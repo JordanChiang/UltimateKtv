@@ -1,0 +1,143 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <Platforms>x86;x64</Platforms>
+    <StartupObject>UltimateKtv.App</StartupObject>
+    <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+
+    <!-- Exclude all satellite resource language DLLs (e.g., de, fr, es folders) from publish output -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <Version>1.0.1</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <Optimize>True</Optimize>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <Optimize>False</Optimize>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Optimize>True</Optimize>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Optimize>False</Optimize>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Platform)' == 'x64'">
+    <CodecDir>Codec</CodecDir>
+    <AssemblyName>UltimateKtv</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)' == 'x86' Or '$(Platform)' == '' Or '$(Platform)' == 'Any CPU'">
+    <CodecDir>Codec_x86</CodecDir>
+    <AssemblyName>UltimateKtv_x86</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Include the Codec folder and its contents in the publish output -->
+    <Content Include="Codec\**" Condition="'$(Platform)' == 'x64'" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Codec_x86\**" Condition="'$(Platform)' != 'x64'" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- FFmpeg binary for YouTube 1080p muxing -->
+    <Content Include="ffmpeg\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="icon.ico" />
+    <Resource Include="logo.jpg" />
+    <!-- Only embed small default fallback images needed by WPF for resource URIs -->
+    <Resource Include="Images\FavoriteUser\*.png" />
+    <Resource Include="Images\Language\*.png" />
+    <Resource Include="Images\SingerPhoto\singertype_default.png" />
+    <Resource Include="Images\WordCount\wordcount_default.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MaterialDesignColors" Version="5.3.0" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.3.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="QRCoder" Version="1.7.0" />
+    <PackageReference Include="System.Data.OleDb" Version="10.0.2" />
+    <PackageReference Include="System.Data.SQLite" Version="2.0.2" />
+    <PackageReference Include="YoutubeExplode" Version="6.5.7" />
+    <PackageReference Include="YoutubeExplode.Converter" Version="6.5.7" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Update="CrazySong.mdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Update="wwwroot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    
+    <!-- Reference DLLs but exclude them from publish -->
+    <Reference Include="CrazyKTV_MediaKit" Condition="'$(Platform)' == 'x64'">
+      <HintPath>Codec\CrazyKTV_MediaKit.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="DirectShowLib-2005" Condition="'$(Platform)' == 'x64'">
+      <HintPath>Codec\DirectShowLib-2005.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="CrazyKTV_MediaKit" Condition="'$(Platform)' != 'x64'">
+      <HintPath>Codec_x86\CrazyKTV_MediaKit.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="DirectShowLib-2005" Condition="'$(Platform)' != 'x64'">
+      <HintPath>Codec_x86\DirectShowLib-2005.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(PublishProtocol)' == ''">
+    <!-- Only copy Codec and Images files during build, not during publish -->
+    <Exec Command="xcopy &quot;$(ProjectDir)$(CodecDir)&quot; &quot;$(TargetDir)$(CodecDir)\&quot; /E /I /Y /D" />
+    <Exec Command="xcopy &quot;$(ProjectDir)Images&quot; &quot;$(TargetDir)Images\&quot; /E /I /Y /D" />
+    <MakeDir Directories="$(TargetDir)libs" />
+    <ItemGroup>
+      <LibFiles Include="$(TargetDir)*.dll" Exclude="$(TargetDir)$(AssemblyName).dll;$(TargetDir)System.Configuration.ConfigurationManager.dll" />
+    </ItemGroup>
+    <Move SourceFiles="@(LibFiles)" DestinationFolder="$(TargetDir)libs\" />
+  </Target>
+
+<Target Name="MovePublishedFiles" AfterTargets="Publish">
+  <ItemGroup>
+    <LibFiles Include="$(PublishDir)*.dll" Exclude="$(PublishDir)$(AssemblyName).dll" />
+  </ItemGroup>
+  <MakeDir Directories="$(PublishDir)libs" />
+  <Move SourceFiles="@(LibFiles)" DestinationFolder="$(PublishDir)libs\" />
+</Target>
+
+</Project>

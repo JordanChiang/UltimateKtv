@@ -1,0 +1,29 @@
+<Window x:Class="UltimateKtv.VideoDisplayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="VideoDisplayWindow" WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" 
+        Topmost="False">
+    <Grid x:Name="VideoContainer" Background="Black" MouseLeftButtonDown="VideoContainer_MouseLeftButtonDown">
+        <!-- Marquee Container for overlay text -->
+        <Grid x:Name="MarqueeContainer" Panel.ZIndex="100" />
+        
+        <!-- LRC Display -->
+        <TextBlock x:Name="LrcTextBlock" 
+                   Panel.ZIndex="50"
+                   Text="" 
+                   Foreground="White" 
+                   FontSize="80" 
+                   FontWeight="Bold" 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Bottom" 
+                   Margin="0,0,0,80" 
+                   TextWrapping="Wrap" 
+                   TextAlignment="Center"
+                   IsHitTestVisible="False"
+                   Visibility="Collapsed">
+            <TextBlock.Effect>
+                <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="3" Opacity="1"/>
+            </TextBlock.Effect>
+        </TextBlock>
+    </Grid>
+</Window>

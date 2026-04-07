@@ -1,0 +1,1247 @@
+<Window x:Class="UltimateKtv.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Name="MyMainWindow"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:PlayerControls="clr-namespace:CrazyKTV_MediaKit.DirectShow.Controls;assembly=CrazyKTV_MediaKit" 
+        xmlns:Players="clr-namespace:CrazyKTV_MediaKit.DirectShow.MediaPlayers;assembly=CrazyKTV_MediaKit" 
+        xmlns:local="clr-namespace:UltimateKtv"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        WindowStyle="None"
+        WindowState="Maximized"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="False"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="ClearType"
+        PreviewMouseWheel="Window_PreviewMouseWheel">
+    
+    <Window.Resources>
+        <!-- Font Size Variables -->
+        <sys:Double x:Key="FuncBtnFontSize">32</sys:Double>
+        <sys:Double x:Key="BottomButtonFontSize">36</sys:Double>
+        <sys:Double x:Key="WaitingListFontSize">24</sys:Double>
+        <sys:Double x:Key="SongListFontSize">38</sys:Double>
+        <sys:Double x:Key="VisualSingerNameFontSize">20</sys:Double>
+
+        <!-- Other Variables -->
+        <sys:Double x:Key="FunBtnWidth">66</sys:Double>
+        <sys:Double x:Key="FunBtnHeight">48</sys:Double>
+    
+        <sys:Double x:Key="SingerGridHeight">900</sys:Double>
+        <sys:Double x:Key="PlayingBtnWidth">122</sys:Double>
+        <sys:Double x:Key="PlayingBtnHeight">50</sys:Double>
+        <sys:Double x:Key="ExtendedBtnWidth">150</sys:Double>
+
+        <!-- DataGrid Column Header Colors -->
+        <SolidColorBrush x:Key="DataGridColumnHeaderBackground" Color="#FF4A4A4A"/>
+        <SolidColorBrush x:Key="DataGridColumnHeaderForeground" Color="#FFFFFFFF"/>
+
+        <!-- A custom, static brush for a guaranteed bright border -->
+        <SolidColorBrush x:Key="BrightBorderBrush" Color="#FFD700"/>
+
+        <!-- Singer Grid Button Colors (will be overridden by TextSettings at startup) -->
+        <SolidColorBrush x:Key="SingerButtonBackground" Color="#FFC107"/>
+        <SolidColorBrush x:Key="SingerButtonBorderBrush" Color="#FF8F00"/>
+        <SolidColorBrush x:Key="SingerButtonForeground" Color="#FFFFFF"/>
+
+        <!-- Converter for binding a boolean value to the Stretch property -->
+        <local:BoolToStretchConverter x:Key="BoolToStretchConverter" />
+
+        <!-- Converter to enable/disable button if content is not empty -->
+        <local:NotNullOrEmptyToBoolConverter x:Key="NotNullOrEmptyToBoolConverter" />
+        
+        <!-- Converter to check if value is not equal to parameter -->
+        <local:NotEqualConverter x:Key="NotEqualConverter" />
+
+        <!-- Custom style to increase the height of the slider track -->
+        <Style x:Key="ThickSliderStyle" TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
+            <Style.Resources>
+                <Style TargetType="Track">
+                    <Setter Property="Height" Value="30" />
+                </Style>
+            </Style.Resources>
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="materialDesign:SliderAssist.OnlyShowFocusVisualWhileDragging" Value="True" />
+            <!-- Dynamic theme color for slider track -->
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+        </Style>
+
+        <!-- Base style for all TextBlocks to use the UI font -->
+        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="FontFamily" Value="Microsoft JhengHei UI" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+
+        <!-- Base style for all DataGrid to use the UI font -->
+        <Style TargetType="DataGrid" BasedOn="{StaticResource {x:Type DataGrid}}">
+            <Setter Property="FontFamily" Value="Microsoft JhengHei UI" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+
+        <!-- Style for the buttons inside the singer grid -->
+        <Style x:Key="SingerGridButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="FontSize" Value="48" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <!-- Force a minimum height for each button to ensure cells are tall enough -->
+            <Setter Property="MinHeight" Value="75" />
+            <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+            <Style.Triggers>
+                <Trigger Property="Content" Value="{x:Static sys:String.Empty}">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </Trigger>
+                <Trigger Property="Content" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Hidden"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Style for the top function buttons -->
+        <Style x:Key="FunctionButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
+            <Setter Property="Height" Value="{StaticResource FunBtnHeight}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="Margin" Value="0,0,2,0" />
+            <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+        </Style>
+
+        <!-- Style for the function toggle buttons -->
+        <Style x:Key="FunctionToggleButtonStyle" TargetType="ToggleButton">
+            <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
+            <Setter Property="Height" Value="{StaticResource FunBtnHeight}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,2,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                ClipToBounds="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Indicator Backgrounds: Use Dark Brush for better White Text contrast -->
+                                <Border x:Name="LeftHighlight" Grid.Column="0" Background="{DynamicResource PrimaryHueDarkBrush}"/>
+                                <Border x:Name="RightHighlight" Grid.Column="1" Background="{DynamicResource PrimaryHueDarkBrush}"/>
+
+                                <!-- Text Labels -->
+                                <TextBlock x:Name="LeftText" Grid.Column="0" Text="歌曲" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="RightText" Grid.Column="1" Text="歌星" 
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                           
+                                <!-- Click Ripple -->
+                                <materialDesign:Ripple Grid.ColumnSpan="2" 
+                                                    Feedback="White"
+                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- UNCHECKED (Default): Song Mode -->
+                            <!-- Active Left: White on Dark | Inactive Right: Primary Color on Transparent -->
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="LeftHighlight" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="RightHighlight" Property="Visibility" Value="Hidden"/>
+                                <Setter TargetName="LeftText" Property="Foreground" Value="White"/>
+                                <Setter TargetName="RightText" Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                            </Trigger>
+
+                            <!-- CHECKED: Singer Mode -->
+                            <!-- Active Right: White on Dark | Inactive Left: Primary Color on Transparent -->
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="LeftHighlight" Property="Visibility" Value="Hidden"/>
+                                <Setter TargetName="RightHighlight" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="LeftText" Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                <Setter TargetName="RightText" Property="Foreground" Value="White"/>
+                            </Trigger>
+
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueDarkBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Style for 3-segment RadioButton (Youtube, Song, Singer) -->
+        <Style x:Key="SearchSegmentRadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Background="Transparent">
+                            <Border x:Name="Highlight" Background="{DynamicResource PrimaryHueDarkBrush}" Visibility="Hidden"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="Content"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Highlight" Property="Visibility" Value="Visible"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Style for the 40 small single-word buttons, based on FunctionButtonStyle -->
+        <Style x:Key="QuickWordButtonStyle" TargetType="Button" BasedOn="{StaticResource FunctionButtonStyle}">
+            <Setter Property="FontSize" Value="26" />
+            <Setter Property="Height" Value="50" />
+            <Setter Property="Width" Value="Auto" /> <!-- Let UniformGrid handle width -->
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="IsEnabled" Value="{Binding Path=., Converter={StaticResource NotNullOrEmptyToBoolConverter}}"/>
+            <!-- Dynamic colors - ensure consistency with parent style -->
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+        </Style>
+
+        <!-- Style for the PopupBox to match function buttons -->
+        <Style x:Key="FunctionPopupBoxStyle" TargetType="materialDesign:PopupBox">
+            <Setter Property="Height" Value="{StaticResource FunBtnHeight}" />
+            <Setter Property="Width" Value="{StaticResource FunBtnWidth}" />
+            <Setter Property="Margin" Value="0,0,2,0" />
+        </Style>
+
+        <!-- Style for the singer filter buttons -->
+        <Style x:Key="SecondFilterButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
+            <Setter Property="Height" Value="50" />
+            <Setter Property="Margin" Value="0,0,5,0" />
+            <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+        </Style>
+
+        <!-- Style for the small player control buttons -->
+        <Style x:Key="PlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
+            <Setter Property="Height" Value="{StaticResource PlayingBtnHeight}" />
+            <Setter Property="Width" Value="132" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="2" />
+            <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+        </Style>
+
+        <!-- Style for the large player control button (切歌) -->
+        <Style x:Key="LargePlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Height" Value="110" />
+            <Setter Property="Width" Value="{StaticResource PlayingBtnWidth}" />
+            <Setter Property="Padding" Value="2" />
+            <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+        </Style>
+
+        <!-- Style for the pagination buttons (上一頁 / 下一頁) -->
+        <Style x:Key="PaginationButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
+            <Setter Property="Width" Value="{StaticResource ExtendedBtnWidth}" />
+            <Setter Property="Height" Value="{StaticResource PlayingBtnHeight}" />
+            <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+        </Style>
+
+        <!-- Style for Visual Singer Buttons -->
+        <Style x:Key="VisualSingerButtonStyle" TargetType="Button">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontSize" Value="{DynamicResource VisualSingerNameFontSize}"/>
+            <Setter Property="Background" Value="#2A2A2A"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" BorderThickness="0" CornerRadius="4" Background="{TemplateBinding Background}" ClipToBounds="True">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Image Grid.Row="0" Grid.RowSpan="2" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <Image.Source>
+                                        <Binding Path="PhotoPath" TargetNullValue="{x:Null}">
+                                            <Binding.FallbackValue>
+                                                <BitmapImage UriSource="/Images/FavoriteUser/favoriteuser_default.png"/>
+                                            </Binding.FallbackValue>
+                                        </Binding>
+                                    </Image.Source>
+                                </Image>
+                                <Border Grid.Row="1" Background="#CC000000">
+                                    <TextBlock Text="{Binding Name}" Foreground="White" TextAlignment="Center" Padding="2" FontSize="{TemplateBinding FontSize}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#20FFFFFF"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Name}" Value="">
+                                <Setter Property="Visibility" Value="Hidden"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Name}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Hidden"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Global DataGrid Column Header Style -->
+        <Style x:Key="GlobalDataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Padding" Value="8,0,8,0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource DataGridColumnHeaderForeground}"/>
+            <Setter Property="Background" Value="{DynamicResource DataGridColumnHeaderBackground}"/>
+        </Style>
+    </Window.Resources>
+    <materialDesign:DialogHost x:Name="RootDialog" Identifier="RootDialog">
+        <Viewbox Stretch="Fill" StretchDirection="Both">
+            <Grid Width="1920" Height="1080" Background="{DynamicResource MaterialDesignPaper}">
+                <DockPanel Margin="0">
+                    <!-- Left Panel -->
+                    <Border DockPanel.Dock="Left" Width="406" Margin="0,0,10,0">
+                        <DockPanel Margin="0">
+                            <!-- Top Button Panel -->
+                            <Border DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <StackPanel Margin="0">
+                                    <!-- First line of buttons -->
+                                    <UniformGrid Rows="1" Margin="0,0,0,8">
+                                        <Button Name="FuncBtnBySinger" Content="歌星" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnBySinger_Click"/>
+                                        <Button Name="FuncBtnByFav" Content="最愛" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByFav_Click"/>                                        
+                                        <Button Name="FuncBtnByNum" Content="編號" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByNum_Click"/>
+                                        <Button Name="FuncBtnQuit" Content="退出" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnQuit_Click"/>
+                                    </UniformGrid>
+                                    <!-- Second line of buttons -->
+                                    <UniformGrid Rows="1">
+                                        <Button Name="FuncBtnByNew" Content="新進" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByNew_Click"/>
+                                        <Button Name="FuncBtnByRank" Content="排行" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByRank_Click"/>
+                                        <Button Name="FuncBtnByInput" Content="搜尋" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByInput_Click"/>
+                                        <Button Name="FuncBtnSetting" Content="設定" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnSetting_Click"/>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Bottom Button Panel -->
+                            <Border DockPanel.Dock="Bottom" Height="116">
+                                <Grid Margin="0,0,0,5">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- SkipSong - Double height on the left -->
+                                    <Button Name="SkipSong" Content="切歌" Grid.Column="0" Style="{DynamicResource LargePlayerControlButtonStyle}" Click="SkipSong_Click"/>
+                                    
+                                    <!-- Right side buttons layout -->
+                                    <Grid Grid.Column="2">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="5"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <!-- First row - pause and repeat buttons fill the row11 fill the row -->
+                                        <Button Name="PauseBtn" Content="暫停" Grid.Row="0" Grid.Column="0" Style="{DynamicResource PlayerControlButtonStyle}" Click="Pause_Click"/>
+                                        <Button Name="RepeatBtn" Content="重播" Grid.Row="0" Grid.Column="2" Style="{DynamicResource PlayerControlButtonStyle}" Click="Repeat_Click"/>
+                                        
+                                        <!-- Second row - buttons 12 and 13 fill the row -->
+                                        <Button Name="VocalBtn" Content="人聲" Grid.Row="2" Grid.Column="0" Style="{DynamicResource PlayerControlButtonStyle}" 
+                                                Click="VocalBtn_Click" 
+                                                PreviewMouseDown="VocalBtn_PreviewMouseDown" 
+                                                PreviewMouseUp="VocalBtn_PreviewMouseUp" 
+                                                MouseRightButtonUp="VocalBtn_RightClick"/>
+                                        <Button Name="MusicBtn" Content="伴唱" Grid.Row="2" Grid.Column="2" Style="{DynamicResource PlayerControlButtonStyle}" 
+                                                Click="MusicBtn_Click"
+                                                PreviewMouseDown="MusicBtn_PreviewMouseDown" 
+                                                PreviewMouseUp="MusicBtn_PreviewMouseUp" 
+                                                MouseRightButtonUp="MusicBtn_RightClick"/>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+
+                            <!-- Center Content: Waiting List and Media Player -->
+                            <!-- Center Content: Waiting List and Media Player -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="444" />  <!-- header 45 + (9*44)=396 + 2px border + 1px bottom line -->
+                                    <RowDefinition Height="Auto" /> <!-- Row for the new buttons -->
+                                    <RowDefinition Height="*" />    <!-- Media player fills remaining space -->
+                                </Grid.RowDefinitions>
+
+                                <!-- Waiting List Panel with explicit bottom line -->
+                                <Grid Grid.Row="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="443"/>
+                                    </Grid.RowDefinitions>
+                                    <Border Grid.Row="0" BorderThickness="0" UseLayoutRounding="True" SnapsToDevicePixels="True">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="280"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <!-- DataGrid with built-in column headers to match SongListGrid -->
+                                            <DataGrid Grid.Row="0" Grid.ColumnSpan="2"
+                                                      Name="WaitingListGrid"
+                                                      FontSize="{DynamicResource WaitingListFontSize}"
+                                                      RowHeight="44"
+                                                      HeadersVisibility="Column"
+                                                      ColumnHeaderHeight="45"
+                                                      BorderThickness="0"
+                                                      Padding="0"
+                                                      Margin="0"
+                                                      AutoGenerateColumns="False" 
+                                                      CanUserAddRows="False" 
+                                                      CanUserDeleteRows="False"
+                                                      IsReadOnly="True"
+                                                      CanUserSortColumns="False"
+                                                      CanUserReorderColumns="False"
+                                                      CanUserResizeColumns="False"
+                                                      CanUserResizeRows="False"
+                                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                      PreviewMouseRightButtonDown="WaitingListGrid_PreviewMouseRightButtonDown"
+                                                      PreviewMouseLeftButtonDown="WaitingListGrid_PreviewMouseLeftButtonDown"
+                                                      SelectionChanged="WaitingListGrid_SelectionChanged"
+                                                      ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                                <DataGrid.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="移到最前面" Click="WaitingList_MoveToFirst_Click"/>
+                                                        <MenuItem Header="從清單移除" Click="WaitingList_RemoveFromList_Click"/>
+                                                        <MenuItem Header="往後一首" Click="WaitingList_MoveToNext_Click"/>
+                                                    </ContextMenu>
+                                                </DataGrid.ContextMenu>
+                                                <DataGrid.Columns>
+                                                    <DataGridTemplateColumn Header="歌名" Width="280" CanUserSort="False">
+                                                        <DataGridTemplateColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                                                                    <!-- Web order icon with tooltip -->
+                                                                    <Border Background="Transparent" 
+                                                                            Padding="0"
+                                                                            ToolTipService.InitialShowDelay="300"
+                                                                            ToolTipService.ShowDuration="10000">
+                                                                        <Border.Style>
+                                                                            <Style TargetType="Border">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding OrderedBy, Converter={StaticResource NotNullOrEmptyToBoolConverter}}" Value="True">
+                                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </Border.Style>
+                                                                        <Border.ToolTip>
+                                                                            <ToolTip>
+                                                                                <TextBlock FontSize="18" FontWeight="Medium">
+                                                                                    <Run Text="{Binding OrderedBy, Mode=OneWay}" FontWeight="Bold"/>
+                                                                                </TextBlock>
+                                                                            </ToolTip>
+                                                                        </Border.ToolTip>
+                                                                        <materialDesign:PackIcon Kind="Web" 
+                                                                                               Width="16" 
+                                                                                               Height="16" 
+                                                                                               Margin="0,0,4,0"
+                                                                                               VerticalAlignment="Center"
+                                                                                               Foreground="#4CAF50"/>
+                                                                    </Border>
+                                                                    <!-- Song name -->
+                                                                    <TextBlock Text="{Binding WaitingListSongName}" 
+                                                                             TextAlignment="Left"
+                                                                             VerticalAlignment="Center"
+                                                                             TextTrimming="CharacterEllipsis"/>
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </DataGridTemplateColumn.CellTemplate>
+                                                    </DataGridTemplateColumn>
+                                                    <DataGridTemplateColumn Header="歌手" Width="*" CanUserSort="False">
+                                                        <DataGridTemplateColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="6,0,6,0">
+                                                                    <TextBlock Text="{Binding WaitingListSingerName}" VerticalAlignment="Center" />
+                                                                </Viewbox>
+                                                            </DataTemplate>
+                                                        </DataGridTemplateColumn.CellTemplate>
+                                                    </DataGridTemplateColumn>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Buttons for Waiting List Pagination -->
+                                <Grid Grid.Row="1" Margin="0,5,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                <TextBlock Name="WaitListPageInfo" Margin="10,0,0,0" Grid.Column="0" Text="第 1/10 頁&#x0A;(0 首歌曲)" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="{DynamicResource WaitingListFontSize}" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Name="WaitListPageUp" Content="上一頁" Style="{StaticResource FunctionButtonStyle}" Width="100"/>
+                                        <Button Name="WaitListPageDown" Content="下一頁" Style="{StaticResource FunctionButtonStyle}" Margin="10,0,0,0" Width="100"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Media Player Panel -->
+                                <Border Grid.Row="2" Margin="0,10,0,0" BorderThickness="0" Background="Black">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />    <!-- Video player area -->
+                                            <RowDefinition Height="Auto" /> <!-- Sliders area -->
+                                        </Grid.RowDefinitions>
+                                        
+                                        <!-- Video Player Container -->
+                                        <Grid x:Name="MediaPlayerContainer" Grid.Row="0" ClipToBounds="False" Background="Transparent" MouseLeftButtonDown="MediaPlayerContainer_MouseLeftButtonDown">
+                                            <!-- Marquee Container for overlay text -->
+                                            <Grid x:Name="MarqueeContainer" Panel.ZIndex="100" ClipToBounds="False" IsHitTestVisible="False" />
+                                        </Grid>
+                                        
+                                        <!-- Control Sliders Panel -->
+                                        <Grid Grid.Row="1" Background="#CC000000" Margin="5,0,5,5">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            
+                                            <!-- Video Progress Slider -->
+                                            <Grid Grid.Row="0" Margin="5,5,5,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <TextBlock Grid.Column="0" Name="CurrentTimeText" Text="00:00" 
+                                                           Foreground="White" FontSize="26" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                
+                                                <Slider Grid.Column="1" Name="VideoProgressSlider" 
+                                                        Minimum="0" Maximum="100" Value="0"
+                                                        Style="{StaticResource ThickSliderStyle}"
+                                                        Thumb.DragStarted="VideoProgressSlider_DragStarted"
+                                                        Thumb.DragCompleted="VideoProgressSlider_DragCompleted"/>
+                                                
+                                                <TextBlock Grid.Column="2" Name="TotalTimeText" Text="00:00" 
+                                                           Foreground="White" FontSize="26" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                            </Grid>
+                                            
+                                            <!-- Volume Control Slider -->
+                                            <Grid Grid.Row="1" Margin="5,2,5,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <Button Grid.Column="0" Name="MuteButton" Click="MuteButton_Click"
+                                                        Style="{StaticResource MaterialDesignIconButton}"
+                                                        ToolTip="Mute/Unmute"
+                                                        Margin="0,0,5,0">
+                                                    <materialDesign:PackIcon Name="VolumeIcon" Kind="VolumeHigh" 
+                                                                             Foreground="White" Width="36" Height="36" 
+                                                                             VerticalAlignment="Center"/>
+                                                </Button>
+                                                
+                                                <Slider Grid.Column="1" Name="VolumeSlider" 
+                                                        Minimum="0" Maximum="100" Value="100"
+                                                        Style="{StaticResource ThickSliderStyle}"
+                                                        Margin="0,0,10,0"/>
+                                                
+                                                <TextBlock Grid.Column="2" Name="VolumeText" Text="100" 
+                                                           Foreground="White" FontSize="28" VerticalAlignment="Center" 
+                                                           TextAlignment="Left" Width="50" Margin="0,0,10,0"/>
+                                                
+                                                <ToggleButton Grid.Column="3" Name="VolumeLockToggle"
+                                                              Style="{StaticResource MaterialDesignActionToggleButton}"
+                                                              ToolTip="鎖定音量"
+                                                              VerticalAlignment="Center"
+                                                              Margin="0,0,10,0"
+                                                              Background="Transparent"
+                                                              Checked="VolumeLockToggle_Checked"
+                                                              Unchecked="VolumeLockToggle_Unchecked">
+                                                    <ToggleButton.Content>
+                                                        <materialDesign:PackIcon Kind="LockOpenVariant" Width="28" Height="28" Foreground="{DynamicResource SingerButtonBackground}"/>
+                                                    </ToggleButton.Content>
+                                                    <materialDesign:ToggleButtonAssist.OnContent>
+                                                        <materialDesign:PackIcon Kind="Lock" Width="28" Height="28" Foreground="{DynamicResource SingerButtonBackground}"/>
+                                                    </materialDesign:ToggleButtonAssist.OnContent>
+                                                </ToggleButton>
+                                                
+                                                <!-- Pitch Control Button - 3 horizontal lines -->
+                                                <Button Grid.Column="4" Name="PitchControlBtn"
+                                                        Click="PitchControlBtn_Click"
+                                                        Style="{StaticResource MaterialDesignIconButton}"
+                                                        ToolTip="音調控制"
+                                                        Margin="0"
+                                                        Width="40" Height="40">
+                                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                        <Rectangle Width="24" Height="3" Fill="White" Margin="0,2"/>
+                                                        <Rectangle Width="24" Height="3" Fill="White" Margin="0,2"/>
+                                                        <Rectangle Width="24" Height="3" Fill="White" Margin="0,2"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Right Panel -->
+                    <Border>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" /> <!-- 0: Top Buttons -->
+                                <RowDefinition Height="Auto" /> <!-- 1: Selector Buttons -->
+                                <RowDefinition Height="Auto" /> <!-- 2: 40 Small Buttons -->
+                                <RowDefinition Height="Auto" /> <!-- 3: Search bar & Pagination buttons -->
+                                <RowDefinition Height="*" />    <!-- 4: Content area (Grids/Results) -->
+                                <RowDefinition Height="Auto" /> <!-- 5: Bottom Clock & Global Pagination -->
+                            </Grid.RowDefinitions>
+
+                            <!-- Top 7 buttons for 2nd filter, default is singer -->
+                            <UniformGrid Grid.Row="0" Rows="1" Margin="0,0,0,10">
+                                <Button x:Name="FilterButton1" Style="{DynamicResource SecondFilterButtonStyle}"/>
+                                <Button x:Name="FilterButton2" Style="{DynamicResource SecondFilterButtonStyle}"/>
+                                <Button x:Name="FilterButton3" Style="{DynamicResource SecondFilterButtonStyle}"/>
+                                <Button x:Name="FilterButton4" Style="{DynamicResource SecondFilterButtonStyle}"/>
+                                <Button x:Name="FilterButton5" Style="{DynamicResource SecondFilterButtonStyle}"/>
+                                <Button x:Name="FilterButton6" Style="{DynamicResource SecondFilterButtonStyle}"/>
+                                <Button x:Name="FilterButton7" Style="{DynamicResource SecondFilterButtonStyle}" Margin="0,0,0,0"/>
+                            </UniformGrid>
+
+                            <!-- Five selector buttons: 1) BopomofoList 2) EngAndNumList 3) PenStyleList 4) song ID 5) blank -->
+                            <!-- Search method and style row (partially segmented) -->
+                            <Grid x:Name="SearchStyleBtnPanel" Grid.Row="1" Margin="0,0,0,8" Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2.0*"/> <!-- Youtube/Songs/Singers Toggle -->
+                                    <ColumnDefinition Width="*"/>   <!-- 注音 -->
+                                    <ColumnDefinition Width="*"/>   <!-- 筆劃 -->
+                                    <ColumnDefinition Width="*"/>   <!-- 英數 -->
+                                    <ColumnDefinition Width="*"/>   <!-- 編號 -->
+                                    <ColumnDefinition Width="*"/>   <!-- 鍵盤 -->
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 3-Way Mode Toggle -->
+                                <Border Grid.Column="0" BorderBrush="{DynamicResource PrimaryHueMidBrush}" BorderThickness="1" CornerRadius="4" Margin="0,0,8,0" UseLayoutRounding="True">
+                                    <UniformGrid x:Name="SearchModeSegment" Columns="3">
+                                        <RadioButton x:Name="YoutubeRadio" Content="Youtube" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
+                                        <RadioButton x:Name="SongRadio" Content="歌曲" IsChecked="True" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
+                                        <RadioButton x:Name="SingerRadio" Content="歌星" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
+                                    </UniformGrid>
+                                </Border>
+
+                                <Button x:Name="BopomofoListBtn" Grid.Column="1" Content="注音" Style="{StaticResource FunctionButtonStyle}" Click="BopomofoListBtn_Click"/>
+                                <Button x:Name="PenStyleListBtn" Grid.Column="2" Content="筆劃" Style="{StaticResource FunctionButtonStyle}" Click="PenStyleListBtn_Click"/>
+                                <Button x:Name="EngAndNumListBtn" Grid.Column="3" Content="英數" Style="{StaticResource FunctionButtonStyle}" Click="EngAndNumListBtn_Click"/>
+                                <Button x:Name="SongIdListBtn" Grid.Column="4" Content="編號" Style="{StaticResource FunctionButtonStyle}" Click="SongIdListBtn_Click" Margin="0"/>
+                                <Button x:Name="KeyboardListBtn" Grid.Column="5" Content="鍵盤" Style="{StaticResource FunctionButtonStyle}" Click="KeyboardListBtn_Click" Margin="0"/>
+                            </Grid>
+
+                            <!-- 40 single-word grid (default: Bopomofo list) -->
+                            <ItemsControl x:Name="SearchInputGrid" Grid.Row="2" Visibility="Collapsed">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="5" Columns="8"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding}"
+                                                Tag="{Binding}"
+                                                Style="{DynamicResource QuickWordButtonStyle}"
+                                                Click="QuickWordButton_Click"
+                                                />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Static user input words (max 10) + actions -->
+                            <Border x:Name="SearchSymbolPanel" Grid.Row="3" Margin="0,6,0,0" Visibility="Collapsed"
+                                    BorderBrush="{StaticResource BrightBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <!-- Fixed width text so buttons stay close -->
+                                            <ColumnDefinition Width="260"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="SearchWords" Grid.Column="0" Text="" VerticalAlignment="Center" 
+                                                 Background="Transparent" BorderThickness="0"
+                                                 Foreground="{StaticResource DataGridColumnHeaderForeground}"
+                                                 Width="260" FontSize="{DynamicResource BottomButtonFontSize}" Margin="0,0,6,0" 
+                                                 MaxLength="20"
+                                                 TextChanged="SearchWords_TextChanged"
+                                                 CaretBrush="White">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="IsReadOnly" Value="True"/>
+                                                    <Setter Property="Focusable" Value="False"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ElementName=YoutubeRadio, Path=IsChecked}" Value="True">
+                                                            <Setter Property="IsReadOnly" Value="False"/>
+                                                            <Setter Property="Focusable" Value="True"/>
+                                                            <Setter Property="Cursor" Value="IBeam"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding ElementName=KeyboardListBtn, Path=FontWeight}" Value="{x:Static FontWeights.Bold}">
+                                                            <Setter Property="IsReadOnly" Value="False"/>
+                                                            <Setter Property="Focusable" Value="True"/>
+                                                            <Setter Property="Cursor" Value="IBeam"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+                                        <Button x:Name="DeleteEnteredWordBtn" Grid.Column="1" Content="刪除" Style="{StaticResource FunctionButtonStyle}"
+                                                Click="DeleteEnteredWordBtn_Click" Margin="0,0,4,0" MinWidth="72"/>
+                                        <Button x:Name="ClearEnteredWordBtn" Grid.Column="2" Content="清空" Style="{StaticResource FunctionButtonStyle}"
+                                                Click="ClearEnteredWordBtn_Click" Margin="0,0,4,0" MinWidth="72"/>
+                                        <Button x:Name="YoutubeSearchBtn" Grid.Column="3" 
+                                                Click="YoutubeSearchBtn_Click" Margin="0,0,4,0" MinWidth="72">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource FunctionButtonStyle}">
+                                                    <Setter Property="Content" Value="尋找"/>
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ElementName=YoutubeRadio, Path=IsChecked}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsDownloadingYoutube, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                            <Setter Property="Content" Value="取消"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                                            <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="White"
+                                                       FontSize="26" FontWeight="Bold" Margin="0,0,10,0" Visibility="Collapsed"/>
+                                            <ProgressBar x:Name="YoutubeDownloadProgress" Width="100" Height="20" Minimum="0" Maximum="100"
+                                                          Visibility="Collapsed" Value="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                            <TextBlock x:Name="YoutubeDownloadText" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="White"
+                                                       FontSize="28" FontWeight="Bold"
+                                                       Visibility="Collapsed" Text="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:F1}%}"/>
+                                            
+                                            <TextBlock x:Name="QuickSongCountText" Text="" Visibility="Collapsed" Foreground="{DynamicResource MaterialDesignBody}"
+                                                       VerticalAlignment="Center" Margin="10,0,0,0"
+                                                       FontSize="{DynamicResource BottomButtonFontSize}" />
+                                        </StackPanel>
+                                        
+                                        <Button x:Name="QuickPageUpBtn" Grid.Column="5" Content="上頁" Width="{StaticResource ExtendedBtnWidth}" Height="42"
+                                                Padding="0" Margin="0,0,4,0"
+                                                Style="{DynamicResource PaginationButtonStyle}"
+                                                Click="QuickPageUp_Click"/>
+                                        <Button x:Name="QuickPageDownBtn" Grid.Column="6" Content="次頁" Width="{StaticResource ExtendedBtnWidth}" Height="42"
+                                                Padding="0"
+                                                Style="{DynamicResource PaginationButtonStyle}"
+                                                Click="QuickPageDown_Click"/>
+                                    </Grid>
+                            </Border>
+
+                            <!-- Quick results area: DataGrid + bottom count text (same row) -->
+                            <Grid Grid.Row="4" Visibility="Collapsed" x:Name="QuickResultsContainer">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <DataGrid x:Name="QuickSongListGrid" Grid.Row="0" Margin="0,8,0,2"
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          RowHeight="57"
+                                          ColumnHeaderHeight="54"
+                                          Height="850"
+                                          HeadersVisibility="Column"
+                                          BorderThickness="0"
+                                          Padding="0"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          IsReadOnly="True"
+                                          SelectionUnit="FullRow"
+                                          CanUserSortColumns="False"
+                                          CanUserReorderColumns="False"
+                                          CanUserResizeColumns="False"
+                                          CanUserResizeRows="False"
+                                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          PreviewMouseLeftButtonDown="SongGrid_PreviewMouseLeftButtonDown"
+                                          PreviewMouseLeftButtonUp="SongGrid_PreviewMouseLeftButtonUp"
+                                          PreviewMouseRightButtonDown="SongGrid_PreviewMouseRightButtonDown"
+                                          SelectionChanged="WaitingListGrid_SelectionChanged"
+                                          Visibility="Collapsed"
+                                          RowHeaderWidth="0"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="加入最愛" Click="AddToFavorite_Click"/>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="*">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Left"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                    <Setter Property="Margin" Value="0"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="Padding" Value="6,0,6,0"/>
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                    <Style.Triggers>
+                                                        <!-- Only apply non-Mandarin color when in Song mode (toggle unchecked) -->
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                 <Condition Binding="{Binding ElementName=SingerRadio, Path=IsChecked}" Value="False"/>
+                                                                 <Condition Binding="{Binding Language, Converter={StaticResource NotEqualConverter}, ConverterParameter=國語}" Value="True"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="LightSkyBlue"/>
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTemplateColumn Width="380">
+                                            <DataGridTemplateColumn.HeaderStyle>
+                                                <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                                    <Setter Property="Content" Value="歌手"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ElementName=YoutubeRadio, Path=IsChecked}" Value="True">
+                                                            <Setter Property="Content" Value="歌曲時間"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </DataGridTemplateColumn.HeaderStyle>
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="Transparent" Padding="6,0,6,0" Cursor="Hand"
+                                                            MouseEnter="SingerCell_MouseEnter" MouseLeave="SingerCell_MouseLeave">
+                                                        <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left">
+                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center"/>
+                                                        </Viewbox>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="130">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Left"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                    <Setter Property="Margin" Value="0"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="Padding" Value="6,0,6,0"/>
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <!-- 4x4 Grid for Youtube Thumbnails - Sharing Row 0 with QuickSongListGrid -->
+                                <ItemsControl x:Name="YoutubeThumbnailGrid" Grid.Row="0" Margin="0,8,0,2" Height="850"
+                                              Visibility="Collapsed" Background="Transparent" 
+                                              HorizontalAlignment="Stretch">
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style>
+                                            <Setter Property="FrameworkElement.HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="FrameworkElement.VerticalAlignment" Value="Stretch"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="4" Columns="4"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Click="YoutubeThumbnail_Click" Tag="{Binding}" Style="{StaticResource VisualSingerButtonStyle}"
+                                                    MouseEnter="YoutubeThumbnail_MouseEnter" MouseLeave="YoutubeThumbnail_MouseLeave">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="border" BorderThickness="0" CornerRadius="4" Background="#2A2A2A" ClipToBounds="True" Margin="2">
+                                                            <Grid>
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="*"/>
+                                                                    <RowDefinition Height="Auto"/>
+                                                                </Grid.RowDefinitions>
+                                                                <Image x:Name="ThumbnailImage" Grid.Row="0" Grid.RowSpan="2" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                                                    <Image.Source>
+                                                                        <Binding Path="ThumbnailUrl" TargetNullValue="{x:Null}">
+                                                                            <Binding.FallbackValue>
+                                                                                <BitmapImage UriSource="/Images/FavoriteUser/favoriteuser_default.png"/>
+                                                                            </Binding.FallbackValue>
+                                                                        </Binding>
+                                                                    </Image.Source>
+                                                                </Image>
+                                                                <MediaElement x:Name="PreviewPlayer" Grid.Row="0" Grid.RowSpan="2" 
+                                                                              Stretch="Uniform" 
+                                                                              VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                              Visibility="Collapsed" 
+                                                                              LoadedBehavior="Manual" 
+                                                                              UnloadedBehavior="Stop" 
+                                                                              Volume="0" />
+                                                                <Border x:Name="TitleBorder" Grid.Row="1" Background="#CC000000">
+                                                                    <TextBlock Text="{Binding SongName}" Foreground="White" TextAlignment="Center" Padding="2" FontSize="20" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                                                </Border>
+                                                            </Grid>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="border" Property="Background" Value="#20FFFFFF"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <!-- StackPanel Grid.Row="1" with Pagination removed -->
+                            </Grid>
+
+
+
+                            <!-- Content Area - Singer Grid and Song List Grid occupy same space -->
+                            <Grid x:Name="SingerSongContentGrid" Grid.Row="4" Margin="0,0,0,5" Height="{StaticResource SingerGridHeight}">
+                                <!-- 10x6 Grid for Singer Names -->
+                                <ItemsControl Name="SingerGrid" Visibility="Visible">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="10" Columns="6"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{DynamicResource SingerGridButtonStyle}"
+                                            Click="SingerButton_Click" Tag="{Binding}">
+                                                <Viewbox StretchDirection="DownOnly">
+                                                    <TextBlock Text="{Binding}" Padding="5,0" Foreground="{DynamicResource SingerButtonBackground}"/>
+                                                </Viewbox>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                
+                                <!-- 6x3 Grid for Singer Photos -->
+                                <ItemsControl Name="VisualSingerGrid" Visibility="Collapsed" Background="Transparent" 
+                                              HorizontalAlignment="Stretch">
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style>
+                                            <Setter Property="FrameworkElement.HorizontalAlignment" Value="Stretch"/>
+                                            <Setter Property="FrameworkElement.VerticalAlignment" Value="Stretch"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="3" Columns="6"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource VisualSingerButtonStyle}"
+                                                    Click="SingerButton_Click" Tag="{Binding Name}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Visual Singer Grid etc removed or moved -->
+
+                                <!-- Song list for singer search Results - Same size as SingerGrid -->
+                                <DataGrid Name="SongListGrid" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          RowHeight="65"
+                                          HeadersVisibility="Column"
+                                          BorderThickness="0"
+                                          Padding="0"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          IsReadOnly="True"
+                                          SelectionUnit="FullRow"
+                                          CanUserSortColumns="False"
+                                          CanUserReorderColumns="False"
+                                          CanUserResizeColumns="False"
+                                          CanUserResizeRows="False"
+                                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          Visibility="Collapsed"
+                                          PreviewMouseLeftButtonDown="SongGrid_PreviewMouseLeftButtonDown"
+                                          PreviewMouseLeftButtonUp="SongGrid_PreviewMouseLeftButtonUp"
+                                          PreviewMouseRightButtonDown="SongGrid_PreviewMouseRightButtonDown"
+                                          SelectionChanged="WaitingListGrid_SelectionChanged"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="加入最愛" Click="AddToFavorite_Click"/>
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="*">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Left"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="Padding" Value="6,0,6,0"/>
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                    <Setter Property="Foreground" Value="LightSkyBlue"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Language}" Value="國語">
+                                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTemplateColumn Header="歌手" Width="380">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="Transparent" Padding="6,0,6,0" Cursor="Hand"
+                                                            MouseEnter="SingerCell_MouseEnter" MouseLeave="SingerCell_MouseLeave">
+                                                        <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left">
+                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center"/>
+                                                        </Viewbox>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="140">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="TextAlignment" Value="Left"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="Padding" Value="6,0,6,0"/>
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+
+                            <!-- Container for other DataGrids - Always visible in remaining space -->
+                            <Grid Grid.Row="6" Margin="0,10,0,0">
+                                <!-- DataGrid 2 - Language Search Results -->
+                                <DataGrid Name="LanguageResultGrid" Margin="0,0,0,5" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          Visibility="Collapsed"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="100"/>
+                                        <DataGridTextColumn Header="歌曲數量" Binding="{Binding Count}" Width="100"/>
+                                        <DataGridTextColumn Header="熱門歌曲" Binding="{Binding PopularSong}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                
+                                <!-- DataGrid 3 - Search Results -->
+                                <DataGrid Name="SearchResultGrid" Margin="0,0,0,5" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          Visibility="Collapsed"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="編號" Binding="{Binding Number}" Width="100"/>
+                                        <DataGridTextColumn Header="歌名" Binding="{Binding Title}" Width="*"/>
+                                        <DataGridTextColumn Header="歌手" Binding="{Binding Artist}" Width="200"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                
+                                <!-- DataGrid 4 - Number Search Results -->
+                                <DataGrid Name="NumberResultGrid" Margin="0,0,0,5" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          Visibility="Collapsed"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="編號" Binding="{Binding SongNumber}" Width="100"/>
+                                        <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="*"/>
+                                        <DataGridTextColumn Header="歌手" Binding="{Binding SingerName}" Width="200"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                
+                                <!-- DataGrid 5 - Favorite Songs -->
+                                <DataGrid Name="FavoriteResultGrid" Margin="0,0,0,5" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          Visibility="Collapsed"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="最愛歌曲" Binding="{Binding FavoriteSong}" Width="*"/>
+                                        <DataGridTextColumn Header="歌手" Binding="{Binding FavoriteArtist}" Width="200"/>
+                                        <DataGridTextColumn Header="點播次數" Binding="{Binding PlayCount}" Width="100"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                
+                                <!-- DataGrid 6 - New Songs -->
+                                <DataGrid Name="NewSongResultGrid" Margin="0,0,0,5" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          Visibility="Collapsed"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="新歌" Binding="{Binding NewSong}" Width="*"/>
+                                        <DataGridTextColumn Header="歌手" Binding="{Binding NewArtist}" Width="200"/>
+                                        <DataGridTextColumn Header="發行日期" Binding="{Binding ReleaseDate}" Width="150"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                
+                                <!-- DataGrid 7 - Ranking Songs -->
+                                <DataGrid Name="RankResultGrid" Margin="0,0,0,5" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          Visibility="Collapsed"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="排名" Binding="{Binding Rank}" Width="80"/>
+                                        <DataGridTextColumn Header="歌曲" Binding="{Binding RankSong}" Width="*"/>
+                                        <DataGridTextColumn Header="歌手" Binding="{Binding RankArtist}" Width="200"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                
+                                <!-- DataGrid 8 - Duet Songs -->
+                                <DataGrid Name="DuetResultGrid" Margin="0,0,0,5" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          Visibility="Collapsed"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="對唱歌曲" Binding="{Binding DuetSong}" Width="*"/>
+                                        <DataGridTextColumn Header="原唱歌手" Binding="{Binding DuetArtist}" Width="200"/>
+                                        <DataGridTextColumn Header="類型" Binding="{Binding DuetType}" Width="100"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                
+                                <!-- DataGrid 9 - Button Style Data -->
+                                <DataGrid Name="ButtonStyleGrid" Margin="0,0,0,5" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          Visibility="Collapsed"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="按鈕樣式" Binding="{Binding StyleName}" Width="200"/>
+                                        <DataGridTextColumn Header="描述" Binding="{Binding Description}" Width="*"/>
+                                        <DataGridTextColumn Header="狀態" Binding="{Binding Status}" Width="100"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                
+                                <!-- DataGrid 10 - Theme Data -->
+                                <DataGrid Name="ThemeGrid" Margin="0,0,0,5" 
+                                          FontSize="{DynamicResource SongListFontSize}"
+                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          Visibility="Collapsed"
+                                          ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="主題名稱" Binding="{Binding ThemeName}" Width="150"/>
+                                        <DataGridTextColumn Header="類型" Binding="{Binding ThemeType}" Width="100"/>
+                                        <DataGridTextColumn Header="顏色配置" Binding="{Binding ColorScheme}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+
+                            <!-- Bottom panel with pagination controls - Moved to bottom -->
+                            <Grid Grid.Row="5" Margin="0,15,0,0">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ElementName=SearchStyleBtnPanel, Path=Visibility}" Value="Visible">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Name="PageInfoTextBlock" Grid.Column="0" Text="第 1/10 頁" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="{DynamicResource BottomButtonFontSize}" Foreground="{DynamicResource MaterialDesignBody}" Margin="10,0,0,0" />
+
+                                <!-- Digital Clock -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,30,0">
+                                    <materialDesign:PackIcon Kind="ClockOutline" Width="46" Height="46" VerticalAlignment="Center" Foreground="White" Margin="0,0,12,0"/>
+                                    <TextBlock Name="DigitalClockText" Text="00:00" FontSize="40" FontWeight="Medium" VerticalAlignment="Center" Foreground="White" FontFamily="Consolas"/>
+                                </StackPanel>
+                                
+                                <Button Name="PageUp" Grid.Column="2" Content="上一頁" Style="{DynamicResource PaginationButtonStyle}" Margin="0,0,10,10" VerticalAlignment="Top"/>
+                                <Button Name="PageDown" Grid.Column="3" Content="下一頁" Style="{DynamicResource PaginationButtonStyle}" Margin="0,0,10,0" VerticalAlignment="Top"/>
+                            </Grid>
+
+                        </Grid>
+                    </Border>
+
+                </DockPanel>
+            </Grid>
+        </Viewbox>
+    </materialDesign:DialogHost>
+</Window>

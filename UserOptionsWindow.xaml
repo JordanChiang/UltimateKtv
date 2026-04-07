@@ -1,0 +1,702 @@
+﻿<Window x:Class="UltimateKtv.UserOptionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="使用者設定選項" 
+        Height="900" 
+        Width="1024"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <sys:Double x:Key="OptionsHeaderFontSize">32</sys:Double>
+            <sys:Double x:Key="OptionsItemLabelFontSize">28</sys:Double>
+            <sys:Double x:Key="OptionsItemButtonFontSize">26</sys:Double>
+            <sys:Double x:Key="OptionsFooterButtonFontSize">28</sys:Double>
+            <sys:Double x:Key="OptionsDescriptionFontSize">20</sys:Double>
+            <sys:Double x:Key="OptionsSmallFontSize">16</sys:Double>
+            
+            <!-- Custom Slider style with theme colors -->
+            <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}" />
+            </Style>
+            
+            <!-- Custom ToggleButton style for switch buttons with theme colors -->
+            <Style x:Key="ThemedSwitchToggleButton" TargetType="ToggleButton" BasedOn="{StaticResource MaterialDesignSwitchToggleButton}">
+                <Setter Property="Background" Value="{DynamicResource PrimaryHueMidBrush}" />
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Border Background="{DynamicResource MaterialDesignPaper}"
+            BorderBrush="{DynamicResource PrimaryBrush}"
+            BorderThickness="2"
+            CornerRadius="10" Margin="10"
+            Effect="{DynamicResource MaterialDesignShadowDepth5}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                <materialDesign:PackIcon Kind="Settings" Width="32" Height="32"
+                                         Foreground="{DynamicResource PrimaryBrush}"
+                                         VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="使用者設定選項" FontSize="{StaticResource OptionsHeaderFontSize}" FontWeight="Bold"
+                          VerticalAlignment="Center"
+                          Foreground="{DynamicResource MaterialDesignBody}"/>
+            </StackPanel>
+
+            <!-- Scrollable Options - same content as window version -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="5">
+                    <!-- Row 1: Public IP + Remote Server -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Public IP QR Code (Left) -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="公網IP連線" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="埠號:" FontSize="{StaticResource OptionsItemLabelFontSize}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                              Foreground="{DynamicResource MaterialDesignBody}"/>
+                                    <TextBox x:Name="PublicServerPortTextBox"
+                                             Style="{x:Null}"
+                                             Width="100" Height="40"
+                                             FontSize="{StaticResource OptionsItemLabelFontSize}" 
+                                             VerticalAlignment="Center"
+                                             VerticalContentAlignment="Center"
+                                             TextAlignment="Center"
+                                             Padding="5"
+                                             BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                             BorderThickness="1"
+                                             Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                                             Foreground="{DynamicResource MaterialDesignBody}"
+                                             PreviewTextInput="PublicServerPortTextBox_PreviewTextInput"
+                                             TextChanged="PublicServerPortTextBox_TextChanged"/>
+                                </StackPanel>
+
+                                <TextBlock Name="PublicIpStatusText" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                           Text="" FontSize="{StaticResource OptionsDescriptionFontSize}" Opacity="0.7" Margin="0,4,0,0"
+                                           VerticalAlignment="Top" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}"/>
+
+                                <Image Name="PublicQrCodeImage" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Width="200" Height="200" Margin="0,10,0,0"
+                                       Visibility="Collapsed" HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Local HTTP Server QR Code (Right) -->
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Name="HttpServerLabel" Grid.Row="0" Grid.Column="0" Text="遠端點歌伺服器" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+
+                                <ToggleButton Name="HttpServerToggle" Grid.Row="0" Grid.Column="1"
+                                              Style="{StaticResource ThemedSwitchToggleButton}"
+                                              VerticalAlignment="Center"
+                                              Checked="HttpServerToggle_StateChanged"
+                                              Unchecked="HttpServerToggle_StateChanged"/>
+                                
+                                <TextBlock Name="HttpStatusText" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                           Text="伺服器未啟用" FontSize="{StaticResource OptionsDescriptionFontSize}" Opacity="0.7" Margin="0,4,0,0"
+                                           VerticalAlignment="Top" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}"/>
+
+                                <Image Name="QrCodeImage" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Width="200" Height="200" Margin="0,10,0,0"
+                                       Visibility="Collapsed" HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 2: Change Song Library Drive + Random Play -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Change Song Library Drive (Left) -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="更換歌庫磁碟代號" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+
+                                <ToggleButton Name="ChangeSongLibraryDriveToggle" Grid.Row="0" Grid.Column="1"
+                                              Style="{StaticResource ThemedSwitchToggleButton}"
+                                              VerticalAlignment="Center"
+                                              Checked="ChangeSongLibraryDriveToggle_Checked"
+                                              Unchecked="ChangeSongLibraryDriveToggle_Unchecked"/>
+
+                                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0"
+                                            Visibility="{Binding ElementName=ChangeSongLibraryDriveToggle, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Name="SongLibraryDrivePathPanel">
+                                    <TextBlock Text="路徑:" FontSize="{StaticResource OptionsDescriptionFontSize}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                               Foreground="{DynamicResource MaterialDesignBody}"/>
+                                    <TextBlock x:Name="SongLibraryDrivePathText"
+                                               Text="(尚未選擇目錄)"
+                                               Width="280"
+                                               FontSize="{StaticResource OptionsDescriptionFontSize}" 
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
+                                               Foreground="{DynamicResource MaterialDesignBody}"/>
+                                    <Button x:Name="BrowseSongLibraryDriveButton"
+                                            Content="瀏覽..."
+                                            Style="{DynamicResource MaterialDesignOutlinedButton}"
+                                            FontSize="{StaticResource OptionsSmallFontSize}"
+                                            Height="35"
+                                            Margin="10,0,0,0"
+                                            Click="BrowseSongLibraryDrive_Click"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Random Play (Right) -->
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="隨機播放" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+
+                                <ToggleButton Name="RandomPlayToggle" Grid.Row="0" Grid.Column="1"
+                                              Style="{StaticResource ThemedSwitchToggleButton}"
+                                              VerticalAlignment="Center"
+                                              Checked="RandomPlayToggle_Checked"
+                                              Unchecked="RandomPlayToggle_Unchecked"/>
+
+                                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0"
+                                            Name="RandomPlayOptionsPanel">
+                                    <ComboBox x:Name="RandomPlayCategoryComboBox"
+                                             Width="200" Height="35"
+                                             FontSize="{StaticResource OptionsDescriptionFontSize}"
+                                             Foreground="{DynamicResource MaterialDesignBody}"
+                                             VerticalAlignment="Center"
+                                             VerticalContentAlignment="Center"
+                                             Margin="0,0,10,0"
+                                             SelectionChanged="RandomPlayCategoryComboBox_SelectionChanged">
+                                        <ComboBoxItem Content="國語排行" Tag="0"/>
+                                        <ComboBoxItem Content="台語排行" Tag="1"/>
+                                        <ComboBoxItem Content="新進歌曲" Tag="2"/>
+                                        <ComboBoxItem Content="我的最愛" Tag="10"/>
+                                    </ComboBox>
+
+                                    <ComboBox x:Name="RandomPlayFavoriteUserComboBox"
+                                             Width="150" Height="35"
+                                             FontSize="{StaticResource OptionsDescriptionFontSize}"
+                                             Foreground="{DynamicResource MaterialDesignBody}"
+                                             VerticalAlignment="Center"
+                                             VerticalContentAlignment="Center"
+                                             Margin="0,0,10,0"
+                                             Visibility="Collapsed"/>
+
+                                    <ComboBox x:Name="RandomPlayAudioChannelComboBox"
+                                             Width="100" Height="35"
+                                             FontSize="{StaticResource OptionsDescriptionFontSize}"
+                                             Foreground="{DynamicResource MaterialDesignBody}"
+                                             VerticalAlignment="Center"
+                                             VerticalContentAlignment="Center"
+                                             SelectionChanged="RandomPlayAudioChannelComboBox_SelectionChanged">
+                                        <ComboBoxItem Content="人聲" Tag="0"/>
+                                        <ComboBoxItem Content="伴唱" Tag="1"/>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 3: Preview + Full Screen -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Preview Option -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="點播螢幕顯示" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="PreviewToggle" Grid.Column="1"
+                                             Style="{StaticResource ThemedSwitchToggleButton}"
+                                             VerticalAlignment="Center"
+                                             Checked="PreviewToggle_Checked"
+                                             Unchecked="PreviewToggle_Unchecked"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- System Option -->
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="保持全螢幕播放" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="FullScreenButton" Grid.Column="1"
+                                       Style="{StaticResource ThemedSwitchToggleButton}"
+                                       VerticalAlignment="Center"
+                                       Checked="AlwaysFullScreen_Checked"
+                                       Unchecked="AlwaysFullScreen_UnChecked"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 4: Limit Cursor + New Song Days -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="限制游標於主螢幕" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="LimitCursorToggle" Grid.Column="1"
+                                             Style="{StaticResource ThemedSwitchToggleButton}"
+                                             VerticalAlignment="Center"
+                                             Checked="LimitCursorToggle_Checked"
+                                             Unchecked="LimitCursorToggle_Unchecked"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Volume Option (New Song Days) -->
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="新進歌曲天數" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <TextBox x:Name="NewSongDaysTextBox" Grid.Column="1"
+                                         Style="{x:Null}"
+                                         Width="100" Height="40"
+                                         FontSize="{StaticResource OptionsItemLabelFontSize}" 
+                                         VerticalAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         TextAlignment="Center"
+                                         Padding="5"
+                                         BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                         BorderThickness="1"
+                                         Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
+                                         Foreground="{DynamicResource MaterialDesignBody}"
+                                         PreviewTextInput="NewSongDaysTextBox_PreviewTextInput"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 5: Song Sort + Sync Music -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="歌曲排序方式" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ComboBox x:Name="SongSortMethodComboBox" Grid.Column="1"
+                                         Width="150" Height="40"
+                                         FontSize="{StaticResource OptionsItemButtonFontSize}"
+                                         Foreground="{DynamicResource MaterialDesignBody}"
+                                         VerticalAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         SelectionChanged="SongSortMethodComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="點播次數" Tag="1"/>
+                                    <ComboBoxItem Content="加歌日期" Tag="2"/>
+                                    <ComboBoxItem Content="字數" Tag="3"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- Legacy Audio Channel Definition -->
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="舊版聲道定義" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="LegacyAudioChannelToggle" Grid.Column="1"
+                                             Style="{StaticResource ThemedSwitchToggleButton}"
+                                             VerticalAlignment="Center"
+                                             Checked="LegacyAudioChannelToggle_Changed"
+                                             Unchecked="LegacyAudioChannelToggle_Changed"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 6: Pre-Loading + App Logger -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Pre-Loading Option -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="預先讀取" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="PreLoadingToggle" Grid.Column="1"
+                                             Style="{StaticResource ThemedSwitchToggleButton}"
+                                             VerticalAlignment="Center"
+                                             Checked="PreLoadingToggle_Checked"
+                                             Unchecked="PreLoadingToggle_Unchecked"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="APP記錄檔" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="AppLoggerToggle" Grid.Column="1"
+                                             Style="{StaticResource ThemedSwitchToggleButton}"
+                                             VerticalAlignment="Center"
+                                             Checked="AppLoggerToggle_Checked"
+                                             Unchecked="AppLoggerToggle_Unchecked"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 7: Network Username + Play History -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Network Remote Song Username Recording Option -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="網路點播使用者記名" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="NetworkRemoteSongUsernameToggle" Grid.Column="1"
+                                             Style="{StaticResource ThemedSwitchToggleButton}"
+                                             VerticalAlignment="Center"
+                                             Checked="NetworkRemoteSongUsernameToggle_Checked"
+                                             Unchecked="NetworkRemoteSongUsernameToggle_Unchecked"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="播放記錄自動保存次數" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,10,0"/>
+                                <Slider Grid.Column="1" Name="PlayHistoryCountSlider" Minimum="1" Maximum="10" Value="5" 
+                                        TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center"
+                                        ValueChanged="PlayHistoryCountSlider_ValueChanged"/>
+                                <TextBlock Grid.Column="2" Name="PlayHistoryCountValue" Text="5" FontSize="{StaticResource OptionsItemLabelFontSize}" 
+                                          FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Width="30" TextAlignment="Right"
+                                          Foreground="{DynamicResource MaterialDesignBody}"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 8: Play Count + Audio Amplify -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Play Count -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="點播次數更新" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Slider x:Name="PlayCountSlider" Width="200" Minimum="10" Maximum="90"
+                                            IsSnapToTickEnabled="True" TickFrequency="1"
+                                            VerticalAlignment="Center"
+                                            ValueChanged="PlayCountSlider_ValueChanged" />
+                                    <TextBlock x:Name="PlayCountValueText"
+                                               Text="{Binding ElementName=PlayCountSlider, Path=Value, StringFormat={}{0:F0}%}"
+                                               FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold" Width="60" TextAlignment="Right"
+                                               VerticalAlignment="Center" Margin="10,0,0,0"
+                                               Foreground="{DynamicResource MaterialDesignBody}"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                           Text="設定歌曲播放進度超過多少百分比時，計入一次點播次數 (範圍: 10% - 90%)"
+                                           FontSize="{StaticResource OptionsDescriptionFontSize}" Opacity="0.7" Margin="0,4,0,0"
+                                           VerticalAlignment="Top" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Audio Amplify Setting -->
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50" VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="音響增益值" VerticalAlignment="Center" FontSize="{StaticResource OptionsItemLabelFontSize}" Margin="0,0,20,0" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <Slider x:Name="AudioAmplifySlider" Grid.Column="1" Minimum="100" Maximum="500"
+                                        IsSnapToTickEnabled="True"
+                                        TickFrequency="10"
+                                        VerticalAlignment="Center"
+                                        ValueChanged="AudioAmplifySlider_ValueChanged"/>
+                                <TextBlock Grid.Column="2" Text="{Binding ElementName=AudioAmplifySlider, Path=Value, StringFormat={}{0:F0}}"
+                                           VerticalAlignment="Center" FontSize="{StaticResource OptionsItemLabelFontSize}" Margin="20,0,0,0"
+                                           MinWidth="40" TextAlignment="Right" Foreground="{DynamicResource MaterialDesignBody}"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 9: Video Renderer + Audio Renderer -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Video Renderer -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="視訊渲染器" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ComboBox x:Name="VideoRendererComboBox" Grid.Column="1"
+                                         Width="150" Height="40"
+                                         FontSize="{StaticResource OptionsItemButtonFontSize}"
+                                         Foreground="{DynamicResource MaterialDesignBody}"
+                                         VerticalAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         SelectionChanged="VideoRendererComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="VMR9" Tag="0"/>
+                                    <ComboBoxItem Content="EVR" Tag="1"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- Audio Renderer -->
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="音訊輸出裝置" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,10,0"/>
+                                <ComboBox x:Name="AudioRendererComboBox" Grid.Column="1"
+                                         Height="40"
+                                         FontSize="{StaticResource OptionsSmallFontSize}"
+                                         Foreground="{DynamicResource MaterialDesignBody}"
+                                         VerticalAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         SelectionChanged="AudioRendererComboBox_SelectionChanged"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 10: HW Acceleration -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Enable HW Accel -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="啟用硬體解碼" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="EnableHWAccelToggle" Grid.Column="1"
+                                             Style="{StaticResource ThemedSwitchToggleButton}"
+                                             VerticalAlignment="Center"
+                                             Checked="EnableHWAccelToggle_Checked"
+                                             Unchecked="EnableHWAccelToggle_Unchecked"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- HW Accel Mode -->
+                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="硬體解碼方式" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ComboBox x:Name="HWAccelModeComboBox" Grid.Column="1"
+                                         Width="250" Height="40"
+                                         FontSize="{StaticResource OptionsSmallFontSize}"
+                                         Foreground="{DynamicResource MaterialDesignBody}"
+                                         VerticalAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         SelectionChanged="HWAccelModeComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="AutoDetect" Tag="0"/>
+                                    <ComboBoxItem Content="NVIDIA CUVID" Tag="1"/>
+                                    <ComboBoxItem Content="Intel® Quick Sync" Tag="2"/>
+                                    <ComboBoxItem Content="DXVA2 (copy-back)" Tag="3"/>
+                                    <ComboBoxItem Content="DXVA2 (native)" Tag="4"/>
+                                    <ComboBoxItem Content="D3D11" Tag="5"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Footer -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
+                <Button Name="ApplyButton" Content="套用設定"
+                       Style="{DynamicResource MaterialDesignRaisedButton}"
+                       FontSize="{StaticResource OptionsFooterButtonFontSize}" Height="45"
+                       Margin="5,0" Padding="10,8"
+                       VerticalContentAlignment="Center"
+                       Background="{DynamicResource PrimaryHueMidBrush}"
+                       Foreground="{DynamicResource PrimaryHueMidForegroundBrush}"
+                       Click="ApplyButton_Click"/>
+                <Button Name="CancelButton" Content="取消"
+                       Style="{DynamicResource MaterialDesignOutlinedButton}"
+                       FontSize="{StaticResource OptionsFooterButtonFontSize}" Height="45"
+                       Margin="5,0" Padding="10,8"
+                       VerticalContentAlignment="Center"
+                       BorderBrush="{DynamicResource PrimaryHueMidBrush}"
+                       Foreground="{DynamicResource PrimaryHueMidBrush}"
+                       Click="CancelButton_Click"/>
+                <Button Name="LeaveButton" Content="離開"
+                       Style="{DynamicResource MaterialDesignOutlinedButton}"
+                       FontSize="{StaticResource OptionsFooterButtonFontSize}" Height="45"
+                       Margin="5,0" Padding="10,8"
+                       VerticalContentAlignment="Center"
+                       BorderBrush="{DynamicResource PrimaryHueMidBrush}"
+                       Foreground="{DynamicResource PrimaryHueMidBrush}"
+                       Click="LeaveButton_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
