@@ -117,5 +117,8 @@ namespace UltimateKtv
 
         [Description("Youtube 搜尋數量: 設定 YouTube 搜尋時回傳的影片數量。有效範圍: 10 - 100。預設值為 50。")]
         public int YoutubeSearchCount { get; set; } = 50;
+
+        [Description("GitHub 更新網址: 設定自動更新檢查的 GitHub 倉庫 (格式: Owner/Repo)。預設為 JordanChiang/UltimateKtv。")]
+        public string GitHubRepoUrl { get; set; } = "JordanChiang/UltimateKtv";
     }
 }

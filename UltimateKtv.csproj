@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -11,11 +11,14 @@
     <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
     <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
     <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    
+    <!-- Exclude the Updater project folder from the main project's compilation -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Updater\**</DefaultItemExcludes>
 
     <!-- Exclude all satellite resource language DLLs (e.g., de, fr, es folders) from publish output -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationIcon>icon.ico</ApplicationIcon>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
@@ -42,7 +45,7 @@
     <CodecDir>Codec</CodecDir>
     <AssemblyName>UltimateKtv</AssemblyName>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)' == 'x86' Or '$(Platform)' == '' Or '$(Platform)' == 'Any CPU'">
+  <PropertyGroup Condition="'$(Platform)' == 'x86' Or '$(Platform)' == ''">
     <CodecDir>Codec_x86</CodecDir>
     <AssemblyName>UltimateKtv_x86</AssemblyName>
   </PropertyGroup>
@@ -122,12 +125,17 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(PublishProtocol)' == ''">
-    <!-- Only copy Codec and Images files during build, not during publish -->
-    <Exec Command="xcopy &quot;$(ProjectDir)$(CodecDir)&quot; &quot;$(TargetDir)$(CodecDir)\&quot; /E /I /Y /D" />
+    <!-- Ensure Codec and Images files are copied during build -->
+    <Exec Command="if not &quot;$(CodecDir)&quot; == &quot;&quot; xcopy &quot;$(ProjectDir)$(CodecDir)&quot; &quot;$(TargetDir)$(CodecDir)\&quot; /E /I /Y /D" />
     <Exec Command="xcopy &quot;$(ProjectDir)Images&quot; &quot;$(TargetDir)Images\&quot; /E /I /Y /D" />
+    
+    <!-- Copy the standalone updater application (Updater is now always x86 to work on both architectures) -->
+    <Exec Command="xcopy &quot;$(ProjectDir)Updater\bin\x86\$(Configuration)\net8.0-windows\UltimateKtv.Updater.*&quot; &quot;$(TargetDir)&quot; /E /I /Y /D" Condition="Exists('$(ProjectDir)Updater\bin\x86\$(Configuration)\net8.0-windows\UltimateKtv.Updater.exe')" />
+    <Exec Command="xcopy &quot;$(ProjectDir)Updater\bin\$(Configuration)\net8.0-windows\UltimateKtv.Updater.*&quot; &quot;$(TargetDir)&quot; /E /I /Y /D" Condition="!Exists('$(ProjectDir)Updater\bin\x86\$(Configuration)\net8.0-windows\UltimateKtv.Updater.exe')" />
+
     <MakeDir Directories="$(TargetDir)libs" />
     <ItemGroup>
-      <LibFiles Include="$(TargetDir)*.dll" Exclude="$(TargetDir)$(AssemblyName).dll;$(TargetDir)System.Configuration.ConfigurationManager.dll" />
+      <LibFiles Include="$(TargetDir)*.dll" Exclude="$(TargetDir)$(AssemblyName).dll;$(TargetDir)System.Configuration.ConfigurationManager.dll;$(TargetDir)UltimateKtv.Updater.dll" />
     </ItemGroup>
     <Move SourceFiles="@(LibFiles)" DestinationFolder="$(TargetDir)libs\" />
   </Target>

@@ -738,6 +738,14 @@ namespace UltimateKtv
             // Close the splash screen with a fade out
             App.StartupSplashScreen?.Close(TimeSpan.FromSeconds(0.5));
 
+            // Check for auto-updates in the background
+            _ = System.Threading.Tasks.Task.Run(async () =>
+            {
+                // Slight delay to ensure main window is fully rendered before any prompts
+                await System.Threading.Tasks.Task.Delay(2000);
+                await UltimateKtv.Services.UpdateManager.CheckForUpdatesAsync();
+            });
+
             AppLogger.Log("MainWindow_Loaded event finished.");
         }
 

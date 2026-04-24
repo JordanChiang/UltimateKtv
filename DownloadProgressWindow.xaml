@@ -1,0 +1,45 @@
+<Window x:Class="UltimateKtv.DownloadProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="下載更新中" Height="250" Width="450"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        Topmost="True">
+    <Border Background="{DynamicResource MaterialDesignPaper}"
+            BorderBrush="{DynamicResource PrimaryBrush}"
+            BorderThickness="2"
+            CornerRadius="10" Margin="10"
+            Effect="{DynamicResource MaterialDesignShadowDepth5}">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                <materialDesign:PackIcon Kind="CloudDownload" Width="32" Height="32"
+                                         Foreground="{DynamicResource PrimaryBrush}"
+                                         VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="正在下載更新，請稍候..." FontSize="22" FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource MaterialDesignBody}"/>
+            </StackPanel>
+            
+            <TextBlock x:Name="StatusText" Grid.Row="1" Text="準備下載..." FontSize="16" Foreground="{DynamicResource MaterialDesignBody}"
+                       VerticalAlignment="Bottom" Margin="0,0,0,5"/>
+
+            <ProgressBar x:Name="DownloadProgressBar" Grid.Row="2" Height="20" Minimum="0" Maximum="100" Value="0"
+                         Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,10"/>
+            
+            <TextBlock x:Name="PercentageText" Grid.Row="3" Text="0%" HorizontalAlignment="Center" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{DynamicResource MaterialDesignBody}"/>
+        </Grid>
+    </Border>
+</Window>
