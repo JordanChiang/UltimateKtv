@@ -770,6 +770,9 @@
                                                         <DataTrigger Binding="{Binding ElementName=YoutubeRadio, Path=IsChecked}" Value="True">
                                                             <Setter Property="Visibility" Value="Visible"/>
                                                         </DataTrigger>
+                                                        <DataTrigger Binding="{Binding ElementName=KeyboardListBtn, Path=FontWeight}" Value="{x:Static FontWeights.Bold}">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
                                                         <DataTrigger Binding="{Binding IsDownloadingYoutube, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
                                                             <Setter Property="Content" Value="取消"/>
                                                         </DataTrigger>

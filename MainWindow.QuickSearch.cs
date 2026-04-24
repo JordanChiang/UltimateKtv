@@ -151,7 +151,7 @@ namespace UltimateKtv
                 return;
             }
 
-            if (_searchMode == SearchMode.Youtube)
+            if (_searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard)
             {
                 UpdateSearchWords(true);
             }
@@ -274,6 +274,10 @@ namespace UltimateKtv
             {
 
                 UpdateSearchWords(false);
+                if (method == QuickMethod.Keyboard)
+                {
+                    SearchWords?.Focus();
+                }
 
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
