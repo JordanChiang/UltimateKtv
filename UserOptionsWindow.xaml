@@ -1,4 +1,4 @@
-﻿<Window x:Class="UltimateKtv.UserOptionsWindow"
+<Window x:Class="UltimateKtv.UserOptionsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
@@ -234,6 +234,7 @@
                                         <ComboBoxItem Content="國語排行" Tag="0"/>
                                         <ComboBoxItem Content="台語排行" Tag="1"/>
                                         <ComboBoxItem Content="新進歌曲" Tag="2"/>
+                                        <ComboBoxItem Content="全部排行" Tag="3"/>
                                         <ComboBoxItem Content="我的最愛" Tag="10"/>
                                     </ComboBox>
 

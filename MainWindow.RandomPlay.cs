@@ -27,7 +27,7 @@ namespace UltimateKtv
                 return false;
             }
 
-            AppLogger.Log($"Random play: Selecting from category {settings.RandomPlayCategory}");
+//            AppLogger.Log($"Random play: Selecting from category {settings.RandomPlayCategory}");
 
             SongDisplayItem? randomSong = null;
 
@@ -41,6 +41,9 @@ namespace UltimateKtv
                     break;
                 case 2: // 新進歌曲
                     randomSong = GetRandomSongFromNewSongs();
+                    break;
+                case 3: // 全部排行
+                    randomSong = GetRandomSongFromRanking(null);
                     break;
                 case 10: // 我的最愛
                     randomSong = GetRandomSongFromFavorites(settings.RandomPlayFavoriteUser);
@@ -56,6 +59,7 @@ namespace UltimateKtv
                     0 => "國語排行",
                     1 => "台語排行",
                     2 => "新進歌曲",
+                    3 => "全部排行",
                     10 => "我的最愛",
                     _ => "未知類別"
                 };
@@ -157,7 +161,7 @@ namespace UltimateKtv
                         if (playCount == 0) return false;
 
                         var songLang = s.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() : "";
-                        return songLang == language;
+                        return string.IsNullOrEmpty(language) || songLang == language;
                     })
                     .OrderByDescending(s => s.TryGetValue("Song_PlayCount", out var pc) && int.TryParse(pc?.ToString(), out int count) ? count : 0)
                     .Take(100) // Top 100 songs to random select from

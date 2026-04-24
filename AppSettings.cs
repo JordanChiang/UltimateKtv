@@ -85,7 +85,7 @@ namespace UltimateKtv
         [Description("隨機播放: 啟用隨機播放模式。預設為 false (停用)。")]
         public bool RandomPlayEnabled { get; set; } = false;
 
-        [Description("隨機播放類別: 隨機播放的類別。0=國語排行, 1=台語排行, 2=新進歌曲, 10=我的最愛。預設為 0。")]
+        [Description("隨機播放類別: 隨機播放的類別。0=國語排行, 1=台語排行, 2=新進歌曲, 3=全部排行, 10=我的最愛。預設為 0。")]
         public int RandomPlayCategory { get; set; } = 0;
 
         [Description("隨機播放最愛用戶: 「我的最愛」隨機播放模式的指定用戶名稱。")]
