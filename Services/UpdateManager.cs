@@ -145,7 +145,7 @@ namespace UltimateKtv.Services
             string extractPath = Path.Combine(tempDir, "extracted");
 
             // Open Progress Window
-            DownloadProgressWindow progressWindow = null;
+            DownloadProgressWindow? progressWindow = null;
             await Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 progressWindow = new DownloadProgressWindow();
@@ -233,7 +233,7 @@ namespace UltimateKtv.Services
                         Verb = "runas" 
                     };
 
-                    Process p = Process.Start(updaterStartInfo);
+                    Process? p = Process.Start(updaterStartInfo);
                     if (p != null)
                     {
                         AppLogger.Log($"更新管理員已啟動，PID: {p.Id}");

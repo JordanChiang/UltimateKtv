@@ -45,14 +45,28 @@
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                <materialDesign:PackIcon Kind="Settings" Width="32" Height="32"
-                                         Foreground="{DynamicResource PrimaryBrush}"
-                                         VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="使用者設定選項" FontSize="{StaticResource OptionsHeaderFontSize}" FontWeight="Bold"
-                          VerticalAlignment="Center"
-                          Foreground="{DynamicResource MaterialDesignBody}"/>
-            </StackPanel>
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <Button Name="ExitProgramButton" Click="ExitProgramButton_Click" 
+                        Style="{StaticResource MaterialDesignRaisedButton}" 
+                        Background="#F44336" Foreground="White" BorderThickness="0"
+                        Height="45" FontSize="26" FontWeight="Bold" 
+                        HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ExitToApp" Width="26" Height="26" VerticalAlignment="Center" Margin="5,0,5,0"/>
+                            <TextBlock Text="退出程式" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button.Content>
+                </Button>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="Settings" Width="32" Height="32"
+                                             Foreground="{DynamicResource PrimaryBrush}"
+                                             VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="使用者設定選項 (Settings)" FontSize="{StaticResource OptionsHeaderFontSize}" FontWeight="Bold"
+                              VerticalAlignment="Center"
+                              Foreground="{DynamicResource MaterialDesignBody}"/>
+                </StackPanel>
+            </Grid>
 
             <!-- Scrollable Options - same content as window version -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -665,6 +679,30 @@
                                     <ComboBoxItem Content="DXVA2 (native)" Tag="4"/>
                                     <ComboBoxItem Content="D3D11" Tag="5"/>
                                 </ComboBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                    <!-- Row 11: Language Filter settings -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Language Multi-Select -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="語系點歌複選" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="LanguageMultiSelectToggle" Grid.Column="1"
+                                             Style="{StaticResource ThemedSwitchToggleButton}"
+                                             VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
                     </Grid>

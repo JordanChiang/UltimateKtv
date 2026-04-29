@@ -55,7 +55,7 @@ namespace UltimateKtv
 
         private void PageUp_Click(object sender, RoutedEventArgs e)
         {
-            if (SongListGrid.Visibility == Visibility.Visible)
+            if (SongListGrid.Visibility == Visibility.Visible || LanguageSongListGrid.Visibility == Visibility.Visible)
             {
                 // Handle song pagination
                 if (_currentSongPage <= 1) return;
@@ -73,7 +73,7 @@ namespace UltimateKtv
 
         private void PageDown_Click(object sender, RoutedEventArgs e)
         {
-            if (SongListGrid.Visibility == Visibility.Visible)
+            if (SongListGrid.Visibility == Visibility.Visible || LanguageSongListGrid.Visibility == Visibility.Visible)
             {
                 // Handle song pagination
                 if (_currentSongPage >= _totalSongPages) return;
@@ -126,11 +126,25 @@ namespace UltimateKtv
             // Use LINQ to get the correct subset of songs for the page
             var songsForPage = _allSongs.Skip((page - 1) * SongPageSize).Take(SongPageSize).ToList();
 
-            // Set the ItemsSource of the DataGrid
-            SongListGrid.ItemsSource = songsForPage;
+            // Set the ItemsSource of the correct DataGrid
+            if (_isLanguageMode)
+            {
+                LanguageSongListGrid.ItemsSource = songsForPage;
+            }
+            else
+            {
+                SongListGrid.ItemsSource = songsForPage;
+            }
 
             // Update the page information TextBlock
-            PageInfoTextBlock.Text = $"第 {page}/{_totalSongPages} 頁 ({_selectedSinger} - {_allSongs.Count} 首歌曲)";
+            if (_isLanguageMode)
+            {
+                PageInfoTextBlock.Text = $"第 {page}/{_totalSongPages} 頁 (語系點歌 - {_allSongs.Count} 首歌曲)";
+            }
+            else
+            {
+                PageInfoTextBlock.Text = $"第 {page}/{_totalSongPages} 頁 ({_selectedSinger} - {_allSongs.Count} 首歌曲)";
+            }
 
             // Enable or disable the page buttons based on the current page
             PageUp.IsEnabled = (page > 1);
@@ -139,6 +153,7 @@ namespace UltimateKtv
 
         private void DisplaySongsInGrid(List<SongDisplayItem> songs, string title)
         {
+            _isLanguageMode = false;
             _allSongs = songs;
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + SongPageSize - 1) / SongPageSize;
             _currentSongPage = 1;
@@ -149,6 +164,24 @@ namespace UltimateKtv
             PageInfoTextBlock.Text = $"{title} - {_allSongs.Count} 首歌曲";
 
             SongListGrid.Visibility = Visibility.Visible;
+            LanguageSongListGrid.Visibility = Visibility.Collapsed;
+            SingerGrid.Visibility = Visibility.Collapsed;
+        }
+
+        private void DisplayLanguageSongsInGrid(List<SongDisplayItem> songs, string title)
+        {
+            _isLanguageMode = true;
+            _allSongs = songs;
+            _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + SongPageSize - 1) / SongPageSize;
+            _currentSongPage = 1;
+
+            LoadSongPage(_currentSongPage);
+
+            // Update title in PageInfoTextBlock
+            PageInfoTextBlock.Text = $"{title} - {_allSongs.Count} 首歌曲";
+
+            LanguageSongListGrid.Visibility = Visibility.Visible;
+            SongListGrid.Visibility = Visibility.Collapsed;
             SingerGrid.Visibility = Visibility.Collapsed;
         }
 

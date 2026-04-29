@@ -42,6 +42,7 @@ namespace UltimateKtv
         private List<SongDisplayItem> _allSongs = new List<SongDisplayItem>();
         private int _currentSongPage = 1;
         private int _totalSongPages = 1;
+        private bool _isLanguageMode = false;
 
         // Current playing song file path and properties for database lookup
         private string PlayingFilePath = string.Empty;
@@ -134,8 +135,15 @@ namespace UltimateKtv
         private Storyboard? _vocalBtnFlashStoryboard; // Player logic
 
         // For dynamic top 7 filter buttons
-        private enum MainFilterMode { Singer, NewSong, Ranking, Generation }
+        private enum MainFilterMode { Singer, NewSong, Ranking, Generation, Language }
         private List<Button> _filterButtons = new();
+
+        // State tracking for Language filter
+        private List<string> _selectedLanguages = new List<string>();
+        private string _selectedSingerType = ""; // "", "0", "1", "2", "99"
+        private string _selectedWordCountRange = ""; // "", "1-2", "3", ...
+        private bool _isDuetOnly = false;
+        private bool _isFirstLanguageVisit = true;
 
         // Configurable number of days for the "New Song" filter
         public int NewSongDays { get; set; } // Loaded from settings
@@ -608,8 +616,10 @@ namespace UltimateKtv
         /// <param name="filter">A predicate to apply to the singer data.</param>
         private void FilterAndDisplaySingers(string filterKey, Predicate<Dictionary<string, object?>> filter)
         {
-            // Ensure we are looking in the correct photo folder for these filters
-            SingerPhotoManager.CurrentSubFolder = "SingerAvatar";
+            bool isFavoriteMode = (SingerPhotoManager.CurrentSubFolder == "FavoriteUser");
+            
+            // Ensure we are looking in the correct photo folder
+            if (!isFavoriteMode) SingerPhotoManager.CurrentSubFolder = "SingerAvatar";
 
             // Store current page state for the previous filter
             if (!string.IsNullOrEmpty(_currentFilterKey))
@@ -626,11 +636,23 @@ namespace UltimateKtv
             }
             else
             {
+                // If in favorite mode, only include singers who are in the favorite list
+                HashSet<string>? favoriteNames = null;
+                if (isFavoriteMode)
+                {
+                    favoriteNames = SongDatas.GetSortedFavoriteUsers(false)
+                        .Select(u => u.User_Name)
+                        .ToHashSet();
+                }
+
                 // Use the globally sorted data directly.
-                // Since SingerData is already sorted by our desired logic (English first, then Chinese by stroke),
-                // we just need to filter and select distinct names. The order will be preserved.
                 _allSingers = SongDatas.SingerData
-                    .Where(s => s != null && filter(s)) // Apply the custom filter
+                    .Where(s => {
+                        if (s == null) return false;
+                        string name = s["Singer_Name"]?.ToString() ?? "";
+                        if (isFavoriteMode && favoriteNames != null && !favoriteNames.Contains(name)) return false;
+                        return filter(s);
+                    })
                     .Select(s => s["Singer_Name"]?.ToString() ?? "")
                     .Where(s => !string.IsNullOrEmpty(s))
                     .Distinct()
@@ -844,8 +866,10 @@ namespace UltimateKtv
                     return;
                 }
 
-                // 4. Main Song List
-                if (FindVisualParent<DataGrid>(source) == SongListGrid && SongListGrid.Visibility == Visibility.Visible)
+                // 4. Main Song List / Language Song List
+                var activeGrid = FindVisualParent<DataGrid>(source);
+                if ((activeGrid == SongListGrid && SongListGrid.Visibility == Visibility.Visible) ||
+                    (activeGrid == LanguageSongListGrid && LanguageSongListGrid.Visibility == Visibility.Visible))
                 {
                     if (e.Delta > 0) PageUp_Click(sender, new RoutedEventArgs());
                     else PageDown_Click(sender, new RoutedEventArgs());
@@ -892,33 +916,63 @@ namespace UltimateKtv
                 }
             }
 
-            if (e.Key == Key.PageUp || e.Key == Key.PageDown)
+            // Handle PageUp/PageDown and Up/Down/Home/End for navigation
+            if (e.Key == Key.PageUp || e.Key == Key.PageDown || e.Key == Key.Up || e.Key == Key.Down || e.Key == Key.Home || e.Key == Key.End)
             {
+                bool isUp = e.Key == Key.PageUp || e.Key == Key.Up;
+                bool isDown = e.Key == Key.PageDown || e.Key == Key.Down;
+                bool isHome = e.Key == Key.Home;
+                bool isEnd = e.Key == Key.End;
+
                 // Priority 1: Quick Search Visibility
-                // If the Quick Search results are visible, control that list first.
                 if (QuickResultsContainer != null && QuickResultsContainer.Visibility == Visibility.Visible)
                 {
-                    if (e.Key == Key.PageUp) QuickPageUp_Click(sender, new RoutedEventArgs());
-                    else QuickPageDown_Click(sender, new RoutedEventArgs());
+                    if (isHome) 
+                    {
+                        _quickMethodCurrentPage[_currentQuickMethod] = 1;
+                        RefreshQuickResultsPage();
+                    }
+                    else if (isEnd)
+                    {
+                        var total = _quickMethodResultsCache.GetValueOrDefault(_currentQuickMethod, new List<SongDisplayItem>()).Count;
+                        _quickMethodCurrentPage[_currentQuickMethod] = Math.Max(1, (int)Math.Ceiling(total / (double)QuickSearchPageSize));
+                        RefreshQuickResultsPage();
+                    }
+                    else if (isUp) QuickPageUp_Click(sender, new RoutedEventArgs());
+                    else if (isDown) QuickPageDown_Click(sender, new RoutedEventArgs());
                     e.Handled = true;
                     return;
                 }
 
-                // Priority 2: Waiting List specific focus
-                // If the user is actively interacting with the Waiting List, control it.
-                // not able to receive IsKeyboardFocusWithin event, so comment out
-                //                if (WaitingListGrid != null && WaitingListGrid.IsKeyboardFocusWithin)
-                //                {
-                //                    if (e.Key == Key.PageUp) WaitListPageUp_Click(sender, null);
-                //                    else WaitListPageDown_Click(sender, null);
-                //                    e.Handled = true;
-                //                    return;
-                //                }
-
-                // Priority 3: Default Main List
-                // Otherwise, control the main song list / singer list.
-                if (e.Key == Key.PageUp) PageUp_Click(sender, new RoutedEventArgs());
-                else PageDown_Click(sender, new RoutedEventArgs());
+                // Priority 2: Default Main List (Singer, SongList, LanguageSongList)
+                if (isHome)
+                {
+                    if (SongListGrid.Visibility == Visibility.Visible || LanguageSongListGrid.Visibility == Visibility.Visible)
+                    {
+                        _currentSongPage = 1;
+                        LoadSongPage(_currentSongPage);
+                    }
+                    else
+                    {
+                        _currentPage = 1;
+                        LoadSingerPage(_currentPage);
+                    }
+                }
+                else if (isEnd)
+                {
+                    if (SongListGrid.Visibility == Visibility.Visible || LanguageSongListGrid.Visibility == Visibility.Visible)
+                    {
+                        _currentSongPage = _totalSongPages;
+                        LoadSongPage(_currentSongPage);
+                    }
+                    else
+                    {
+                        _currentPage = _totalPages;
+                        LoadSingerPage(_currentPage);
+                    }
+                }
+                else if (isUp) PageUp_Click(sender, new RoutedEventArgs());
+                else if (isDown) PageDown_Click(sender, new RoutedEventArgs());
                 e.Handled = true;
             }
         }
@@ -1153,5 +1207,96 @@ namespace UltimateKtv
             }
         }
 
+        private void FuncBtnByLanguage_Click(object sender, RoutedEventArgs e)
+        {
+            AppLogger.Log("User action: Navigate to Language view");
+            ShowSingerPanels(false);
+            ShowQuickInputPanels(false);
+            
+            // Show the additional filter grids for Language mode
+            if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Visible;
+            if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Visible;
+
+            // Ensure the main song content grid and specifically the LanguageSongListGrid is visible for results
+            if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Visible;
+            if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Visible;
+            if (SongListGrid != null) SongListGrid.Visibility = Visibility.Collapsed;
+            if (SingerGrid != null) SingerGrid.Visibility = Visibility.Collapsed;
+            if (VisualSingerGrid != null) VisualSingerGrid.Visibility = Visibility.Collapsed;
+
+            SetupFilterButtons(MainFilterMode.Language);
+            
+            // Set default filters only on the first visit: Mandarin, Male Singer, Word Count 1-2
+            if (_isFirstLanguageVisit)
+            {
+                _selectedLanguages.Clear();
+                _selectedLanguages.Add("國語");
+                _selectedSingerType = "0";
+                _selectedWordCountRange = "1-2";
+                _isDuetOnly = false;
+                _isFirstLanguageVisit = false;
+            }
+
+            UpdateLanguageFilterButtonHighlights();
+            ApplyLanguageCombinedFilter();
+            
+            // Set focus for keyboard/mouse wheel events
+            if (LanguageSongListGrid != null)
+            {
+                LanguageSongListGrid.Focus();
+                Keyboard.Focus(LanguageSongListGrid);
+            }
+        }
+
+        private void LanguageDuetToggle_Click(object sender, RoutedEventArgs e)
+        {
+            _isDuetOnly = LanguageDuetToggle?.IsChecked == true;
+            if (LanguageDuetToggle != null)
+            {
+                LanguageDuetToggle.Content = _isDuetOnly ? "合唱" : "獨唱";
+            }
+            if (_isDuetOnly) _selectedSingerType = ""; // Clear singer type when switching to duet mode
+            
+            UpdateLanguageFilterButtonHighlights();
+            ApplyLanguageCombinedFilter();
+        }
+
+        private void LanguageSingerType_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as Button;
+            string tag = btn?.Tag?.ToString() ?? "";
+            
+            // If already selected, clear it (Toggle logic)
+            if (_selectedSingerType == tag)
+            {
+                _selectedSingerType = "";
+            }
+            else
+            {
+                _selectedSingerType = tag;
+            }
+            
+            UpdateLanguageFilterButtonHighlights();
+            ApplyLanguageCombinedFilter();
+        }
+
+        private void LanguageWordCount_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as Button;
+            string tag = btn?.Tag?.ToString() ?? "";
+            
+            // If already selected, clear it (Toggle logic)
+            if (_selectedWordCountRange == tag)
+            {
+                _selectedWordCountRange = "";
+            }
+            else
+            {
+                _selectedWordCountRange = tag;
+            }
+            
+            UpdateLanguageFilterButtonHighlights();
+            ApplyLanguageCombinedFilter();
+        }
     }
 }

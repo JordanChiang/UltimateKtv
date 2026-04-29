@@ -16,6 +16,14 @@ namespace UltimateKtv
             
             if (show)
             {
+                // Collapse language filters when OPENING search panels (ID/Search)
+                if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Collapsed;
+                if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Collapsed;
+                if (_filterButtons != null)
+                {
+                    foreach (var btn in _filterButtons) btn.Visibility = Visibility.Collapsed;
+                }
+
                 // Youtube mode collapses the char grid and results list, but shows the thumbnail grid
                 if (SearchInputGrid != null) 
                     SearchInputGrid.Visibility = (_searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
@@ -27,6 +35,9 @@ namespace UltimateKtv
 
                 if (QuickResultsContainer != null)
                     QuickResultsContainer.Visibility = Visibility.Visible;
+
+                // Hide language grid when in quick search
+                if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
 
                 // Important: Collapse the main singer/song grid area in YouTube mode to give space for Row 4
                 if (SingerSongContentGrid != null)
@@ -54,10 +65,17 @@ namespace UltimateKtv
             if (SingerGrid != null) SingerGrid.Visibility = vis;
             if (VisualSingerGrid != null) VisualSingerGrid.Visibility = vis;
             if (SongListGrid != null) SongListGrid.Visibility = vis;
+            if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
+            _isLanguageMode = false;
 
             if (show) 
             {
                 ShowSingerGrid(); // Ensure correct internal visibility
+                
+                // Set focus to the active grid for keyboard/mouse wheel support
+                if (IsVisualSingerStyleEffective && VisualSingerGrid != null) VisualSingerGrid.Focus();
+                else if (SingerGrid != null) SingerGrid.Focus();
+
                 if (YoutubeThumbnailGrid != null) YoutubeThumbnailGrid.Visibility = Visibility.Collapsed;
                 if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Visible;
             }
@@ -92,12 +110,6 @@ namespace UltimateKtv
             SetupFilterButtons(MainFilterMode.Singer);
             // Trigger the first filter button by default
             if (_filterButtons.Any() && _filterButtons[0].IsVisible) MaleSingerFilter_Click(null!, null!);
-        }
-        private void FuncBtnQuit_Click(object sender, RoutedEventArgs e)
-        {
-            AppLogger.Log("User action: Navigate to Quit");
-            var optionsWindow = new UserOptionsWindow(this);
-            optionsWindow.FuncBtnQuit_Click(sender, e);
         }
         private void FuncBtnByInput_Click(object sender, RoutedEventArgs e)
         {
@@ -137,6 +149,11 @@ namespace UltimateKtv
             SingerPhotoManager.CurrentSubFolder = "FavoriteUser";
             ShowSingerPanels(false);
             ShowQuickInputPanels(false);
+            if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
+            
+            // Enable top buttons like singer mode
+            SetupFilterButtons(MainFilterMode.Singer);
+
             LoadFavoriteUsers();
         }
 
@@ -145,6 +162,7 @@ namespace UltimateKtv
             AppLogger.Log("User action: Navigate to New Songs view");
             ShowSingerPanels(false);
             ShowQuickInputPanels(false);
+            if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
             SetupFilterButtons(MainFilterMode.NewSong);
             // Trigger the first filter button by default
             if (_filterButtons.Any() && _filterButtons[0].IsVisible) NewSongFilter_Click(sender, new RoutedEventArgs());
@@ -155,6 +173,7 @@ namespace UltimateKtv
             AppLogger.Log("User action: Navigate to Ranking view");
             ShowSingerPanels(false);
             ShowQuickInputPanels(false);
+            if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
             SetupFilterButtons(MainFilterMode.Ranking);
             // Trigger the first filter button by default
             if (_filterButtons.Any() && _filterButtons[0].IsVisible) RankingFilter_Click(sender, new RoutedEventArgs());
@@ -182,28 +201,38 @@ namespace UltimateKtv
                 btn.Click -= NewSongFilter_Click;
                 btn.Click -= RankingFilter_Click;
                 btn.Click -= GenerationFilter_Click;
+                btn.Click -= LanguageFilter_Click;
                 btn.Visibility = Visibility.Collapsed;
+                // Reset button appearance (clear any active highlight if we use it later)
+                btn.FontWeight = FontWeights.Normal;
+                btn.ClearValue(Button.BackgroundProperty);
+                btn.ClearValue(Button.ForegroundProperty);
+                btn.ClearValue(Button.BorderBrushProperty);
             }
+
+            // Hide extra Language filter rows by default
+            if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Collapsed;
+            if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Collapsed;
 
             switch (mode)
             {
                 case MainFilterMode.Singer:
                     var singerFilters = new[] { "男歌手", "女歌手", "團體", "外國男", "外國女", "外國團", "其他" };
-                    var singerActions = new Action<object, RoutedEventArgs>[] { MaleSingerFilter_Click, FemaleSingerFilter_Click, GroupSingerFilter_Click, ForeignMaleSingerFilter_Click, ForeignFemaleSingerFilter_Click, ForeignGroupSingerFilter_Click, OtherSingerFilter_Click };
+                    var singerActions = new RoutedEventHandler[] { MaleSingerFilter_Click, FemaleSingerFilter_Click, GroupSingerFilter_Click, ForeignMaleSingerFilter_Click, ForeignFemaleSingerFilter_Click, ForeignGroupSingerFilter_Click, OtherSingerFilter_Click };
                     for (int i = 0; i < singerFilters.Length; i++)
                     {
                         _filterButtons[i].Content = singerFilters[i];
-                        _filterButtons[i].Click += new RoutedEventHandler(singerActions[i]);
+                        _filterButtons[i].Click += singerActions[i];
                         _filterButtons[i].Visibility = Visibility.Visible;
                     }
                     break;
 
                 case MainFilterMode.NewSong:
-                    var newSongFilters = new[] { "國語", "台語", "其它" };
-                    for (int i = 0; i < newSongFilters.Length; i++)
+                    var newSongLangs = new[] { "國語", "台語", "英語", "日語", "其它" };
+                    for (int i = 0; i < newSongLangs.Length; i++)
                     {
-                        _filterButtons[i].Content = newSongFilters[i];
-                        _filterButtons[i].Tag = newSongFilters[i];
+                        _filterButtons[i].Content = newSongLangs[i];
+                        _filterButtons[i].Tag = newSongLangs[i];
                         _filterButtons[i].Click += NewSongFilter_Click;
                         _filterButtons[i].Visibility = Visibility.Visible;
                     }
@@ -211,6 +240,22 @@ namespace UltimateKtv
 
                 case MainFilterMode.Ranking:
                     SetupRankingButtons();
+                    break;
+
+                case MainFilterMode.Language:
+                    // Show extra filter rows in Language mode
+                    if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Visible;
+                    if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Visible;
+
+                    var langList = new[] { "國語", "台語", "英語", "日語", "粵語", "兒歌", "其他" };
+                    
+                    for (int i = 0; i < langList.Length && i < _filterButtons.Count; i++)
+                    {
+                        _filterButtons[i].Content = langList[i];
+                        _filterButtons[i].Tag = langList[i];
+                        _filterButtons[i].Click += LanguageFilter_Click;
+                        _filterButtons[i].Visibility = Visibility.Visible;
+                    }
                     break;
             }
         }

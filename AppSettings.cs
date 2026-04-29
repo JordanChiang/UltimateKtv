@@ -52,7 +52,7 @@ namespace UltimateKtv
         [Description("歌曲排序方式: 歌曲排序方法。1=點播次數, 2=加歌日期, 3=字數。預設為 3。")]
         public int SongSortMethod { get; set; } = 1;
 
-        [Description("APP記錄檔: 啟用或停用應用程式記錄功能。預設為 true (啟用)。")]
+        [Description("APP記錄檔: 啟用或停用應用程式記錄功能。 true=開啟, false=關閉")]
         public bool IsAppLoggerEnabled { get; set; } = true;
 
         [Description("視訊渲染器: 0=VMR9, 1=EVR。預設為 0 (VMR9)。")]
@@ -70,22 +70,22 @@ namespace UltimateKtv
         [Description("公網伺服器埠號: 用於公網 IP QR Code 的連接埠號。預設為 8088。")]
         public int PublicServerPort { get; set; } = 8088;
 
-        [Description("預先讀取: 啟用將候播清單的第一首歌曲預先載入到記憶體，以供網路存取。預設為 false。")]
+        [Description("預先讀取: 啟用將候播清單的第一首歌曲預先載入到記憶體，以供網路存取。 true=開啟, false=關閉")]
         public bool EnablePreLoading { get; set; } = false;
 
-        [Description("網路點播使用者記名: 啟用網路遠端點歌的使用者名稱記錄。預設為 false (停用)。")]
+        [Description("網路點播使用者記名: 啟用網路遠端點歌的使用者名稱記錄。 true=開啟, false=關閉")]
         public bool NetworkRemoteSongUsername { get; set; } = false;
 
-        [Description("更換歌庫磁碟代號: 啟用變更歌庫磁碟路徑的功能。預設為 false (停用)。")]
+        [Description("更換歌庫磁碟代號: 啟用變更歌庫磁碟路徑的功能。 true=開啟, false=關閉")]
         public bool ChangeSongLibraryDriveEnabled { get; set; } = false;
 
         [Description("歌庫磁碟路徑: 設定歌庫所在的磁碟代號與路徑。")]
         public string SongLibraryDrivePath { get; set; } = "";
 
-        [Description("隨機播放: 啟用隨機播放模式。預設為 false (停用)。")]
+        [Description("隨機播放: 啟用隨機播放模式。 true=開啟, false=關閉")]
         public bool RandomPlayEnabled { get; set; } = false;
 
-        [Description("隨機播放類別: 隨機播放的類別。0=國語排行, 1=台語排行, 2=新進歌曲, 3=全部排行, 10=我的最愛。預設為 0。")]
+        [Description("隨機播放類別: 隨機播放的類別。0=國語排行, 1=台語排行, 2=新進歌曲, 3=全部排行, 10=我的最愛。預設為 0=國語排行")]
         public int RandomPlayCategory { get; set; } = 0;
 
         [Description("隨機播放最愛用戶: 「我的最愛」隨機播放模式的指定用戶名稱。")]
@@ -94,13 +94,13 @@ namespace UltimateKtv
         [Description("隨機播放聲道: 隨機播放時的音訊聲道。0=人聲, 1=伴唱。預設為 0。")]
         public int RandomPlayAudioChannel { get; set; } = 0;
 
-        [Description("舊版聲道定義: 啟用舊版音訊聲道定義模式。預設為 true。, true=開啟, false=關閉)")]
+        [Description("舊版聲道定義: 啟用舊版音訊聲道定義模式。預設為 true。 true=開啟, false=關閉")]
         public bool IsLegacyAudioChannelDefinitionEnabled { get; set; } = true;
 
-        [Description("網頁預設編號點歌: 網頁遠端服務啟動時直接跳轉至「編號點歌」。, true=開啟, false=關閉)")]
+        [Description("網頁預設編號點歌: 網頁遠端服務啟動時直接跳轉至「編號點歌」。 true=開啟, false=關閉")]
         public bool WebDefaultNumOrder { get; set; } = false;
 
-        [Description("啟用視覺化歌星樣式: 啟用時，歌星選擇介面將顯示照片。, true=開啟, false=關閉)")]
+        [Description("啟用視覺化歌星樣式: 啟用時，歌星選擇介面將顯示照片。 true=開啟, false=關閉")]
         public bool VisualSingerStyle { get; set; } = true;
 
         [Description("歌星照片路徑: 設定歌星照片存放的目錄路徑。")]
@@ -109,16 +109,19 @@ namespace UltimateKtv
         [Description("視覺化歌星姓名大小: 設定視覺化歌星樣式時，歌星姓名的字體大小。")]
         public int VisualSingerNameFontSize { get; set; } = 26;
 
-        [Description("Youtube 高畫質下載: 決定是否優先以高畫質 (1080p/720p) 下載 YouTube 影片。預設為 true。")]
+        [Description("Youtube 高畫質下載: 決定是否優先以高畫質 (1080p/720p) 下載 YouTube 影片。 true=開啟, false=關閉")]
         public bool HighQualityYoutube { get; set; } = true;
 
-        [Description("Youtube 預設消除人聲: 啟動時是否預設將 YouTube 影片設定為消除人聲模式。預設為 true。")]
+        [Description("Youtube 預設消除人聲: 啟動時是否預設將 YouTube 影片設定為消除人聲模式。 true=開啟, false=關閉")]
         public bool YoutubeDefaultNoVocal { get; set; } = true;
 
-        [Description("Youtube 搜尋數量: 設定 YouTube 搜尋時回傳的影片數量。有效範圍: 10 - 100。預設值為 50。")]
+        [Description("Youtube 搜尋數量: 設定 YouTube 搜尋時回傳的影片數量。有效範圍: 10 - 100。 預設值為 50。")]
         public int YoutubeSearchCount { get; set; } = 50;
 
-        [Description("GitHub 更新網址: 設定自動更新檢查的 GitHub 倉庫 (格式: Owner/Repo)。預設為 JordanChiang/UltimateKtv。")]
+        [Description("GitHub 更新網址: 設定自動更新檢查的 GitHub 倉庫 (格式: Owner/Repo)。 預設為 JordanChiang/UltimateKtv")]
         public string GitHubRepoUrl { get; set; } = "JordanChiang/UltimateKtv";
+
+        [Description("語系點歌複選: 決定語系點歌時是否可以同時選擇多個語系。 true=開啟, false=關閉")]
+        public bool IsLanguageMultiSelect { get; set; } = false;
     }
 }

@@ -34,6 +34,9 @@ namespace UltimateKtv
         private enum SearchMode { Song, Singer, Youtube }
         private SearchMode _searchMode = SearchMode.Song;
         private bool _isSingerSearchMode => _searchMode == SearchMode.Singer;
+        
+        // Centralized page size for Quick Search
+        private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube) ? 16 : (_currentQuickMethod == QuickMethod.Keyboard) ? 15 : 10;
 
         // For async quick search to prevent UI lag
         private CancellationTokenSource? _quickSearchCts;
@@ -624,8 +627,7 @@ namespace UltimateKtv
                 // Cache and compute paging (8 per grid page, 16 per youtube page)
                 _quickMethodResultsCache[_currentQuickMethod] = matched;
                 int total = _quickMethodResultsCache[_currentQuickMethod].Count;
-                int pageSize = (_searchMode == SearchMode.Youtube) ? 16 : (_currentQuickMethod == QuickMethod.Keyboard) ? 14 : 8;
-                var _quickTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+                var _quickTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)QuickSearchPageSize));
                 if (_quickMethodCurrentPage[_currentQuickMethod] > _quickTotalPages) _quickMethodCurrentPage[_currentQuickMethod] = _quickTotalPages;
                 if (_quickMethodCurrentPage[_currentQuickMethod] < 1) _quickMethodCurrentPage[_currentQuickMethod] = 1;
             }
@@ -644,15 +646,14 @@ namespace UltimateKtv
                 var currentPage = _quickMethodCurrentPage.GetValueOrDefault(_currentQuickMethod, 1);
 
                 int total = currentCache.Count;
-                int pageSize = (_searchMode == SearchMode.Youtube) ? 16 : (_currentQuickMethod == QuickMethod.Keyboard) ? 14 : 8;
                 var _quickTotalPages = 1;
-                _quickTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+                _quickTotalPages = Math.Max(1, (int)Math.Ceiling(total / (double)QuickSearchPageSize));
                 if (currentPage > _quickTotalPages) currentPage = _quickTotalPages;
                 if (currentPage < 1) currentPage = 1;
 
                 var pageItems = currentCache
-                    .Skip((currentPage - 1) * pageSize)
-                    .Take(pageSize)
+                    .Skip((currentPage - 1) * QuickSearchPageSize)
+                    .Take(QuickSearchPageSize)
                     .ToList();
 
                 if (YoutubeThumbnailGrid != null)
@@ -721,8 +722,7 @@ namespace UltimateKtv
         {
             var currentPage = _quickMethodCurrentPage.GetValueOrDefault(_currentQuickMethod, 1);
             var currentCache = _quickMethodResultsCache.GetValueOrDefault(_currentQuickMethod, new List<SongDisplayItem>());
-            var pageSize = (_searchMode == SearchMode.Youtube) ? 16 : (_currentQuickMethod == QuickMethod.Keyboard) ? 14 : 8;
-            var totalPages = Math.Max(1, (int)Math.Ceiling(currentCache.Count / (double)pageSize));
+            var totalPages = Math.Max(1, (int)Math.Ceiling(currentCache.Count / (double)QuickSearchPageSize));
             if (currentPage < totalPages)
             {
                 _quickMethodCurrentPage[_currentQuickMethod]++;

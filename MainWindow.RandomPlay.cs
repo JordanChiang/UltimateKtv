@@ -143,7 +143,7 @@ namespace UltimateKtv
         /// <summary>
         /// Gets a random song from ranking by language (top played songs)
         /// </summary>
-        private SongDisplayItem? GetRandomSongFromRanking(string language)
+        private SongDisplayItem? GetRandomSongFromRanking(string? language)
         {
             if (SongDatas.SongData == null)
             {
@@ -182,7 +182,7 @@ namespace UltimateKtv
                     SongId = song.TryGetValue("Song_Id", out var id) ? id?.ToString() ?? "" : "",
                     SongName = song.TryGetValue("Song_SongName", out var name) ? name?.ToString() ?? "" : "",
                     SingerName = song.TryGetValue("Song_Singer", out var singer) ? singer?.ToString() ?? "" : "",
-                    Language = language,
+                    Language = language ?? (song.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() ?? "" : ""),
                     FilePath = song.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "",
                     Volume = song.TryGetValue("Song_Volume", out var vol) && int.TryParse(vol?.ToString(), out int v) ? v : 90,
                     AudioTrack = song.TryGetValue("Song_Track", out var tr) && int.TryParse(tr?.ToString(), out int t) ? t : 0

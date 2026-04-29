@@ -120,6 +120,9 @@ namespace UltimateKtv
             // Update HTTP server status text
             UpdateHttpServerLabelStyle();
             UpdateHttpStatusText();
+
+            // Language settings
+            LanguageMultiSelectToggle.IsChecked = settings.IsLanguageMultiSelect;
         }
 
         private void InitializeFavoriteUserComboBox()
@@ -324,6 +327,9 @@ namespace UltimateKtv
                 settings.RandomPlayAudioChannel = audioChannel;
             }
 
+            // Save Language settings
+            settings.IsLanguageMultiSelect = LanguageMultiSelectToggle.IsChecked == true;
+
             // Apply changes to the running application
             _parentWindow.NewSongDays = settings.NewSongDays;
 
@@ -420,6 +426,11 @@ namespace UltimateKtv
         }
 
         public void FuncBtnQuit_Click(object sender, RoutedEventArgs e)
+        {
+            ShowQuitOptionsDialog();
+        }
+
+        private void ExitProgramButton_Click(object sender, RoutedEventArgs e)
         {
             ShowQuitOptionsDialog();
         }
