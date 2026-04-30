@@ -259,7 +259,6 @@ namespace UltimateKtv
             if (LanguageDuetToggle != null)
             {
                 LanguageDuetToggle.IsChecked = _isDuetOnly;
-                LanguageDuetToggle.Content = _isDuetOnly ? "合唱" : "獨唱";
             }
 
             // 2. Update singer type buttons

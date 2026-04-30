@@ -1251,10 +1251,6 @@ namespace UltimateKtv
         private void LanguageDuetToggle_Click(object sender, RoutedEventArgs e)
         {
             _isDuetOnly = LanguageDuetToggle?.IsChecked == true;
-            if (LanguageDuetToggle != null)
-            {
-                LanguageDuetToggle.Content = _isDuetOnly ? "合唱" : "獨唱";
-            }
             if (_isDuetOnly) _selectedSingerType = ""; // Clear singer type when switching to duet mode
             
             UpdateLanguageFilterButtonHighlights();

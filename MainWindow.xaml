@@ -703,7 +703,14 @@
 
                             <!-- Language Second Filter: Singer Type -->
                             <UniformGrid x:Name="LanguageSecondFilterGrid" Grid.Row="1" Rows="1" Margin="0,0,0,4" Height="50" Visibility="Collapsed">
-                                <ToggleButton x:Name="LanguageDuetToggle" Content="獨唱" Style="{StaticResource SecondFilterToggleButtonStyle}" Click="LanguageDuetToggle_Click"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="合唱" VerticalAlignment="Center" Margin="0,0,30,0" FontSize="{DynamicResource FuncBtnFontSize}" FontWeight="Bold" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                    <ToggleButton x:Name="LanguageDuetToggle" IsChecked="False" Style="{StaticResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" Click="LanguageDuetToggle_Click">
+                                        <ToggleButton.LayoutTransform>
+                                            <ScaleTransform ScaleX="1.8" ScaleY="1.4"/>
+                                        </ToggleButton.LayoutTransform>
+                                    </ToggleButton>
+                                </StackPanel>
                                 <Button x:Name="LanguageMaleBtn" Content="男歌手" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="0"/>
                                 <Button x:Name="LanguageFemaleBtn" Content="女歌手" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="1"/>
                                 <Button x:Name="LanguageGroupBtn" Content="團體" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="2"/>
