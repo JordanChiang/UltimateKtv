@@ -43,6 +43,7 @@ namespace UltimateKtv
         private int _currentSongPage = 1;
         private int _totalSongPages = 1;
         private bool _isLanguageMode = false;
+        private string _currentSongsTitle = string.Empty;
 
         // Current playing song file path and properties for database lookup
         private string PlayingFilePath = string.Empty;
@@ -991,6 +992,7 @@ namespace UltimateKtv
         /// <param name="singerName">The name of the singer to search for</param>
         private void LoadSongsForSinger(string singerName)
         {
+            _currentSongsTitle = singerName;
             if (SongDatas.SongData == null)
             {
                 _allSongs = new List<SongDisplayItem>();

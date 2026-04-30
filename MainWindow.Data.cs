@@ -137,14 +137,7 @@ namespace UltimateKtv
             }
 
             // Update the page information TextBlock
-            if (_isLanguageMode)
-            {
-                PageInfoTextBlock.Text = $"第 {page}/{_totalSongPages} 頁 (語系點歌 - {_allSongs.Count} 首歌曲)";
-            }
-            else
-            {
-                PageInfoTextBlock.Text = $"第 {page}/{_totalSongPages} 頁 ({_selectedSinger} - {_allSongs.Count} 首歌曲)";
-            }
+            PageInfoTextBlock.Text = $"第 {page}/{_totalSongPages} 頁 ({_currentSongsTitle} - {_allSongs.Count} 首歌曲)";
 
             // Enable or disable the page buttons based on the current page
             PageUp.IsEnabled = (page > 1);
@@ -153,15 +146,13 @@ namespace UltimateKtv
 
         private void DisplaySongsInGrid(List<SongDisplayItem> songs, string title)
         {
+            _currentSongsTitle = title;
             _isLanguageMode = false;
             _allSongs = songs;
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + SongPageSize - 1) / SongPageSize;
             _currentSongPage = 1;
 
             LoadSongPage(_currentSongPage);
-
-            // Update title in PageInfoTextBlock
-            PageInfoTextBlock.Text = $"{title} - {_allSongs.Count} 首歌曲";
 
             SongListGrid.Visibility = Visibility.Visible;
             LanguageSongListGrid.Visibility = Visibility.Collapsed;
@@ -170,15 +161,13 @@ namespace UltimateKtv
 
         private void DisplayLanguageSongsInGrid(List<SongDisplayItem> songs, string title)
         {
+            _currentSongsTitle = title;
             _isLanguageMode = true;
             _allSongs = songs;
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + SongPageSize - 1) / SongPageSize;
             _currentSongPage = 1;
 
             LoadSongPage(_currentSongPage);
-
-            // Update title in PageInfoTextBlock
-            PageInfoTextBlock.Text = $"{title} - {_allSongs.Count} 首歌曲";
 
             LanguageSongListGrid.Visibility = Visibility.Visible;
             SongListGrid.Visibility = Visibility.Collapsed;
@@ -224,6 +213,7 @@ namespace UltimateKtv
         /// <param name="userName">The name of the user to load favorites for</param>
         private void LoadFavoriteSongsForUser(string userName)
         {
+            _currentSongsTitle = $"{userName} 的最愛";
             if (SongDatas.FavoriteUserData == null || SongDatas.FavoriteSongData == null || SongDatas.SongData == null)
             {
                 _allSongs = new List<SongDisplayItem>();
