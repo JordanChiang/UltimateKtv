@@ -23,7 +23,7 @@ namespace UltimateKtv.Updater
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("====================================================");
-            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.0 =");
+            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.1 =");
             Console.WriteLine("====================================================");
             Console.ResetColor();
             Console.WriteLine();
@@ -260,6 +260,13 @@ namespace UltimateKtv.Updater
 
                 string relativePath = Path.GetRelativePath(sourceDir, file);
                 string destFile = Path.Combine(destDir, relativePath);
+
+                // Skip database if it already exists to preserve user data
+                if (fileName.Equals("CrazySong.mdb", StringComparison.OrdinalIgnoreCase) && File.Exists(destFile))
+                {
+                    continue;
+                }
+
                 string destFolder = Path.GetDirectoryName(destFile)!;
 
                 if (!Directory.Exists(destFolder)) Directory.CreateDirectory(destFolder);
