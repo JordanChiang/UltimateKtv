@@ -26,6 +26,53 @@ namespace UltimateKtv
             
             // Apply theme colors to this window
             TextSettingsHandler.ApplyToResources(this);
+
+            // Adjust window size while maintaining aspect ratio (1024:900)
+            double designHeight = 900.0;
+            double designWidth = 1024.0;
+            
+            double screenWorkHeight = SystemParameters.WorkArea.Height;
+            double screenWorkWidth = SystemParameters.WorkArea.Width;
+            double dpiScale = 1.0;
+
+            try 
+            {
+                var monitors = VideoDisplayWindow.GetAvailableMonitorsInfo();
+                int monitorIndex = SettingsManager.Instance.CurrentSettings.ConsoleScreen - 1;
+
+                if (monitorIndex >= 0 && monitorIndex < monitors.Count)
+                {
+                    var monitor = monitors[monitorIndex];
+                    dpiScale = VideoDisplayWindow.GetDpiScaleForMonitor(monitorIndex);
+                    screenWorkHeight = (monitor.rcWork.Bottom - monitor.rcWork.Top) / dpiScale;
+                    screenWorkWidth = (monitor.rcWork.Right - monitor.rcWork.Left) / dpiScale;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"[Scaling Debug] Error calculating monitor size: {ex.Message}");
+            }
+
+            // Apply buffers
+            double maxAllowedHeight = screenWorkHeight - 40;
+            double maxAllowedWidth = screenWorkWidth - 40;
+
+            // Calculate the uniform scale factor needed to fit within the available space
+            double scaleHeight = maxAllowedHeight / designHeight;
+            double scaleWidth = maxAllowedWidth / designWidth;
+            double uniformScale = Math.Min(1.0, Math.Min(scaleHeight, scaleWidth));
+
+            // Set the final window size maintaining aspect ratio
+            this.Height = designHeight * uniformScale;
+            this.Width = designWidth * uniformScale;
+
+            // Enforce constraints
+            this.MaxHeight = maxAllowedHeight;
+            this.MaxWidth = maxAllowedWidth;
+
+            AppLogger.Log($"[Scaling Debug] Monitor WorkArea: {screenWorkWidth}x{screenWorkHeight}");
+            AppLogger.Log($"[Scaling Debug] Uniform Scale: {uniformScale:F3}");
+            AppLogger.Log($"[Scaling Debug] Final Window Size: {this.Width:F1}x{this.Height:F1}");
             
             InitializeAudioRenderer();
             InitializeSettings();

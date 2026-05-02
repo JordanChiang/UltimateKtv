@@ -10,7 +10,9 @@
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
     <Window.Resources>
         <ResourceDictionary>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -32,10 +34,12 @@
             </Style>
         </ResourceDictionary>
     </Window.Resources>
+    <Viewbox Stretch="Fill" StretchDirection="Both">
     <Border Background="{DynamicResource MaterialDesignPaper}"
             BorderBrush="{DynamicResource PrimaryBrush}"
             BorderThickness="2"
-            CornerRadius="10" Margin="10"
+            CornerRadius="10" 
+            Width="1024" Height="900"
             Effect="{DynamicResource MaterialDesignShadowDepth5}">
         <Grid Margin="20">
             <Grid.RowDefinitions>
@@ -738,4 +742,5 @@
             </StackPanel>
         </Grid>
     </Border>
+    </Viewbox>
 </Window>
