@@ -23,7 +23,7 @@ namespace UltimateKtv.Updater
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("====================================================");
-            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.1 =");
+            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.2 =");
             Console.WriteLine("====================================================");
             Console.ResetColor();
             Console.WriteLine();
@@ -163,7 +163,7 @@ namespace UltimateKtv.Updater
 
             // 5. Extract
             Console.WriteLine("[3/5] 正在解壓縮...");
-            ZipFile.ExtractToDirectory(zipPath, extractPath, true);
+            ZipFile.ExtractToDirectory(zipPath, extractPath);
 
             // 6. Check if app is running
             int targetPid = 0;
@@ -258,7 +258,7 @@ namespace UltimateKtv.Updater
                     continue;
                 }
 
-                string relativePath = Path.GetRelativePath(sourceDir, file);
+                string relativePath = GetRelativePath(sourceDir, file);
                 string destFile = Path.Combine(destDir, relativePath);
 
                 // Skip database if it already exists to preserve user data
@@ -314,6 +314,13 @@ namespace UltimateKtv.Updater
             Console.WriteLine("\n[成功] 更新已完成，祝您歌唱愉快！");
             Console.ResetColor();
             await Task.Delay(1500);
+        }
+
+        private static string GetRelativePath(string relativeTo, string path)
+        {
+            var uri = new Uri(relativeTo.EndsWith("\\") ? relativeTo : relativeTo + "\\");
+            var fullUri = new Uri(path);
+            return Uri.UnescapeDataString(uri.MakeRelativeUri(fullUri).ToString().Replace('/', '\\'));
         }
     }
 }

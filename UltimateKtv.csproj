@@ -130,8 +130,8 @@
     <Exec Command="xcopy &quot;$(ProjectDir)Images&quot; &quot;$(TargetDir)Images\&quot; /E /I /Y /D" />
     
     <!-- Copy the standalone updater application (Updater is now always x86 to work on both architectures) -->
-    <Exec Command="xcopy &quot;$(ProjectDir)Updater\bin\x86\$(Configuration)\net8.0-windows\UltimateKtv.Updater.*&quot; &quot;$(TargetDir)&quot; /E /I /Y /D" Condition="Exists('$(ProjectDir)Updater\bin\x86\$(Configuration)\net8.0-windows\UltimateKtv.Updater.exe')" />
-    <Exec Command="xcopy &quot;$(ProjectDir)Updater\bin\$(Configuration)\net8.0-windows\UltimateKtv.Updater.*&quot; &quot;$(TargetDir)&quot; /E /I /Y /D" Condition="!Exists('$(ProjectDir)Updater\bin\x86\$(Configuration)\net8.0-windows\UltimateKtv.Updater.exe')" />
+    <Exec Command="xcopy &quot;$(ProjectDir)Updater\bin\x86\$(Configuration)\net471\UltimateKtv.Updater.exe&quot; &quot;$(TargetDir)&quot; /E /I /Y /D" Condition="Exists('$(ProjectDir)Updater\bin\x86\$(Configuration)\net471\UltimateKtv.Updater.exe')" />
+    <Exec Command="xcopy &quot;$(ProjectDir)Updater\bin\$(Configuration)\net471\UltimateKtv.Updater.exe&quot; &quot;$(TargetDir)&quot; /E /I /Y /D" Condition="!Exists('$(ProjectDir)Updater\bin\x86\$(Configuration)\net471\UltimateKtv.Updater.exe')" />
 
     <MakeDir Directories="$(TargetDir)libs" />
     <ItemGroup>
