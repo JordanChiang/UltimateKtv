@@ -250,9 +250,6 @@ namespace UltimateKtv
 
             LoadSingerPage(_currentPage);
 
-            // Wire up the click events for the pagination buttons
-            PageUp.Click += PageUp_Click;
-            PageDown.Click += PageDown_Click;
 
             // Wire up waiting list pagination buttons
             WaitListPageUp.Click += WaitListPageUp_Click;
