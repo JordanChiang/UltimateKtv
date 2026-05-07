@@ -76,7 +76,7 @@ namespace UltimateKtv
 
         private void VideoContainer_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (OwnerWindow != null && OwnerWindow.IsSingleMonitorMode)
+            if (e.ClickCount == 2 && OwnerWindow != null && OwnerWindow.IsSingleMonitorMode)
             {
                 System.Diagnostics.Debug.WriteLine("Single monitor mode: Returning to ConsoleWindow (VideoDisplayWindow stays open).");
                 

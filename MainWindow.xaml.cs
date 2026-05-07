@@ -779,7 +779,7 @@ namespace UltimateKtv
 
         private void MediaPlayerContainer_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (IsSingleMonitorMode && _videoDisplayWindow != null)
+            if (e.ClickCount == 2 && IsSingleMonitorMode && _videoDisplayWindow != null)
             {
                 DebugLog("Single monitor mode: Hiding MainWindow and activating VideoDisplayWindow.");
                 
