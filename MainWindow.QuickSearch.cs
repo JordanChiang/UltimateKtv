@@ -27,7 +27,7 @@ namespace UltimateKtv
         private bool _isQuickSearchInitialized = false;
 
         // Exclusive selector for the 4 search type buttons
-        private enum QuickMethod { Bopomofo, EngNum, PenStyle, SongId, Keyboard, Extra5 }
+        private enum QuickMethod { Bopomofo, EngNum, PenStyle, SongId, Keyboard, Extra5, YoutubeHistory }
         private QuickMethod _currentQuickMethod = QuickMethod.Bopomofo;
 
         // Toggle state for Song vs Singer vs Youtube search
@@ -36,7 +36,7 @@ namespace UltimateKtv
         private bool _isSingerSearchMode => _searchMode == SearchMode.Singer;
         
         // Centralized page size for Quick Search
-        private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube) ? 16 : (_currentQuickMethod == QuickMethod.Keyboard) ? 15 : 10;
+        private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube) ? (_currentQuickMethod == QuickMethod.YoutubeHistory ? 15 : 16) : 10;
 
         // For async quick search to prevent UI lag
         private CancellationTokenSource? _quickSearchCts;
@@ -154,6 +154,11 @@ namespace UltimateKtv
                 return;
             }
 
+            if (_searchMode == SearchMode.Youtube && _currentQuickMethod == QuickMethod.YoutubeHistory)
+            {
+                SetQuickMethod(QuickMethod.Keyboard, KeyboardListBtn);
+            }
+
             if (_searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard)
             {
                 UpdateSearchWords(true);
@@ -164,6 +169,76 @@ namespace UltimateKtv
         private void SongIdListBtn_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.SongId, sender as Button);
         private void KeyboardListBtn_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.Keyboard, sender as Button);
         private void ExtraListBtn5_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.Extra5, sender as Button);
+        private void YoutubeHistoryBtn_Click(object sender, RoutedEventArgs e) 
+        {
+            if (_currentQuickMethod == QuickMethod.YoutubeHistory)
+            {
+                SetQuickMethod(QuickMethod.Keyboard, KeyboardListBtn);
+            }
+            else
+            {
+                SetQuickMethod(QuickMethod.YoutubeHistory, sender as Button);
+            }
+        }
+
+        private void ClearYoutubeBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show("確定要清除所有 Youtube 點播記錄與已下載的檔案嗎？", "確認清除", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                // Delete from DB
+                try
+                {
+                    string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+                    string sql = "DELETE FROM YoutubeSongList";
+                    DbHelper.Access.ExecuteNonQuery(dbPath, sql, null);
+                    AppLogger.Log("Cleared YoutubeSongList database.");
+                    
+                    // Clear YoutubeHistory memory cache if any
+                    _quickMethodResultsCache[QuickMethod.YoutubeHistory] = new List<SongDisplayItem>();
+                    if (_currentQuickMethod == QuickMethod.YoutubeHistory)
+                    {
+                        RefreshQuickResultsPage();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Failed to clear Youtube database", ex);
+                }
+
+                // Delete from FileSystem
+                try
+                {
+                    var dlFolder = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
+                    // Provide a fully qualified path if it's a relative path.
+                    if (!System.IO.Path.IsPathRooted(dlFolder))
+                    {
+                        dlFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dlFolder);
+                    }
+                    if (!string.IsNullOrEmpty(dlFolder) && System.IO.Directory.Exists(dlFolder))
+                    {
+                        var files = System.IO.Directory.GetFiles(dlFolder);
+                        int count = 0;
+                        foreach (var file in files)
+                        {
+                            try 
+                            { 
+                                System.IO.File.Delete(file); 
+                                count++;
+                            } 
+                            catch { }
+                        }
+                        AppLogger.Log($"Cleared {count} Youtube files from {dlFolder}.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Failed to clear Youtube files", ex);
+                }
+            }
+        }
+
+        private QuickMethod _previousQuickMethod = QuickMethod.Bopomofo;
 
         // Toggle button handler
         private void SearchMode_Click(object sender, RoutedEventArgs e)
@@ -176,16 +251,31 @@ namespace UltimateKtv
                     if (SearchWords != null) SearchWords.Text = string.Empty;
                     _quickMethodSelectedWords[_currentQuickMethod].Clear();
 
+                    if (_currentQuickMethod != QuickMethod.YoutubeHistory)
+                    {
+                        _previousQuickMethod = _currentQuickMethod;
+                    }
+
+                    if (BopomofoListBtn != null) BopomofoListBtn.Visibility = Visibility.Collapsed;
+                    if (PenStyleListBtn != null) PenStyleListBtn.Visibility = Visibility.Collapsed;
+                    if (EngAndNumListBtn != null) EngAndNumListBtn.Visibility = Visibility.Collapsed;
+                    if (SongIdListBtn != null) SongIdListBtn.Visibility = Visibility.Collapsed;
+                    if (KeyboardListBtn != null) KeyboardListBtn.Visibility = Visibility.Collapsed;
+                    if (YoutubeHistoryBtn != null) YoutubeHistoryBtn.Visibility = Visibility.Visible;
+                    if (ClearYoutubeBtn != null) ClearYoutubeBtn.Visibility = Visibility.Visible;
+
                     _searchMode = SearchMode.Youtube;
                     SearchWords?.Focus();
                     if (SearchInputGrid != null) SearchInputGrid.Visibility = Visibility.Collapsed;
                     if (SingerGrid != null) SingerGrid.Visibility = Visibility.Collapsed;
                     if (VisualSingerGrid != null) VisualSingerGrid.Visibility = Visibility.Collapsed;
 
+                    bool useYoutubeGrid = _currentQuickMethod != QuickMethod.YoutubeHistory;
+
                     // Relocated: YoutubeThumbnailGrid is now inside QuickResultsContainer
-                    if (YoutubeThumbnailGrid != null) YoutubeThumbnailGrid.Visibility = Visibility.Visible;
+                    if (YoutubeThumbnailGrid != null) YoutubeThumbnailGrid.Visibility = useYoutubeGrid ? Visibility.Visible : Visibility.Collapsed;
                     if (QuickResultsContainer != null) QuickResultsContainer.Visibility = Visibility.Visible;
-                    if (QuickSongListGrid != null) QuickSongListGrid.Visibility = Visibility.Collapsed;
+                    if (QuickSongListGrid != null) QuickSongListGrid.Visibility = !useYoutubeGrid ? Visibility.Visible : Visibility.Collapsed;
                     if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Collapsed;
                 }
                 else 
@@ -194,11 +284,43 @@ namespace UltimateKtv
                     if (radio == SingerRadio) _searchMode = SearchMode.Singer;
                     else _searchMode = SearchMode.Song;
 
+                    // Clear caches to prevent cross-contamination between modes
+                    if (oldMode != _searchMode)
+                    {
+                        foreach (var key in _quickMethodResultsCache.Keys.ToList())
+                        {
+                            _quickMethodResultsCache[key] = new List<SongDisplayItem>();
+                        }
+                    }
+
+                    if (BopomofoListBtn != null) BopomofoListBtn.Visibility = Visibility.Visible;
+                    if (PenStyleListBtn != null) PenStyleListBtn.Visibility = Visibility.Visible;
+                    if (EngAndNumListBtn != null) EngAndNumListBtn.Visibility = Visibility.Visible;
+                    if (SongIdListBtn != null) SongIdListBtn.Visibility = Visibility.Visible;
+                    if (KeyboardListBtn != null) KeyboardListBtn.Visibility = Visibility.Visible;
+                    if (YoutubeHistoryBtn != null) YoutubeHistoryBtn.Visibility = Visibility.Collapsed;
+                    if (ClearYoutubeBtn != null) ClearYoutubeBtn.Visibility = Visibility.Collapsed;
+
                     // Clear search keywords when switching from YouTube mode to others as requested
                     if (oldMode == SearchMode.Youtube)
                     {
                         if (SearchWords != null) SearchWords.Text = string.Empty;
-                        _quickMethodSelectedWords[_currentQuickMethod].Clear();
+                        foreach (var key in _quickMethodSelectedWords.Keys.ToList())
+                        {
+                            _quickMethodSelectedWords[key].Clear();
+                        }
+                        
+                        // Restore previous quick method state
+                        Button? targetBtn = null;
+                        switch (_previousQuickMethod)
+                        {
+                            case QuickMethod.Bopomofo: targetBtn = BopomofoListBtn; break;
+                            case QuickMethod.PenStyle: targetBtn = PenStyleListBtn; break;
+                            case QuickMethod.EngNum: targetBtn = EngAndNumListBtn; break;
+                            case QuickMethod.SongId: targetBtn = SongIdListBtn; break;
+                            case QuickMethod.Keyboard: targetBtn = KeyboardListBtn; break;
+                        }
+                        SetQuickMethod(_previousQuickMethod, targetBtn);
                     }
 
                     if (SearchInputGrid != null) SearchInputGrid.Visibility = (_currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
@@ -243,6 +365,7 @@ namespace UltimateKtv
                         break;
                     case QuickMethod.Keyboard:
                     case QuickMethod.Extra5:
+                    case QuickMethod.YoutubeHistory:
                         SetQuickWordSet(new List<string>()); // no items yet
                         break;
                 }
@@ -254,7 +377,7 @@ namespace UltimateKtv
                 var inactiveBg = System.Windows.Media.Brushes.Transparent;
                 var inactiveFg = (System.Windows.Media.Brush)FindResource("SingerButtonBackground");
 
-                var buttons = new[] { BopomofoListBtn, EngAndNumListBtn, PenStyleListBtn, SongIdListBtn, KeyboardListBtn };
+                var buttons = new[] { BopomofoListBtn, EngAndNumListBtn, PenStyleListBtn, SongIdListBtn, KeyboardListBtn, YoutubeHistoryBtn };
                 foreach (var btn in buttons)
                 {
                     if (btn == null) continue;
@@ -275,8 +398,17 @@ namespace UltimateKtv
             // Defer the refresh so layout/render can coalesce first
             Dispatcher.BeginInvoke(new Action(() =>
             {
-
-                UpdateSearchWords(false);
+                bool triggerSearch = method == QuickMethod.YoutubeHistory;
+                if (!triggerSearch)
+                {
+                    // If the cache is empty but there are selected words, we MUST trigger a search!
+                    if (_quickMethodResultsCache.TryGetValue(method, out var cache) && cache.Count == 0 &&
+                        _quickMethodSelectedWords.TryGetValue(method, out var words) && words.Count > 0)
+                    {
+                        triggerSearch = true;
+                    }
+                }
+                UpdateSearchWords(triggerSearch);
                 if (method == QuickMethod.Keyboard)
                 {
                     SearchWords?.Focus();
@@ -304,7 +436,7 @@ namespace UltimateKtv
                 if (SearchWords != null)
                 {
                     // If in Youtube mode or Keyboard mode, we might want to preserve what the user typed manually
-                    bool isTextInputMode = _searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard;
+                    bool isTextInputMode = (_searchMode == SearchMode.Youtube && _currentQuickMethod != QuickMethod.YoutubeHistory) || _currentQuickMethod == QuickMethod.Keyboard;
                     
                     // If triggerSearch is false (just refreshing UI), we update the text
                     // If triggerSearch is true (new search), we might want to sync text -> buffer
@@ -352,6 +484,11 @@ namespace UltimateKtv
         // Delete last selected token (or character in Youtube mode)
         private void DeleteEnteredWordBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (_searchMode == SearchMode.Youtube && _currentQuickMethod == QuickMethod.YoutubeHistory)
+            {
+                SetQuickMethod(QuickMethod.Keyboard, KeyboardListBtn);
+            }
+
             if (_searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard)
             {
                 if (SearchWords != null && SearchWords.Text.Length > 0)
@@ -375,6 +512,11 @@ namespace UltimateKtv
         // Clear all selected tokens (or text in Youtube mode)
         private void ClearEnteredWordBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (_searchMode == SearchMode.Youtube && _currentQuickMethod == QuickMethod.YoutubeHistory)
+            {
+                SetQuickMethod(QuickMethod.Keyboard, KeyboardListBtn);
+            }
+
             if (_searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard)
             {
                 if (SearchWords != null)
@@ -409,7 +551,7 @@ namespace UltimateKtv
                 var key = string.Join("", currentWords);
 
                 // Panel visibility when no key
-                if (string.IsNullOrEmpty(key))
+                if (string.IsNullOrEmpty(key) && _currentQuickMethod != QuickMethod.YoutubeHistory)
                 {
                     _quickMethodResultsCache[_currentQuickMethod] = new List<SongDisplayItem>();
                     _quickMethodCurrentPage[_currentQuickMethod] = 1;
@@ -454,6 +596,46 @@ namespace UltimateKtv
 
                 if (_searchMode == SearchMode.Youtube)
                 {
+                    if (_currentQuickMethod == QuickMethod.YoutubeHistory)
+                    {
+                        AppLogger.Log("QuickSearch: Triggered YoutubeHistory search mode.");
+                        var history = SongDatas.GetYoutubeHistory();
+                        AppLogger.Log($"QuickSearch: Received {history.Count} history items from SongDatas.");
+                        var historyResults = history.Select(h => {
+                            string url = h.TryGetValue("Url", out var u) ? u?.ToString() ?? "" : "";
+                            string id = h.TryGetValue("Id", out var iObj) ? iObj?.ToString() ?? "" : url;
+                            int lengthSeconds = h.TryGetValue("Length", out var lenObj) && int.TryParse(lenObj?.ToString(), out int l) ? l : 0;
+                            string rawPath = h.TryGetValue("DownloadDir", out var d) && h.TryGetValue("FileName", out var fn) 
+                                           ? System.IO.Path.Combine(d?.ToString() ?? "", fn?.ToString() ?? "") : "";
+                            if (!string.IsNullOrEmpty(rawPath) && !System.IO.Path.IsPathRooted(rawPath))
+                            {
+                                rawPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rawPath);
+                            }
+
+                            return new SongDisplayItem
+                            {
+                                SongId = id,
+                                SongName = h.TryGetValue("Name", out var n) ? n?.ToString() ?? "" : "",
+                                SingerName = lengthSeconds > 0 ? TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss") : "未知長度",
+                                Language = h.TryGetValue("Lang", out var lang) ? lang?.ToString() ?? "" : "",
+                                FilePath = rawPath,
+                                IsYoutube = true,
+                                YoutubeId = url,
+                                Volume = h.TryGetValue("Volume", out var v) && int.TryParse(v?.ToString(), out int iv) ? iv : 30,
+                                ThumbnailUrl = $"https://i.ytimg.com/vi/{url}/hqdefault.jpg"
+                            };
+                        }).ToList();
+
+                        if (!string.IsNullOrEmpty(key))
+                        {
+                            historyResults = historyResults.Where(r => r.SongName.Contains(key, StringComparison.OrdinalIgnoreCase)).ToList();
+                        }
+                        
+                        _quickMethodResultsCache[_currentQuickMethod] = historyResults;
+                        RefreshQuickResultsPage();
+                        return;
+                    }
+
                     // === YOUTUBE SEARCH MODE ===
                     if (YoutubeStatusText != null)
                     {
@@ -656,16 +838,21 @@ namespace UltimateKtv
                     .Take(QuickSearchPageSize)
                     .ToList();
 
+                bool useYoutubeGrid = (_searchMode == SearchMode.Youtube && _currentQuickMethod != QuickMethod.YoutubeHistory);
+
                 if (YoutubeThumbnailGrid != null)
                 {
-                    YoutubeThumbnailGrid.ItemsSource = (_searchMode == SearchMode.Youtube) ? pageItems : null;
-                    YoutubeThumbnailGrid.Visibility = (_searchMode == SearchMode.Youtube) ? Visibility.Visible : Visibility.Collapsed;
+                    YoutubeThumbnailGrid.ItemsSource = useYoutubeGrid ? pageItems : null;
+                    YoutubeThumbnailGrid.Visibility = useYoutubeGrid ? Visibility.Visible : Visibility.Collapsed;
                 }
 
                 if (_searchMode == SearchMode.Youtube)
                 {
                     if (QuickResultsContainer != null) QuickResultsContainer.Visibility = Visibility.Visible;
-                    if (QuickSongListGrid != null) QuickSongListGrid.Visibility = Visibility.Collapsed;
+                    if (useYoutubeGrid)
+                    {
+                        if (QuickSongListGrid != null) QuickSongListGrid.Visibility = Visibility.Collapsed;
+                    }
                     if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Collapsed;
                 }
                 else
@@ -676,8 +863,15 @@ namespace UltimateKtv
 
                 if (QuickSongListGrid != null)
                 {
-                    QuickSongListGrid.ItemsSource = (_searchMode != SearchMode.Youtube) ? pageItems : null;
-                    QuickSongListGrid.Visibility = (_searchMode != SearchMode.Youtube && pageItems.Any()) ? Visibility.Visible : Visibility.Collapsed;
+                    QuickSongListGrid.ItemsSource = !useYoutubeGrid ? pageItems : null;
+                    if (!useYoutubeGrid)
+                    {
+                        QuickSongListGrid.Visibility = pageItems.Any() ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        QuickSongListGrid.Visibility = Visibility.Collapsed;
+                    }
                 }
 
                 // Ensure container is visible if YT results or standard results are shown

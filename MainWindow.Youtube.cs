@@ -17,57 +17,125 @@ namespace UltimateKtv
     {
         private CancellationTokenSource? _youtubePreviewCts;
         private static readonly ConcurrentDictionary<string, string> _youtubeStreamUrlCache = new();
-        private async void DownloadYoutubeVideo(SongDisplayItem song)
+        private ConcurrentQueue<SongDisplayItem> _youtubeDownloadQueue = new();
+
+        private void UpdateYoutubeDownloadQueueUI()
         {
-            if (IsDownloadingYoutube)
+            if (YoutubeStatusText != null)
             {
-                MessageBox.Show("已有下載正在進行中，請稍候或取消。", "下載中", MessageBoxButton.OK, MessageBoxImage.Information);
+                int remaining = _youtubeDownloadQueue.Count;
+                if (remaining > 0)
+                {
+                    YoutubeStatusText.Text = $" 下載中.. (剩餘: {remaining})";
+                    YoutubeStatusText.Visibility = Visibility.Visible;
+                }
+                else if (IsDownloadingYoutube)
+                {
+                    YoutubeStatusText.Text = " 下載中..";
+                    YoutubeStatusText.Visibility = Visibility.Visible;
+                }
+            }
+        }
+
+        private void DownloadYoutubeVideo(SongDisplayItem song)
+        {
+            // Always prevent adding duplicate Youtube songs to queue or waiting list
+            if (_waitingList.Any(w => w.SongId == song.SongId) || _youtubeDownloadQueue.Any(q => q.SongId == song.SongId))
+            {
+                return; // Skip if already in waiting list or queue
+            }
+
+            // Quick check if file already exists in cache directory before queueing
+            string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
+            if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
+            string videoId = string.IsNullOrEmpty(song.YoutubeId) ? song.SongId : song.YoutubeId;
+            string filePath = song.FilePath;
+            if (string.IsNullOrEmpty(filePath) || filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                string safeName = string.Join("_", song.SongName.Split(Path.GetInvalidFileNameChars()));
+                filePath = Path.Combine(cacheDir, $"{safeName}_{videoId}.mp4");
+            }
+            else if (!Path.IsPathRooted(filePath))
+            {
+                filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filePath);
+            }
+
+            if (File.Exists(filePath))
+            {
+                DebugLog($"YouTube: File already exists in cache: {filePath}");
+                song.FilePath = filePath;
+                AddSongToWaitingList(song);
                 return;
             }
 
-            try
+            _youtubeDownloadQueue.Enqueue(song);
+            UpdateYoutubeDownloadQueueUI();
+
+            if (!IsDownloadingYoutube)
             {
-                IsDownloadingYoutube = true;
-                YoutubeDownloadPercentage = 0;
-                
-                // Show progress UI
-                if (YoutubeDownloadProgress != null) YoutubeDownloadProgress.Visibility = Visibility.Visible;
-                if (YoutubeDownloadText != null) YoutubeDownloadText.Visibility = Visibility.Visible;
-                if (YoutubeStatusText != null)
+                _ = ProcessYoutubeDownloadQueueAsync();
+            }
+        }
+
+        private async Task ProcessYoutubeDownloadQueueAsync()
+        {
+            if (IsDownloadingYoutube) return;
+            IsDownloadingYoutube = true;
+
+            while (_youtubeDownloadQueue.TryDequeue(out var song))
+            {
+                UpdateYoutubeDownloadQueueUI();
+
+                try
                 {
-                    YoutubeStatusText.Text = "YouTube 下載中...";
-                    YoutubeStatusText.Visibility = Visibility.Visible;
-                }
+                    YoutubeDownloadPercentage = 0;
+                    
+                    // Show progress UI
+                    if (YoutubeDownloadText != null) YoutubeDownloadText.Visibility = Visibility.Visible;
 
                 _youtubeDownloadCts = new CancellationTokenSource();
                 var token = _youtubeDownloadCts.Token;
 
-                string cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "YoutubeCache");
-                if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
+                    string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
+                    if (!Path.IsPathRooted(cacheDir))
+                    {
+                        cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
+                    }
+                    if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
 
-                // Sanitize filename
-                string safeName = string.Join("_", song.SongName.Split(Path.GetInvalidFileNameChars()));
-                string filePath = Path.Combine(cacheDir, $"{safeName}_{song.SongId}.mp4");
+                    string videoId = string.IsNullOrEmpty(song.YoutubeId) ? song.SongId : song.YoutubeId;
+                    string filePath = song.FilePath;
+                    
+                    if (string.IsNullOrEmpty(filePath) || filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string safeName = string.Join("_", song.SongName.Split(Path.GetInvalidFileNameChars()));
+                        filePath = Path.Combine(cacheDir, $"{safeName}_{videoId}.mp4");
+                    }
+                    else if (!Path.IsPathRooted(filePath))
+                    {
+                        filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filePath);
+                    }
 
-                // Check if already exists
-                if (File.Exists(filePath))
-                {
-                    DebugLog($"YouTube: File already exists in cache: {filePath}");
-                    song.FilePath = filePath;
-                    AddSongToWaitingList(song);
-                    CleanupDownloadUI();
-                    return;
-                }
+                    // Check if already exists
+                    if (File.Exists(filePath))
+                    {
+                        DebugLog($"YouTube: File already exists in cache: {filePath}");
+                        song.FilePath = filePath;
+                        AddSongToWaitingList(song);
+                        continue;
+                    }
 
-                DebugLog($"YouTube Download: Starting for {song.SongName} ({song.SongId})");
+                DebugLog($"YouTube Download: Starting for {song.SongName} ({videoId})");
                 
-                var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(song.SongId, token);
+                var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(videoId, token);
 
                 // Check user setting for high quality download
                 bool isHighQualityEnabled = SettingsManager.Instance.CurrentSettings.HighQualityYoutube;
 
                 IVideoStreamInfo? videoStream = null;
                 IAudioStreamInfo? audioStream = null;
+                IVideoStreamInfo? muxedStream = null;
+                double totalMegaBytes = 0;
 
                 if (isHighQualityEnabled)
                 {
@@ -79,7 +147,33 @@ namespace UltimateKtv
 
                     audioStream = (IAudioStreamInfo)streamManifest.GetAudioOnlyStreams()
                         .GetWithHighestBitrate();
+
+                    if (videoStream != null && audioStream != null)
+                    {
+                        totalMegaBytes = videoStream.Size.MegaBytes + audioStream.Size.MegaBytes;
+                    }
                 }
+
+                if (totalMegaBytes == 0) // Fallback or user preference
+                {
+                    muxedStream = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
+                    if (muxedStream == null)
+                    {
+                        MessageBox.Show("找不到適合的 YouTube 影片串流。", "錯誤", MessageBoxButton.OK, MessageBoxImage.Error);
+                        CleanupDownloadUI();
+                        return;
+                    }
+                    totalMegaBytes = muxedStream.Size.MegaBytes;
+                }
+
+                    if (totalMegaBytes > 300)
+                    {
+                        var result = MessageBox.Show($"此影片檔案較大 (約 {totalMegaBytes:F1} MB)，是否確定要下載？\n下載時間可能會較長。", "檔案較大", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                        if (result != MessageBoxResult.Yes)
+                        {
+                            continue;
+                        }
+                    }
 
                 // Download with progress
                 var progress = new Progress<double>(p => {
@@ -87,7 +181,7 @@ namespace UltimateKtv
                     HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = YoutubeDownloadPercentage });
                 });
 
-                if (isHighQualityEnabled && videoStream != null && audioStream != null)
+                if (videoStream != null && audioStream != null)
                 {
                     // Use FFmpeg to mux separate video + audio → supports 720p / 1080p
                     string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe");
@@ -98,16 +192,8 @@ namespace UltimateKtv
                         .Build();
                     await _youtube.Videos.DownloadAsync(streamInfos, conversionRequest, progress, token);
                 }
-                else
+                else if (muxedStream != null)
                 {
-                    // Fallback or User preference: muxed stream (up to 720p, no FFmpeg needed)
-                    var muxedStream = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
-                    if (muxedStream == null)
-                    {
-                        MessageBox.Show("找不到適合的 YouTube 影片串流。", "錯誤", MessageBoxButton.OK, MessageBoxImage.Error);
-                        CleanupDownloadUI();
-                        return;
-                    }
                     DebugLog($"YouTube Download: {(isHighQualityEnabled ? "Fallback" : "User Preference")} using muxed stream.");
                     await _youtube.Videos.Streams.DownloadAsync(muxedStream, filePath, progress, token);
                 }
@@ -115,32 +201,56 @@ namespace UltimateKtv
                 DebugLog($"YouTube Download: Completed! Path: {filePath}");
                 HttpServer.BroadcastEvent("YoutubeComplete", new { videoId = song.SongId });
                 
-                // Update song path and add to waiting list
+                // Update song path, record to database, and add to waiting list
                 song.FilePath = filePath;
+                SongDatas.RecordYoutubeSong(song);
                 AddSongToWaitingList(song);
+
+                    if (_currentQuickMethod == QuickMethod.YoutubeHistory)
+                    {
+                        UpdateSearchWords(true);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    DebugLog("YouTube Download: Cancelled by user. Clearing queue.");
+                    HttpServer.BroadcastEvent("YoutubeError", new { videoId = song.SongId, message = "使用者取消下載" });
+                    _youtubeDownloadQueue.Clear(); // Clear the remaining queue on cancel
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    DebugLog($"YouTube Download: Error: {ex.Message}");
+                    HttpServer.BroadcastEvent("YoutubeError", new { videoId = song.SongId, message = ex.Message });
+                    
+                    if (!string.IsNullOrEmpty(song.YoutubeId) && song.SongId.StartsWith("Y"))
+                    {
+                        var result = MessageBox.Show($"下載失敗: {ex.Message}\n這支影片可能已被下架或變更權限。\n是否要將此紀錄從點播歷史中刪除？", "下載錯誤", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                        if (result == MessageBoxResult.Yes)
+                        {
+                            SongDatas.DeleteYoutubeHistory(song.SongId);
+                            
+                            // Also trigger UI refresh for YoutubeHistory tab
+                            if (_currentQuickMethod == QuickMethod.YoutubeHistory)
+                            {
+                                UpdateSearchWords(true);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show($"下載失敗: {ex.Message}", "錯誤", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
             }
-            catch (OperationCanceledException)
-            {
-                DebugLog("YouTube Download: Cancelled by user.");
-                HttpServer.BroadcastEvent("YoutubeError", new { videoId = song.SongId, message = "使用者取消下載" });
-            }
-            catch (Exception ex)
-            {
-                DebugLog($"YouTube Download: Error: {ex.Message}");
-                HttpServer.BroadcastEvent("YoutubeError", new { videoId = song.SongId, message = ex.Message });
-                MessageBox.Show($"下載失敗: {ex.Message}", "錯誤", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                CleanupDownloadUI();
-            }
+
+            CleanupDownloadUI();
         }
 
         private void CleanupDownloadUI()
         {
             IsDownloadingYoutube = false;
             YoutubeDownloadPercentage = 0;
-            if (YoutubeDownloadProgress != null) YoutubeDownloadProgress.Visibility = Visibility.Collapsed;
             if (YoutubeDownloadText != null) YoutubeDownloadText.Visibility = Visibility.Collapsed;
             if (YoutubeStatusText != null) YoutubeStatusText.Visibility = Visibility.Collapsed;
             _youtubeDownloadCts?.Dispose();

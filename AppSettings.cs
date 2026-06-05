@@ -49,7 +49,7 @@ namespace UltimateKtv
         [Description("播放記錄自動保存次數: 在資料庫中保留歌曲播放歷史的次數 (1-10)。預設為 5。")]
         public int PlayHistoryCount { get; set; } = 5;
 
-        [Description("歌曲排序方式: 歌曲排序方法。1=點播次數, 2=加歌日期, 3=字數。預設為 3。")]
+        [Description("歌曲排序方式: 歌曲排序方法。1=點播次數, 2=加歌日期, 3=字數。預設為 1。")]
         public int SongSortMethod { get; set; } = 1;
 
         [Description("APP記錄檔: 啟用或停用應用程式記錄功能。 true=開啟, false=關閉")]
@@ -117,6 +117,9 @@ namespace UltimateKtv
 
         [Description("Youtube 搜尋數量: 設定 YouTube 搜尋時回傳的影片數量。有效範圍: 10 - 100。 預設值為 50。")]
         public int YoutubeSearchCount { get; set; } = 50;
+
+        [Description("Youtube 下載目錄: 設定 YouTube 影片下載的預設目錄。")]
+        public string YoutubeDownloadDir { get; set; } = @"YoutubeDownloads";
 
         [Description("GitHub 更新網址: 設定自動更新檢查的 GitHub 倉庫 (格式: Owner/Repo)。 預設為 JordanChiang/UltimateKtv")]
         public string GitHubRepoUrl { get; set; } = "JordanChiang/UltimateKtv";

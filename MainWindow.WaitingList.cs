@@ -598,11 +598,12 @@ namespace UltimateKtv
                 return;
             }
 
-            // Check for duplicates (both song name and singer must match)
+            // Check for duplicates (either file path matches, or both song name and singer match)
             var isDuplicate = _waitingList.Any(item =>
-                !string.IsNullOrEmpty(item.WaitingListSongName) &&
-                item.WaitingListSongName.Equals(song.SongName, StringComparison.OrdinalIgnoreCase) &&
-                item.WaitingListSingerName.Equals(song.SingerName, StringComparison.OrdinalIgnoreCase));
+                (!string.IsNullOrEmpty(item.FilePath) && item.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(item.WaitingListSongName) &&
+                 item.WaitingListSongName.Equals(song.SongName, StringComparison.OrdinalIgnoreCase) &&
+                 item.WaitingListSingerName.Equals(song.SingerName, StringComparison.OrdinalIgnoreCase)));
 
             if (isDuplicate)
             {

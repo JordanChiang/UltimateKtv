@@ -237,6 +237,12 @@ namespace UltimateKtv
 
             try
             {
+                // Check and create YoutubeSongList table before proceeding
+                if (databaseType.Equals("Access", StringComparison.OrdinalIgnoreCase))
+                {
+                    CheckAndCreateYoutubeTable(databaseFile);
+                }
+
                 // Use delegates to avoid duplicating database access logic.
                 Func<string, string, string?, List<Dictionary<string, object?>>> getDictionary;
                 Func<string, string, string?, DataTable> getDataTable;
@@ -508,6 +514,188 @@ namespace UltimateKtv
             if (notFoundSongs.Any())
             {
                 File.WriteAllLines("genFilePathNA.txt", notFoundSongs);
+            }
+        }
+
+        /// <summary>
+        /// Checks if the YoutubeSongList table exists in the database and creates it if not.
+        /// </summary>
+        /// <param name="databasePath">Path to the Access database file.</param>
+        private static void CheckAndCreateYoutubeTable(string databasePath)
+        {
+            try
+            {
+                var tables = DbHelper.Access.GetDBTableList(databasePath);
+                if (!tables.Contains("YoutubeSongList"))
+                {
+                    string createTableSql = @"
+                        CREATE TABLE YoutubeSongList (
+                            Id TEXT(5) PRIMARY KEY,
+                            Name TEXT(255),
+                            CreatDate DATETIME,
+                            Url MEMO,
+                            Singer TEXT(50),
+                            Lang TEXT(16),
+                            PlayCount INTEGER,
+                            Length INTEGER,
+                            DownloadDir MEMO,
+                            FileName TEXT(255),
+                            FileSize INTEGER,
+                            Track INTEGER DEFAULT 3,
+                            Volume INTEGER,
+                            WordCount INTEGER
+                        )";
+                    DbHelper.Access.ExecuteNonQuery(databasePath, createTableSql, null);
+                    AppLogger.Log("DB Write: Created YoutubeSongList table");
+                    Debug.WriteLine("Created YoutubeSongList table");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to create YoutubeSongList table: {ex.Message}");
+            }
+        }
+
+        private static bool _isYoutubeDbAltered = false;
+
+        /// <summary>
+        /// Records a downloaded YouTube song to the MDB database.
+        /// </summary>
+        public static string RecordYoutubeSong(SongDisplayItem song)
+        {
+            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+            try
+            {
+                if (!_isYoutubeDbAltered)
+                {
+                    try
+                    {
+                        DbHelper.Access.ExecuteNonQuery(dbPath, "ALTER TABLE YoutubeSongList ALTER COLUMN Name TEXT(255)", null);
+                    }
+                    catch { /* Ignore if already altered or unsupported */ }
+                    _isYoutubeDbAltered = true;
+                }
+
+                // Check if already exists
+                string query = $"SELECT Id FROM YoutubeSongList WHERE Url = '{song.SongId}'";
+                var existing = DbHelper.Access.GetDataTable(dbPath, query, null);
+                if (existing.Rows.Count > 0)
+                {
+                    return existing.Rows[0][0].ToString() ?? "";
+                }
+
+                // Generate new Id (Y0001 format)
+                string maxIdQuery = "SELECT MAX(Id) FROM YoutubeSongList";
+                var maxIdTable = DbHelper.Access.GetDataTable(dbPath, maxIdQuery, null);
+                string newId = "Y0001";
+                if (maxIdTable.Rows.Count > 0 && maxIdTable.Rows[0][0] != DBNull.Value)
+                {
+                    string maxId = maxIdTable.Rows[0][0].ToString() ?? "";
+                    if (maxId.StartsWith("Y") && int.TryParse(maxId.Substring(1), out int num))
+                    {
+                        newId = $"Y{(num + 1):D4}";
+                    }
+                }
+
+                string name = song.SongName;
+                if (!string.IsNullOrEmpty(name) && name.Length > 40) name = name.Substring(0, 40);
+
+                int lengthSeconds = 0;
+                if (!string.IsNullOrEmpty(song.SingerName) && TimeSpan.TryParse(song.SingerName, out TimeSpan ts))
+                {
+                    lengthSeconds = (int)ts.TotalSeconds;
+                }
+
+                string insertSql = @"INSERT INTO YoutubeSongList 
+                    (Id, Name, CreatDate, Url, Singer, Lang, PlayCount, Length, DownloadDir, FileName, FileSize, Track, Volume, WordCount) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                
+                var parameters = new List<System.Data.OleDb.OleDbParameter>
+                {
+                    new System.Data.OleDb.OleDbParameter("@Id", newId),
+                    new System.Data.OleDb.OleDbParameter("@Name", name ?? ""),
+                    new System.Data.OleDb.OleDbParameter("@CreatDate", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss")),
+                    new System.Data.OleDb.OleDbParameter("@Url", song.SongId ?? ""),
+                    new System.Data.OleDb.OleDbParameter("@Singer", ""),
+                    new System.Data.OleDb.OleDbParameter("@Lang", song.Language ?? ""),
+                    new System.Data.OleDb.OleDbParameter("@PlayCount", System.Data.OleDb.OleDbType.Integer) { Value = 1 },
+                    new System.Data.OleDb.OleDbParameter("@Length", System.Data.OleDb.OleDbType.Integer) { Value = lengthSeconds },
+                    new System.Data.OleDb.OleDbParameter("@DownloadDir", SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir ?? ""),
+                    new System.Data.OleDb.OleDbParameter("@FileName", Path.GetFileName(song.FilePath) ?? ""),
+                    new System.Data.OleDb.OleDbParameter("@FileSize", System.Data.OleDb.OleDbType.Integer) { Value = File.Exists(song.FilePath) ? (int)Math.Min(new FileInfo(song.FilePath).Length, int.MaxValue) : 0 },
+                    new System.Data.OleDb.OleDbParameter("@Track", System.Data.OleDb.OleDbType.Integer) { Value = 3 },
+                    new System.Data.OleDb.OleDbParameter("@Volume", System.Data.OleDb.OleDbType.Integer) { Value = song.Volume },
+                    new System.Data.OleDb.OleDbParameter("@WordCount", System.Data.OleDb.OleDbType.Integer) { Value = 0 }
+                };
+
+                DbHelper.Access.ExecuteNonQuery(dbPath, insertSql, null, parameters);
+                Debug.WriteLine($"Recorded YouTube song: {name} (Id: {newId})");
+                AppLogger.Log($"DB Write: Recorded YouTube song: {name} (Id: {newId})");
+
+                return newId;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error recording YouTube song: {ex.Message}");
+                AppLogger.Log($"Error recording YouTube song: {ex.Message}");
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// Gets the history of downloaded YouTube songs from the MDB database.
+        /// </summary>
+        public static List<Dictionary<string, object?>> GetYoutubeHistory()
+        {
+            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+            var list = new List<Dictionary<string, object?>>();
+            try
+            {
+                AppLogger.Log("GetYoutubeHistory: Starting DB fetch...");
+                int sortMethod = SettingsManager.Instance.CurrentSettings.SongSortMethod;
+                string orderBy = "CreatDate DESC";
+                if (sortMethod == 1)
+                {
+                    orderBy = "PlayCount DESC, CreatDate DESC";
+                }
+                string query = $"SELECT * FROM YoutubeSongList ORDER BY {orderBy}";
+                var dt = DbHelper.Access.GetDataTable(dbPath, query, null);
+                
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object?>();
+                    foreach (System.Data.DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col] == DBNull.Value ? null : row[col];
+                    }
+                    list.Add(dict);
+                }
+                AppLogger.Log($"GetYoutubeHistory: Fetched {list.Count} records successfully.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to fetch Youtube history: {ex.Message}");
+                AppLogger.Log($"GetYoutubeHistory Error: {ex.Message}");
+            }
+            return list;
+        }
+
+        public static void DeleteYoutubeHistory(string id)
+        {
+            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+            try
+            {
+                string query = "DELETE FROM YoutubeSongList WHERE Id = @Id";
+                var parameters = new[] {
+                    new System.Data.OleDb.OleDbParameter("@Id", id)
+                };
+                DbHelper.Access.ExecuteNonQuery(dbPath, query, null, parameters);
+                AppLogger.Log($"Deleted Youtube History record: {id}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error deleting Youtube history: {ex.Message}");
+                AppLogger.Log($"Error deleting Youtube history: {ex.Message}");
             }
         }
 

@@ -30,8 +30,9 @@ namespace UltimateKtv
                 
                 if (SearchSymbolPanel != null) SearchSymbolPanel.Visibility = Visibility.Visible;
                 
+                bool useYoutubeGrid = (_searchMode == SearchMode.Youtube && _currentQuickMethod != QuickMethod.YoutubeHistory);
                 if (YoutubeThumbnailGrid != null)
-                    YoutubeThumbnailGrid.Visibility = (_searchMode == SearchMode.Youtube) ? Visibility.Visible : Visibility.Collapsed;
+                    YoutubeThumbnailGrid.Visibility = useYoutubeGrid ? Visibility.Visible : Visibility.Collapsed;
 
                 if (QuickResultsContainer != null)
                     QuickResultsContainer.Visibility = Visibility.Visible;

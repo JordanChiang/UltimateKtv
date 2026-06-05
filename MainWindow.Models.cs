@@ -20,6 +20,7 @@ namespace UltimateKtv
         public int AudioTrack { get; set; } = 0; // Default audio track from Song_Track
         public string OrderedBy { get; set; } = string.Empty; // Username who ordered the song
         public bool IsYoutube { get; set; } = false;
+        public string YoutubeId { get; set; } = string.Empty;
         public string? ThumbnailUrl { get; set; }
     }
 

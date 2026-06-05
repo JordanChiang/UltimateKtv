@@ -294,16 +294,40 @@ namespace UltimateKtv
                 ApplyRandomPlayAudioChannel();
 
                 // Clear today's play list on first song, then record this song play
-                // no needed for random play or youtube songs
+                // no needed for random play
                 var songId = _playingSongData.TryGetValue("Song_Id", out var idObj) ? idObj?.ToString() ?? "" : "";
-                if (!string.IsNullOrEmpty(songId) && (!_isRandomSongPlaying) && (!IsPlayingYoutube))
+                if (!string.IsNullOrEmpty(songId) && (!_isRandomSongPlaying))
                 {
-                    if (_isFirstSongInSession)
+                    if (IsPlayingYoutube)
                     {
-                        ClearTodayPlayList();
-                        _isFirstSongInSession = false;
+                        var songNameForLog = _playingSongData.TryGetValue("Song_SongName", out var nObj) ? nObj?.ToString() ?? "Unknown" : "Unknown";
+                        Task.Run(() =>
+                        {
+                            try
+                            {
+                                string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+                                string sql = "UPDATE YoutubeSongList SET PlayCount = PlayCount + 1 WHERE Id = ?";
+                                var parameters = new System.Data.OleDb.OleDbParameter[] { new System.Data.OleDb.OleDbParameter("?", songId) };
+                                DbHelper.Access.ExecuteNonQuery(dbPath, sql, null, parameters);
+                                AppLogger.Log($"DB Write: Incremented PlayCount for Youtube '{songNameForLog}'");
+                                DebugLog($"Successfully saved incremented play count for '{songNameForLog}' to the database.");
+                            }
+                            catch (Exception ex)
+                            {
+                                DebugLog($"Failed to save Youtube play count to database: {ex.Message}");
+                                AppLogger.LogError($"DB Write failed: PlayCount update for '{songNameForLog}'", ex);
+                            }
+                        });
                     }
-                    RecordSongPlay(songId);
+                    else
+                    {
+                        if (_isFirstSongInSession)
+                        {
+                            ClearTodayPlayList();
+                            _isFirstSongInSession = false;
+                        }
+                        RecordSongPlay(songId);
+                    }
                 }
             }
             catch (Exception ex)
@@ -410,10 +434,10 @@ namespace UltimateKtv
                         }
 
                         // Increment play count if position more than user criteria and not already incremented
-                        // no needed for random play or youtube songs
-                        if (!_playCountIncrementedForCurrentSong && progressPercentage > PlayCountUpdatePercentage && (!_isRandomSongPlaying) && (!IsPlayingYoutube))
+                        // no needed for random play
+                        if (!_playCountIncrementedForCurrentSong && progressPercentage > PlayCountUpdatePercentage && (!_isRandomSongPlaying))
                         {
-                            if (_playingSongData != null && _playingSongData.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int playCount))
+                            if (!IsPlayingYoutube && _playingSongData != null && _playingSongData.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int playCount))
                             {
                                 int newPlayCount = playCount + 1;
                                 _playingSongData["Song_PlayCount"] = newPlayCount;

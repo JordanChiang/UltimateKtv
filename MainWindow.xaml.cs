@@ -1105,7 +1105,7 @@ namespace UltimateKtv
             // QuickSongListGrid sets the header via Style so Header might be null, use DisplayIndex 1 as fallback
             string? columnHeader = cell.Column.Header?.ToString();
 
-            if (columnHeader == "歌手" || cell.Column.DisplayIndex == 1) // "歌手" is "Singer"
+            if ((columnHeader == "歌手" || cell.Column.DisplayIndex == 1) && _searchMode != SearchMode.Youtube) // "歌手" is "Singer"
             {
                 // --- Special Action for Singer Column ---
                 // The user clicked on the "Singer" column.
@@ -1177,6 +1177,7 @@ namespace UltimateKtv
         /// </summary>
         private void SingerCell_MouseEnter(object sender, MouseEventArgs e)
         {
+            if (_searchMode == SearchMode.Youtube) return;
             if (sender is Border border)
             {
                 border.Background = TryFindResource("PrimaryHueLightBrush") as Brush ?? new SolidColorBrush(Colors.Gold);
@@ -1194,6 +1195,7 @@ namespace UltimateKtv
         /// </summary>
         private void SingerCell_MouseLeave(object sender, MouseEventArgs e)
         {
+            if (_searchMode == SearchMode.Youtube) return;
             if (sender is Border border)
             {
                 border.Background = Brushes.Transparent;

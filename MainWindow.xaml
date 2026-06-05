@@ -762,6 +762,10 @@
                                 <Button x:Name="PenStyleListBtn" Grid.Column="2" Content="筆劃" Style="{StaticResource FunctionButtonStyle}" Click="PenStyleListBtn_Click"/>
                                 <Button x:Name="EngAndNumListBtn" Grid.Column="3" Content="英數" Style="{StaticResource FunctionButtonStyle}" Click="EngAndNumListBtn_Click"/>
                                 <Button x:Name="SongIdListBtn" Grid.Column="4" Content="編號" Style="{StaticResource FunctionButtonStyle}" Click="SongIdListBtn_Click" Margin="0"/>
+                                
+                                <Button x:Name="YoutubeHistoryBtn" Grid.Column="1" Grid.ColumnSpan="2" Content="Youtube點播記錄" Style="{StaticResource FunctionButtonStyle}" Click="YoutubeHistoryBtn_Click" Margin="0" Visibility="Collapsed"/>
+                                <Button x:Name="ClearYoutubeBtn" Grid.Column="4" Grid.ColumnSpan="2" Content="清除Youtube歌曲" Style="{StaticResource FunctionButtonStyle}" Click="ClearYoutubeBtn_Click" Margin="0" Visibility="Collapsed" Background="#D32F2F" Foreground="White" BorderBrush="#D32F2F" />
+
                                 <Button x:Name="KeyboardListBtn" Grid.Column="5" Content="鍵盤" Style="{StaticResource FunctionButtonStyle}" Click="KeyboardListBtn_Click" Margin="0"/>
                             </Grid>
 
@@ -848,17 +852,15 @@
                                             </Button.Style>
                                         </Button>
                                         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                                            <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="White"
-                                                       FontSize="26" FontWeight="Bold" Margin="0,0,10,0" Visibility="Collapsed"/>
-                                            <ProgressBar x:Name="YoutubeDownloadProgress" Width="100" Height="20" Minimum="0" Maximum="100"
-                                                          Visibility="Collapsed" Value="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                                            <TextBlock x:Name="YoutubeDownloadText" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="White"
-                                                       FontSize="28" FontWeight="Bold"
-                                                       Visibility="Collapsed" Text="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:F1}%}"/>
-                                            
                                             <TextBlock x:Name="QuickSongCountText" Text="" Visibility="Collapsed" Foreground="{DynamicResource MaterialDesignBody}"
-                                                       VerticalAlignment="Center" Margin="10,0,0,0"
+                                                       VerticalAlignment="Center" Margin="0,0,10,0"
                                                        FontSize="{DynamicResource BottomButtonFontSize}" />
+                                                       
+                                            <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="#FFD700"
+                                                       FontSize="22" FontWeight="Bold" Margin="0,0,10,0" Visibility="Collapsed"/>
+                                            <TextBlock x:Name="YoutubeDownloadText" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="#FFD700"
+                                                       FontSize="22" FontWeight="Bold"
+                                                       Visibility="Collapsed" Text="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:F1}%}"/>
                                         </StackPanel>
                                         
                                         <Button x:Name="QuickPageUpBtn" Grid.Column="5" Content="上頁" Width="{StaticResource ExtendedBtnWidth}" Height="42"
@@ -943,8 +945,18 @@
                                             </DataGridTemplateColumn.HeaderStyle>
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <Border Background="Transparent" Padding="6,0,6,0" Cursor="Hand"
+                                                    <Border Background="Transparent" Padding="6,0,6,0"
                                                             MouseEnter="SingerCell_MouseEnter" MouseLeave="SingerCell_MouseLeave">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Cursor" Value="Hand"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding ElementName=YoutubeRadio, Path=IsChecked}" Value="True">
+                                                                        <Setter Property="Cursor" Value="Arrow"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
                                                         <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left">
                                                             <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center"/>
                                                         </Viewbox>
