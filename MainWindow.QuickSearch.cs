@@ -169,6 +169,108 @@ namespace UltimateKtv
         private void SongIdListBtn_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.SongId, sender as Button);
         private void KeyboardListBtn_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.Keyboard, sender as Button);
         private void ExtraListBtn5_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.Extra5, sender as Button);
+        private bool _hasCheckedYoutubeHistoryFiles = false;
+
+        private async Task CheckAndImportLocalYoutubeFiles()
+        {
+            try
+            {
+                var dlFolder = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
+                if (!System.IO.Path.IsPathRooted(dlFolder))
+                {
+                    dlFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dlFolder);
+                }
+
+                if (!string.IsNullOrEmpty(dlFolder) && System.IO.Directory.Exists(dlFolder))
+                {
+                    var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) 
+                    { 
+                        ".mpeg", ".mpg", ".mp4", ".mp3", ".avi", ".mkv" 
+                    };
+                    var files = System.IO.Directory.GetFiles(dlFolder)
+                        .Where(f => allowedExtensions.Contains(System.IO.Path.GetExtension(f)))
+                        .ToArray();
+                        
+                    if (files.Length > 0)
+                    {
+                        var history = SongDatas.GetYoutubeHistory();
+                        var existingFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var item in history)
+                        {
+                            if (item.TryGetValue("FileName", out var fnObj) && fnObj is string fn)
+                            {
+                                existingFileNames.Add(fn);
+                            }
+                        }
+
+                        var newFiles = new List<string>();
+                        foreach (var file in files)
+                        {
+                            var fileName = System.IO.Path.GetFileName(file);
+                            if (!existingFileNames.Contains(fileName))
+                            {
+                                newFiles.Add(file);
+                            }
+                        }
+
+                        if (newFiles.Count > 0)
+                        {
+                            string logMsg = $"Found {newFiles.Count} unrecorded YouTube files in {dlFolder}";
+                            AppLogger.Log(logMsg);
+                            Debug.WriteLine(logMsg);
+
+                            var msg = $"找到 {newFiles.Count} 首未記錄的本機 YouTube 歌曲檔案，是否要把這些歌新增到 Youtube 記錄裏？";
+                            var result = MessageBox.Show(msg, "新增記錄", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                            if (result == MessageBoxResult.Yes)
+                            {
+                                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                                await Task.Run(() =>
+                                {
+                                    foreach (var file in newFiles)
+                                    {
+                                        var nameOnly = System.IO.Path.GetFileNameWithoutExtension(file);
+                                        var item = new SongDisplayItem
+                                        {
+                                            SongName = nameOnly,
+                                            FilePath = file,
+                                            SongId = "", // Url field stays blank
+                                            Language = "",
+                                            Volume = 30
+                                        };
+                                        SongDatas.RecordYoutubeSong(item);
+                                        System.Threading.Thread.Sleep(5); // Pause to prevent OleDb AccessViolation
+                                    }
+                                });
+                                stopwatch.Stop();
+                                
+                                // Invalidate cache so it refreshes
+                                _quickMethodResultsCache[QuickMethod.YoutubeHistory] = new List<SongDisplayItem>();
+                                if (_currentQuickMethod == QuickMethod.YoutubeHistory)
+                                {
+                                    _ = RebuildQuickResultsCache();
+                                }
+                                
+                                string successMsg = $"Successfully imported {newFiles.Count} YouTube files to database. Time taken: {stopwatch.ElapsedMilliseconds} ms.";
+                                AppLogger.Log(successMsg);
+                                Debug.WriteLine(successMsg);
+                            }
+                            else
+                            {
+                                string declinedMsg = "User declined to import unrecorded YouTube files.";
+                                AppLogger.Log(declinedMsg);
+                                Debug.WriteLine(declinedMsg);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("Error in CheckAndImportLocalYoutubeFiles", ex);
+                Debug.WriteLine($"Error in CheckAndImportLocalYoutubeFiles: {ex.Message}");
+            }
+        }
+
         private void YoutubeHistoryBtn_Click(object sender, RoutedEventArgs e) 
         {
             if (_currentQuickMethod == QuickMethod.YoutubeHistory)
@@ -241,12 +343,18 @@ namespace UltimateKtv
         private QuickMethod _previousQuickMethod = QuickMethod.Bopomofo;
 
         // Toggle button handler
-        private void SearchMode_Click(object sender, RoutedEventArgs e)
+        private async void SearchMode_Click(object sender, RoutedEventArgs e)
         {
             if (sender is RadioButton radio)
             {
                 if (radio == YoutubeRadio)
                 {
+                    if (!_hasCheckedYoutubeHistoryFiles)
+                    {
+                        _hasCheckedYoutubeHistoryFiles = true;
+                        await CheckAndImportLocalYoutubeFiles();
+                    }
+
                     // Clear search keywords when entering YouTube mode IMMEDIATELY
                     if (SearchWords != null) SearchWords.Text = string.Empty;
                     _quickMethodSelectedWords[_currentQuickMethod].Clear();
@@ -605,8 +713,9 @@ namespace UltimateKtv
                             string url = h.TryGetValue("Url", out var u) ? u?.ToString() ?? "" : "";
                             string id = h.TryGetValue("Id", out var iObj) ? iObj?.ToString() ?? "" : url;
                             int lengthSeconds = h.TryGetValue("Length", out var lenObj) && int.TryParse(lenObj?.ToString(), out int l) ? l : 0;
-                            string rawPath = h.TryGetValue("DownloadDir", out var d) && h.TryGetValue("FileName", out var fn) 
-                                           ? System.IO.Path.Combine(d?.ToString() ?? "", fn?.ToString() ?? "") : "";
+                            string downloadDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir ?? "";
+                            string rawPath = h.TryGetValue("FileName", out var fn) && fn != null
+                                           ? System.IO.Path.Combine(downloadDir, fn.ToString() ?? "") : "";
                             if (!string.IsNullOrEmpty(rawPath) && !System.IO.Path.IsPathRooted(rawPath))
                             {
                                 rawPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rawPath);

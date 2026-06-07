@@ -64,6 +64,7 @@ namespace UltimateKtv
             {
                 DebugLog($"YouTube: File already exists in cache: {filePath}");
                 song.FilePath = filePath;
+                SongDatas.RecordYoutubeSong(song);
                 AddSongToWaitingList(song);
                 return;
             }
@@ -121,6 +122,7 @@ namespace UltimateKtv
                     {
                         DebugLog($"YouTube: File already exists in cache: {filePath}");
                         song.FilePath = filePath;
+                        SongDatas.RecordYoutubeSong(song);
                         AddSongToWaitingList(song);
                         continue;
                     }

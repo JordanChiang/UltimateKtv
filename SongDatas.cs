@@ -538,7 +538,6 @@ namespace UltimateKtv
                             Lang TEXT(16),
                             PlayCount INTEGER,
                             Length INTEGER,
-                            DownloadDir MEMO,
                             FileName TEXT(255),
                             FileSize INTEGER,
                             Track INTEGER DEFAULT 3,
@@ -576,12 +575,37 @@ namespace UltimateKtv
                     _isYoutubeDbAltered = true;
                 }
 
-                // Check if already exists
-                string query = $"SELECT Id FROM YoutubeSongList WHERE Url = '{song.SongId}'";
-                var existing = DbHelper.Access.GetDataTable(dbPath, query, null);
-                if (existing.Rows.Count > 0)
+                // Check if already exists by Url
+                if (!string.IsNullOrEmpty(song.SongId))
                 {
-                    return existing.Rows[0][0].ToString() ?? "";
+                    string safeUrl = song.SongId.Replace("'", "''");
+                    string query = $"SELECT Id FROM YoutubeSongList WHERE Url = '{safeUrl}'";
+                    var existing = DbHelper.Access.GetDataTable(dbPath, query, null);
+                    if (existing.Rows.Count > 0)
+                    {
+                        return existing.Rows[0][0].ToString() ?? "";
+                    }
+                }
+                
+                // Check if already exists by FileName (handles imported files that have empty Urls)
+                string fileName = Path.GetFileName(song.FilePath) ?? "";
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    string safeFileName = fileName.Replace("'", "''");
+                    string query = $"SELECT Id FROM YoutubeSongList WHERE FileName = '{safeFileName}'";
+                    var existing = DbHelper.Access.GetDataTable(dbPath, query, null);
+                    if (existing.Rows.Count > 0)
+                    {
+                        string existingId = existing.Rows[0][0].ToString() ?? "";
+                        // If we have a SongId (Video ID) now, update the empty Url in the database
+                        if (!string.IsNullOrEmpty(song.SongId))
+                        {
+                            string safeUrl = song.SongId.Replace("'", "''");
+                            string updateSql = $"UPDATE YoutubeSongList SET Url = '{safeUrl}' WHERE Id = '{existingId}' AND (Url IS NULL OR Url = '')";
+                            DbHelper.Access.ExecuteNonQuery(dbPath, updateSql, null);
+                        }
+                        return existingId;
+                    }
                 }
 
                 // Generate new Id (Y0001 format)
@@ -600,15 +624,11 @@ namespace UltimateKtv
                 string name = song.SongName;
                 if (!string.IsNullOrEmpty(name) && name.Length > 40) name = name.Substring(0, 40);
 
-                int lengthSeconds = 0;
-                if (!string.IsNullOrEmpty(song.SingerName) && TimeSpan.TryParse(song.SingerName, out TimeSpan ts))
-                {
-                    lengthSeconds = (int)ts.TotalSeconds;
-                }
+
 
                 string insertSql = @"INSERT INTO YoutubeSongList 
-                    (Id, Name, CreatDate, Url, Singer, Lang, PlayCount, Length, DownloadDir, FileName, FileSize, Track, Volume, WordCount) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    (Id, Name, CreatDate, Url, Singer, Lang, PlayCount, Length, FileName, FileSize, Track, Volume, WordCount) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 
                 var parameters = new List<System.Data.OleDb.OleDbParameter>
                 {
@@ -619,8 +639,7 @@ namespace UltimateKtv
                     new System.Data.OleDb.OleDbParameter("@Singer", ""),
                     new System.Data.OleDb.OleDbParameter("@Lang", song.Language ?? ""),
                     new System.Data.OleDb.OleDbParameter("@PlayCount", System.Data.OleDb.OleDbType.Integer) { Value = 1 },
-                    new System.Data.OleDb.OleDbParameter("@Length", System.Data.OleDb.OleDbType.Integer) { Value = lengthSeconds },
-                    new System.Data.OleDb.OleDbParameter("@DownloadDir", SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir ?? ""),
+                    new System.Data.OleDb.OleDbParameter("@Length", System.Data.OleDb.OleDbType.Integer) { Value = 0 },
                     new System.Data.OleDb.OleDbParameter("@FileName", Path.GetFileName(song.FilePath) ?? ""),
                     new System.Data.OleDb.OleDbParameter("@FileSize", System.Data.OleDb.OleDbType.Integer) { Value = File.Exists(song.FilePath) ? (int)Math.Min(new FileInfo(song.FilePath).Length, int.MaxValue) : 0 },
                     new System.Data.OleDb.OleDbParameter("@Track", System.Data.OleDb.OleDbType.Integer) { Value = 3 },
@@ -639,6 +658,29 @@ namespace UltimateKtv
                 Debug.WriteLine($"Error recording YouTube song: {ex.Message}");
                 AppLogger.Log($"Error recording YouTube song: {ex.Message}");
                 return "";
+            }
+        }
+
+        /// <summary>
+        /// Updates the Length of a recorded YouTube song.
+        /// </summary>
+        public static void UpdateYoutubeSongLength(string songId, int lengthSeconds)
+        {
+            if (string.IsNullOrEmpty(songId) || lengthSeconds <= 0) return;
+            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+            try
+            {
+                string safeSongId = songId.Replace("'", "''");
+                string sql = $"UPDATE YoutubeSongList SET Length = {lengthSeconds} WHERE (Id = '{safeSongId}' OR Url = '{safeSongId}') AND (Length IS NULL OR Length = 0)";
+                int rowsAffected = DbHelper.Access.ExecuteNonQuery(dbPath, sql, null);
+                if (rowsAffected > 0)
+                {
+                    AppLogger.Log($"DB Write: Updated Youtube song {songId} length to {lengthSeconds} seconds.");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError($"Failed to update Youtube song length for {songId}", ex);
             }
         }
 

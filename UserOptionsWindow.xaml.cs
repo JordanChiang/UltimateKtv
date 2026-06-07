@@ -69,11 +69,7 @@ namespace UltimateKtv
             // Enforce constraints
             this.MaxHeight = maxAllowedHeight;
             this.MaxWidth = maxAllowedWidth;
-
-            AppLogger.Log($"[Scaling Debug] Monitor WorkArea: {screenWorkWidth}x{screenWorkHeight}");
-            AppLogger.Log($"[Scaling Debug] Uniform Scale: {uniformScale:F3}");
-            AppLogger.Log($"[Scaling Debug] Final Window Size: {this.Width:F1}x{this.Height:F1}");
-            
+                        
             InitializeAudioRenderer();
             InitializeSettings();
             _isInitializing = false;

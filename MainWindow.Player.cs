@@ -95,7 +95,7 @@ namespace UltimateKtv
 
             if (_playingSongData == null)
             {
-                DebugLog($"     mediaUriElement_MediaOpened but _playingSongData = null");
+                DebugLog($"     but _playingSongData = null");
                 return;
             }
 
@@ -134,7 +134,7 @@ namespace UltimateKtv
                     }
                 }
                 catch {
-                    DebugLog($"     mediaUriElement_MediaOpened: failed to set player.Volume={PlayingFileVolume} ");
+                    DebugLog($"     failed to set player.Volume={PlayingFileVolume} ");
                 }
 
                 LegacyAudioChannelDefinition = SettingsManager.Instance.CurrentSettings.IsLegacyAudioChannelDefinitionEnabled;
@@ -301,8 +301,18 @@ namespace UltimateKtv
                     if (IsPlayingYoutube)
                     {
                         var songNameForLog = _playingSongData.TryGetValue("Song_SongName", out var nObj) ? nObj?.ToString() ?? "Unknown" : "Unknown";
+                        long ticks = player.MediaDuration;
+                        int lengthSeconds = ticks > 0 ? (int)TimeSpan.FromTicks(ticks).TotalSeconds : 0;
+                        
                         Task.Run(() =>
                         {
+                            // 1. Sequentially update length to avoid OleDb parallel access violations
+                            if (lengthSeconds > 0)
+                            {
+                                SongDatas.UpdateYoutubeSongLength(songId, lengthSeconds);
+                            }
+
+                            // 2. Update PlayCount
                             try
                             {
                                 string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
