@@ -1075,6 +1075,7 @@ namespace UltimateKtv
                     SingerGrid.Visibility = Visibility.Collapsed;
                     SongListGrid.Visibility = Visibility.Visible;
                     ShowQuickInputPanels(false);
+                    SetupFilterButtons(MainFilterMode.Singer);
                     
                     e.Handled = true;
                     return;
@@ -1120,8 +1121,9 @@ namespace UltimateKtv
                 SingerGrid.Visibility = Visibility.Collapsed;
                 SongListGrid.Visibility = Visibility.Visible;
                 ShowQuickInputPanels(false); // Hide quick search if it was open
+                SetupFilterButtons(MainFilterMode.Singer);
                 
-                // Cancel long press since we're navigating
+                // Cancel long press since were navigating
                 _longPressTimer?.Stop();
             }
             else
