@@ -169,10 +169,12 @@ namespace UltimateKtv
         private void SongIdListBtn_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.SongId, sender as Button);
         private void KeyboardListBtn_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.Keyboard, sender as Button);
         private void ExtraListBtn5_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.Extra5, sender as Button);
+        public bool HasCheckedYoutubeHistoryFiles { get { return _hasCheckedYoutubeHistoryFiles; } set { _hasCheckedYoutubeHistoryFiles = value; } }
         private bool _hasCheckedYoutubeHistoryFiles = false;
 
-        private async Task CheckAndImportLocalYoutubeFiles()
+        public List<string> GetUnrecordedYoutubeFiles()
         {
+            var newFiles = new List<string>();
             try
             {
                 var dlFolder = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
@@ -203,7 +205,6 @@ namespace UltimateKtv
                             }
                         }
 
-                        var newFiles = new List<string>();
                         foreach (var file in files)
                         {
                             var fileName = System.IO.Path.GetFileName(file);
@@ -212,55 +213,79 @@ namespace UltimateKtv
                                 newFiles.Add(file);
                             }
                         }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("Error in GetUnrecordedYoutubeFiles", ex);
+            }
+            return newFiles;
+        }
 
-                        if (newFiles.Count > 0)
-                        {
-                            string logMsg = $"Found {newFiles.Count} unrecorded YouTube files in {dlFolder}";
-                            AppLogger.Log(logMsg);
-                            Debug.WriteLine(logMsg);
+        public async Task ImportUnrecordedYoutubeFilesAsync(List<string> newFiles)
+        {
+            if (newFiles == null || newFiles.Count == 0) return;
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            await Task.Run(() =>
+            {
+                foreach (var file in newFiles)
+                {
+                    var nameOnly = System.IO.Path.GetFileNameWithoutExtension(file);
+                    var item = new SongDisplayItem
+                    {
+                        SongName = nameOnly,
+                        FilePath = file,
+                        SongId = "", // Url field stays blank
+                        Language = "",
+                        Volume = 30
+                    };
+                    SongDatas.RecordYoutubeSong(item);
+                    System.Threading.Thread.Sleep(5); // Pause to prevent OleDb AccessViolation
+                }
+            });
+            stopwatch.Stop();
+            
+            // Invalidate cache so it refreshes
+            _quickMethodResultsCache[QuickMethod.YoutubeHistory] = new List<SongDisplayItem>();
+            if (_currentQuickMethod == QuickMethod.YoutubeHistory)
+            {
+                _ = RebuildQuickResultsCache();
+            }
+            
+            string successMsg = $"Successfully imported {newFiles.Count} YouTube files to database. Time taken: {stopwatch.ElapsedMilliseconds} ms.";
+            AppLogger.Log(successMsg);
+            Debug.WriteLine(successMsg);
+        }
 
-                            var msg = $"找到 {newFiles.Count} 首未記錄的本機 YouTube 歌曲檔案，是否要把這些歌新增到 Youtube 記錄裏？";
-                            var result = MessageBox.Show(msg, "新增記錄", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                            if (result == MessageBoxResult.Yes)
-                            {
-                                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                                await Task.Run(() =>
-                                {
-                                    foreach (var file in newFiles)
-                                    {
-                                        var nameOnly = System.IO.Path.GetFileNameWithoutExtension(file);
-                                        var item = new SongDisplayItem
-                                        {
-                                            SongName = nameOnly,
-                                            FilePath = file,
-                                            SongId = "", // Url field stays blank
-                                            Language = "",
-                                            Volume = 30
-                                        };
-                                        SongDatas.RecordYoutubeSong(item);
-                                        System.Threading.Thread.Sleep(5); // Pause to prevent OleDb AccessViolation
-                                    }
-                                });
-                                stopwatch.Stop();
-                                
-                                // Invalidate cache so it refreshes
-                                _quickMethodResultsCache[QuickMethod.YoutubeHistory] = new List<SongDisplayItem>();
-                                if (_currentQuickMethod == QuickMethod.YoutubeHistory)
-                                {
-                                    _ = RebuildQuickResultsCache();
-                                }
-                                
-                                string successMsg = $"Successfully imported {newFiles.Count} YouTube files to database. Time taken: {stopwatch.ElapsedMilliseconds} ms.";
-                                AppLogger.Log(successMsg);
-                                Debug.WriteLine(successMsg);
-                            }
-                            else
-                            {
-                                string declinedMsg = "User declined to import unrecorded YouTube files.";
-                                AppLogger.Log(declinedMsg);
-                                Debug.WriteLine(declinedMsg);
-                            }
-                        }
+        public async Task CheckAndImportLocalYoutubeFiles(bool silent = false)
+        {
+            try
+            {
+                var newFiles = GetUnrecordedYoutubeFiles();
+
+                if (newFiles.Count > 0)
+                {
+                    string logMsg = $"Found {newFiles.Count} unrecorded YouTube files in cache";
+                    AppLogger.Log(logMsg);
+                    System.Diagnostics.Debug.WriteLine(logMsg);
+
+                    MessageBoxResult result = MessageBoxResult.Yes;
+                    if (!silent)
+                    {
+                        var msg = $"找到 {newFiles.Count} 首未記錄的本機 YouTube 歌曲檔案，是否要把這些歌新增到 Youtube 記錄裏？";
+                        result = MessageBox.Show(msg, "新增記錄", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    }
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        await ImportUnrecordedYoutubeFilesAsync(newFiles);
+                    }
+                    else
+                    {
+                        string declinedMsg = "User declined to import unrecorded YouTube files.";
+                        AppLogger.Log(declinedMsg);
+                        System.Diagnostics.Debug.WriteLine(declinedMsg);
                     }
                 }
             }

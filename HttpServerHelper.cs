@@ -664,6 +664,26 @@ public class HttpServerHelper
 		}
 	}
 
+	public static string QueryYoutubeQueue()
+	{
+	    try
+	    {
+	        object status = new { count = 0, isDownloading = false };
+	        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+	        {
+	            if (System.Windows.Application.Current?.MainWindow is UltimateKtv.MainWindow mainWindow)
+	            {
+	                status = mainWindow.GetYoutubeDownloadQueueStatus();
+	            }
+	        });
+	        return JsonConvert.SerializeObject(status);
+	    }
+	    catch
+	    {
+	        return JsonConvert.SerializeObject(new { count = 0, isDownloading = false });
+	    }
+	}
+
 	public static string QueryHostServerInfo(string value, object mainDataContext)
 	{
 		// Return basic server info
@@ -1169,6 +1189,7 @@ public class HttpServerHelper
 	            };
 
 	            bool downloadQueued = false;
+	            bool isDownloaded = false;
 	            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
 	            {
 	                try
@@ -1176,9 +1197,16 @@ public class HttpServerHelper
 	                    var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
 	                    if (mainWindow != null)
 	                    {
-                            if (mainWindow.IsDownloadingYoutube)
+                            // Check if file already exists in cache directory
+                            string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
+                            if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
+                            string vId = string.IsNullOrEmpty(songItem.YoutubeId) ? songItem.SongId : songItem.YoutubeId;
+                            string safeName = string.Join("_", songItem.SongName.Split(Path.GetInvalidFileNameChars()));
+                            string filePath = Path.Combine(cacheDir, $"{safeName}_{vId}.mp4");
+
+                            if (File.Exists(filePath))
                             {
-                                return; // Handled below by returning error
+                                isDownloaded = true;
                             }
 
                             // Trigger the host-side download using reflection since it's a private method
@@ -1197,10 +1225,10 @@ public class HttpServerHelper
 
                 if (!downloadQueued)
                 {
-                    return JsonConvert.SerializeObject(new { success = false, message = "已有下載正在進行中，請稍候再試" });
+                    return JsonConvert.SerializeObject(new { success = false, message = "無法將歌曲加入下載佇列" });
                 }
 
-	            return JsonConvert.SerializeObject(new { success = true, message = "點歌成功" });
+	            return JsonConvert.SerializeObject(new { success = true, message = "點歌成功", isDownloaded = isDownloaded });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1208,6 +1236,140 @@ public class HttpServerHelper
 	            return ErrorResult("Order Error", ex.Message);
 	        }
 	    }
-	
+
+	    public static string OrderYoutubeHistory(string id, string userName, object mainDataContext)
+	    {
+	        try
+	        {
+	            var history = SongDatas.GetYoutubeHistory();
+	            var item = history.FirstOrDefault(h => h.TryGetValue("Id", out var idObj) && idObj?.ToString() == id);
+	            if (item == null) return ErrorResult("Not Found", "無法取得歷史記錄");
+
+	            string url = item.TryGetValue("Url", out var u) ? u?.ToString() ?? "" : "";
+	            string name = item.TryGetValue("Name", out var n) ? n?.ToString() ?? "" : "";
+	            int lengthSeconds = item.TryGetValue("Length", out var lenObj) && int.TryParse(lenObj?.ToString(), out int l) ? l : 0;
+	            string downloadDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir ?? "";
+	            string rawPath = item.TryGetValue("FileName", out var fn) && fn != null
+	                           ? System.IO.Path.Combine(downloadDir, fn.ToString() ?? "") : "";
+
+	            if (!string.IsNullOrEmpty(rawPath) && !System.IO.Path.IsPathRooted(rawPath))
+	            {
+	                rawPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rawPath);
+	            }
+
+	            var songItem = new UltimateKtv.SongDisplayItem
+	            {
+	                SongId = string.IsNullOrEmpty(url) ? id : url,
+	                SongName = name,
+	                SingerName = lengthSeconds > 0 ? TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss") : "未知長度",
+	                Language = item.TryGetValue("Lang", out var lang) ? lang?.ToString() ?? "" : "",
+	                FilePath = rawPath,
+	                IsYoutube = true,
+	                YoutubeId = url,
+	                Volume = item.TryGetValue("Volume", out var v) && int.TryParse(v?.ToString(), out int iv) ? iv : 30,
+	                OrderedBy = !string.IsNullOrEmpty(userName) ? userName : "網路點歌",
+	                AudioTrack = 0
+	            };
+
+	            bool fileExists = System.IO.File.Exists(rawPath);
+	            if (!fileExists && string.IsNullOrEmpty(url))
+	            {
+	                return ErrorResult("File Not Found", "找不到本機檔案，且沒有YouTube連結，無法播放。");
+	            }
+
+	            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+	            {
+	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
+	                if (mainWindow != null)
+	                {
+	                    var method = mainWindow.GetType().GetMethod("DownloadYoutubeVideo",
+	                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+	                    method?.Invoke(mainWindow, new object[] { songItem });
+	                }
+	            });
+
+	            return JsonConvert.SerializeObject(new { success = true, isDownloaded = fileExists, message = "點歌成功" });
+	        }
+	        catch (Exception ex)
+	        {
+	            System.Diagnostics.Debug.WriteLine($"[OrderYoutubeHistory] Exception: {ex.Message}");
+	            return ErrorResult("Order Error", ex.Message);
+	        }
+	    }
+
+        public static async Task<string> CheckNewYoutubeAsync()
+        {
+            try
+            {
+                int count = 0;
+                if (System.Windows.Application.Current != null)
+                {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (System.Windows.Application.Current.MainWindow is UltimateKtv.MainWindow mainWindow)
+                        {
+                            var files = mainWindow.GetUnrecordedYoutubeFiles();
+                            count = files?.Count ?? 0;
+                        }
+                    });
+                }
+                return JsonConvert.SerializeObject(new { count = count });
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new { count = 0, error = ex.Message });
+            }
+        }
+
+        public static async Task<string> ImportNewYoutubeAsync()
+        {
+            try
+            {
+                if (System.Windows.Application.Current != null)
+                {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                    {
+                        if (System.Windows.Application.Current.MainWindow is UltimateKtv.MainWindow mainWindow)
+                        {
+                            var files = mainWindow.GetUnrecordedYoutubeFiles();
+                            if (files != null && files.Count > 0)
+                            {
+                                await mainWindow.ImportUnrecordedYoutubeFilesAsync(files);
+                            }
+                        }
+                    }).Task.Unwrap();
+                }
+                return JsonConvert.SerializeObject(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new { success = false, error = ex.Message });
+            }
+        }
+
+		public static string QueryYoutubeHistory(string page, string rows)
+		{
+			try
+			{
+				var history = SongDatas.GetYoutubeHistory();
+				if (history == null || history.Count == 0)
+					return EmptyResult;
+
+				if (string.IsNullOrEmpty(rows) || !IsNumeric(rows))
+					return JsonConvert.SerializeObject(history);
+
+				int pageIndex = (string.IsNullOrEmpty(page) || !IsNumeric(page)) ? 1 : Convert.ToInt32(page) + 1;
+				int pageSize = Convert.ToInt32(rows);
+				var pagedHistory = history.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+
+				return JsonConvert.SerializeObject(pagedHistory);
+			}
+			catch (Exception ex)
+			{
+				System.Diagnostics.Debug.WriteLine($"[QueryYoutubeHistory] Exception: {ex.Message}");
+				return ErrorResult("Query Error", ex.Message);
+			}
+		}
+
 	    #endregion
 	}

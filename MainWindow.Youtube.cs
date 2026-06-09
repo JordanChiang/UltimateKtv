@@ -19,11 +19,18 @@ namespace UltimateKtv
         private static readonly ConcurrentDictionary<string, string> _youtubeStreamUrlCache = new();
         private ConcurrentQueue<SongDisplayItem> _youtubeDownloadQueue = new();
 
+        public object GetYoutubeDownloadQueueStatus()
+        {
+            return new { count = _youtubeDownloadQueue.Count, isDownloading = IsDownloadingYoutube };
+        }
+
         private void UpdateYoutubeDownloadQueueUI()
         {
+            int remaining = _youtubeDownloadQueue.Count;
+            HttpServer.BroadcastEvent("YoutubeQueueUpdate", new { count = remaining, isDownloading = IsDownloadingYoutube });
+
             if (YoutubeStatusText != null)
             {
-                int remaining = _youtubeDownloadQueue.Count;
                 if (remaining > 0)
                 {
                     YoutubeStatusText.Text = $" 下載中.. (剩餘: {remaining})";
@@ -257,6 +264,7 @@ namespace UltimateKtv
             if (YoutubeStatusText != null) YoutubeStatusText.Visibility = Visibility.Collapsed;
             _youtubeDownloadCts?.Dispose();
             _youtubeDownloadCts = null;
+            UpdateYoutubeDownloadQueueUI();
         }
 
 

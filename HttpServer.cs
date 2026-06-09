@@ -277,6 +277,11 @@ public class HttpServer : IDisposable
                 "singerphoto" => await HandleSingerPhoto(context, queryParams),
                 "youtubesearch" => await HttpServerHelper.SearchYoutubeAsync(value),
                 "orderyoutube" => await HttpServerHelper.OrderYoutubeAsync(value, user, MainDataContext!),
+                "orderyoutubehistory" => HttpServerHelper.OrderYoutubeHistory(value, user, MainDataContext!),
+                "queryyoutubehistory" => HttpServerHelper.QueryYoutubeHistory(page, rows),
+                "checknewyoutube" => await HttpServerHelper.CheckNewYoutubeAsync(),
+                "importnewyoutube" => await HttpServerHelper.ImportNewYoutubeAsync(),
+                "queryyoutubequeue" => HttpServerHelper.QueryYoutubeQueue(),
 				_ => JsonConvert.SerializeObject(new JArray())
 			};
 			
@@ -307,7 +312,7 @@ public class HttpServer : IDisposable
             "movetofirst" or "removefromlist" or "movetonext" or
             "volup" or "voldown" or "vollock" or
             "pitchup" or "pitchdown" or "pitchreset" or "quit" or
-			"debug" or "events" or "singerphoto" or "youtubesearch" or "orderyoutube" => true,
+			"debug" or "events" or "singerphoto" or "youtubesearch" or "orderyoutube" or "queryyoutubehistory" or "orderyoutubehistory" or "checknewyoutube" or "importnewyoutube" or "queryyoutubequeue" => true,
 			_ => false
 		};
 	}

@@ -983,7 +983,10 @@
                 <h2>我的最愛</h2>
             </div>
             <div class="menu-card" onclick="showSection('youtubeSong')">
-                <div class="icon">▶️</div>
+                <div class="icon" style="position: relative;">
+                    ▶️
+                    <span class="youtube-queue-badge" style="display: none; position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 14px; font-weight: bold; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10;">0</span>
+                </div>
                 <h2>Youtube點歌</h2>
             </div>
             <div class="menu-card" onclick="showSection('numberSong')">
@@ -1106,13 +1109,17 @@
         <div id="youtubeSong" class="content-area">
             <div class="content-header">
                 <button class="back-btn" onclick="showMainMenu()">← 返回主選單</button>
-                <h2>Youtube點歌</h2>
+                <h2 style="display: flex; align-items: center;">
+                    Youtube點歌
+                    <span class="youtube-queue-badge" style="display: none; background: #e74c3c; color: white; border-radius: 12px; padding: 2px 10px; font-size: 14px; font-weight: bold; margin-left: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">下載中: 0</span>
+                </h2>
             </div>
 
             <div class="search-box">
                 <input type="text" id="youtubeSearchInput" placeholder="輸入YouTube搜尋關鍵字..."
-                    onkeypress="if(event.key==='Enter')searchYoutube()">
-                <button onclick="searchYoutube()">🔍 搜尋</button>
+                    onkeypress="if(event.key==='Enter')searchYoutube()" style="flex: 0 1 50%; width: 50%;">
+                <button onclick="searchYoutube()" style="white-space: nowrap; flex-shrink: 0;">🔍 搜尋</button>
+                <button onclick="loadYoutubeHistory()" style="background: #4CAF50; white-space: nowrap; flex-shrink: 0;">點播記錄</button>
             </div>
 
             <div id="youtubeResults" class="song-list"></div>
@@ -1286,8 +1293,17 @@
 
             eventSource = new EventSource('?queryType=events');
 
-            eventSource.addEventListener('connected', (e) => {
+            eventSource.addEventListener('connected', async (e) => {
                 console.log('[SSE] Connected to server');
+                try {
+                    const res = await fetch('?queryType=queryyoutubequeue');
+                    if (res.ok) {
+                        const data = await res.json();
+                        updateYoutubeQueueBadge(data.count);
+                    }
+                } catch(err) {
+                    console.error('Failed to fetch initial youtube queue count', err);
+                }
             });
 
             eventSource.addEventListener('playlistChanged', (e) => {
@@ -1335,6 +1351,36 @@
                 }
                 showToast(`YouTube 下載失敗: ${data.message}`, 'error');
             });
+
+            eventSource.addEventListener('YoutubeQueueUpdate', (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    updateYoutubeQueueBadge(data.count, data.isDownloading);
+                } catch (err) {
+                    console.error('Failed to parse YoutubeQueueUpdate', err);
+                }
+            });
+
+            function updateYoutubeQueueBadge(count, isDownloading) {
+                const badges = document.querySelectorAll('.youtube-queue-badge');
+                badges.forEach(badge => {
+                    if (count > 0 || isDownloading) {
+                        // If it's the header badge, prefix with text
+                        if (badge.tagName.toLowerCase() === 'span' && badge.parentElement.tagName.toLowerCase() === 'h2') {
+                            if (count > 0) {
+                                badge.innerText = `下載中.. (剩餘: ${count})`;
+                            } else {
+                                badge.innerText = '下載中..';
+                            }
+                        } else {
+                            badge.innerText = count > 0 ? count : '↓';
+                        }
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                });
+            }
 
             eventSource.onerror = (e) => {
                 console.error('[SSE] Connection error, reconnecting in 5s...');
@@ -2535,6 +2581,115 @@
             }
         }
 
+        // Add method to order a YouTube song from history
+        async function orderYoutubeHistory(dbId, videoId) {
+            const orderBtn = document.getElementById(`yt-order-btn-${videoId}`);
+            if (!orderBtn) return;
+            const originalText = orderBtn.innerText;
+            orderBtn.innerText = '處理中...';
+            orderBtn.disabled = true;
+
+            try {
+                const response = await fetch(`?queryType=orderyoutubehistory&value=${encodeURIComponent(dbId)}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('點歌成功');
+                    
+                    if (result.isDownloaded) {
+                        // It's already played locally, no download needed
+                        orderBtn.innerText = '點歌';
+                        orderBtn.disabled = false;
+                    } else {
+                        const progressContainer = document.getElementById(`yt-progress-container-${videoId}`);
+                        const progressText = document.getElementById(`yt-progress-text-${videoId}`);
+                        const progressBar = document.getElementById(`yt-progress-${videoId}`);
+                        
+                        if (progressContainer) progressContainer.style.display = 'block';
+                        if (progressText) progressText.innerText = '下載中... 0%';
+                        if (progressBar) progressBar.style.width = '0%';
+                        
+                        youtubeDownloadStates.set(videoId, { status: 'downloading', btn: orderBtn });
+                    }
+                } else {
+                    showToast(result.message || '點歌失敗', 'error');
+                    orderBtn.innerText = '點歌';
+                    orderBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Youtube order history error:', error);
+                showToast('伺服器錯誤', 'error');
+                orderBtn.innerText = '點歌';
+                orderBtn.disabled = false;
+            }
+        }
+
+        let isCheckingYoutubeHistory = false;
+
+        // Load YouTube history
+        async function loadYoutubeHistory() {
+            const resultsDiv = document.getElementById('youtubeResults');
+            const loadingDiv = document.getElementById('youtubeResults-loading');
+
+            resultsDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+
+            try {
+                if (!isCheckingYoutubeHistory) {
+                    isCheckingYoutubeHistory = true;
+                    try {
+                        const checkRes = await fetch('?queryType=checknewyoutube');
+                        const checkData = await checkRes.json();
+                        if (checkData.count > 0) {
+                            if (confirm(`找到 ${checkData.count} 首未記錄的本機 YouTube 歌曲檔案，是否要把這些歌新增到 點播記錄 裏？`)) {
+                                await fetch('?queryType=importnewyoutube');
+                            }
+                        }
+                    } catch (e) { console.error('check new youtube error', e); }
+                }
+
+                const response = await fetch(`?queryType=queryyoutubehistory`);
+                const history = await response.json();
+                loadingDiv.style.display = 'none';
+
+                if (!history || history.length === 0) {
+                    resultsDiv.innerHTML = '<div class="no-results">無點播記錄</div>';
+                    return;
+                }
+
+                let html = '';
+                history.forEach(item => {
+                    const dbId = item.Id;
+                    const videoId = item.Url || item.Id;
+                    const title = item.Name;
+                    html += `
+                        <div class="song-item wrap-mode" style="flex-direction: column; align-items: stretch;">
+                            <div style="display: flex; align-items: center; width: 100%;">
+                                <div class="song-info">
+                                    <span class="song-name" style="flex: 1;">${title}</span>
+                                </div>
+                                <button id="yt-order-btn-${videoId}" class="order-btn" onclick="orderYoutubeHistory('${dbId}', '${videoId}')" style="margin-left: 10px; white-space: nowrap;">點歌</button>
+                            </div>
+                            <div id="yt-progress-container-${videoId}" style="display: none; width: 100%; margin-top: 10px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 13px; color: #f57c00; font-weight: bold; margin-bottom: 4px;">
+                                    <span id="yt-progress-text-${videoId}">下載中... 0%</span>
+                                </div>
+                                <div style="width: 100%; height: 8px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; overflow: hidden;">
+                                    <div id="yt-progress-${videoId}" style="height: 100%; background: linear-gradient(90deg, #ff9800, #fbc02d); width: 0%; transition: width 0.3s; border-radius: 4px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                resultsDiv.innerHTML = html;
+                checkAndApplyWrapMode('youtubeResults');
+            } catch (error) {
+                console.error('Load history failed:', error);
+                loadingDiv.style.display = 'none';
+                resultsDiv.innerHTML = '<div class="no-results">載入失敗，請稍後再試</div>';
+            }
+        }
+
         // Order a YouTube video
         async function orderYoutube(videoId) {
             const orderBtn = document.getElementById(`yt-order-btn-${videoId}`);
@@ -2552,9 +2707,18 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    if (progressContainer) progressContainer.style.display = 'block';
-                    if (progress) progress.style.width = '0%';
-                    if (progressText) progressText.innerText = '準備下載...';
+                    if (data.isDownloaded) {
+                        if (orderBtn) {
+                            orderBtn.innerText = '點歌成功';
+                            orderBtn.style.background = '#4CAF50';
+                            orderBtn.disabled = true;
+                        }
+                        showToast('已加入待播清單', 'success');
+                    } else {
+                        if (progressContainer) progressContainer.style.display = 'block';
+                        if (progress) progress.style.width = '0%';
+                        if (progressText) progressText.innerText = '準備下載...';
+                    }
                 } else {
                     if (orderBtn) {
                         orderBtn.disabled = false;
