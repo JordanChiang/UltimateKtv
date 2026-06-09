@@ -1029,29 +1029,37 @@
         <div id="singerSong" class="content-area">
             <div class="content-header">
                 <button class="back-btn" onclick="showMainMenu()">← 返回主選單</button>
+                <button id="backToSingerListBtn" class="back-btn" onclick="backToSingerList()" style="display:none; margin-left: 10px;">← 返回前頁</button>
                 <h2>歌星點歌</h2>
             </div>
 
-            <div class="filter-buttons">
-                <button class="filter-btn" onclick="searchSingerByType(0)">男歌星</button>
-                <button class="filter-btn" onclick="searchSingerByType(1)">女歌星</button>
-                <button class="filter-btn" onclick="searchSingerByType(2)">團體</button>
-                <button class="filter-btn" onclick="searchSingerByType(4)">外國男</button>
-                <button class="filter-btn" onclick="searchSingerByType(5)">外國女</button>
-                <button class="filter-btn" onclick="searchSingerByType(6)">外國團</button>
-                <button class="filter-btn" onclick="searchSingerByType(99)">其它</button>
-                <button class="filter-btn" onclick="searchSingerByType('')">全部</button>
+            <div id="singerSearchArea">
+                <div class="filter-buttons">
+                    <button class="filter-btn" onclick="searchSingerByType(0)">男歌星</button>
+                    <button class="filter-btn" onclick="searchSingerByType(1)">女歌星</button>
+                    <button class="filter-btn" onclick="searchSingerByType(2)">團體</button>
+                    <button class="filter-btn" onclick="searchSingerByType(4)">外國男</button>
+                    <button class="filter-btn" onclick="searchSingerByType(5)">外國女</button>
+                    <button class="filter-btn" onclick="searchSingerByType(6)">外國團</button>
+                    <button class="filter-btn" onclick="searchSingerByType(99)">其它</button>
+                    <button class="filter-btn" onclick="searchSingerByType('')">全部</button>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="singerSearch" placeholder="輸入歌手名稱..."
+                        onkeypress="if(event.key==='Enter')searchSinger()">
+                    <button onclick="searchSinger()">🔍 搜尋</button>
+                </div>
+
+                <div id="singerResults" class="song-list"></div>
+                <div id="singerResults-loading" class="loading" style="display: none;">載入中</div>
+                <div id="singerPagination" class="pagination"></div>
             </div>
 
-            <div class="search-box">
-                <input type="text" id="singerSearch" placeholder="輸入歌手名稱..."
-                    onkeypress="if(event.key==='Enter')searchSinger()">
-                <button onclick="searchSinger()">🔍 搜尋</button>
+            <div id="singerSongListArea" style="display: none;">
+                <div id="singerSongResults" class="song-list"></div>
+                <div id="singerSongResults-loading" class="loading" style="display: none;">載入中</div>
             </div>
-
-            <div id="singerResults" class="song-list"></div>
-            <div id="singerResults-loading" class="loading" style="display: none;">載入中</div>
-            <div id="singerPagination" class="pagination"></div>
         </div>
 
         <!-- New Song Section -->
@@ -1206,9 +1214,9 @@
         // Global variables
         let currentLang = '';
         let statusInterval;
-        let currentPage = { searchResults: 0, singerResults: 0, newSongResults: 0, rankingSongResults: 0, favoriteSongResults: 0 };
+        let currentPage = { searchResults: 0, singerResults: 0, newSongResults: 0, rankingSongResults: 0, favoriteSongResults: 0, singerSongResults: 0 };
 
-        let lastSearchParams = { searchResults: '', singerResults: '', newSongResults: '', rankingSongResults: '', favoriteSongResults: '' };
+        let lastSearchParams = { searchResults: '', singerResults: '', newSongResults: '', rankingSongResults: '', favoriteSongResults: '', singerSongResults: '' };
         let currentUsername = '';
         let contextMenuTargetId = '';
         let eventSource = null; // SSE connection for real-time updates
@@ -1262,7 +1270,7 @@
             console.log('[KTV] Web service started. Reference width:', document.querySelector('.container')?.offsetWidth);
 
             // Setup infinite scroll for all song lists
-            ['searchResults', 'singerResults', 'newSongResults', 'rankingSongResults', 'favoriteSongResults'].forEach(id => {
+            ['searchResults', 'singerResults', 'newSongResults', 'rankingSongResults', 'favoriteSongResults', 'singerSongResults'].forEach(id => {
                 const container = document.getElementById(id);
                 if (container) {
                     container.addEventListener('scroll', () => {
@@ -1475,6 +1483,12 @@
                     document.getElementById('singerResults').innerHTML = '';
                     document.getElementById('singerPagination').innerHTML = '';
                     document.querySelectorAll('#singerSong .filter-btn').forEach(btn => btn.classList.remove('active'));
+                    
+                    if (document.getElementById('singerSearchArea')) {
+                        document.getElementById('singerSearchArea').style.display = 'block';
+                        document.getElementById('singerSongListArea').style.display = 'none';
+                        document.getElementById('backToSingerListBtn').style.display = 'none';
+                    }
                 }
 
                 // Auto-load data for certain sections
@@ -2114,23 +2128,38 @@
         }
 
         // This function is called when a singer item is clicked from the singer list.
-        // It will switch to the "Search Song" view and show songs by that singer.
+        // It will switch to the song list view within the same section and show songs by that singer.
         async function searchSongsBySinger(singerName) {
-            // Switch to the search song tab
-            showSection('searchSong');
+            // Hide the singer search area and show the song list area
+            document.getElementById('singerSearchArea').style.display = 'none';
+            document.getElementById('singerSongListArea').style.display = 'block';
+            document.getElementById('backToSingerListBtn').style.display = 'inline-block';
 
-            // Set the search input value to the singer's name
-            const searchInput = document.getElementById('songSearch');
-            if (searchInput) {
-                searchInput.value = singerName;
+            // Now perform the search for songs by this singer
+            const resultsDiv = document.getElementById('singerSongResults');
+            resultsDiv.innerHTML = '<div class="loading">搜尋中</div>';
+            currentPage.singerSongResults = 0;
+
+            try {
+                let conditions = [`Song_Singer LIKE '%${singerName}%'`];
+                const conditionString = conditions.join(' AND ');
+                let url = `?queryType=querysong&page=0&rows=50&condition=${encodeURIComponent(conditionString)}`;
+                
+                lastSearchParams.singerSongResults = url;
+                const response = await fetch(url);
+                const data = await response.json();
+                displaySongs(data, 'singerSongResults');
+            } catch (error) {
+                console.error('Search failed:', error);
+                resultsDiv.innerHTML = '<div class="no-results">搜尋失敗，請稍後再試</div>';
             }
+        }
 
-            // Clear language filters
-            currentLang = '';
-            document.querySelectorAll('#searchSong .filter-btn').forEach(btn => btn.classList.remove('active'));
-
-            // Trigger the search
-            await searchSongs();
+        function backToSingerList() {
+            document.getElementById('singerSongListArea').style.display = 'none';
+            document.getElementById('backToSingerListBtn').style.display = 'none';
+            document.getElementById('singerSearchArea').style.display = 'block';
+            document.getElementById('singerSongResults').innerHTML = '';
         }
 
 
