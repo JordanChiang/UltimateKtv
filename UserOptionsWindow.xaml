@@ -710,6 +710,86 @@
                             </Grid>
                         </Border>
                     </Grid>
+
+                    <!-- Row 12: Recording settings (Enable Recording & Audio Input) -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Enable Recording (Left) -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="啟用錄音功能" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ToggleButton Name="EnableRecordingToggle" Grid.Column="1"
+                                             Style="{StaticResource ThemedSwitchToggleButton}"
+                                             VerticalAlignment="Center"
+                                             Checked="EnableRecordingToggle_Checked"
+                                             Unchecked="EnableRecordingToggle_Unchecked"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Audio Input Device (Right) -->
+                        <Border x:Name="RecordingDeviceBorder" Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="錄音輸入裝置" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,10,0"/>
+                                <ComboBox x:Name="AudioInputDeviceComboBox" Grid.Column="1"
+                                          Height="40"
+                                          FontSize="{StaticResource OptionsSmallFontSize}"
+                                          Foreground="{DynamicResource MaterialDesignBody}"
+                                          VerticalAlignment="Center"
+                                          VerticalContentAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Row 13: Recording Path (Full Width) -->
+                    <Grid Margin="0,2">
+                        <Border x:Name="RecordingPathBorder" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Column="0" Text="錄音檔存放路徑" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,20,0"/>
+                                
+                                <TextBlock x:Name="RecordingPathText" Grid.Column="1"
+                                           Text="Recordings"
+                                           FontSize="{StaticResource OptionsDescriptionFontSize}" 
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
+                                           Foreground="{DynamicResource MaterialDesignBody}"/>
+                                
+                                <Button x:Name="BrowseRecordingPathButton" Grid.Column="2"
+                                        Content="瀏覽..."
+                                        Style="{DynamicResource MaterialDesignOutlinedButton}"
+                                        FontSize="{StaticResource OptionsSmallFontSize}"
+                                        Height="35"
+                                        Margin="20,0,0,0"
+                                        Click="BrowseRecordingPath_Click"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </StackPanel>
             </ScrollViewer>
 

@@ -74,6 +74,15 @@ namespace UltimateKtv
             _currentLyricIndex = -1;
             _videoDisplayWindow?.UpdateLyrics("", Visibility.Collapsed);
             
+            try
+            {
+                RecordingManager.Instance.StopRecording();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("Error stopping recording in mediaUriElement_MediaFailed", ex);
+            }
+            
             DebugLog("mediaUriElement_MediaFailed: Lock released (_isTransitioningSong = false).");
             SetPlayerControlsEnabled(true); // Re-enable controls so the user can try another action
             // Optionally, try to play the next song in the list automatically on failure.
@@ -237,6 +246,16 @@ namespace UltimateKtv
                 // Show marquee with song name and singer name before playing
                 var songName = _playingSongData.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? "未知歌曲" : "未知歌曲";
                 var singerName = _playingSongData.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? "未知歌手" : "未知歌手";
+                
+                try
+                {
+                    RecordingManager.Instance.StartRecording(songName, singerName);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Error starting recording in mediaUriElement_MediaOpened", ex);
+                }
+
                 var songCount = _playingSongData.TryGetValue("Song_PlayCount", out var pcObj);
                 // Display marquee on main window                 
                 MarqueeAPI.ShowCustomStaticText(
@@ -370,6 +389,15 @@ namespace UltimateKtv
             DebugLog("[MainPlayer] MediaEnded.");
 
             SaveCurrentSongVolume();
+
+            try
+            {
+                RecordingManager.Instance.StopRecording();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("Error stopping recording in MediaUriElement_MediaEnded", ex);
+            }
 
             // Stop all marquees when media ends
             MarqueeAPI.StopAll();
@@ -559,6 +587,16 @@ namespace UltimateKtv
                 SaveCurrentSongVolume();
                 AppLogger.Log("User action: Skip song button clicked");
                 DebugLog("SkipSong_Click: Skip song button clicked");
+
+                try
+                {
+                    RecordingManager.Instance.StopRecording();
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Error stopping recording in SkipSong_Click", ex);
+                }
+
                 mediaUriElement.Stop();
                 mediaUriElement.Source = null; // Clear source to release resources immediately
                 _isRandomSongPlaying = false;
@@ -614,6 +652,15 @@ namespace UltimateKtv
                     // stopped or closed state.
                     // Simply setting MediaPosition = 0 is not safe if the graph is torn down.
                     DebugLog($"Repeat_Click: Re-playing '{PlayingFilePath}'");
+
+                    try
+                    {
+                        RecordingManager.Instance.StopRecording();
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.LogError("Error stopping recording in Repeat_Click", ex);
+                    }
 
                     // Stop any current playback and release resources
                     SafeStop(mediaUriElement, nameof(mediaUriElement));

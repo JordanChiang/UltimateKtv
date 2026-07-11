@@ -126,5 +126,15 @@ namespace UltimateKtv
 
         [Description("語系點歌複選: 決定語系點歌時是否可以同時選擇多個語系。 true=開啟, false=關閉")]
         public bool IsLanguageMultiSelect { get; set; } = false;
+
+        [Description("啟用錄音功能: 決定是否啟用錄音功能。 true=開啟, false=關閉")]
+        public bool EnableRecording { get; set; } = false;
+
+        [Description("錄音輸入裝置: 設定錄音使用的音訊輸入裝置。")]
+        public string RecordingDevice { get; set; } = "Default WaveIn Device";
+
+        [Description("錄音檔存放路徑: 設定錄音檔的儲存目錄。")]
+        public string RecordingPath { get; set; } = "Recordings";
+
     }
 }

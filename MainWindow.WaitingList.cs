@@ -357,6 +357,16 @@ namespace UltimateKtv
                     
                     // Stop playback first
                     SafeStop(mediaUriElement, nameof(mediaUriElement));
+                    
+                    try
+                    {
+                        RecordingManager.Instance.StopRecording();
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.LogError("Error stopping recording in PlayNextSongFromWaitingList (idle)", ex);
+                    }
+
                     SetPlayerControlsEnabled(false); // Nothing to control
                     PauseBtn.Content = "暫停"; // Reset pause button text
                     

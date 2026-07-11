@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Configuration;
 using System.Data;
 using System.IO;
@@ -120,6 +120,16 @@ namespace UltimateKtv
 
         private void App_Exit(object sender, ExitEventArgs e)
         {
+            try
+            {
+                RecordingManager.Instance.StopRecording();
+                RecordingManager.Instance.WaitForRecordingToFinish();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("Error stopping recording on exit", ex);
+            }
+
             // Clear pre-loading cache on shutdown
             if (Current.MainWindow is MainWindow mainWindow)
             {

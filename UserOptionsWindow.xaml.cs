@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using MaterialDesignThemes.Wpf;
 using QRCoder;
 using DirectShowLib;
+using NAudio.Wave;
 
 namespace UltimateKtv
 {
@@ -71,6 +72,7 @@ namespace UltimateKtv
             this.MaxWidth = maxAllowedWidth;
                         
             InitializeAudioRenderer();
+            InitializeAudioInputDevice();
             InitializeSettings();
             _isInitializing = false;
         }
@@ -91,6 +93,26 @@ namespace UltimateKtv
             catch (Exception ex)
             {
                 AppLogger.LogError("Failed to list audio renderer devices", ex);
+            }
+        }
+
+        private void InitializeAudioInputDevice()
+        {
+            AudioInputDeviceComboBox.Items.Clear();
+            AudioInputDeviceComboBox.Items.Add("Default WaveIn Device");
+
+            try
+            {
+                int deviceCount = WaveInEvent.DeviceCount;
+                for (int i = 0; i < deviceCount; i++)
+                {
+                    var caps = WaveInEvent.GetCapabilities(i);
+                    AudioInputDeviceComboBox.Items.Add(caps.ProductName);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("Failed to list audio input devices", ex);
             }
         }
 
@@ -136,6 +158,28 @@ namespace UltimateKtv
             {
                 AudioRendererComboBox.SelectedIndex = 0;
             }
+
+            // Set Recording Settings
+            EnableRecordingToggle.IsChecked = settings.EnableRecording;
+            UpdateRecordingUIState();
+
+            AudioInputDeviceComboBox.SelectedItem = settings.RecordingDevice;
+            if (AudioInputDeviceComboBox.SelectedIndex == -1 && AudioInputDeviceComboBox.Items.Count > 0)
+            {
+                AudioInputDeviceComboBox.SelectedIndex = 0;
+            }
+
+            string recPath = settings.RecordingPath;
+            if (string.IsNullOrEmpty(recPath))
+            {
+                recPath = "Recordings";
+            }
+            if (!System.IO.Path.IsPathRooted(recPath))
+            {
+                recPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, recPath);
+            }
+            RecordingPathText.Text = recPath;
+            RecordingPathText.ToolTip = recPath;
 
             // Set HW Accel
             EnableHWAccelToggle.IsChecked = settings.EnableHWAccel;
@@ -330,6 +374,16 @@ namespace UltimateKtv
             {
                 settings.AudioRendererDevice = AudioRendererComboBox.SelectedItem.ToString() ?? "Default DirectSound Device";
             }
+
+            // Save Recording Settings
+            settings.EnableRecording = EnableRecordingToggle.IsChecked == true;
+            if (AudioInputDeviceComboBox.SelectedItem != null)
+            {
+                settings.RecordingDevice = AudioInputDeviceComboBox.SelectedItem.ToString() ?? "Default WaveIn Device";
+            }
+
+            string recPathText = RecordingPathText.Text;
+            settings.RecordingPath = (recPathText == "Recordings") ? "Recordings" : recPathText.Trim();
 
             settings.EnableHWAccel = EnableHWAccelToggle.IsChecked == true;
             
@@ -881,6 +935,62 @@ namespace UltimateKtv
             {
                 AppLogger.Log($"User setting changed: RandomPlayAudioChannel = {item.Content}");
             }
+        }
+
+        private void BrowseRecordingPath_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = "選擇錄音檔存放的目錄",
+                Multiselect = false
+            };
+
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string currentPath = RecordingPathText.Text;
+            string initialPath = currentPath;
+
+            // Resolve relative path to absolute relative to application base directory
+            if (!string.IsNullOrEmpty(currentPath) && !System.IO.Path.IsPathRooted(currentPath))
+            {
+                initialPath = System.IO.Path.Combine(baseDir, currentPath);
+            }
+
+            if (System.IO.Directory.Exists(initialPath))
+            {
+                dialog.InitialDirectory = initialPath;
+            }
+            else
+            {
+                dialog.InitialDirectory = baseDir;
+            }
+
+            if (dialog.ShowDialog() == true)
+            {
+                RecordingPathText.Text = dialog.FolderName;
+                RecordingPathText.ToolTip = dialog.FolderName;
+                AppLogger.Log($"Recording save path selected: {dialog.FolderName}");
+            }
+        }
+
+        private void EnableRecordingToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+            UpdateRecordingUIState();
+        }
+
+        private void EnableRecordingToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+            UpdateRecordingUIState();
+        }
+
+        private void UpdateRecordingUIState()
+        {
+            bool isEnabled = EnableRecordingToggle.IsChecked == true;
+            RecordingDeviceBorder.IsEnabled = isEnabled;
+            RecordingPathBorder.IsEnabled = isEnabled;
+            RecordingDeviceBorder.Opacity = isEnabled ? 1.0 : 0.5;
+            RecordingPathBorder.Opacity = isEnabled ? 1.0 : 0.5;
         }
     }
 }
