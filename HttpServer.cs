@@ -146,8 +146,10 @@ public class HttpServer : IDisposable
 			var path = context.Request.Path.Value;
 			var query = context.Request.QueryString.Value;
             
-            // Only log non-image requests to reduce noise and overhead
-            if (path == null || !path.Contains("singerphoto"))
+            bool isSingerPhoto = (path != null && path.Contains("singerphoto")) || (query != null && query.Contains("singerphoto"));
+            bool isEvents = query != null && query.Contains("queryType=events");
+
+            if (!isSingerPhoto)
             {
 			    System.Diagnostics.Debug.WriteLine($"[{timestamp}] HTTP {context.Request.Method} {path}{query}");
             }
@@ -165,11 +167,17 @@ public class HttpServer : IDisposable
 				context.Response.StatusCode = 405;
 				await context.Response.WriteAsync("Method Not Allowed");
 			}
+
+            if (context.Response.StatusCode >= 400 && !isEvents && !isSingerPhoto)
+            {
+                AppLogger.Log($"[Network] Failed Request: {context.Request.Method} {path}{query} - Status: {context.Response.StatusCode}");
+            }
 		}
 		catch (Exception ex)
 		{
 			System.Diagnostics.Debug.WriteLine($"[HTTP ERROR] {ex.Message}");
 			System.Diagnostics.Debug.WriteLine($"[HTTP ERROR] StackTrace: {ex.StackTrace}");
+			AppLogger.LogError($"[Network] HTTP ERROR during {context.Request.Method} {context.Request.Path.Value}", ex);
 			context.Response.StatusCode = 500;
 			await context.Response.WriteAsync($"Internal Server Error: {ex.Message}");
 		}
@@ -243,6 +251,19 @@ public class HttpServer : IDisposable
             {
 			    System.Diagnostics.Debug.WriteLine($"[HTTP] Query: {queryType}, Lang: {lang}, Singer: {singer}, Words: {words}");
 			    System.Diagnostics.Debug.WriteLine($"[HTTP] SongData loaded: {SongDatas.SongData?.Count ?? 0} songs");
+                
+                // Only log actionable or search queries to AppLogger (filter out periodic polling)
+                var silentQueries = new System.Collections.Generic.HashSet<string> { 
+                    "events", "debug", "queryyoutubequeue", "checknewyoutube", 
+                    "queryyoutubehistory", "queryplayerstate", "queryhostserverinfo", 
+                    "queryplaylist", "singerphoto"
+                };
+
+                if (!silentQueries.Contains(queryType)) 
+                {
+                    string userLog = string.IsNullOrEmpty(user) ? "" : $"User: {user}, ";
+                    AppLogger.Log($"[Network API] Action: {queryType}, {userLog}Condition: {condition}, Value: {value}");
+                }
             }
 
 			responseJson = queryType switch
@@ -338,6 +359,7 @@ public class HttpServer : IDisposable
 			_sseClients.Add(context.Response);
 		}
 		System.Diagnostics.Debug.WriteLine($"[SSE] Client connected. Total clients: {_sseClients.Count}");
+		AppLogger.Log($"[Network] SSE Client connected. Total clients: {_sseClients.Count}");
 
 		// Keep connection alive until client disconnects
 		try
@@ -360,6 +382,7 @@ public class HttpServer : IDisposable
 				_sseClients.Remove(context.Response);
 			}
 			System.Diagnostics.Debug.WriteLine($"[SSE] Client disconnected. Total clients: {_sseClients.Count}");
+			AppLogger.Log($"[Network] SSE Client disconnected. Total clients: {_sseClients.Count}");
 		}
 	}
 
@@ -535,19 +558,21 @@ public class HttpServer : IDisposable
 		try
 		{
 			string localIP = "127.0.0.1";
-			foreach (var ip in System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName()).AddressList)
+			foreach (var item in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
 			{
-				// Pick the first valid IPv4 that's not loopback or virtual
-				if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork &&
-					// !ip.ToString().StartsWith("10.") &&		// skip huge local subnet
-					!ip.ToString().StartsWith("169.") &&  // skip link-local
-					!ip.ToString().StartsWith("127.") &&  // skip loopback
-					!ip.ToString().StartsWith("192.168.56.") && // skip VirtualBox
-					!ip.ToString().StartsWith("172.16.")  // optional: skip Docker subnet
-					)
+				if (item.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up)
 				{
-					localIP = ip.ToString();
-					break;
+					foreach (var ip in item.GetIPProperties().UnicastAddresses)
+					{
+						if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork &&
+							!ip.Address.ToString().StartsWith("169.") &&
+							!ip.Address.ToString().StartsWith("127.") &&
+							!ip.Address.ToString().StartsWith("192.168.56.") &&
+							!ip.Address.ToString().StartsWith("172.16."))
+						{
+							return ip.Address.ToString();
+						}
+					}
 				}
 			}
 			return localIP;

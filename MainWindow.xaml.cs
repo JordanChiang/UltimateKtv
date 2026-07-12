@@ -105,6 +105,7 @@ namespace UltimateKtv
 
         // HTTP server for remote control
         private UltimateKtv.HttpServer? _httpServer = null;
+        private string _lastKnownIp = string.Empty;
 
         // Flag to track if web host info marquee is displayed (for single-monitor mode)
         private bool _isWebHostMarqueeDisplayed = false;
@@ -338,6 +339,7 @@ namespace UltimateKtv
 
             // Start HTTP server for remote control
             _httpServer = UltimateKtv.HttpServer.StartHttpServer(this, DebugLog);
+            _lastKnownIp = UltimateKtv.HttpServer.GetLocalIPAddress();
             /*
                         // Add 120 random songs to the waiting list for testing
                         if (SongDatas.SongData != null && SongDatas.SongData.Any())

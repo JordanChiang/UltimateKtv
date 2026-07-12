@@ -352,7 +352,6 @@ namespace UltimateKtv
                 theme.SetPrimaryColor(primaryColor);
                 
                 paletteHelper.SetTheme(theme);
-                AppLogger.Log($"Material Design theme primary color set to: {Settings.PrimaryMidColor}");
             }
             catch (Exception ex)
             {

@@ -98,7 +98,7 @@ namespace UltimateKtv
             {
                 if (string.IsNullOrEmpty(name)) return; // Ignore clicks on padded empty buttons
 
-                AppLogger.Log($"User action: Singer button clicked - {name}");
+//                AppLogger.Log($"User action: Singer button clicked - {name}");
                 _selectedSinger = name;
 
                 // Check if we're in "Favorite Users" mode

@@ -99,6 +99,19 @@ namespace UltimateKtv
         private void FuncBtnSetting_Click(object sender, RoutedEventArgs e)
         {
             AppLogger.Log("User action: Open settings window");
+
+            // Check if IP changed before opening settings
+            string currentIp = UltimateKtv.HttpServer.GetLocalIPAddress();
+            if (currentIp != _lastKnownIp)
+            {
+                AppLogger.Log($"[Network] Local IP address changed from {_lastKnownIp} to {currentIp}");
+                _lastKnownIp = currentIp;
+                if (_isWebHostMarqueeDisplayed)
+                {
+                    DisplayWebHostInfoMarquee();
+                }
+            }
+
             // Show settings as a modal dialog window
             var settingsWindow = new UserOptionsWindow(this)
             {
