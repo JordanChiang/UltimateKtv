@@ -122,7 +122,9 @@ namespace UltimateKtv
         {
             try
             {
-                RecordingManager.Instance.StopRecording();
+                // StopRecording was already called in the button click handler before Shutdown().
+                // WaitForRecordingToFinish here is a safety net (e.g. if closed by Task Manager).
+                RecordingManager.Instance.StopRecording();    // no-op if already stopped
                 RecordingManager.Instance.WaitForRecordingToFinish();
             }
             catch (Exception ex)

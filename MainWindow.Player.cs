@@ -249,7 +249,7 @@ namespace UltimateKtv
                 
                 try
                 {
-                    RecordingManager.Instance.StartRecording(songName, singerName);
+                    RecordingManager.Instance.StartRecording(songName, singerName, _isRandomSongPlaying);
                 }
                 catch (Exception ex)
                 {
@@ -620,6 +620,10 @@ namespace UltimateKtv
                     AppLogger.Log("User action: Pause button clicked");
                     mediaUriElement.Pause();
 
+                    // Pause recording in sync with media
+                    try { RecordingManager.Instance.PauseRecording(); }
+                    catch (Exception ex) { AppLogger.LogError("Error pausing recording in Pause_Click", ex); }
+
                     PauseBtn.Content = "繼續";
                     Debug.WriteLine("Media paused");
                 }
@@ -627,6 +631,10 @@ namespace UltimateKtv
                 {
                     AppLogger.Log("User action: Resume button clicked");
                     mediaUriElement.Play();
+
+                    // Resume recording in sync with media
+                    try { RecordingManager.Instance.ResumeRecording(); }
+                    catch (Exception ex) { AppLogger.LogError("Error resuming recording in Pause_Click", ex); }
 
                     PauseBtn.Content = "暫停";
                 }

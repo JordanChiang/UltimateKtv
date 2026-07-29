@@ -170,9 +170,9 @@ namespace UltimateKtv
             }
 
             string recPath = settings.RecordingPath;
-            if (string.IsNullOrEmpty(recPath))
+            if (string.IsNullOrWhiteSpace(recPath))
             {
-                recPath = "Recordings";
+                recPath = "Recording";
             }
             if (!System.IO.Path.IsPathRooted(recPath))
             {
@@ -382,8 +382,13 @@ namespace UltimateKtv
                 settings.RecordingDevice = AudioInputDeviceComboBox.SelectedItem.ToString() ?? "Default WaveIn Device";
             }
 
-            string recPathText = RecordingPathText.Text;
-            settings.RecordingPath = (recPathText == "Recordings") ? "Recordings" : recPathText.Trim();
+            string recPathText = RecordingPathText.Text.Trim();
+            // Resolve what the default path would be so we can compare
+            string defaultRecPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Recording");
+            // Store empty string if the user has the default path selected — RecordingManager will handle the fallback
+            settings.RecordingPath = string.Equals(recPathText, defaultRecPath, StringComparison.OrdinalIgnoreCase)
+                ? string.Empty
+                : recPathText;
 
             settings.EnableHWAccel = EnableHWAccelToggle.IsChecked == true;
             
@@ -641,15 +646,43 @@ namespace UltimateKtv
 
             cancelBtn.Click += (s, ev) => optionsDialog.Close();
             
-            quitAppBtn.Click += (s, ev) =>
+            quitAppBtn.Click += async (s, ev) =>
             {
                 optionsDialog.Close();
+                // Stop recording and wait for MP3 to complete on a background thread
+                // BEFORE shutting down. This prevents the UI thread from being blocked
+                // while NAudio's RecordingStopped callback tries to dispatch back to it.
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        RecordingManager.Instance.StopRecording();
+                        RecordingManager.Instance.WaitForRecordingToFinish();
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.LogError("Error stopping recording before quit", ex);
+                    }
+                });
                 Application.Current.Shutdown();
             };
 
-            shutdownBtn.Click += (s, ev) =>
+            shutdownBtn.Click += async (s, ev) =>
             {
                 optionsDialog.Close();
+                // Stop recording and wait for MP3 to complete before shutting down PC
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        RecordingManager.Instance.StopRecording();
+                        RecordingManager.Instance.WaitForRecordingToFinish();
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.LogError("Error stopping recording before shutdown", ex);
+                    }
+                });
                 Application.Current.Shutdown();
                 // Shutdown the computer
                 System.Diagnostics.Process.Start("shutdown", "/s /t 0");
