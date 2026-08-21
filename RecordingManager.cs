@@ -241,7 +241,7 @@ namespace UltimateKtv
         {
             try
             {
-                string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe");
+                string ffmpegPath = Path.Combine(YtDlpHelper.GetFFmpegDir(), "ffmpeg.exe");
                 if (!File.Exists(ffmpegPath))
                 {
                     AppLogger.Log($"[Recording] FFmpeg not found at '{ffmpegPath}'. Cannot convert to MP3.");
@@ -499,7 +499,7 @@ namespace UltimateKtv
 
                             _waveSource = new WaveInEvent();
                             _waveSource.DeviceNumber = deviceIndex;
-                            _waveSource.WaveFormat = new WaveFormat(44100, 16, 2);
+                            _waveSource.WaveFormat = new WaveFormat(44100, 24, 2);
 
                             _waveSource.DataAvailable += (s, e) =>
                             {

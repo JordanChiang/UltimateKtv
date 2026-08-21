@@ -18,7 +18,7 @@
     <!-- Exclude all satellite resource language DLLs (e.g., de, fr, es folders) from publish output -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationIcon>icon.ico</ApplicationIcon>
-    <Version>1.1.5</Version>
+    <Version>1.1.6</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
@@ -57,8 +57,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- FFmpeg binary for YouTube 1080p muxing -->
-    <Content Include="ffmpeg\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Third party binaries (FFmpeg, yt-dlp, etc.) -->
+    <Content Include="Tools\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

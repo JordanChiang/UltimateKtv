@@ -23,7 +23,7 @@ namespace UltimateKtv.Updater
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("====================================================");
-            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.2 =");
+            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.3 =");
             Console.WriteLine("====================================================");
             Console.ResetColor();
             Console.WriteLine();
@@ -248,12 +248,14 @@ namespace UltimateKtv.Updater
             {
                 string fileName = Path.GetFileName(file);
                 
-                // Skip the updater's own files to prevent "file in use" errors
-                if (fileName.Equals("UltimateKtv.Updater.exe", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Equals("UltimateKtv.Updater.dll", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Equals("UltimateKtv.Updater.pdb", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Equals("UltimateKtv.Updater.deps.json", StringComparison.OrdinalIgnoreCase) ||
-                    fileName.Equals("UltimateKtv.Updater.runtimeconfig.json", StringComparison.OrdinalIgnoreCase))
+                // Skip the updater's own files to prevent "file in use" errors if running from destination directory
+                bool isRunningFromTemp = AppDomain.CurrentDomain.BaseDirectory.StartsWith(Path.GetTempPath(), StringComparison.OrdinalIgnoreCase);
+                if (!isRunningFromTemp &&
+                    (fileName.Equals("UltimateKtv.Updater.exe", StringComparison.OrdinalIgnoreCase) ||
+                     fileName.Equals("UltimateKtv.Updater.dll", StringComparison.OrdinalIgnoreCase) ||
+                     fileName.Equals("UltimateKtv.Updater.pdb", StringComparison.OrdinalIgnoreCase) ||
+                     fileName.Equals("UltimateKtv.Updater.deps.json", StringComparison.OrdinalIgnoreCase) ||
+                     fileName.Equals("UltimateKtv.Updater.runtimeconfig.json", StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }

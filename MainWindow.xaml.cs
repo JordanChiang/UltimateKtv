@@ -486,7 +486,8 @@ namespace UltimateKtv
                 var tid = System.Threading.Thread.CurrentThread.ManagedThreadId;
                 var line = $"[{ts} T{tid}] {message}";
                 Debug.WriteLine(line);
-                AppLogger.Log(message);
+                //System.Diagnostics.Trace.WriteLine(line);
+                System.Diagnostics.Trace.Flush();
             }
             catch { /* ignore logging errors */ }
         }

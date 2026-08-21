@@ -16,55 +16,43 @@ namespace UltimateKtv
         public static string GetFFmpegDir()
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string subDir = Path.Combine(baseDir, "ffmpeg");
-            if (File.Exists(Path.Combine(subDir, "ffmpeg.exe"))) return subDir;
-            if (File.Exists(Path.Combine(baseDir, "ffmpeg.exe"))) return baseDir;
+            string toolsDir = Path.Combine(baseDir, "Tools");
+            if (File.Exists(Path.Combine(toolsDir, "ffmpeg.exe"))) return toolsDir;
 
             string currentDir = Directory.GetCurrentDirectory();
-            string currentSubDir = Path.Combine(currentDir, "ffmpeg");
-            if (File.Exists(Path.Combine(currentSubDir, "ffmpeg.exe"))) return currentSubDir;
-            if (File.Exists(Path.Combine(currentDir, "ffmpeg.exe"))) return currentDir;
+            string currentToolsDir = Path.Combine(currentDir, "Tools");
+            if (File.Exists(Path.Combine(currentToolsDir, "ffmpeg.exe"))) return currentToolsDir;
 
             var dirInfo = new DirectoryInfo(baseDir);
             for (int i = 0; i < 6 && dirInfo != null; i++)
             {
-                string checkPath = Path.Combine(dirInfo.FullName, "ffmpeg", "ffmpeg.exe");
-                if (File.Exists(checkPath)) return Path.Combine(dirInfo.FullName, "ffmpeg");
+                string toolsPath = Path.Combine(dirInfo.FullName, "Tools", "ffmpeg.exe");
+                if (File.Exists(toolsPath)) return Path.Combine(dirInfo.FullName, "Tools");
                 dirInfo = dirInfo.Parent;
             }
 
-            return subDir;
+            return toolsDir;
         }
 
         public static string GetYtDlpPath()
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            
-            // Check ffmpeg/yt-dlp.exe in base directory
-            string ffmpegYtDlp = Path.Combine(baseDir, "ffmpeg", "yt-dlp.exe");
-            if (File.Exists(ffmpegYtDlp)) return ffmpegYtDlp;
+            string toolsYtDlp = Path.Combine(baseDir, "Tools", "yt-dlp.exe");
+            if (File.Exists(toolsYtDlp)) return toolsYtDlp;
 
-            // Check root yt-dlp.exe in base directory
-            string rootYtDlp = Path.Combine(baseDir, "yt-dlp.exe");
-            if (File.Exists(rootYtDlp)) return rootYtDlp;
-
-            // Check current working directory
             string currentDir = Directory.GetCurrentDirectory();
-            string currentFfmpegYtDlp = Path.Combine(currentDir, "ffmpeg", "yt-dlp.exe");
-            if (File.Exists(currentFfmpegYtDlp)) return currentFfmpegYtDlp;
-            string currentRootYtDlp = Path.Combine(currentDir, "yt-dlp.exe");
-            if (File.Exists(currentRootYtDlp)) return currentRootYtDlp;
+            string currentToolsYtDlp = Path.Combine(currentDir, "Tools", "yt-dlp.exe");
+            if (File.Exists(currentToolsYtDlp)) return currentToolsYtDlp;
 
             var dirInfo = new DirectoryInfo(baseDir);
             for (int i = 0; i < 6 && dirInfo != null; i++)
             {
-                string checkPath = Path.Combine(dirInfo.FullName, "ffmpeg", "yt-dlp.exe");
-                if (File.Exists(checkPath)) return checkPath;
+                string toolsPath = Path.Combine(dirInfo.FullName, "Tools", "yt-dlp.exe");
+                if (File.Exists(toolsPath)) return toolsPath;
                 dirInfo = dirInfo.Parent;
             }
 
-            // Fallback path where it will be downloaded if missing
-            string targetDir = Path.Combine(baseDir, "ffmpeg");
+            string targetDir = Path.Combine(baseDir, "Tools");
             if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
             return Path.Combine(targetDir, "yt-dlp.exe");
         }

@@ -211,9 +211,37 @@ namespace UltimateKtv.Services
                 string currentExePath = Process.GetCurrentProcess().MainModule?.FileName ?? "UltimateKtv.exe";
                 int currentPid = Process.GetCurrentProcess().Id;
                 
-                // Locate the standalone updater exe (should be in the same folder)
+                // Locate the standalone updater exe
                 string updaterPath = Path.Combine(currentAppPath, "UltimateKtv.Updater.exe");
                 
+                // If the extracted files contain UltimateKtv.Updater.*, attempt to overwrite existing files before launching
+                bool preCopySuccess = false;
+                string? extractedUpdater = Directory.GetFiles(extractPath, "UltimateKtv.Updater.exe", SearchOption.AllDirectories).FirstOrDefault();
+                if (!string.IsNullOrEmpty(extractedUpdater))
+                {
+                    string extractedUpdaterDir = Path.GetDirectoryName(extractedUpdater)!;
+                    try
+                    {
+                        foreach (var file in Directory.GetFiles(extractedUpdaterDir, "UltimateKtv.Updater.*"))
+                        {
+                            string fileName = Path.GetFileName(file);
+                            string destFile = Path.Combine(currentAppPath, fileName);
+                            File.Copy(file, destFile, true);
+                        }
+                        preCopySuccess = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.Log($"無法預先覆蓋更新程式檔：{ex.Message}");
+                    }
+                }
+
+                // If pre-copy failed or local updater doesn't exist, fallback to launching updater directly from extractPath
+                if ((!preCopySuccess || !File.Exists(updaterPath)) && !string.IsNullOrEmpty(extractedUpdater) && File.Exists(extractedUpdater))
+                {
+                    updaterPath = extractedUpdater;
+                }
+
                 if (!File.Exists(updaterPath))
                 {
                     throw new FileNotFoundException($"找不到更新程式：{updaterPath}");
