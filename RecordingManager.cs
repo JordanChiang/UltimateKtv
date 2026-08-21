@@ -29,29 +29,7 @@ namespace UltimateKtv
             }
         }
 
-        private WaveInEvent? _waveSource;
-        private WaveFileWriter? _waveWriter;
-
-        private WasapiLoopbackCapture? _loopbackSource;
-        private WaveFileWriter? _loopbackWriter;
-
-        private string? _currentFilePath;
-        private bool _isRecordingActive = false;
-        private bool _isPaused = false;
-
-        // Tracks how many capture devices are still stopping — used with Interlocked
-        // to ensure ConvertToMp3Async is triggered exactly once.
-        private int _pendingStopCount = 0;
-
-        // Paths for the current recording session (needed for pause/resume)
-        private string? _currentMicPath;
-        private string? _currentLoopbackPath;
-
-        // Previous-session capture devices to stop AFTER releasing the lock
-        // (set in StartRecording when a prior session is already active).
-        private WaveInEvent?           _prevWaveToStop;
-        private WasapiLoopbackCapture? _prevLoopbackToStop;
-
+        private RecordingSession? _currentSession;
         private int _activeOperations = 0;
         private readonly ManualResetEventSlim _allStoppedEvent = new ManualResetEventSlim(true);
 
@@ -65,7 +43,7 @@ namespace UltimateKtv
             {
                 lock (_lock)
                 {
-                    return _isRecordingActive;
+                    return _currentSession != null && !_currentSession.IsStopped;
                 }
             }
         }
@@ -76,7 +54,7 @@ namespace UltimateKtv
             {
                 lock (_lock)
                 {
-                    return _isPaused;
+                    return _currentSession != null && _currentSession.IsPaused;
                 }
             }
         }
@@ -88,6 +66,8 @@ namespace UltimateKtv
         /// </summary>
         public void StartRecording(string songName, string singer, bool isRandomPlay = false)
         {
+            RecordingSession? prevSession = null;
+
             lock (_lock)
             {
                 var settings = SettingsManager.Instance.CurrentSettings;
@@ -104,25 +84,12 @@ namespace UltimateKtv
                     return;
                 }
 
-                // If currently recording, stop it first.
-                // We call the public StopRecording() which handles stopping devices
-                // outside the lock to avoid deadlock with RecordingStopped callbacks.
-                // Because StartRecording holds _lock here and StopRecording also acquires
-                // _lock (reentrant on same thread), we snapshot the devices manually inline
-                // so they can be stopped below, after releasing the outer lock.
-                if (_isRecordingActive)
+                // If currently recording, snapshot previous session to stop it outside lock
+                if (_currentSession != null && !_currentSession.IsStopped)
                 {
                     AppLogger.Log("[Recording] Stopping previous recording session to start a new one.");
-                    // Snapshot and clear refs; devices will be stopped after we release the lock.
-                    _prevWaveToStop     = _waveSource;
-                    _prevLoopbackToStop = _loopbackSource;
-                    _waveSource     = null;
-                    _loopbackSource = null;
-                    _isRecordingActive = false;
-                    _isPaused          = false;
-                    // Note: the previous session's _pendingStopCount and RecordingStopped
-                    // callbacks will still run; they'll decrement and fire ConvertToMp3Async.
-                    // Devices are stopped outside this lock block (see end of StartRecording).
+                    prevSession = _currentSession;
+                    _currentSession = null;
                 }
 
                 // Determine file name
@@ -160,7 +127,6 @@ namespace UltimateKtv
                     AppLogger.LogError($"[Recording] Could not check disk space for '{outputDir}', proceeding anyway.", ex);
                 }
 
-                int startedCount = 0;
                 try
                 {
                     if (!Directory.Exists(outputDir))
@@ -168,18 +134,347 @@ namespace UltimateKtv
                         Directory.CreateDirectory(outputDir);
                     }
 
-                    _currentFilePath = Path.Combine(outputDir, fileName);
+                    // Trigger async cleanup of any orphaned WAV files left from past runs
+                    Task.Run(() => CleanupOrphanedWavFiles(outputDir));
 
-                    string wavPathMic      = Path.ChangeExtension(_currentFilePath, ".mic.wav");
-                    string wavPathLoopback = Path.ChangeExtension(_currentFilePath, ".loopback.wav");
+                    string mp3Path = Path.Combine(outputDir, fileName);
+                    string micPath = Path.ChangeExtension(mp3Path, ".mic.wav");
+                    string loopbackPath = Path.ChangeExtension(mp3Path, ".loopback.wav");
 
-                    // Keep paths for pause/resume
-                    _currentMicPath      = wavPathMic;
-                    _currentLoopbackPath = wavPathLoopback;
+                    var newSession = new RecordingSession(mp3Path, micPath, loopbackPath, GetLoopbackDevice);
 
-                    string localMp3Path = _currentFilePath;
+                    if (newSession.Start(settings))
+                    {
+                        _currentSession = newSession;
+                        _activeOperations++;
+                        _allStoppedEvent.Reset();
+                    }
+                    else
+                    {
+                        AppLogger.Log("[Recording] No capture devices were successfully started.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("[Recording] Failed to start audio recording session", ex);
+                }
+            } // end lock(_lock)
 
-                    // --- 1. Try start Microphone recording ---
+            // Stop previous session outside lock to avoid deadlocks
+            if (prevSession != null)
+            {
+                prevSession.Stop(OnSessionConversionCompleted);
+            }
+        }
+
+        public void StopRecording()
+        {
+            RecordingSession? sessionToStop = null;
+            lock (_lock)
+            {
+                if (_currentSession == null)
+                {
+                    return;
+                }
+                sessionToStop = _currentSession;
+                _currentSession = null;
+            }
+
+            sessionToStop?.Stop(OnSessionConversionCompleted);
+        }
+
+        public void PauseRecording()
+        {
+            lock (_lock)
+            {
+                _currentSession?.Pause();
+            }
+        }
+
+        public void ResumeRecording()
+        {
+            lock (_lock)
+            {
+                _currentSession?.Resume();
+            }
+        }
+
+        private async Task OnSessionConversionCompleted()
+        {
+            lock (_lock)
+            {
+                _activeOperations--;
+                if (_activeOperations <= 0)
+                {
+                    _activeOperations = 0;
+                    _allStoppedEvent.Set();
+                }
+            }
+            await Task.CompletedTask;
+        }
+
+        public void WaitForRecordingToFinish()
+        {
+            try
+            {
+                if (!_allStoppedEvent.IsSet)
+                {
+                    AppLogger.Log("[Recording] Waiting for recording stop and MP3 transcoding to complete...");
+                    bool finished = _allStoppedEvent.Wait(20000); // Wait up to 20 seconds
+                    if (finished)
+                    {
+                        AppLogger.Log("[Recording] MP3 transcoding completed successfully before exit.");
+                    }
+                    else
+                    {
+                        AppLogger.Log("[Recording] Timeout waiting for MP3 transcoding to complete. Exiting anyway.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("[Recording] Error waiting for recording finish", ex);
+            }
+        }
+
+        private static async Task ConvertToMp3Async(string wavPathMic, string wavPathLoopback, string mp3Path)
+        {
+            try
+            {
+                string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe");
+                if (!File.Exists(ffmpegPath))
+                {
+                    AppLogger.Log($"[Recording] FFmpeg not found at '{ffmpegPath}'. Cannot convert to MP3.");
+                    return;
+                }
+
+                bool hasMic = File.Exists(wavPathMic);
+                bool hasLoopback = File.Exists(wavPathLoopback);
+
+                if (!hasMic && !hasLoopback)
+                {
+                    AppLogger.Log("[Recording] No temporary recording files found to convert.");
+                    return;
+                }
+
+                string arguments;
+                if (hasMic && hasLoopback)
+                {
+                    AppLogger.Log($"[Recording] Mixing Mic + Loopback to 320kbps MP3: {wavPathMic} & {wavPathLoopback} -> {mp3Path}");
+                    arguments = $"-y -i \"{wavPathLoopback}\" -i \"{wavPathMic}\" -filter_complex \"amix=inputs=2:duration=longest\" -codec:a libmp3lame -b:a 320k \"{mp3Path}\"";
+                }
+                else if (hasMic)
+                {
+                    AppLogger.Log($"[Recording] Converting Mic WAV to 320kbps MP3: {wavPathMic} -> {mp3Path}");
+                    arguments = $"-y -i \"{wavPathMic}\" -codec:a libmp3lame -b:a 320k \"{mp3Path}\"";
+                }
+                else
+                {
+                    AppLogger.Log($"[Recording] Converting Loopback WAV to 320kbps MP3: {wavPathLoopback} -> {mp3Path}");
+                    arguments = $"-y -i \"{wavPathLoopback}\" -codec:a libmp3lame -b:a 320k \"{mp3Path}\"";
+                }
+
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = ffmpegPath,
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    if (process != null)
+                    {
+                        string err = await process.StandardError.ReadToEndAsync();
+                        await process.WaitForExitAsync();
+
+                        if (process.ExitCode == 0)
+                        {
+                            AppLogger.Log("[Recording] Successfully created mixed MP3. Deleting temporary WAV files.");
+                            await TryDeleteFileAsync(wavPathMic);
+                            await TryDeleteFileAsync(wavPathLoopback);
+                        }
+                        else
+                        {
+                            AppLogger.Log($"[Recording] FFmpeg mixing failed with exit code {process.ExitCode}. Output: {err}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("[Recording] Exception during MP3 conversion/mixing", ex);
+            }
+        }
+
+        /// <summary>
+        /// Scans the output directory for leftover .mic.wav or .loopback.wav files whose corresponding .mp3 file
+        /// ALREADY exists and is non-empty, deleting them cleanly.
+        /// </summary>
+        private static void CleanupOrphanedWavFiles(string outputDir)
+        {
+            try
+            {
+                if (!Directory.Exists(outputDir)) return;
+
+                var wavFiles = Directory.GetFiles(outputDir, "*.wav");
+                foreach (var wavFile in wavFiles)
+                {
+                    string? mp3Path = null;
+                    if (wavFile.EndsWith(".mic.wav", StringComparison.OrdinalIgnoreCase))
+                    {
+                        mp3Path = wavFile.Substring(0, wavFile.Length - ".mic.wav".Length) + ".mp3";
+                    }
+                    else if (wavFile.EndsWith(".loopback.wav", StringComparison.OrdinalIgnoreCase))
+                    {
+                        mp3Path = wavFile.Substring(0, wavFile.Length - ".loopback.wav".Length) + ".mp3";
+                    }
+
+                    if (mp3Path != null && File.Exists(mp3Path) && new FileInfo(mp3Path).Length > 0)
+                    {
+                        try
+                        {
+                            File.Delete(wavFile);
+                            AppLogger.Log($"[Recording] Cleaned up orphaned temporary file: {Path.GetFileName(wavFile)}");
+                        }
+                        catch (Exception ex)
+                        {
+                            AppLogger.Log($"[Recording] Could not clean up orphaned file '{Path.GetFileName(wavFile)}': {ex.Message}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("[Recording] Error during CleanupOrphanedWavFiles", ex);
+            }
+        }
+
+        private static async Task TryDeleteFileAsync(string path)
+        {
+            const int maxRetries = 5;
+            const int retryDelayMs = 500;
+
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                    }
+                    return; // success
+                }
+                catch (IOException ioEx) when (attempt < maxRetries)
+                {
+                    AppLogger.Log($"[Recording] File '{Path.GetFileName(path)}' is locked (attempt {attempt}/{maxRetries}): {ioEx.Message} — retrying in {retryDelayMs}ms...");
+                    await Task.Delay(retryDelayMs);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError($"[Recording] Failed to delete temporary file '{path}'", ex);
+                    return;
+                }
+            }
+
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError($"[Recording] Failed to delete temporary file '{path}' after {maxRetries} retries", ex);
+            }
+        }
+
+        private string SanitizeFileName(string fileName)
+        {
+            string invalidChars = Regex.Escape(new string(Path.GetInvalidFileNameChars()));
+            string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
+            return Regex.Replace(fileName, invalidRegStr, "_");
+        }
+
+        private MMDevice? GetLoopbackDevice(string targetFriendlyName)
+        {
+            try
+            {
+                var enumerator = new MMDeviceEnumerator();
+                var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+
+                foreach (var device in devices)
+                {
+                    if (device.FriendlyName.Equals(targetFriendlyName, StringComparison.OrdinalIgnoreCase) ||
+                        device.FriendlyName.Contains(targetFriendlyName) ||
+                        targetFriendlyName.Contains(device.FriendlyName))
+                    {
+                        return device;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError($"[Recording] Error finding MMDevice for loopback device '{targetFriendlyName}'", ex);
+            }
+            return null;
+        }
+
+        private class RecordingSession
+        {
+            private readonly object _sessionLock = new object();
+            private readonly Func<string, MMDevice?> _getLoopbackDeviceFunc;
+
+            private WaveInEvent? _waveSource;
+            private WaveFileWriter? _waveWriter;
+            private WasapiLoopbackCapture? _loopbackSource;
+            private WaveFileWriter? _loopbackWriter;
+            private Func<Task>? _onConversionComplete;
+
+            private int _pendingStopCount = 0;
+            private bool _isPaused = false;
+            private bool _isStopped = false;
+            private bool _conversionTriggered = false;
+
+            public string Mp3Path { get; }
+            public string MicPath { get; }
+            public string LoopbackPath { get; }
+
+            public RecordingSession(string mp3Path, string micPath, string loopbackPath, Func<string, MMDevice?> getLoopbackDeviceFunc)
+            {
+                Mp3Path = mp3Path;
+                MicPath = micPath;
+                LoopbackPath = loopbackPath;
+                _getLoopbackDeviceFunc = getLoopbackDeviceFunc;
+            }
+
+            public bool IsPaused
+            {
+                get
+                {
+                    lock (_sessionLock) return _isPaused;
+                }
+            }
+
+            public bool IsStopped
+            {
+                get
+                {
+                    lock (_sessionLock) return _isStopped;
+                }
+            }
+
+            public bool Start(AppSettings settings)
+            {
+                lock (_sessionLock)
+                {
+                    int startedCount = 0;
+
+                    // 1. Try start Microphone recording
                     try
                     {
                         int deviceCount = WaveInEvent.DeviceCount;
@@ -208,7 +503,7 @@ namespace UltimateKtv
 
                             _waveSource.DataAvailable += (s, e) =>
                             {
-                                lock (_lock)
+                                lock (_sessionLock)
                                 {
                                     if (_waveWriter != null && e.BytesRecorded > 0)
                                     {
@@ -220,34 +515,13 @@ namespace UltimateKtv
 
                             _waveSource.RecordingStopped += (s, e) =>
                             {
-                                lock (_lock)
-                                {
-                                    // Only close writer when NOT paused (paused keeps writer open for resume)
-                                    if (!_isPaused)
-                                    {
-                                        CleanUpWriter();
-                                    }
-                                    if (e.Exception != null)
-                                    {
-                                        AppLogger.LogError("[Recording] Mic recording stopped with error", e.Exception);
-                                    }
-                                }
-
-                                // Use Interlocked to ensure ConvertToMp3Async is fired exactly once
-                                if (!_isPaused)
-                                {
-                                    int remaining = Interlocked.Decrement(ref _pendingStopCount);
-                                    if (remaining <= 0)
-                                    {
-                                        ConvertToMp3Async(wavPathMic, wavPathLoopback, localMp3Path);
-                                    }
-                                }
+                                OnDeviceStopped(isMic: true, e.Exception);
                             };
 
-                            _waveWriter = new WaveFileWriter(wavPathMic, _waveSource.WaveFormat);
+                            _waveWriter = new WaveFileWriter(MicPath, _waveSource.WaveFormat);
                             _waveSource.StartRecording();
                             startedCount++;
-                            AppLogger.Log($"[Recording] Mic capture started using device index {deviceIndex}. Temp path: {wavPathMic}");
+                            AppLogger.Log($"[Recording] Mic capture started using device index {deviceIndex}. Temp path: {MicPath}");
                         }
                         else
                         {
@@ -257,18 +531,18 @@ namespace UltimateKtv
                     catch (Exception ex)
                     {
                         AppLogger.LogError("[Recording] Failed to start mic recording", ex);
-                        CleanUpWriter();
+                        CleanUpMicWriter();
                         if (_waveSource != null) { try { _waveSource.Dispose(); } catch { } _waveSource = null; }
                     }
 
-                    // --- 2. Try start Loopback (Line Out) recording ---
+                    // 2. Try start Loopback (Line Out) recording
                     try
                     {
                         MMDevice? loopbackDevice = null;
                         if (!string.IsNullOrEmpty(settings.AudioRendererDevice) &&
                             settings.AudioRendererDevice != "Default DirectSound Device")
                         {
-                            loopbackDevice = GetLoopbackDevice(settings.AudioRendererDevice);
+                            loopbackDevice = _getLoopbackDeviceFunc(settings.AudioRendererDevice);
                         }
 
                         if (loopbackDevice != null)
@@ -284,7 +558,7 @@ namespace UltimateKtv
 
                         _loopbackSource.DataAvailable += (s, e) =>
                         {
-                            lock (_lock)
+                            lock (_sessionLock)
                             {
                                 if (_loopbackWriter != null && e.BytesRecorded > 0)
                                 {
@@ -296,32 +570,13 @@ namespace UltimateKtv
 
                         _loopbackSource.RecordingStopped += (s, e) =>
                         {
-                            lock (_lock)
-                            {
-                                if (!_isPaused)
-                                {
-                                    CleanUpLoopbackWriter();
-                                }
-                                if (e.Exception != null)
-                                {
-                                    AppLogger.LogError("[Recording] Loopback recording stopped with error", e.Exception);
-                                }
-                            }
-
-                            if (!_isPaused)
-                            {
-                                int remaining = Interlocked.Decrement(ref _pendingStopCount);
-                                if (remaining <= 0)
-                                {
-                                    ConvertToMp3Async(wavPathMic, wavPathLoopback, localMp3Path);
-                                }
-                            }
+                            OnDeviceStopped(isMic: false, e.Exception);
                         };
 
-                        _loopbackWriter = new WaveFileWriter(wavPathLoopback, _loopbackSource.WaveFormat);
+                        _loopbackWriter = new WaveFileWriter(LoopbackPath, _loopbackSource.WaveFormat);
                         _loopbackSource.StartRecording();
                         startedCount++;
-                        AppLogger.Log($"[Recording] Loopback capture started. Temp path: {wavPathLoopback}");
+                        AppLogger.Log($"[Recording] Loopback capture started. Temp path: {LoopbackPath}");
                     }
                     catch (Exception ex)
                     {
@@ -330,472 +585,251 @@ namespace UltimateKtv
                         if (_loopbackSource != null) { try { _loopbackSource.Dispose(); } catch { } _loopbackSource = null; }
                     }
 
-                    // Initialize the pending-stop counter to how many devices started
                     _pendingStopCount = startedCount;
+                    _isStopped = (startedCount == 0);
+                    _isPaused = false;
 
-                    if (startedCount > 0)
+                    return startedCount > 0;
+                }
+            }
+
+            public void Pause()
+            {
+                lock (_sessionLock)
+                {
+                    if (_isStopped || _isPaused) return;
+
+                    AppLogger.Log("[Recording] Pausing recording.");
+                    _isPaused = true;
+
+                    if (_waveSource != null)
                     {
-                        lock (_lock)
+                        try { _waveSource.StopRecording(); }
+                        catch (Exception ex) { AppLogger.LogError("[Recording] Error pausing WaveSource", ex); }
+                    }
+
+                    if (_loopbackSource != null)
+                    {
+                        try { _loopbackSource.StopRecording(); }
+                        catch (Exception ex) { AppLogger.LogError("[Recording] Error pausing LoopbackSource", ex); }
+                    }
+                }
+            }
+
+            public void Resume()
+            {
+                lock (_sessionLock)
+                {
+                    if (_isStopped || !_isPaused) return;
+
+                    AppLogger.Log("[Recording] Resuming recording.");
+                    _isPaused = false;
+
+                    int restarted = 0;
+                    if (_waveSource != null && _waveWriter != null)
+                    {
+                        try
                         {
-                            _activeOperations++;
+                            _waveSource.StartRecording();
+                            restarted++;
+                            AppLogger.Log("[Recording] Mic capture resumed.");
                         }
-                        _allStoppedEvent.Reset();
-                        _isRecordingActive = true;
+                        catch (Exception ex)
+                        {
+                            AppLogger.LogError("[Recording] Error resuming mic capture", ex);
+                        }
+                    }
+
+                    if (_loopbackSource != null && _loopbackWriter != null)
+                    {
+                        try
+                        {
+                            _loopbackSource.StartRecording();
+                            restarted++;
+                            AppLogger.Log("[Recording] Loopback capture resumed.");
+                        }
+                        catch (Exception ex)
+                        {
+                            AppLogger.LogError("[Recording] Error resuming loopback capture", ex);
+                        }
+                    }
+
+                    _pendingStopCount = restarted;
+                    if (restarted == 0)
+                    {
+                        _isStopped = true;
+                        AppLogger.Log("[Recording] Resume failed — no devices could be restarted.");
+                    }
+                }
+            }
+
+            public void Stop(Func<Task>? onConversionComplete = null)
+            {
+                WaveInEvent? waveToStop = null;
+                WasapiLoopbackCapture? loopbackToStop = null;
+                bool triggerManual = false;
+
+                lock (_sessionLock)
+                {
+                    _onConversionComplete = onConversionComplete;
+
+                    if (_isStopped) return;
+                    _isStopped = true;
+
+                    if (_isPaused)
+                    {
+                        AppLogger.Log("[Recording] StopRecording while paused — flushing writers and scheduling conversion.");
+                        CleanUpWriters();
+
+                        waveToStop = _waveSource;
+                        loopbackToStop = _loopbackSource;
+                        _waveSource = null;
+                        _loopbackSource = null;
                         _isPaused = false;
+                        _pendingStopCount = 0;
+
+                        triggerManual = true;
                     }
                     else
                     {
-                        _isRecordingActive = false;
+                        waveToStop = _waveSource;
+                        loopbackToStop = _loopbackSource;
+                        _waveSource = null;
+                        _loopbackSource = null;
                         _isPaused = false;
-                        _allStoppedEvent.Set();
-                        AppLogger.Log("[Recording] No capture devices were successfully started.");
                     }
                 }
-                catch (Exception ex)
+
+                if (!triggerManual)
                 {
-                    AppLogger.LogError("[Recording] Failed to start audio recording session", ex);
-                    _isRecordingActive = false;
-                    _isPaused = false;
-                    lock (_lock)
+                    if (waveToStop != null)
                     {
-                        if (startedCount > 0)
-                        {
-                            _activeOperations--;
-                        }
-                        if (_activeOperations <= 0)
-                        {
-                            _allStoppedEvent.Set();
-                        }
+                        try { waveToStop.StopRecording(); }
+                        catch (Exception ex) { AppLogger.LogError("[Recording] Error stopping WaveSource", ex); }
+                        try { waveToStop.Dispose(); } catch { }
                     }
-                }
-            } // end lock(_lock)
 
-            // Stop previous session's devices OUTSIDE the lock so their RecordingStopped
-            // callbacks can acquire the lock and fire ConvertToMp3Async unblocked.
-            if (_prevWaveToStop != null)
-            {
-                try { _prevWaveToStop.StopRecording(); }
-                catch (Exception ex) { AppLogger.LogError("[Recording] Error stopping previous WaveSource", ex); }
-                try { _prevWaveToStop.Dispose(); } catch { }
-                _prevWaveToStop = null;
-            }
-            if (_prevLoopbackToStop != null)
-            {
-                try { _prevLoopbackToStop.StopRecording(); }
-                catch (Exception ex) { AppLogger.LogError("[Recording] Error stopping previous LoopbackSource", ex); }
-                try { _prevLoopbackToStop.Dispose(); } catch { }
-                _prevLoopbackToStop = null;
-            }
-        }
-
-        public void StopRecording()
-        {
-            string micPath      = "";
-            string loopbackPath = "";
-            string mp3Path      = "";
-            bool   triggerConversionManually = false;
-
-            // Snapshot capture device refs and path info, then mark as stopped.
-            // Devices are stopped OUTSIDE the lock below so RecordingStopped
-            // callbacks can freely acquire the lock (prevents deadlock with
-            // WaitForRecordingToFinish on shutdown).
-            WaveInEvent?           waveToStop     = null;
-            WasapiLoopbackCapture? loopbackToStop = null;
-
-            lock (_lock)
-            {
-                if (!_isRecordingActive)
-                {
-                    return;
-                }
-
-                if (_isPaused)
-                {
-                    // Capture devices are already stopped (PauseRecording stopped them).
-                    // Writers are still open — flush them then trigger conversion manually.
-                    AppLogger.Log("[Recording] StopRecording while paused — flushing writers and scheduling conversion.");
-
-                    micPath      = _currentMicPath      ?? "";
-                    loopbackPath = _currentLoopbackPath ?? "";
-                    mp3Path      = _currentFilePath      ?? "";
-
-                    CleanUpWriter();
-                    CleanUpLoopbackWriter();
-
-                    // Capture devices were already stopped by PauseRecording; just dispose.
-                    waveToStop     = _waveSource;
-                    loopbackToStop = _loopbackSource;
-                    _waveSource     = null;
-                    _loopbackSource = null;
-
-                    _isPaused          = false;
-                    _isRecordingActive = false;
-                    _pendingStopCount  = 0;
-
-                    triggerConversionManually = !string.IsNullOrEmpty(mp3Path);
+                    if (loopbackToStop != null)
+                    {
+                        try { loopbackToStop.StopRecording(); }
+                        catch (Exception ex) { AppLogger.LogError("[Recording] Error stopping LoopbackSource", ex); }
+                        try { loopbackToStop.Dispose(); } catch { }
+                    }
                 }
                 else
                 {
-                    // Snapshot refs and mark as inactive; actual stop happens outside lock.
-                    waveToStop     = _waveSource;
-                    loopbackToStop = _loopbackSource;
-                    _waveSource     = null;
-                    _loopbackSource = null;
-                    _isPaused          = false;
-                    _isRecordingActive = false;
-                    // _pendingStopCount stays as-is; RecordingStopped will decrement it.
+                    if (waveToStop != null) { try { waveToStop.Dispose(); } catch { } }
+                    if (loopbackToStop != null) { try { loopbackToStop.Dispose(); } catch { } }
+
+                    TriggerConversion(_onConversionComplete);
                 }
             }
 
-            // --- Stop/dispose devices OUTSIDE the lock ---
-            // This allows RecordingStopped event callbacks to acquire the lock
-            // and call ConvertToMp3Async without deadlocking.
-            if (!triggerConversionManually)
+            private void OnDeviceStopped(bool isMic, Exception? ex)
             {
-                // Normal (non-paused) stop: StopRecording fires RecordingStopped async.
-                if (waveToStop != null)
+                bool shouldTrigger = false;
+
+                lock (_sessionLock)
                 {
-                    try { waveToStop.StopRecording(); }
-                    catch (Exception ex) { AppLogger.LogError("[Recording] Error stopping WaveSource", ex); }
-                    try { waveToStop.Dispose(); } catch { }
-                }
-                if (loopbackToStop != null)
-                {
-                    try { loopbackToStop.StopRecording(); }
-                    catch (Exception ex) { AppLogger.LogError("[Recording] Error stopping LoopbackSource", ex); }
-                    try { loopbackToStop.Dispose(); } catch { }
-                }
-            }
-            else
-            {
-                // Paused stop: devices were already stopped, just dispose.
-                if (waveToStop != null)     { try { waveToStop.Dispose(); }     catch { } }
-                if (loopbackToStop != null) { try { loopbackToStop.Dispose(); } catch { } }
-
-                // Trigger conversion now that the lock is released.
-                ConvertToMp3Async(micPath, loopbackPath, mp3Path);
-            }
-        }
-
-        /// <summary>
-        /// Pauses active recording. Capture devices are stopped but WAV writers stay open.
-        /// Call ResumeRecording() to continue writing to the same files.
-        /// </summary>
-        public void PauseRecording()
-        {
-            lock (_lock)
-            {
-                if (!_isRecordingActive || _isPaused)
-                {
-                    return;
-                }
-
-                AppLogger.Log("[Recording] Pausing recording.");
-                _isPaused = true;
-
-                // Stop capture — RecordingStopped events will fire but _isPaused flag
-                // prevents writer cleanup and ConvertToMp3Async from being triggered.
-                if (_waveSource != null)
-                {
-                    try { _waveSource.StopRecording(); }
-                    catch (Exception ex) { AppLogger.LogError("[Recording] Error pausing WaveSource", ex); }
-                }
-
-                if (_loopbackSource != null)
-                {
-                    try { _loopbackSource.StopRecording(); }
-                    catch (Exception ex) { AppLogger.LogError("[Recording] Error pausing LoopbackSource", ex); }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Resumes recording after PauseRecording(). Restarts capture devices and continues
-        /// writing to the same WAV files as before.
-        /// </summary>
-        public void ResumeRecording()
-        {
-            lock (_lock)
-            {
-                if (!_isRecordingActive || !_isPaused)
-                {
-                    return;
-                }
-
-                AppLogger.Log("[Recording] Resuming recording.");
-                _isPaused = false;
-
-                int restarted = 0;
-
-                // Restart mic capture
-                if (_waveSource != null && _waveWriter != null)
-                {
-                    try
+                    if (!_isPaused)
                     {
-                        _waveSource.StartRecording();
-                        restarted++;
-                        AppLogger.Log("[Recording] Mic capture resumed.");
-                    }
-                    catch (Exception ex)
-                    {
-                        AppLogger.LogError("[Recording] Error resuming mic capture", ex);
-                    }
-                }
-
-                // Restart loopback capture
-                if (_loopbackSource != null && _loopbackWriter != null)
-                {
-                    try
-                    {
-                        _loopbackSource.StartRecording();
-                        restarted++;
-                        AppLogger.Log("[Recording] Loopback capture resumed.");
-                    }
-                    catch (Exception ex)
-                    {
-                        AppLogger.LogError("[Recording] Error resuming loopback capture", ex);
-                    }
-                }
-
-                // Reset the pending-stop counter so ConvertToMp3Async fires correctly on next stop
-                _pendingStopCount = restarted;
-
-                if (restarted == 0)
-                {
-                    // Nothing could be resumed — treat as stopped
-                    _isRecordingActive = false;
-                    AppLogger.Log("[Recording] Resume failed — no devices could be restarted.");
-                }
-            }
-        }
-
-        // StopRecordingInternal is no longer used — logic moved into StopRecording
-        // to ensure devices are stopped outside the lock (deadlock prevention).
-
-        private void CleanUpWriter()
-        {
-            if (_waveWriter != null)
-            {
-                try
-                {
-                    _waveWriter.Flush();
-                    _waveWriter.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    AppLogger.LogError("[Recording] Error disposing WaveWriter", ex);
-                }
-                finally
-                {
-                    _waveWriter = null;
-                }
-            }
-        }
-
-        private void CleanUpLoopbackWriter()
-        {
-            if (_loopbackWriter != null)
-            {
-                try
-                {
-                    _loopbackWriter.Flush();
-                    _loopbackWriter.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    AppLogger.LogError("[Recording] Error disposing Loopback WaveWriter", ex);
-                }
-                finally
-                {
-                    _loopbackWriter = null;
-                }
-            }
-        }
-
-        private void ConvertToMp3Async(string wavPathMic, string wavPathLoopback, string mp3Path)
-        {
-            Task.Run(async () =>
-            {
-                try
-                {
-                    string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe");
-                    if (!File.Exists(ffmpegPath))
-                    {
-                        AppLogger.Log($"[Recording] FFmpeg not found at '{ffmpegPath}'. Cannot convert to MP3.");
-                        return;
+                        if (isMic) CleanUpMicWriter();
+                        else CleanUpLoopbackWriter();
                     }
 
-                    bool hasMic      = File.Exists(wavPathMic);
-                    bool hasLoopback = File.Exists(wavPathLoopback);
-
-                    if (!hasMic && !hasLoopback)
+                    if (ex != null)
                     {
-                        AppLogger.Log("[Recording] No temporary recording files found to convert.");
-                        return;
+                        AppLogger.LogError($"[Recording] {(isMic ? "Mic" : "Loopback")} recording stopped with error", ex);
                     }
 
-                    string arguments;
-                    if (hasMic && hasLoopback)
+                    if (!_isPaused)
                     {
-                        AppLogger.Log($"[Recording] Mixing Mic + Loopback to 320kbps MP3: {wavPathMic} & {wavPathLoopback} -> {mp3Path}");
-                        arguments = $"-y -i \"{wavPathLoopback}\" -i \"{wavPathMic}\" -filter_complex \"amix=inputs=2:duration=longest\" -codec:a libmp3lame -b:a 320k \"{mp3Path}\"";
-                    }
-                    else if (hasMic)
-                    {
-                        AppLogger.Log($"[Recording] Converting Mic WAV to 320kbps MP3: {wavPathMic} -> {mp3Path}");
-                        arguments = $"-y -i \"{wavPathMic}\" -codec:a libmp3lame -b:a 320k \"{mp3Path}\"";
-                    }
-                    else
-                    {
-                        AppLogger.Log($"[Recording] Converting Loopback WAV to 320kbps MP3: {wavPathLoopback} -> {mp3Path}");
-                        arguments = $"-y -i \"{wavPathLoopback}\" -codec:a libmp3lame -b:a 320k \"{mp3Path}\"";
-                    }
-
-                    var startInfo = new ProcessStartInfo
-                    {
-                        FileName               = ffmpegPath,
-                        Arguments              = arguments,
-                        UseShellExecute        = false,
-                        CreateNoWindow         = true,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError  = true
-                    };
-
-                    using (var process = Process.Start(startInfo))
-                    {
-                        if (process != null)
+                        _pendingStopCount--;
+                        if (_pendingStopCount <= 0 && !_conversionTriggered)
                         {
-                            process.WaitForExit();
-                            if (process.ExitCode == 0)
-                            {
-                                AppLogger.Log("[Recording] Successfully created mixed MP3. Deleting temporary WAV files.");
-                                await TryDeleteFileAsync(wavPathMic);
-                                await TryDeleteFileAsync(wavPathLoopback);
-                            }
-                            else
-                            {
-                                string err = process.StandardError.ReadToEnd();
-                                AppLogger.Log($"[Recording] FFmpeg mixing failed with exit code {process.ExitCode}. Output: {err}");
-                            }
+                            _conversionTriggered = true;
+                            shouldTrigger = true;
                         }
                     }
                 }
-                catch (Exception ex)
+
+                if (shouldTrigger)
                 {
-                    AppLogger.LogError("[Recording] Exception during MP3 conversion/mixing", ex);
+                    CleanUpWriters();
+                    TriggerConversion(_onConversionComplete);
                 }
-                finally
+            }
+
+            private void CleanUpMicWriter()
+            {
+                lock (_sessionLock)
                 {
-                    lock (_lock)
+                    if (_waveWriter != null)
                     {
-                        _activeOperations--;
-                        if (_activeOperations <= 0)
+                        try
                         {
-                            _allStoppedEvent.Set();
+                            _waveWriter.Flush();
+                            _waveWriter.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            AppLogger.LogError("[Recording] Error disposing Mic WaveWriter", ex);
+                        }
+                        finally
+                        {
+                            _waveWriter = null;
                         }
                     }
                 }
-            });
-        }
+            }
 
-        public void WaitForRecordingToFinish()
-        {
-            try
+            private void CleanUpLoopbackWriter()
             {
-                if (!_allStoppedEvent.IsSet)
+                lock (_sessionLock)
                 {
-                    AppLogger.Log("[Recording] Waiting for recording stop and MP3 transcoding to complete...");
-                    bool finished = _allStoppedEvent.Wait(20000); // Wait up to 20 seconds
-                    if (finished)
+                    if (_loopbackWriter != null)
                     {
-                        AppLogger.Log("[Recording] MP3 transcoding completed successfully before exit.");
-                    }
-                    else
-                    {
-                        AppLogger.Log("[Recording] Timeout waiting for MP3 transcoding to complete. Exiting anyway.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError("[Recording] Error waiting for recording finish", ex);
-            }
-        }
-
-        /// <summary>
-        /// Attempts to delete a file, retrying up to 3 times with a 500ms delay if the file
-        /// is locked by another process (e.g. ffmpeg still finishing).
-        /// </summary>
-        private async Task TryDeleteFileAsync(string path)
-        {
-            const int maxRetries = 3;
-            const int retryDelayMs = 500;
-
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    if (File.Exists(path))
-                    {
-                        File.Delete(path);
-                    }
-                    return; // success
-                }
-                catch (IOException ioEx) when (attempt < maxRetries)
-                {
-                    AppLogger.Log($"[Recording] File '{Path.GetFileName(path)}' is locked (attempt {attempt}/{maxRetries}): {ioEx.Message} — retrying in {retryDelayMs}ms...");
-                    await Task.Delay(retryDelayMs);
-                }
-                catch (Exception ex)
-                {
-                    AppLogger.LogError($"[Recording] Failed to delete temporary file '{path}'", ex);
-                    return;
-                }
-            }
-
-            // Final attempt after retries
-            try
-            {
-                if (File.Exists(path))
-                {
-                    File.Delete(path);
-                }
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError($"[Recording] Failed to delete temporary file '{path}' after {maxRetries} retries", ex);
-            }
-        }
-
-        private string SanitizeFileName(string fileName)
-        {
-            string invalidChars    = Regex.Escape(new string(Path.GetInvalidFileNameChars()));
-            string invalidRegStr   = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
-            return Regex.Replace(fileName, invalidRegStr, "_");
-        }
-
-        private MMDevice? GetLoopbackDevice(string targetFriendlyName)
-        {
-            try
-            {
-                var enumerator = new MMDeviceEnumerator();
-                var devices    = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-
-                foreach (var device in devices)
-                {
-                    if (device.FriendlyName.Equals(targetFriendlyName, StringComparison.OrdinalIgnoreCase) ||
-                        device.FriendlyName.Contains(targetFriendlyName) ||
-                        targetFriendlyName.Contains(device.FriendlyName))
-                    {
-                        return device;
+                        try
+                        {
+                            _loopbackWriter.Flush();
+                            _loopbackWriter.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            AppLogger.LogError("[Recording] Error disposing Loopback WaveWriter", ex);
+                        }
+                        finally
+                        {
+                            _loopbackWriter = null;
+                        }
                     }
                 }
             }
-            catch (Exception ex)
+
+            private void CleanUpWriters()
             {
-                AppLogger.LogError($"[Recording] Error finding MMDevice for loopback device '{targetFriendlyName}'", ex);
+                CleanUpMicWriter();
+                CleanUpLoopbackWriter();
             }
-            return null;
+
+            private void TriggerConversion(Func<Task>? onConversionComplete)
+            {
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        CleanUpWriters();
+                        await ConvertToMp3Async(MicPath, LoopbackPath, Mp3Path);
+                    }
+                    finally
+                    {
+                        if (onConversionComplete != null)
+                        {
+                            await onConversionComplete();
+                        }
+                    }
+                });
+            }
         }
     }
 }
