@@ -951,6 +951,7 @@
                         <div class="context-menu-item" onclick="controlAction('pitchreset')">原調</div>
                         <div class="context-menu-item" onclick="controlAction('pitchdown')">降調</div>
                         <div class="context-menu-item danger" onclick="confirmQuitApp()">結束程式</div>
+                        <div class="context-menu-item danger" onclick="confirmShutdownWin()">關閉電腦</div>
                     </div>
                 </div>
             </div>
@@ -1522,6 +1523,13 @@
         function confirmQuitApp() {
             if (confirm('確定要結束程式嗎？')) {
                 controlAction('quit');
+            }
+        }
+
+        // Confirm and shutdown Windows remotely
+        function confirmShutdownWin() {
+            if (confirm('確定要關閉電腦嗎？')) {
+                controlAction('shutdownwin');
             }
         }
 

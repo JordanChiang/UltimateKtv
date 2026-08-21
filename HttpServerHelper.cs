@@ -1137,6 +1137,36 @@ public class HttpServerHelper
 	        }
 	    }
 
+	    public static string ShutdownWin(string value, object mainDataContext)
+	    {
+	        try
+	        {
+	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(async () =>
+	            {
+	                await Task.Run(() =>
+	                {
+	                    try
+	                    {
+	                        RecordingManager.Instance.StopRecording();
+	                        RecordingManager.Instance.WaitForRecordingToFinish();
+	                    }
+	                    catch (Exception ex)
+	                    {
+	                        AppLogger.LogError("Error stopping recording before shutdown", ex);
+	                    }
+	                });
+	                System.Windows.Application.Current?.Shutdown();
+	                System.Diagnostics.Process.Start("shutdown", "/s /t 0");
+	            }));
+	            return JsonConvert.SerializeObject(new { success = true, message = "電腦即將關閉" });
+	        }
+	        catch (Exception ex)
+	        {
+	            return ErrorResult("ShutdownWin Error", ex.Message);
+	        }
+	    }
+
+
 	    public static async Task<string> SearchYoutubeAsync(string keyword)
 	    {
 	        if (string.IsNullOrWhiteSpace(keyword)) return EmptyResult;

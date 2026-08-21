@@ -294,6 +294,7 @@ public class HttpServer : IDisposable
                 "pitchdown" => HttpServerHelper.PitchDown(value, MainDataContext!),
                 "pitchreset" => HttpServerHelper.PitchReset(value, MainDataContext!),
                 "quit" => HttpServerHelper.QuitApp(value, MainDataContext!),
+                "shutdownwin" => HttpServerHelper.ShutdownWin(value, MainDataContext!),
 				"debug" => GetDebugInfo(),
                 "singerphoto" => await HandleSingerPhoto(context, queryParams),
                 "youtubesearch" => await HttpServerHelper.SearchYoutubeAsync(value),
@@ -332,7 +333,7 @@ public class HttpServer : IDisposable
 			"vocal" or "music" or
             "movetofirst" or "removefromlist" or "movetonext" or
             "volup" or "voldown" or "vollock" or
-            "pitchup" or "pitchdown" or "pitchreset" or "quit" or
+            "pitchup" or "pitchdown" or "pitchreset" or "quit" or "shutdownwin" or
 			"debug" or "events" or "singerphoto" or "youtubesearch" or "orderyoutube" or "queryyoutubehistory" or "orderyoutubehistory" or "checknewyoutube" or "importnewyoutube" or "queryyoutubequeue" => true,
 			_ => false
 		};
