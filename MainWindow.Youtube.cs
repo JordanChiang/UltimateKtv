@@ -135,90 +135,68 @@ namespace UltimateKtv
                     }
 
                 DebugLog($"YouTube Download: Starting for {song.SongName} ({videoId})");
-                
-                var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(videoId, token);
-
-                // Check user setting for high quality download
                 bool isHighQualityEnabled = SettingsManager.Instance.CurrentSettings.HighQualityYoutube;
-
-                IVideoStreamInfo? videoStream = null;
-                IAudioStreamInfo? audioStream = null;
-                IVideoStreamInfo? muxedStream = null;
-                double totalMegaBytes = 0;
-
-                if (isHighQualityEnabled)
-                {
-                    // Try to get a high-quality video-only stream (up to 1080p, prefer MP4)
-                    videoStream = streamManifest.GetVideoOnlyStreams()
-                        .Where(s => s.Container == Container.Mp4)
-                        .OrderByDescending(s => s.VideoResolution.Height)
-                        .FirstOrDefault(s => s.VideoResolution.Height <= 1080);
-
-                    audioStream = (IAudioStreamInfo)streamManifest.GetAudioOnlyStreams()
-                        .GetWithHighestBitrate();
-
-                    if (videoStream != null && audioStream != null)
-                    {
-                        totalMegaBytes = videoStream.Size.MegaBytes + audioStream.Size.MegaBytes;
-                    }
-                }
-
-                if (totalMegaBytes == 0) // Fallback or user preference
-                {
-                    muxedStream = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
-                    if (muxedStream == null)
-                    {
-                        MessageBox.Show("找不到適合的 YouTube 影片串流。", "錯誤", MessageBoxButton.OK, MessageBoxImage.Error);
-                        CleanupDownloadUI();
-                        return;
-                    }
-                    totalMegaBytes = muxedStream.Size.MegaBytes;
-                }
-
-                    if (totalMegaBytes > 300)
-                    {
-                        var result = MessageBox.Show($"此影片檔案較大 (約 {totalMegaBytes:F1} MB)，是否確定要下載？\n下載時間可能會較長。", "檔案較大", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                        if (result != MessageBoxResult.Yes)
-                        {
-                            continue;
-                        }
-                    }
-
-                // Download with progress
                 var progress = new Progress<double>(p => {
                     YoutubeDownloadPercentage = p * 100;
                     HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = YoutubeDownloadPercentage });
                 });
 
-                if (videoStream != null && audioStream != null)
+                bool downloadedSuccess = false;
+
+                // Primary engine: yt-dlp
+                try
                 {
-                    // Use FFmpeg to mux separate video + audio → supports 720p / 1080p
-                    string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg", "ffmpeg.exe");
-                    var streamInfos = new IStreamInfo[] { videoStream, audioStream };
-                    var conversionRequest = new ConversionRequestBuilder(filePath)
-                        .SetFFmpegPath(ffmpegPath)
-                        .SetContainer(Container.Mp4)
-                        .Build();
-                    await _youtube.Videos.DownloadAsync(streamInfos, conversionRequest, progress, token);
+                    await YtDlpHelper.DownloadVideoAsync(videoId, filePath, isHighQualityEnabled, progress, token);
+                    downloadedSuccess = true;
                 }
-                else if (muxedStream != null)
+                catch (OperationCanceledException)
                 {
-                    DebugLog($"YouTube Download: {(isHighQualityEnabled ? "Fallback" : "User Preference")} using muxed stream.");
-                    await _youtube.Videos.Streams.DownloadAsync(muxedStream, filePath, progress, token);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    DebugLog($"YouTube Download: yt-dlp engine failed ({ex.Message}), trying YoutubeExplode fallback...");
                 }
 
-                DebugLog($"YouTube Download: Completed! Path: {filePath}");
-                HttpServer.BroadcastEvent("YoutubeComplete", new { videoId = song.SongId });
-                
-                // Update song path, record to database, and add to waiting list
-                song.FilePath = filePath;
-                SongDatas.RecordYoutubeSong(song);
-                AddSongToWaitingList(song);
+                // Backup fallback engine: YoutubeExplode
+                if (!downloadedSuccess)
+                {
+                    try
+                    {
+                        var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(videoId, token);
+                        var muxedStream = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
+                        if (muxedStream != null)
+                        {
+                            await _youtube.Videos.Streams.DownloadAsync(muxedStream, filePath, progress, token);
+                            downloadedSuccess = true;
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        DebugLog($"YouTube Download: YoutubeExplode fallback also failed: {ex.Message}");
+                        throw;
+                    }
+                }
+
+                if (downloadedSuccess)
+                {
+                    DebugLog($"YouTube Download: Completed! Path: {filePath}");
+                    HttpServer.BroadcastEvent("YoutubeComplete", new { videoId = song.SongId });
+                    
+                    // Update song path, record to database, and add to waiting list
+                    song.FilePath = filePath;
+                    SongDatas.RecordYoutubeSong(song);
+                    AddSongToWaitingList(song);
 
                     if (_currentQuickMethod == QuickMethod.YoutubeHistory)
                     {
                         UpdateSearchWords(true);
                     }
+                }
                 }
                 catch (OperationCanceledException)
                 {
@@ -311,27 +289,35 @@ namespace UltimateKtv
                 if (_youtubeStreamUrlCache.TryGetValue(song.SongId, out var cachedUrl))
                 {
                     streamUrl = cachedUrl;
-                    DebugLog($"YoutubeThumbnail_MouseEnter: Using cached stream URL for {song.SongId}");
-                }
+                 }
                 else
                 {
-                    DebugLog($"YoutubeThumbnail_MouseEnter: Fetching manifest for {song.SongId}");
-                    // Do NOT pass the cancellation token to GetManifestAsync. 
-                    // Cancelling it mid-flight throws TaskCanceledException/IOException in the core libraries 
-                    // which spams the output window. Let it finish and just ignore the result.
-                    var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(song.SongId);
-                    
-                    if (token.IsCancellationRequested) return;
-
-                    // Try to get a low-res muxed stream (best for simple preview)
-                    var streamInfo = streamManifest.GetMuxedStreams()
-                        .OrderBy(s => s.VideoResolution.Height)
-                        .FirstOrDefault();
-
-                    if (streamInfo != null)
+                    // Primary engine: yt-dlp
+                    if (!token.IsCancellationRequested)
                     {
-                        streamUrl = streamInfo.Url;
-                        // Avoid holding memory for too long, but cache enough for the session
+                        streamUrl = await YtDlpHelper.GetPreviewStreamUrlAsync(song.SongId, token) ?? string.Empty;
+                    }
+
+                    // Fallback engine: YoutubeExplode
+                    if (string.IsNullOrEmpty(streamUrl) && !token.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(song.SongId);
+                            var streamInfo = streamManifest.GetMuxedStreams()
+                                .OrderBy(s => s.VideoResolution.Height)
+                                .FirstOrDefault();
+
+                            if (streamInfo != null)
+                            {
+                                streamUrl = streamInfo.Url;
+                            }
+                        }
+                        catch { }
+                    }
+
+                    if (!string.IsNullOrEmpty(streamUrl) && !token.IsCancellationRequested)
+                    {
                         if (_youtubeStreamUrlCache.Count > 100) _youtubeStreamUrlCache.Clear();
                         _youtubeStreamUrlCache[song.SongId] = streamUrl;
                     }
@@ -345,9 +331,7 @@ namespace UltimateKtv
                     var titleBorder = btn.Template.FindName("TitleBorder", btn) as Border;
 
                     if (previewPlayer != null)
-                    {
-                        DebugLog($"YoutubeThumbnail_MouseEnter: Stream URL ready, setting source...");
-                        
+                    {                        
                         // Hook up an event handler just once to catch MediaFailed errors from MediaElement
                         previewPlayer.MediaFailed -= PreviewPlayer_MediaFailed;
                         previewPlayer.MediaFailed += PreviewPlayer_MediaFailed;
@@ -360,7 +344,6 @@ namespace UltimateKtv
                         if (titleBorder != null) titleBorder.Visibility = Visibility.Collapsed;
                         previewPlayer.Visibility = Visibility.Visible;
                         previewPlayer.Play();
-                        DebugLog($"YoutubeThumbnail_MouseEnter: Play() called on PreviewPlayer.");
                     }
                 }
             }
