@@ -135,6 +135,7 @@ namespace UltimateKtv
         private Brush? _fixedButtonBackground; // Player logic
         private int _fixedAudioTrack = -1; // Player logic
         private Storyboard? _vocalBtnFlashStoryboard; // Player logic
+        private Storyboard? _repeatBtnFlashStoryboard; // Player logic for loop play
 
         // For dynamic top 7 filter buttons
         private enum MainFilterMode { Singer, NewSong, Ranking, Generation, Language }
@@ -300,7 +301,8 @@ namespace UltimateKtv
             this.SizeChanged += (_, __) => ApplyResponsiveFontSizing();
             ApplyResponsiveFontSizing();
 
-            InitializeVocalButtonFlashAnimation();
+            InitializeButtonFlashAnimation(VocalBtn);
+            InitializeButtonFlashAnimation(RepeatBtn);
 
             // Bind the 40-button ItemsControl once to the backing collection
             if (SearchInputGrid != null && SearchInputGrid.ItemsSource == null)

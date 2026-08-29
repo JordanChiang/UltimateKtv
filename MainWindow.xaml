@@ -427,7 +427,11 @@
                                         
                                         <!-- First row - pause and repeat buttons fill the row11 fill the row -->
                                         <Button Name="PauseBtn" Content="暫停" Grid.Row="0" Grid.Column="0" Style="{DynamicResource PlayerControlButtonStyle}" Click="Pause_Click"/>
-                                        <Button Name="RepeatBtn" Content="重播" Grid.Row="0" Grid.Column="2" Style="{DynamicResource PlayerControlButtonStyle}" Click="Repeat_Click"/>
+                                        <Button Name="RepeatBtn" Content="重播" Grid.Row="0" Grid.Column="2" Style="{DynamicResource PlayerControlButtonStyle}" 
+                                                Click="Repeat_Click"
+                                                PreviewMouseDown="RepeatBtn_PreviewMouseDown" 
+                                                PreviewMouseUp="RepeatBtn_PreviewMouseUp" 
+                                                MouseRightButtonUp="RepeatBtn_RightClick"/>
                                         
                                         <!-- Second row - buttons 12 and 13 fill the row -->
                                         <Button Name="VocalBtn" Content="人聲" Grid.Row="2" Grid.Column="0" Style="{DynamicResource PlayerControlButtonStyle}" 

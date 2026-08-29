@@ -176,10 +176,19 @@ namespace UltimateKtv
                 DebugLog($"     AudioAmplify= {player.AudioAmplify}, VideoRendererType: {player.VideoRenderer}");
                 
                 // Check if a vocal track is fixed and apply it if valid for the current media.
-                if (_isVocalTrackFixed && _fixedAudioTrack != -1)// && audioTracks.Contains(_fixedAudioTrack))
+                if (_isVocalTrackFixed && _fixedAudioTrack != -1)
                 {
-                    player.AudioTrack = _fixedAudioTrack;
-                    DebugLog($"     Applying fixed audio track: {_fixedAudioTrack}");
+                    if (player.AudioStreams == null || player.AudioStreams.Count <= 1)
+                    {
+                        player.AudioChannel = _fixedAudioTrack;
+                        if (player.AudioStreams != null && player.AudioStreams.Count > 0)
+                            player.AudioTrack = player.AudioStreams[0];
+                    }
+                    else
+                    {
+                        player.AudioTrack = _fixedAudioTrack;
+                    }
+                    DebugLog($"     Applying fixed audio track: {_fixedAudioTrack} (AudioStreams.Count={player.AudioStreams?.Count ?? 0}, AudioChannel={player.AudioChannel})");
                 }
                 else if (player.AudioStreams.Count == 1)
                 {
@@ -403,6 +412,18 @@ namespace UltimateKtv
             MarqueeAPI.StopAll();
             DebugLog("All marquees stopped on media end.");
 
+            if (_isLoopPlay && !string.IsNullOrEmpty(PlayingFilePath))
+            {
+                DebugLog($"MediaEnded: Loop play is enabled for '{PlayingFilePath}'. Replaying song.");
+                // Reset lyrics
+                _currentLyrics = null;
+                _currentLyricIndex = -1;
+                _videoDisplayWindow?.UpdateLyrics("", Visibility.Collapsed);
+
+                ReplayCurrentSong();
+                return;
+            }
+
             _isPlayingFromWaitingList = false;
             _isRandomSongPlaying = false;
             IsPlayingYoutube = false;
@@ -600,6 +621,10 @@ namespace UltimateKtv
                 mediaUriElement.Stop();
                 mediaUriElement.Source = null; // Clear source to release resources immediately
                 _isRandomSongPlaying = false;
+                if (_isLoopPlay)
+                {
+                    SetLoopPlay(false);
+                }
                 MarqueeAPI.StopAll();
                 PlayNextSongFromWaitingList();
             }
@@ -648,18 +673,30 @@ namespace UltimateKtv
 
         private void Repeat_Click(object sender, RoutedEventArgs e)
         {
+            if (_isLoopPlay)
+            {
+                // 點1下後則取消循環播放變成原來的"重播"功能
+                SetLoopPlay(false);
+                return;
+            }
+
+            ReplayCurrentSong();
+        }
+
+        public void ReplayCurrentSong()
+        {
             // Replay current song
             try
             {
                 if (!string.IsNullOrEmpty(PlayingFilePath))
                 {
-                    AppLogger.Log($"User action: Repeat button clicked for '{PlayingFilePath}'");
+                    AppLogger.Log($"User action: Replaying '{PlayingFilePath}'");
                     // To safely repeat, we must stop the current playback and
                     // re-assign the Source. This forces the media graph to be
                     // rebuilt correctly, avoiding hangs when the player is in a
                     // stopped or closed state.
                     // Simply setting MediaPosition = 0 is not safe if the graph is torn down.
-                    DebugLog($"Repeat_Click: Re-playing '{PlayingFilePath}'");
+                    DebugLog($"ReplayCurrentSong: Re-playing '{PlayingFilePath}'");
 
                     try
                     {
@@ -667,7 +704,7 @@ namespace UltimateKtv
                     }
                     catch (Exception ex)
                     {
-                        AppLogger.LogError("Error stopping recording in Repeat_Click", ex);
+                        AppLogger.LogError("Error stopping recording in ReplayCurrentSong", ex);
                     }
 
                     // Stop any current playback and release resources
@@ -680,13 +717,42 @@ namespace UltimateKtv
                 }
                 else
                 {
-                    DebugLog("Repeat_Click: No song is currently playing (PlayingFilePath is empty).");
+                    DebugLog("ReplayCurrentSong: No song is currently playing (PlayingFilePath is empty).");
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error replaying song: {ex.Message}");
                 AppLogger.LogError("Error replaying song", ex);
+            }
+        }
+
+        public void SetLoopPlay(bool enable)
+        {
+            _isLoopPlay = enable;
+
+            if (RepeatBtn == null) return;
+
+            if (_isLoopPlay)
+            {
+                RepeatBtn.Content = "循環";
+                RepeatBtn.Background = _fixedButtonBackground ?? TextSettingsHandler.PrimaryDarkBrush;
+                RepeatBtn.Foreground = _activeButtonForeground ?? new SolidColorBrush(Colors.White);
+                _repeatBtnFlashStoryboard?.Begin(RepeatBtn, true);
+                MarqueeAPI.ShowStaticAnnouncement("已開啟單曲循環播放", 5);
+                AppLogger.Log("User action: Loop play enabled");
+                DebugLog("SetLoopPlay: Loop play enabled");
+            }
+            else
+            {
+                RepeatBtn.Content = "重播";
+                _repeatBtnFlashStoryboard?.Stop(RepeatBtn);
+                RepeatBtn.ClearValue(OpacityProperty);
+                RepeatBtn.ClearValue(Button.BackgroundProperty);
+                RepeatBtn.ClearValue(Button.ForegroundProperty);
+                MarqueeAPI.ShowStaticAnnouncement("已取消單曲循環播放", 5);
+                AppLogger.Log("User action: Loop play disabled");
+                DebugLog("SetLoopPlay: Loop play disabled");
             }
         }
 
@@ -1272,10 +1338,13 @@ namespace UltimateKtv
 
                 setFixeTrackButton.Click += (s, e) =>
                 {
-                    AppLogger.Log($"User action: Fix audio track to {currentTrack}");
+                    var targetTrack = (mediaUriElement.AudioStreams == null || mediaUriElement.AudioStreams.Count <= 1) 
+                        ? mediaUriElement.AudioChannel 
+                        : currentTrack;
+                    AppLogger.Log($"User action: Fix audio track to {targetTrack}");
                     // Set the fixed track state and close the popup
                     _isVocalTrackFixed = true;
-                    _fixedAudioTrack = currentTrack;
+                    _fixedAudioTrack = targetTrack;
                     result = null; // Indicate a different action from 'set as music'
                     popup.IsOpen = false;
                 };
@@ -1351,8 +1420,20 @@ namespace UltimateKtv
                     }
                     else // "Fix Track" was clicked (result is null)
                     {
-                        DebugLog($"User confirmed: Fixing AudioTrack to {currentTrack}");
-                        MarqueeAPI.ShowStaticAnnouncement($"已固定聲道 {currentTrack}", 5);
+                        DebugLog($"User confirmed: Fixing AudioTrack to {_fixedAudioTrack}");
+                        if (mediaUriElement.AudioStreams == null || mediaUriElement.AudioStreams.Count <= 1)
+                        {
+                            if (_fixedAudioTrack == 1)
+                                MarqueeAPI.ShowStaticAnnouncement($"已固定左聲道播放", 5);
+                            else if (_fixedAudioTrack == 2)
+                                MarqueeAPI.ShowStaticAnnouncement($"已固定右聲道播放", 5);
+                            else
+                                MarqueeAPI.ShowStaticAnnouncement($"已固定聲道 {_fixedAudioTrack} 播放", 5);
+                        }
+                        else
+                        {
+                            MarqueeAPI.ShowStaticAnnouncement($"已固定聲道 {_fixedAudioTrack} 播放", 5);
+                        }
 
                         // Update button visuals to reflect the new "fixed" state
                         UpdateVocalMusicButtonStates();
@@ -1397,10 +1478,174 @@ namespace UltimateKtv
         }
 
         #endregion
-        
-        private void InitializeVocalButtonFlashAnimation()
+
+        #region RepeatBtn Long Press, Double Click and Right Click Handlers
+
+        private DispatcherTimer? _repeatBtnLongPressTimer;
+        private bool _repeatBtnLongPressTriggered = false;
+        private bool _isLoopPlay = false;
+
+        public bool IsLoopPlay => _isLoopPlay;
+
+        private void RepeatBtn_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            _vocalBtnFlashStoryboard = new Storyboard();
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                _repeatBtnLongPressTriggered = false;
+
+                // Double click detection
+                if (e.ClickCount >= 2)
+                {
+                    e.Handled = true;
+                    _repeatBtnLongPressTimer?.Stop();
+                    ShowLoopPlayDialog();
+                    return;
+                }
+
+                // Start long press timer (500ms)
+                _repeatBtnLongPressTimer?.Stop();
+                _repeatBtnLongPressTimer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(500)
+                };
+                _repeatBtnLongPressTimer.Tick += (s, args) =>
+                {
+                    _repeatBtnLongPressTimer?.Stop();
+                    _repeatBtnLongPressTriggered = true;
+                    ShowLoopPlayDialog();
+                };
+                _repeatBtnLongPressTimer.Start();
+            }
+        }
+
+        private void RepeatBtn_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            _repeatBtnLongPressTimer?.Stop();
+
+            // If long press was triggered, prevent the normal click
+            if (_repeatBtnLongPressTriggered)
+            {
+                e.Handled = true;
+                _repeatBtnLongPressTriggered = false;
+            }
+        }
+
+        private void RepeatBtn_RightClick(object sender, MouseButtonEventArgs e)
+        {
+            AppLogger.Log("User action: Repeat button right click");
+            DebugLog("RepeatBtn_RightClick triggered");
+            ShowLoopPlayDialog();
+        }
+
+        private void ShowLoopPlayDialog()
+        {
+            try
+            {
+                if (RepeatBtn == null) return;
+
+                AppLogger.Log("User action: Show loop play dialog");
+                DebugLog($"ShowLoopPlayDialog: Current _isLoopPlay={_isLoopPlay}");
+
+                // 當副選單出現時，原來的按鈕無效 (Disabled)
+                RepeatBtn.IsEnabled = false;
+
+                // Create a popup positioned near the RepeatBtn
+                var popup = new System.Windows.Controls.Primitives.Popup
+                {
+                    PlacementTarget = RepeatBtn,
+                    Placement = System.Windows.Controls.Primitives.PlacementMode.Top,
+                    AllowsTransparency = true,
+                    StaysOpen = false
+                };
+
+                // Create the dialog content with styling matching Vocal dialog
+                var dialogBorder = new Border
+                {
+                    Background = new SolidColorBrush(Colors.White),
+                    BorderBrush = new SolidColorBrush(Colors.Gray),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(5),
+                    Height = 44,
+                    Effect = new System.Windows.Media.Effects.DropShadowEffect
+                    {
+                        Color = Colors.Black,
+                        Direction = 315,
+                        ShadowDepth = 5,
+                        Opacity = 0.3
+                    }
+                };
+
+                // Button panel
+                var buttonPanel = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Height = 40,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(4)
+                };
+
+                var loopPlayButton = new Button
+                {
+                    Content = _isLoopPlay ? "取消循環" : "循環播放",
+                    Margin = new Thickness(0, 0, 8, 0)
+                };
+                TextSettingsHandler.ApplyOutlinedButtonStyle(loopPlayButton, 18);
+
+                var cancelButton = new Button
+                {
+                    Content = "取消",
+                    Margin = new Thickness(0, 0, 8, 0)
+                };
+                TextSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 18);
+
+                buttonPanel.Children.Add(loopPlayButton);
+                buttonPanel.Children.Add(cancelButton);
+
+                dialogBorder.Child = buttonPanel;
+                popup.Child = dialogBorder;
+
+                bool? result = null;
+
+                loopPlayButton.Click += (s, e) =>
+                {
+                    result = !_isLoopPlay;
+                    AppLogger.Log($"User action: Clicked loopPlayButton in popup, target state: {result}");
+                    popup.IsOpen = false;
+                };
+
+                cancelButton.Click += (s, e) =>
+                {
+                    result = null;
+                    popup.IsOpen = false;
+                };
+
+                popup.Closed += (s, e) =>
+                {
+                    // 副選單關閉後，恢復原來的按鈕功能 (Enabled)
+                    RepeatBtn.IsEnabled = true;
+
+                    if (result.HasValue)
+                    {
+                        SetLoopPlay(result.Value);
+                    }
+                };
+
+                popup.IsOpen = true;
+            }
+            catch (Exception ex)
+            {
+                RepeatBtn.IsEnabled = true;
+                DebugLog($"ShowLoopPlayDialog error: {ex.Message}");
+                AppLogger.LogError("ShowLoopPlayDialog error", ex);
+            }
+        }
+
+        #endregion
+        
+        private void InitializeButtonFlashAnimation(Button button)
+        {
+            var storyboard = new Storyboard();
             var animation = new DoubleAnimation
             {
                 From = 1.0,
@@ -1410,7 +1655,16 @@ namespace UltimateKtv
                 RepeatBehavior = RepeatBehavior.Forever
             };
             Storyboard.SetTargetProperty(animation, new PropertyPath(OpacityProperty));
-            _vocalBtnFlashStoryboard.Children.Add(animation);
+            storyboard.Children.Add(animation);
+
+            if (button == VocalBtn)
+            {
+                _vocalBtnFlashStoryboard = storyboard;
+            }
+            else if (button == RepeatBtn)
+            {
+                _repeatBtnFlashStoryboard = storyboard;
+            }
         }
 
         // New: centralized, reusable volume mapper for project-wide usage.
