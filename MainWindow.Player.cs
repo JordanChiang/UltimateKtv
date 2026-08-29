@@ -178,17 +178,39 @@ namespace UltimateKtv
                 // Check if a vocal track is fixed and apply it if valid for the current media.
                 if (_isVocalTrackFixed && _fixedAudioTrack != -1)
                 {
-                    if (player.AudioStreams == null || player.AudioStreams.Count <= 1)
+                    int streamCount = player.AudioStreams?.Count ?? 0;
+
+                    if (streamCount <= 1)
                     {
-                        player.AudioChannel = _fixedAudioTrack;
+                        // Single audio track: Switch between Left (1) and Right (2) channels
                         if (player.AudioStreams != null && player.AudioStreams.Count > 0)
                             player.AudioTrack = player.AudioStreams[0];
+
+                        // Select the vocal channel (opposite of PlayingFileMusicTrack)
+                        player.AudioChannel = (PlayingFileMusicTrack == 1) ? 2 : 1;
                     }
                     else
                     {
-                        player.AudioTrack = _fixedAudioTrack;
+                        // Multi audio tracks (2 or more)
+                        player.AudioChannel = 0; // Stereo
+
+                        if (streamCount >= 3 && player.AudioStreams != null && player.AudioStreams.Contains(_fixedAudioTrack))
+                        {
+                            // 3+ tracks and exact fixed track exists -> select exact track
+                            player.AudioTrack = _fixedAudioTrack;
+                        }
+                        else
+                        {
+                            // Dual-track or track count insufficient -> pick the first non-music track (vocal track)
+                            int vocalTrack = player.AudioStreams?.FirstOrDefault(t => t != PlayingFileMusicTrack) ?? 0;
+                            if (vocalTrack == 0 && player.AudioStreams != null && player.AudioStreams.Count > 0)
+                                vocalTrack = player.AudioStreams[0];
+
+                            player.AudioTrack = vocalTrack;
+                        }
                     }
-                    DebugLog($"     Applying fixed audio track: {_fixedAudioTrack} (AudioStreams.Count={player.AudioStreams?.Count ?? 0}, AudioChannel={player.AudioChannel})");
+
+                    DebugLog($"     Applying fixed vocal track: Fixed={_fixedAudioTrack} -> Target Track={player.AudioTrack}, Channel={player.AudioChannel} (Streams.Count={streamCount}, PlayingFileMusicTrack={PlayingFileMusicTrack})");
                 }
                 else if (player.AudioStreams.Count == 1)
                 {
