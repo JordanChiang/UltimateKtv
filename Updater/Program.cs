@@ -5,6 +5,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -17,13 +18,23 @@ namespace UltimateKtv.Updater
 
         static async Task Main(string[] args)
         {
+            try
+            {
+                Console.OutputEncoding = Encoding.UTF8;
+                Console.InputEncoding = Encoding.UTF8;
+            }
+            catch
+            {
+                // Ignore if terminal environment does not support changing encoding
+            }
+
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "UltimateKtv-Updater-Independent");
             
             Console.Title = "UltimateKtv 更新管理員";
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("====================================================");
-            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.3 =");
+            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.4 =");
             Console.WriteLine("====================================================");
             Console.ResetColor();
             Console.WriteLine();

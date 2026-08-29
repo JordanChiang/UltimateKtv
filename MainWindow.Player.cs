@@ -1282,8 +1282,13 @@ namespace UltimateKtv
         {
             try
             {
+                if (VocalBtn == null) return Task.CompletedTask;
+
                 var currentTrack = mediaUriElement.AudioTrack;
                 DebugLog($"ShowSetAsMusicTrackDialog: Current AudioTrack={currentTrack}, Current PlayingFileMusicTrack={PlayingFileMusicTrack}");
+
+                // 當副選單出現時，原來的按鈕無效 (Disabled)
+                if (VocalBtn != null) VocalBtn.IsEnabled = false;
 
                 // Create a popup positioned near the VocalBtn
                 var popup = new System.Windows.Controls.Primitives.Popup
@@ -1380,6 +1385,9 @@ namespace UltimateKtv
                 // Handle popup closed event
                 popup.Closed += (s, e) =>
                 {
+                    // 副選單關閉後，恢復原來的按鈕功能 (Enabled)
+                    if (VocalBtn != null) VocalBtn.IsEnabled = true;
+
                     // Process result after popup closes
                     if (result == true) // "Set as Music" was clicked
                     {
@@ -1467,6 +1475,7 @@ namespace UltimateKtv
             }
             catch (Exception ex)
             {
+                if (VocalBtn != null) VocalBtn.IsEnabled = true;
                 DebugLog($"Error in ShowSetAsMusicTrackDialog: {ex.Message}");
                 AppLogger.LogError("Error in ShowSetAsMusicTrackDialog", ex);
                 MarqueeAPI.ShowStaticAnnouncement("設定失敗", 2);
@@ -1501,7 +1510,7 @@ namespace UltimateKtv
 
         #endregion
 
-        #region RepeatBtn Long Press, Double Click and Right Click Handlers
+        #region RepeatBtn Long Press and Right Click Handlers
 
         private DispatcherTimer? _repeatBtnLongPressTimer;
         private bool _repeatBtnLongPressTriggered = false;
@@ -1514,15 +1523,6 @@ namespace UltimateKtv
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 _repeatBtnLongPressTriggered = false;
-
-                // Double click detection
-                if (e.ClickCount >= 2)
-                {
-                    e.Handled = true;
-                    _repeatBtnLongPressTimer?.Stop();
-                    ShowLoopPlayDialog();
-                    return;
-                }
 
                 // Start long press timer (500ms)
                 _repeatBtnLongPressTimer?.Stop();
