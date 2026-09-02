@@ -374,6 +374,8 @@ namespace UltimateKtv
             {
                 if (radio == YoutubeRadio)
                 {
+                    _ = YtDlpHelper.EnsureYtDlpAsync();
+
                     if (!_hasCheckedYoutubeHistoryFiles)
                     {
                         _hasCheckedYoutubeHistoryFiles = true;

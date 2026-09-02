@@ -119,6 +119,16 @@ namespace UltimateKtv
             Enqueue(logEntry);
         }
 
+        public static void LogInfo(string message) => Log(message);
+
+        public static void LogWarn(string message)
+        {
+            if (!IsEnabled) return;
+            
+            string logEntry = $"[{DateTime.Now:HH:mm:ss.fff}] [WARN] {message}{Environment.NewLine}";
+            Enqueue(logEntry);
+        }
+
         public static void LogError(string message, Exception? ex = null)
         {
             if (!IsEnabled) return;

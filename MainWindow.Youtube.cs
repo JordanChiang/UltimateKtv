@@ -137,8 +137,12 @@ namespace UltimateKtv
                 DebugLog($"YouTube Download: Starting for {song.SongName} ({videoId})");
                 bool isHighQualityEnabled = SettingsManager.Instance.CurrentSettings.HighQualityYoutube;
                 var progress = new Progress<double>(p => {
-                    YoutubeDownloadPercentage = p * 100;
-                    HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = YoutubeDownloadPercentage });
+                    double newPct = Math.Round(p * 100);
+                    if (newPct > YoutubeDownloadPercentage)
+                    {
+                        YoutubeDownloadPercentage = newPct;
+                        HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = YoutubeDownloadPercentage });
+                    }
                 });
 
                 bool downloadedSuccess = false;
@@ -146,7 +150,18 @@ namespace UltimateKtv
                 // Primary engine: yt-dlp
                 try
                 {
-                    await YtDlpHelper.DownloadVideoAsync(videoId, filePath, isHighQualityEnabled, progress, token);
+                    await YtDlpHelper.DownloadVideoAsync(videoId, filePath, isHighQualityEnabled, progress, token, status =>
+                    {
+                        Dispatcher.BeginInvoke(() =>
+                        {
+                            if (YoutubeStatusText != null)
+                            {
+                                int rem = _youtubeDownloadQueue.Count;
+                                YoutubeStatusText.Text = rem > 0 ? $" {status} (剩餘: {rem})" : $" {status}";
+                                YoutubeStatusText.Visibility = Visibility.Visible;
+                            }
+                        });
+                    });
                     downloadedSuccess = true;
                 }
                 catch (OperationCanceledException)

@@ -864,7 +864,7 @@
                                                        FontSize="22" FontWeight="Bold" Margin="0,0,10,0" Visibility="Collapsed"/>
                                             <TextBlock x:Name="YoutubeDownloadText" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="#FFD700"
                                                        FontSize="22" FontWeight="Bold"
-                                                       Visibility="Collapsed" Text="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:F1}%}"/>
+                                                       Visibility="Collapsed" Text="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:0}%}"/>
                                         </StackPanel>
                                         
                                         <Button x:Name="QuickPageUpBtn" Grid.Column="5" Content="上頁" Width="{StaticResource ExtendedBtnWidth}" Height="42"
