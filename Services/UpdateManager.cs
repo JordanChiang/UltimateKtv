@@ -198,7 +198,7 @@ namespace UltimateKtv.Services
                 // Extract Zip
                 await Task.Run(() =>
                 {
-                    ZipFile.ExtractToDirectory(zipFilePath, extractPath, true);
+                    ZipHelper.SafeExtractZip(zipFilePath, extractPath, msg => AppLogger.Log(msg));
                 });
 
                 progressWindow?.ReportProgress(100, "準備套用更新...");
@@ -248,7 +248,7 @@ namespace UltimateKtv.Services
                 }
 
                 // Arguments: --pid [pid] --source [source] --dest [dest] --exe [exe]
-                string arguments = $"--pid {currentPid} --source \"{extractPath}\" --dest \"{currentAppPath.TrimEnd('\\')}\" --exe \"{currentExePath}\"";
+                string arguments = $"--pid {currentPid} --source \"{extractPath.TrimEnd('\\')}\" --dest \"{currentAppPath.TrimEnd('\\')}\" --exe \"{currentExePath.TrimEnd('\\')}\"";
 
                 try
                 {

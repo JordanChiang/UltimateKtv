@@ -34,7 +34,7 @@ namespace UltimateKtv.Updater
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("====================================================");
-            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.4 =");
+            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.5 =");
             Console.WriteLine("====================================================");
             Console.ResetColor();
             Console.WriteLine();
@@ -174,7 +174,12 @@ namespace UltimateKtv.Updater
 
             // 5. Extract
             Console.WriteLine("[3/5] 正在解壓縮...");
-            ZipFile.ExtractToDirectory(zipPath, extractPath);
+            ZipHelper.SafeExtractZip(zipPath, extractPath, msg =>
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"      {msg}");
+                Console.ResetColor();
+            });
 
             // 6. Check if app is running
             int targetPid = 0;
@@ -219,10 +224,23 @@ namespace UltimateKtv.Updater
 
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i] == "--pid" && i + 1 < args.Length) targetPid = int.Parse(args[++i]);
-                else if (args[i] == "--source" && i + 1 < args.Length) sourceDir = args[++i];
-                else if (args[i] == "--dest" && i + 1 < args.Length) destDir = args[++i];
-                else if (args[i] == "--exe" && i + 1 < args.Length) targetExe = args[++i];
+                string arg = args[i];
+                if (arg.Equals("--pid", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    int.TryParse(args[++i].Trim('"', '\'', ' '), out targetPid);
+                }
+                else if (arg.Equals("--source", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    sourceDir = args[++i].Trim('"', '\'', ' ');
+                }
+                else if (arg.Equals("--dest", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    destDir = args[++i].Trim('"', '\'', ' ');
+                }
+                else if (arg.Equals("--exe", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+                {
+                    targetExe = args[++i].Trim('"', '\'', ' ');
+                }
             }
 
             return targetPid != 0 && !string.IsNullOrEmpty(sourceDir) && !string.IsNullOrEmpty(destDir) && !string.IsNullOrEmpty(targetExe);
@@ -249,7 +267,19 @@ namespace UltimateKtv.Updater
             // 2. Small delay for file release
             await Task.Delay(1000);
 
-            // 3. Copy files
+            // 3. Create all directories (including empty ones)
+            var directories = Directory.GetDirectories(sourceDir, "*", SearchOption.AllDirectories);
+            foreach (var dir in directories)
+            {
+                string relativeDir = GetRelativePath(sourceDir, dir);
+                string destFolder = Path.Combine(destDir, relativeDir);
+                if (!Directory.Exists(destFolder))
+                {
+                    Directory.CreateDirectory(destFolder);
+                }
+            }
+
+            // 4. Copy files
             Console.WriteLine("[5/5] 正在複製更新檔案...");
             var files = Directory.GetFiles(sourceDir, "*.*", SearchOption.AllDirectories);
             int totalFiles = files.Length;
@@ -280,9 +310,12 @@ namespace UltimateKtv.Updater
                     continue;
                 }
 
-                string destFolder = Path.GetDirectoryName(destFile)!;
+                string destFolder = Path.GetDirectoryName(destFile);
 
-                if (!Directory.Exists(destFolder)) Directory.CreateDirectory(destFolder);
+                if (!string.IsNullOrEmpty(destFolder) && !Directory.Exists(destFolder))
+                {
+                    Directory.CreateDirectory(destFolder);
+                }
 
                 int retry = 0;
                 while (retry < 5)
@@ -331,9 +364,15 @@ namespace UltimateKtv.Updater
 
         private static string GetRelativePath(string relativeTo, string path)
         {
-            var uri = new Uri(relativeTo.EndsWith("\\") ? relativeTo : relativeTo + "\\");
-            var fullUri = new Uri(path);
-            return Uri.UnescapeDataString(uri.MakeRelativeUri(fullUri).ToString().Replace('/', '\\'));
+            string fullRelativeTo = Path.GetFullPath(relativeTo).TrimEnd('\\', '/') + "\\";
+            string fullPath = Path.GetFullPath(path);
+
+            if (fullPath.StartsWith(fullRelativeTo, StringComparison.OrdinalIgnoreCase))
+            {
+                return fullPath.Substring(fullRelativeTo.Length);
+            }
+
+            return Path.GetFileName(fullPath);
         }
     }
 }
