@@ -136,5 +136,79 @@ namespace UltimateKtv
         [Description("錄音檔存放路徑: 設定錄音檔的儲存目錄。")]
         public string RecordingPath { get; set; } = "Recordings";
 
+        [Description("跑馬燈文字範本(點播且有待播歌曲): 播放點播歌曲，待播清單有歌時的跑馬燈字串範本。{0}=當前歌名, {1}=當前歌手, {2}=下首歌名, {3}=下首歌手, {4}=區網IP:Port, {5}=外網IP:Port。")]
+        public string MarqueeTextString1 { get; set; } = "目前正在播放歌曲：「{1} - {0}」，下一首播放：「{3} - {2}」，請準備！！";
+
+        [Description("跑馬燈文字範本(點播且無待播歌曲): 播放點播歌曲，待播清單沒有歌時的跑馬燈字串範本。{0}=當前歌名, {1}=當前歌手, {4}=區網IP:Port, {5}=外網IP:Port。")]
+        public string MarqueeTextString2 { get; set; } = "目前正在播放歌曲：「{1} - {0}」";
+
+        [Description("跑馬燈文字範本(隨機播放且無待播歌曲): 播放隨機點播歌曲，待播清單沒有歌時的跑馬燈字串範本。{0}=當前歌名, {1}=當前歌手, {4}=區網IP:Port, {5}=外網IP:Port。")]
+        public string MarqueeTextString3 { get; set; } = "隨機播放歌曲：「{1} - {0}」";
+
+        [Description("跑馬燈文字範本(啟動訊息): 進入程式時在播放螢幕顯示的跑馬燈字串範本。{4}=區網IP:Port, {5}=外網IP:Port。")]
+        public string MarqueeTextStartup { get; set; } = "歡迎使用 Ultimate KTV！點歌網址：{4}";
+
+        [Description("跑馬燈字型: 設定跑馬燈文字字型名稱。預設為 微軟正黑體。")]
+        public string MarqueeTextFontFamily { get; set; } = "微軟正黑體";
+
+        [Description("跑馬燈字型粗細: 設定跑馬燈字型粗細 (Normal, Bold, ExtraBold 等)。預設為 Bold。")]
+        public string MarqueeTextFontWeight { get; set; } = "Bold";
+
+        [Description("跑馬燈字體大小: 設定跑馬燈文字大小。有效範圍: 12 - 128。預設為 72。")]
+        public int MarqueeTextFontSize { get; set; } = 72;
+
+        [Description("跑馬燈文字描邊粗細: 設定跑馬燈文字外框描邊粗細。有效範圍: 0 - 32。預設為 8。")]
+        public int MarqueeTextFontStrokeThickness { get; set; } = 8;
+
+        [Description("跑馬燈文字顏色: 設定跑馬燈文字本體填滿顏色 (Hex 色碼)。預設為 #FFFFFF。")]
+        public string MarqueeTextFillColor { get; set; } = "#FFFFFF";
+
+        [Description("跑馬燈文字描邊顏色: 設定跑馬燈文字外框描邊顏色 (Hex 色碼)。預設為 #000000。")]
+        public string MarqueeTextStrokeColor { get; set; } = "#000000";
+
+        [Description("跑馬燈停留等待時間: 單趟滾動完成後的停留/間隔等待時間 (毫秒)。預設為 1000。")]
+        public int MarqueeTextTimeHold { get; set; } = 1000;
+
+        [Description("跑馬燈滾動速度: 跑馬燈移動速度 (像素/秒)。有效範圍: 100 - 1000。預設為 200。")]
+        public int MarqueeTextTimeDuration { get; set; } = 200;
+
+        [Description("跑馬燈播放次數: 跑馬燈重複播放次數。有效範圍: 0 - 10 (0 代表關閉/不顯示跑馬燈)。預設為 2。")]
+        public int MarqueeTextPlayCount { get; set; } = 2;
+
+        #region 點播成功跑馬燈設定
+
+        [Description("點播成功跑馬燈文字範本: 點歌成功時在播放螢幕顯示的跑馬燈字串範本。{0}=歌名, {1}=歌手, {4}=區網IP:Port, {5}=外網IP:Port, {6}=網路點歌者名字。")]
+        public string MarqueeSongAddedString { get; set; } = "點播歌曲：{1} - {0}，點歌人：{6}";
+
+        [Description("點播成功跑馬燈字型: 設定點歌成功提示的字型名稱。預設為 微軟正黑體。")]
+        public string MarqueeSongAddedFontFamily { get; set; } = "微軟正黑體";
+
+        [Description("點播成功跑馬燈字體大小: 設定點歌成功提示的字體大小。有效範圍: 12 - 128。預設為 48。")]
+        public int MarqueeSongAddedFontSize { get; set; } = 48;
+
+        [Description("點播成功跑馬燈文字顏色: 設定點歌成功提示的文字顏色 (Hex 色碼)。預設為 #90EE90。")]
+        public string MarqueeSongAddedFillColor { get; set; } = "#90EE90";
+
+        [Description("點播成功跑馬燈顯示時間: 設定點歌成功提示的顯示秒數。有效範圍: 0 - 60 (0 代表不顯示)。預設為 3。")]
+        public int MarqueeSongAddedTimeDuration { get; set; } = 3;
+
+        #endregion
+
+        #region 系統廣播(音量/音調)跑馬燈設定
+
+        [Description("系統廣播跑馬燈字型: 設定系統廣播 (音量/音調/聲道/狀態) 提示的字型名稱。預設為 微軟正黑體。")]
+        public string MarqueeBroadcastFontFamily { get; set; } = "微軟正黑體";
+
+        [Description("系統廣播跑馬燈字體大小: 設定系統廣播 (音量/音調/聲道/狀態) 提示的字體大小。有效範圍: 12 - 128。預設為 38。")]
+        public int MarqueeBroadcastFontSize { get; set; } = 48;
+
+        [Description("系統廣播跑馬燈文字顏色: 設定系統廣播 (音量/音調/聲道/狀態) 提示的文字顏色 (Hex 色碼)。預設為 #FFD700。")]
+        public string MarqueeBroadcastFillColor { get; set; } = "#FFD700";
+
+        [Description("系統廣播跑馬燈顯示時間: 設定系統廣播 (音量/音調/聲道/狀態) 提示的顯示秒數。有效範圍: 0 - 60 (0 代表不顯示)。預設為 3。")]
+        public int MarqueeBroadcastTimeDuration { get; set; } = 3;
+
+        #endregion
+
     }
 }

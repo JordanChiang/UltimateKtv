@@ -31,9 +31,13 @@ namespace UltimateKtv
         /// <param name="displayDevice">Target display device (0 = main window, 1+ = secondary displays)</param>
         public void ShowMarquee(string text, int displayDevice = 0)
         {
-            ShowMarquee(text, TextSettingsHandler.MarqueeForeground, TextSettingsHandler.FontFamily, 
-                TextSettingsHandler.Settings.MarqueeFontSize, TextSettingsHandler.Settings.MarqueeRepeatCount, 
-                MarqueePosition.Bottom, TextSettingsHandler.Settings.MarqueeSpeed, displayDevice);
+            var settings = SettingsManager.Instance.CurrentSettings;
+            var fillBrush = TextSettingsHandler.ParseBrush(settings.MarqueeTextFillColor, System.Windows.Media.Brushes.White);
+            var fontFamily = new System.Windows.Media.FontFamily(
+                !string.IsNullOrWhiteSpace(settings.MarqueeTextFontFamily) ? settings.MarqueeTextFontFamily : "微軟正黑體");
+            ShowMarquee(text, fillBrush, fontFamily, 
+                settings.MarqueeTextFontSize, settings.MarqueeTextPlayCount, 
+                MarqueePosition.Bottom, settings.MarqueeTextTimeDuration, displayDevice);
         }
 
         /// <summary>

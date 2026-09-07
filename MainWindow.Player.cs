@@ -288,12 +288,13 @@ namespace UltimateKtv
                 }
 
                 var songCount = _playingSongData.TryGetValue("Song_PlayCount", out var pcObj);
-                // Display marquee on main window                 
+                // Display marquee on main window
+                var marqueeSettings = SettingsManager.Instance.CurrentSettings;
                 MarqueeAPI.ShowCustomStaticText(
                     $"{singerName} {songName}",
-                    TextSettingsHandler.MarqueeForeground,
-                    TextSettingsHandler.FontFamily,
-                    TextSettingsHandler.Settings.NotificationFontSize,
+                    TextSettingsHandler.ParseBrush(marqueeSettings.MarqueeTextFillColor, System.Windows.Media.Brushes.White),
+                    new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(marqueeSettings.MarqueeBroadcastFontFamily) ? marqueeSettings.MarqueeBroadcastFontFamily : "微軟正黑體"),
+                    marqueeSettings.MarqueeBroadcastFontSize,
                     MarqueePosition.Top,
                     0,
                     MarqueeDisplayDevice.ConsoleScreen
@@ -301,7 +302,10 @@ namespace UltimateKtv
                 // Display marquee on player display device
                 if (_videoDisplayWindow != null)
                 {
-                    MarqueeAPI.ShowSongInfo(songName, singerName, 120, MarqueeDisplayDevice.PlayerScreen);
+                    var nextSongItem = _waitingList?.FirstOrDefault(item => !string.IsNullOrEmpty(item.WaitingListSongName));
+                    string? nextSong = nextSongItem?.WaitingListSongName;
+                    string? nextSinger = nextSongItem?.WaitingListSingerName;
+                    MarqueeAPI.ShowSongPlaybackMarquee(songName, singerName, nextSong, nextSinger, _isRandomSongPlaying, _currentSongOrderedBy, MarqueeDisplayDevice.PlayerScreen);
 
                         // Ensure player window is on top in single monitor mode when song starts
                         if (IsSingleMonitorMode)

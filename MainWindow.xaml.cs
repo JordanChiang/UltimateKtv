@@ -756,6 +756,9 @@ namespace UltimateKtv
                 DisplayWebHostInfoMarquee();
             }
 
+            // Display startup welcome marquee on player screen if configured
+            MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+
             // Trigger random play timer on startup if playlist is empty and random play is enabled
             StartDelayedRandomPlayWhenEmpty();
 

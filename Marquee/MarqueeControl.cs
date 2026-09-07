@@ -15,7 +15,7 @@ namespace UltimateKtv
     public class MarqueeControl : UserControl
     {
         private Canvas _canvas = null!;
-        private TextBlock _textBlock = null!;
+        private OutlinedTextBlock _textBlock = null!;
         private Storyboard? _scrollStoryboard;
         private DispatcherTimer _repeatTimer = null!;
         private int _currentRepeatCount = 0;
@@ -25,9 +25,13 @@ namespace UltimateKtv
         // Marquee properties
         public string MarqueeText { get; set; } = string.Empty;
         public Brush TextColor { get; set; } = Brushes.White;
-        public FontFamily TextFontFamily { get; set; } = new FontFamily("Arial");
+        public Brush StrokeColor { get; set; } = Brushes.Transparent;
+        public double StrokeThickness { get; set; } = 0;
+        public FontFamily TextFontFamily { get; set; } = new FontFamily("Microsoft JhengHei");
+        public FontWeight TextFontWeight { get; set; } = FontWeights.Normal;
         public double TextFontSize { get; set; } = 24;
         public int RepeatCount { get; set; } = 1;
+        public int HoldTimeMs { get; set; } = 500;
         public MarqueePosition Position { get; set; } = MarqueePosition.Bottom;
         public double Speed { get; set; } = 50; // pixels per second
         public int DesiredDisplayDevice { get; set; } = 0; // 0 = main window, 1+ = secondary displays
@@ -64,11 +68,14 @@ namespace UltimateKtv
                 VerticalAlignment = VerticalAlignment.Stretch
             };
 
-            // Create the text block
-            _textBlock = new TextBlock
+            // Create the outlined text block
+            _textBlock = new OutlinedTextBlock
             {
-                Foreground = TextColor,
+                Fill = TextColor,
+                Stroke = StrokeColor,
+                StrokeThickness = StrokeThickness,
                 FontFamily = TextFontFamily,
+                FontWeight = TextFontWeight,
                 FontSize = TextFontSize,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -83,8 +90,6 @@ namespace UltimateKtv
             // Initialize the repeat timer
             _repeatTimer = new DispatcherTimer();
             _repeatTimer.Tick += RepeatTimer_Tick!;
-            
-//            System.Diagnostics.Debug.WriteLine("MarqueeControl initialized with explicit positioning");
         }
 
         /// <summary>
@@ -132,8 +137,11 @@ namespace UltimateKtv
 
             // Update text properties
             _textBlock.Text = MarqueeText;
-            _textBlock.Foreground = TextColor;
+            _textBlock.Fill = TextColor;
+            _textBlock.Stroke = StrokeColor;
+            _textBlock.StrokeThickness = StrokeThickness;
             _textBlock.FontFamily = TextFontFamily;
+            _textBlock.FontWeight = TextFontWeight;
             _textBlock.FontSize = TextFontSize;
 
             // Force measure to get actual text dimensions
@@ -143,9 +151,9 @@ namespace UltimateKtv
 
  //           System.Diagnostics.Debug.WriteLine($"Text Size: {textWidth}x{textHeight}");
 
-            // Use ActualWidth/ActualHeight if available, otherwise fall back to Width/Height
+            // Use ActualWidth/ActualHeight if available, otherwise fall back to Width/Height, ensuring enough height for text
             var canvasWidth = ActualWidth > 0 ? ActualWidth : (Width > 0 ? Width : 404);
-            var canvasHeight = ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 80);
+            var canvasHeight = Math.Max(textHeight, ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 80));
 
 //            System.Diagnostics.Debug.WriteLine($"Canvas Size: {canvasWidth}x{canvasHeight}");
 
@@ -160,16 +168,10 @@ namespace UltimateKtv
 
             double startY = Position switch
             {
-                MarqueePosition.Top or MarqueePosition.TopLeft or MarqueePosition.TopRight => 5,
-                MarqueePosition.Center => Math.Max(5, (canvasHeight - textHeight) / 2),
-                _ => Math.Max(5, canvasHeight - textHeight - 5) // Bottom positions with better margin
+                MarqueePosition.Top or MarqueePosition.TopLeft or MarqueePosition.TopRight => 0,
+                MarqueePosition.Center => Math.Max(0, (canvasHeight - textHeight) / 2),
+                _ => Math.Max(0, canvasHeight - textHeight - 5) // Bottom positions with better margin
             };
-            
-            // Ensure text doesn't go below the canvas
-            if (startY + textHeight > canvasHeight)
-            {
-                startY = Math.Max(0, canvasHeight - textHeight);
-            }
             
             Canvas.SetTop(_textBlock, startY);
 //            System.Diagnostics.Debug.WriteLine($"Text Y Position: {startY}");
@@ -260,7 +262,8 @@ namespace UltimateKtv
         /// Updates the marquee with new parameters and restarts if currently running
         /// </summary>
         public void UpdateMarquee(string text, Brush color, FontFamily fontFamily, double fontSize, 
-            int repeatCount, MarqueePosition position, double speed, int displayDevice)
+            int repeatCount, MarqueePosition position, double speed, int displayDevice,
+            FontWeight? fontWeight = null, Brush? strokeColor = null, double strokeThickness = 0, int holdTimeMs = 500)
         {
             var wasAnimating = _isAnimating;
             
@@ -269,9 +272,13 @@ namespace UltimateKtv
 
             MarqueeText = text;
             TextColor = color;
+            StrokeColor = strokeColor ?? Brushes.Transparent;
+            StrokeThickness = strokeThickness;
             TextFontFamily = fontFamily;
+            TextFontWeight = fontWeight ?? FontWeights.Normal;
             TextFontSize = fontSize;
             RepeatCount = repeatCount;
+            HoldTimeMs = holdTimeMs;
             Position = position;
             Speed = speed;
             DesiredDisplayDevice = displayDevice;
@@ -285,13 +292,17 @@ namespace UltimateKtv
         /// Updates the control for static text display with countdown timer
         /// </summary>
         public void UpdateStaticText(string text, Brush color, FontFamily fontFamily, double fontSize,
-            MarqueePosition position, int timeoutSeconds, int displayDevice)
+            MarqueePosition position, int timeoutSeconds, int displayDevice,
+            FontWeight? fontWeight = null, Brush? strokeColor = null, double strokeThickness = 0)
         {
             StopMarquee(); // Stop any existing animation
 
             MarqueeText = text;
             TextColor = color;
+            StrokeColor = strokeColor ?? Brushes.Transparent;
+            StrokeThickness = strokeThickness;
             TextFontFamily = fontFamily;
+            TextFontWeight = fontWeight ?? FontWeights.Normal;
             TextFontSize = fontSize;
             Position = position;
             TimeoutSeconds = timeoutSeconds;
@@ -336,8 +347,11 @@ namespace UltimateKtv
 
             // Update text properties
             _textBlock.Text = MarqueeText;
-            _textBlock.Foreground = TextColor;
+            _textBlock.Fill = TextColor;
+            _textBlock.Stroke = StrokeColor;
+            _textBlock.StrokeThickness = StrokeThickness;
             _textBlock.FontFamily = TextFontFamily;
+            _textBlock.FontWeight = TextFontWeight;
             _textBlock.FontSize = TextFontSize;
 
             // Force measure to get actual text dimensions
@@ -425,8 +439,8 @@ namespace UltimateKtv
 
             if (_currentRepeatCount < _maxRepeatCount)
             {
-                // Start the next repeat after a brief pause
-                _repeatTimer.Interval = TimeSpan.FromMilliseconds(500);
+                // Start the next repeat after hold time
+                _repeatTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(50, HoldTimeMs));
                 _repeatTimer.Start();
             }
             else

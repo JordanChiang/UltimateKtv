@@ -155,12 +155,6 @@ namespace UltimateKtv
         #region Convenience Properties - Pre-parsed Brushes
 
         /// <summary>
-        /// Gets the marquee foreground brush.
-        /// </summary>
-        public static Brush MarqueeForeground => ParseBrush(Settings.MarqueeForegroundColor, Brushes.White);
-
-
-        /// <summary>
         /// Gets the announcement foreground brush.
         /// </summary>
         public static Brush AnnouncementForeground => ParseBrush(Settings.AnnouncementForegroundColor, Brushes.White);
@@ -174,11 +168,6 @@ namespace UltimateKtv
         /// Gets the web host info foreground brush.
         /// </summary>
         public static Brush WebHostInfoForeground => ParseBrush(Settings.WebHostInfoForegroundColor, Brushes.White);
-
-        /// <summary>
-        /// Gets the song added message foreground brush.
-        /// </summary>
-        public static Brush SongAddedForeground => ParseBrush(Settings.SongAddedForegroundColor, Brushes.LightGreen);
 
         /// <summary>
         /// Gets the configured font family.
@@ -237,22 +226,9 @@ namespace UltimateKtv
         #region Pitch Control Dialog Brushes
 
         /// <summary>
-        /// Gets the pitch dialog background brush.
-        /// </summary>
-        public static Brush PitchDialogBackgroundBrush => ParseBrush(Settings.PitchDialogBackgroundColor, new SolidColorBrush(Color.FromRgb(66, 66, 66)));
-
-        /// <summary>
         /// Gets the pitch dialog foreground brush.
         /// </summary>
         public static Brush PitchDialogForegroundBrush => ParseBrush(Settings.PitchDialogForegroundColor, Brushes.White);
-
-        /// <summary>
-        /// Gets the pitch dialog button background brush. Falls back to PrimaryMidBrush if not set.
-        /// </summary>
-        public static Brush PitchDialogButtonBackgroundBrush => 
-            !string.IsNullOrWhiteSpace(Settings.PitchDialogButtonBackgroundColor) 
-                ? ParseBrush(Settings.PitchDialogButtonBackgroundColor, null) ?? PrimaryMidBrush
-                : PrimaryMidBrush;
 
         /// <summary>
         /// Gets the pitch dialog button foreground brush. Falls back to PrimaryForegroundBrush if not set.

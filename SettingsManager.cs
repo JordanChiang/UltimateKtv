@@ -90,6 +90,65 @@ namespace UltimateKtv
                         needsForceSave = true;
                     }
 
+                    // Validate and correct MarqueeTextFontSize range (12-128)
+                    if (CurrentSettings.MarqueeTextFontSize < 12 || CurrentSettings.MarqueeTextFontSize > 128)
+                    {
+                        AppLogger.Log($"MarqueeTextFontSize value {CurrentSettings.MarqueeTextFontSize} is out of range (12-128). Correcting to safe range.");
+                        CurrentSettings.MarqueeTextFontSize = Math.Clamp(CurrentSettings.MarqueeTextFontSize, 12, 128);
+                        needsForceSave = true;
+                    }
+
+                    // Validate and correct MarqueeTextFontStrokeThickness range (0-32)
+                    if (CurrentSettings.MarqueeTextFontStrokeThickness < 0 || CurrentSettings.MarqueeTextFontStrokeThickness > 32)
+                    {
+                        AppLogger.Log($"MarqueeTextFontStrokeThickness value {CurrentSettings.MarqueeTextFontStrokeThickness} is out of range (0-32). Correcting to safe range.");
+                        CurrentSettings.MarqueeTextFontStrokeThickness = Math.Clamp(CurrentSettings.MarqueeTextFontStrokeThickness, 0, 32);
+                        needsForceSave = true;
+                    }
+
+                    // Validate and correct MarqueeTextPlayCount range (0-10, 0 = disabled)
+                    if (CurrentSettings.MarqueeTextPlayCount < 0 || CurrentSettings.MarqueeTextPlayCount > 10)
+                    {
+                        AppLogger.Log($"MarqueeTextPlayCount value {CurrentSettings.MarqueeTextPlayCount} is out of range (0-10). Correcting to safe range.");
+                        CurrentSettings.MarqueeTextPlayCount = Math.Clamp(CurrentSettings.MarqueeTextPlayCount, 0, 10);
+                        needsForceSave = true;
+                    }
+
+                    // Validate and correct MarqueeTextTimeDuration range (100-1000 px/s)
+                    if (CurrentSettings.MarqueeTextTimeDuration < 100 || CurrentSettings.MarqueeTextTimeDuration > 1000)
+                    {
+                        CurrentSettings.MarqueeTextTimeDuration = Math.Clamp(CurrentSettings.MarqueeTextTimeDuration, 100, 1000);
+                        needsForceSave = true;
+                    }
+
+                    // Validate and correct MarqueeSongAddedFontSize range (12-128)
+                    if (CurrentSettings.MarqueeSongAddedFontSize < 12 || CurrentSettings.MarqueeSongAddedFontSize > 128)
+                    {
+                        CurrentSettings.MarqueeSongAddedFontSize = Math.Clamp(CurrentSettings.MarqueeSongAddedFontSize, 12, 128);
+                        needsForceSave = true;
+                    }
+
+                    // Validate and correct MarqueeSongAddedTimeDuration range (0-60 s)
+                    if (CurrentSettings.MarqueeSongAddedTimeDuration < 0 || CurrentSettings.MarqueeSongAddedTimeDuration > 60)
+                    {
+                        CurrentSettings.MarqueeSongAddedTimeDuration = Math.Clamp(CurrentSettings.MarqueeSongAddedTimeDuration, 0, 60);
+                        needsForceSave = true;
+                    }
+
+                    // Validate and correct MarqueeBroadcastFontSize range (12-128)
+                    if (CurrentSettings.MarqueeBroadcastFontSize < 12 || CurrentSettings.MarqueeBroadcastFontSize > 128)
+                    {
+                        CurrentSettings.MarqueeBroadcastFontSize = Math.Clamp(CurrentSettings.MarqueeBroadcastFontSize, 12, 128);
+                        needsForceSave = true;
+                    }
+
+                    // Validate and correct MarqueeBroadcastTimeDuration range (0-60 s)
+                    if (CurrentSettings.MarqueeBroadcastTimeDuration < 0 || CurrentSettings.MarqueeBroadcastTimeDuration > 60)
+                    {
+                        CurrentSettings.MarqueeBroadcastTimeDuration = Math.Clamp(CurrentSettings.MarqueeBroadcastTimeDuration, 0, 60);
+                        needsForceSave = true;
+                    }
+
                     if (needsForceSave)
                     {
                         SaveSettings(); // Save corrected or new values

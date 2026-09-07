@@ -22,6 +22,7 @@ namespace UltimateKtv
         private List<WaitingListItem> _waitingList = new List<WaitingListItem>();
         private int _currentWaitingListPage = 1;
         private int _totalWaitingListPages = 1;
+        private string _currentSongOrderedBy = string.Empty;
 
         // Queue for songs added during a transition
         private Queue<SongDisplayItem> _pendingSongs = new Queue<SongDisplayItem>();
@@ -397,6 +398,7 @@ namespace UltimateKtv
                 // Set playing state flag
                 _isPlayingFromWaitingList = true;
                 _isRandomSongPlaying = (firstSong.OrderedBy == "隨機播放");
+                _currentSongOrderedBy = firstSong.OrderedBy ?? string.Empty;
                 IsPlayingYoutube = firstSong.IsYoutube;
 
 
@@ -667,14 +669,11 @@ namespace UltimateKtv
             Debug.WriteLine($"Added to waiting list: {song.SongName} by {song.SingerName}" + 
                 (!string.IsNullOrEmpty(song.OrderedBy) ? $" (Ordered by: {song.OrderedBy})" : ""));
 
-            // Show marquee on player screen for 3 seconds with large font
-            MarqueeAPI.ShowCustomStaticText(
-                $"點播: {song.SongName} - {song.SingerName}",
-                TextSettingsHandler.SongAddedForeground,
-                TextSettingsHandler.FontFamily,
-                TextSettingsHandler.Settings.SongAddedFontSize,
-                Enums.MarqueePosition.Top,
-                3,
+            // Show marquee on player screen using customizable settings
+            MarqueeAPI.ShowSongAddedNotification(
+                song.SongName,
+                song.SingerName,
+                song.OrderedBy,
                 Enums.MarqueeDisplayDevice.PlayerScreen
             );
 

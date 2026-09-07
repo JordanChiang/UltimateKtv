@@ -8,6 +8,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Updater", "Updater", "{E4D0
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltimateKtv.Updater", "Updater\UltimateKtv.Updater.csproj", "{3610ACC7-F237-4246-87B5-60563385340C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltimateKtv.StyleSimulator", "StyleSimulator\UltimateKtv.StyleSimulator.csproj", "{C6615598-DE09-4C59-99E7-2BCB612C2849}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -32,6 +34,14 @@ Global
 		{3610ACC7-F237-4246-87B5-60563385340C}.Release|x64.Build.0 = Release|x86
 		{3610ACC7-F237-4246-87B5-60563385340C}.Release|x86.ActiveCfg = Release|x86
 		{3610ACC7-F237-4246-87B5-60563385340C}.Release|x86.Build.0 = Release|x86
+		{C6615598-DE09-4C59-99E7-2BCB612C2849}.Debug|x64.ActiveCfg = Debug|x64
+		{C6615598-DE09-4C59-99E7-2BCB612C2849}.Debug|x64.Build.0 = Debug|x64
+		{C6615598-DE09-4C59-99E7-2BCB612C2849}.Debug|x86.ActiveCfg = Debug|x86
+		{C6615598-DE09-4C59-99E7-2BCB612C2849}.Debug|x86.Build.0 = Debug|x86
+		{C6615598-DE09-4C59-99E7-2BCB612C2849}.Release|x64.ActiveCfg = Release|x64
+		{C6615598-DE09-4C59-99E7-2BCB612C2849}.Release|x64.Build.0 = Release|x64
+		{C6615598-DE09-4C59-99E7-2BCB612C2849}.Release|x86.ActiveCfg = Release|x86
+		{C6615598-DE09-4C59-99E7-2BCB612C2849}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

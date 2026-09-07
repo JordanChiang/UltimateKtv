@@ -12,8 +12,8 @@
     <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
     <EnableNETAnalyzers>False</EnableNETAnalyzers>
     
-    <!-- Exclude the Updater project folder from the main project's compilation -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);Updater\**</DefaultItemExcludes>
+    <!-- Exclude the Updater, MarqueeSimulator, and StyleSimulator project folders from the main project's compilation -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Updater\**;MarqueeSimulator\**;StyleSimulator\**</DefaultItemExcludes>
 
     <!-- Exclude all satellite resource language DLLs (e.g., de, fr, es folders) from publish output -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>

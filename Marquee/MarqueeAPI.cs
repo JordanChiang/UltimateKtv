@@ -1,4 +1,5 @@
 using System;
+using System.Windows;
 using System.Windows.Media;
 using UltimateKtv.Enums;
 
@@ -57,15 +58,16 @@ namespace UltimateKtv
         /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowText(string text, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
+            var settings = SettingsManager.Instance.CurrentSettings;
             int displayDevice = GetDisplayDeviceIndex(device);
             MarqueeManager.Instance.ShowMarquee(
                 text, 
-                TextSettingsHandler.MarqueeForeground,
-                TextSettingsHandler.FontFamily, 
-                TextSettingsHandler.Settings.MarqueeFontSize, 
-                TextSettingsHandler.Settings.MarqueeRepeatCount, 
+                ParseBrush(settings.MarqueeTextFillColor, Brushes.White),
+                ParseFontFamily(settings.MarqueeTextFontFamily), 
+                settings.MarqueeTextFontSize, 
+                settings.MarqueeTextPlayCount, 
                 MarqueePosition.Top, 
-                TextSettingsHandler.Settings.MarqueeSpeed, 
+                settings.MarqueeTextTimeDuration, 
                 displayDevice
             );
         }
@@ -77,15 +79,16 @@ namespace UltimateKtv
         /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowAnnouncement(string text, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
+            var settings = SettingsManager.Instance.CurrentSettings;
             int displayDevice = GetDisplayDeviceIndex(device);
             MarqueeManager.Instance.ShowMarquee(
                 text, 
                 TextSettingsHandler.AnnouncementForeground,
-                TextSettingsHandler.FontFamily, 
-                TextSettingsHandler.Settings.MarqueeFontSize, 
-                TextSettingsHandler.Settings.MarqueeRepeatCount, 
+                ParseFontFamily(settings.MarqueeTextFontFamily), 
+                settings.MarqueeTextFontSize, 
+                settings.MarqueeTextPlayCount, 
                 MarqueePosition.Top, 
-                TextSettingsHandler.Settings.MarqueeSpeed, 
+                settings.MarqueeTextTimeDuration, 
                 displayDevice
             );
         }
@@ -99,7 +102,7 @@ namespace UltimateKtv
         /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowSongInfo(string songName, string artistName, double Speed, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
-            ShowSongInfo(songName, artistName, Speed, TextSettingsHandler.Settings.MarqueeFontSize, device);
+            ShowSongInfo(songName, artistName, Speed, SettingsManager.Instance.CurrentSettings.MarqueeTextFontSize, device);
         }
 
         /// <summary>
@@ -112,14 +115,15 @@ namespace UltimateKtv
         /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowSongInfo(string songName, string artistName, double Speed, double FontSize, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
+            var settings = SettingsManager.Instance.CurrentSettings;
             int displayDevice = GetDisplayDeviceIndex(device);
             var text = $"播放歌曲：{songName}     歌手：{artistName}";
             MarqueeManager.Instance.ShowMarquee(
                 text, 
-                TextSettingsHandler.MarqueeForeground,
-                TextSettingsHandler.FontFamily, 
+                ParseBrush(settings.MarqueeTextFillColor, Brushes.White),
+                ParseFontFamily(settings.MarqueeTextFontFamily), 
                 FontSize, 
-                TextSettingsHandler.Settings.MarqueeRepeatCount, 
+                settings.MarqueeTextPlayCount, 
                 MarqueePosition.Top, 
                 Speed, 
                 displayDevice
@@ -134,9 +138,329 @@ namespace UltimateKtv
         /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowSongInfo(string songName, string artistName, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
-            ShowSongInfo(songName, artistName, TextSettingsHandler.Settings.MarqueeSpeed, device);
+            ShowSongPlaybackMarquee(songName, artistName, null, null, false, null, device);
         }
 
+        /// <summary>
+        /// Shows a customizable song playback marquee based on AppSettings
+        /// </summary>
+        public static void ShowSongPlaybackMarquee(string currentSong, string currentSinger, string? nextSong, string? nextSinger, bool isRandomSong = false, string? orderedBy = null, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
+        {
+            var settings = SettingsManager.Instance.CurrentSettings;
+            int displayDevice = GetDisplayDeviceIndex(device);
+
+            string formattedText;
+            bool hasNextSong = !string.IsNullOrWhiteSpace(nextSong);
+
+            string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{settings.HttpServerPort}";
+            string wanIpPort = $"{HttpServer.GetPublicIPAddress()}:{settings.PublicServerPort}";
+            string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放") ? orderedBy : "";
+
+            if (isRandomSong && !hasNextSong)
+            {
+                // MarqueeTextString3: 播放隨機點播歌曲, 待播清單沒有歌
+                string template = string.IsNullOrEmpty(settings.MarqueeTextString3)
+                    ? "隨機播放歌曲：「{1} - {0}」"
+                    : settings.MarqueeTextString3;
+                string activeTemplate = CleanOrderedByPlaceholder(template, displayOrderedBy);
+                try
+                {
+                    formattedText = string.Format(activeTemplate, currentSong ?? "", currentSinger ?? "", "", "", lanIpPort, wanIpPort, displayOrderedBy);
+                }
+                catch
+                {
+                    formattedText = $"隨機播放歌曲：「{currentSinger} - {currentSong}」";
+                }
+            }
+            else if (hasNextSong)
+            {
+                // MarqueeTextString1: 播放點播歌曲, 待播清單有歌 (或隨機播放但待播清單有歌)
+                string template = string.IsNullOrEmpty(settings.MarqueeTextString1)
+                    ? "目前正在播放歌曲：「{1} - {0}」，下一首播放：「{3} - {2}」，請準備！！"
+                    : settings.MarqueeTextString1;
+                string activeTemplate = CleanOrderedByPlaceholder(template, displayOrderedBy);
+                try
+                {
+                    formattedText = string.Format(activeTemplate, currentSong ?? "", currentSinger ?? "", nextSong ?? "", nextSinger ?? "", lanIpPort, wanIpPort, displayOrderedBy);
+                }
+                catch
+                {
+                    formattedText = $"目前正在播放歌曲：「{currentSinger} - {currentSong}」，下一首播放：「{nextSinger} - {nextSong}」，請準備！！";
+                }
+            }
+            else
+            {
+                // MarqueeTextString2: 播放點播歌曲, 待播清單沒有歌
+                string template = string.IsNullOrEmpty(settings.MarqueeTextString2)
+                    ? "目前正在播放歌曲：「{1} - {0}」"
+                    : settings.MarqueeTextString2;
+                string activeTemplate = CleanOrderedByPlaceholder(template, displayOrderedBy);
+                try
+                {
+                    formattedText = string.Format(activeTemplate, currentSong ?? "", currentSinger ?? "", "", "", lanIpPort, wanIpPort, displayOrderedBy);
+                }
+                catch
+                {
+                    formattedText = $"目前正在播放歌曲：「{currentSinger} - {currentSong}」";
+                }
+            }
+
+            ShowCustomStyledMarquee(formattedText, settings, displayDevice, isSongPlayback: true, priority: MarqueePriority.Normal);
+        }
+
+        /// <summary>
+        /// Shows startup welcome marquee on player screen based on MarqueeTextStartup
+        /// </summary>
+        public static void ShowStartupMarquee(MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
+        {
+            var settings = SettingsManager.Instance.CurrentSettings;
+            if (string.IsNullOrWhiteSpace(settings.MarqueeTextStartup))
+                return;
+
+            int displayDevice = GetDisplayDeviceIndex(device);
+            string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{settings.HttpServerPort}";
+            string wanIpPort = $"{HttpServer.GetPublicIPAddress()}:{settings.PublicServerPort}";
+
+            string formattedText;
+            try
+            {
+                formattedText = string.Format(settings.MarqueeTextStartup, "", "", "", "", lanIpPort, wanIpPort);
+            }
+            catch
+            {
+                formattedText = settings.MarqueeTextStartup;
+            }
+
+            ShowCustomStyledMarquee(formattedText, settings, displayDevice, isSongPlayback: false, priority: MarqueePriority.Low);
+        }
+
+        private static void ShowCustomStyledMarquee(string formattedText, AppSettings settings, int displayDevice, bool isSongPlayback = false, MarqueePriority priority = MarqueePriority.Normal)
+        {
+            if (settings.MarqueeTextPlayCount <= 0)
+            {
+                // PlayCount is 0, meaning disabled
+                return;
+            }
+
+            // Parse FontFamily
+            FontFamily fontFamily;
+            try
+            {
+                fontFamily = !string.IsNullOrWhiteSpace(settings.MarqueeTextFontFamily)
+                    ? new FontFamily(settings.MarqueeTextFontFamily)
+                    : new FontFamily("微軟正黑體");
+            }
+            catch
+            {
+                fontFamily = new FontFamily("微軟正黑體");
+            }
+
+            // Parse FontWeight
+            FontWeight fontWeight = FontWeights.Bold;
+            if (!string.IsNullOrWhiteSpace(settings.MarqueeTextFontWeight))
+            {
+                try
+                {
+                    var converter = new System.Windows.FontWeightConverter();
+                    var converted = converter.ConvertFromString(settings.MarqueeTextFontWeight);
+                    if (converted is FontWeight fw)
+                    {
+                        fontWeight = fw;
+                    }
+                }
+                catch
+                {
+                    fontWeight = FontWeights.Bold;
+                }
+            }
+
+            // Parse Fill Color
+            Brush fillBrush = Brushes.White;
+            if (!string.IsNullOrWhiteSpace(settings.MarqueeTextFillColor))
+            {
+                try
+                {
+                    var brush = (Brush?)new BrushConverter().ConvertFromString(settings.MarqueeTextFillColor);
+                    if (brush != null)
+                    {
+                        if (brush.CanFreeze) brush.Freeze();
+                        fillBrush = brush;
+                    }
+                }
+                catch
+                {
+                    fillBrush = Brushes.White;
+                }
+            }
+
+            // Parse Stroke Color
+            Brush strokeBrush = Brushes.Black;
+            if (!string.IsNullOrWhiteSpace(settings.MarqueeTextStrokeColor))
+            {
+                try
+                {
+                    var brush = (Brush?)new BrushConverter().ConvertFromString(settings.MarqueeTextStrokeColor);
+                    if (brush != null)
+                    {
+                        if (brush.CanFreeze) brush.Freeze();
+                        strokeBrush = brush;
+                    }
+                }
+                catch
+                {
+                    strokeBrush = Brushes.Black;
+                }
+            }
+
+            double fontSize = Math.Clamp(settings.MarqueeTextFontSize > 0 ? settings.MarqueeTextFontSize : 72, 12, 128);
+            double strokeThickness = Math.Clamp(settings.MarqueeTextFontStrokeThickness >= 0 ? settings.MarqueeTextFontStrokeThickness : 8, 0, 32);
+            double speed = Math.Clamp(settings.MarqueeTextTimeDuration > 0 ? settings.MarqueeTextTimeDuration : 200, 100, 1000);
+            int playCount = Math.Clamp(settings.MarqueeTextPlayCount > 0 ? settings.MarqueeTextPlayCount : 2, 1, 10);
+            int holdTimeMs = Math.Max(0, settings.MarqueeTextTimeHold);
+
+            MarqueeManager.Instance.ShowMarquee(
+                formattedText,
+                fillBrush,
+                fontFamily,
+                fontSize,
+                playCount,
+                MarqueePosition.Top,
+                speed,
+                displayDevice,
+                fontWeight,
+                strokeBrush,
+                strokeThickness,
+                holdTimeMs,
+                priority,
+                isSongPlayback
+            );
+        }
+
+
+        private static FontFamily ParseFontFamily(string? fontName)
+        {
+            if (string.IsNullOrWhiteSpace(fontName))
+                return new FontFamily(SettingsManager.Instance.CurrentSettings.MarqueeTextFontFamily);
+            try
+            {
+                return new FontFamily(fontName);
+            }
+            catch
+            {
+                return new FontFamily(SettingsManager.Instance.CurrentSettings.MarqueeTextFontFamily);
+            }
+        }
+
+        private static Brush ParseBrush(string? hexColor, Brush defaultBrush)
+        {
+            if (string.IsNullOrWhiteSpace(hexColor))
+                return defaultBrush;
+            try
+            {
+                var brush = (Brush?)new BrushConverter().ConvertFromString(hexColor);
+                if (brush != null)
+                {
+                    if (brush.CanFreeze) brush.Freeze();
+                    return brush;
+                }
+            }
+            catch { }
+            return defaultBrush;
+        }
+
+        private static string CleanOrderedByPlaceholder(string template, string orderedBy)
+        {
+            if (!string.IsNullOrWhiteSpace(orderedBy))
+                return template;
+
+            // When orderedBy is empty (e.g. local PC order), cleanly remove any ", 點歌人：{6}" or similar suffix
+            return template
+                .Replace("，點歌人：{6}", "")
+                .Replace("，點歌人:{6}", "")
+                .Replace(", 點歌人：{6}", "")
+                .Replace(", 點歌人:{6}", "")
+                .Replace(" (點歌人：{6})", "")
+                .Replace(" (點歌人:{6})", "")
+                .Replace("（點歌人：{6}）", "")
+                .Replace("點歌人：{6}", "")
+                .Replace("點歌人:{6}", "")
+                .Replace("{6}", "");
+        }
+
+        /// <summary>
+        /// Shows song added notification on player screen using MarqueeSongAdded settings (Template, Font, Size, Color, Time)
+        /// {0}=SongName, {1}=SingerName, {4}=LAN IP:Port, {5}=WAN IP:Port, {6}=OrderedBy
+        /// </summary>
+        public static void ShowSongAddedNotification(string songName, string singerName, string? orderedBy = null, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
+        {
+            var settings = SettingsManager.Instance.CurrentSettings;
+            if (settings.MarqueeSongAddedTimeDuration <= 0)
+                return;
+
+            int displayDevice = GetDisplayDeviceIndex(device);
+            string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{settings.HttpServerPort}";
+            string wanIpPort = $"{HttpServer.GetPublicIPAddress()}:{settings.PublicServerPort}";
+
+            string template = string.IsNullOrEmpty(settings.MarqueeSongAddedString)
+                ? "點播歌曲：「{1} - {0}」"
+                : settings.MarqueeSongAddedString;
+
+            string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放") ? orderedBy : "";
+            string activeTemplate = CleanOrderedByPlaceholder(template, displayOrderedBy);
+
+            string formattedText;
+            try
+            {
+                formattedText = string.Format(activeTemplate, songName ?? "", singerName ?? "", "", "", lanIpPort, wanIpPort, displayOrderedBy);
+            }
+            catch
+            {
+                formattedText = $"點播歌曲：{singerName} - {songName}" + (!string.IsNullOrWhiteSpace(displayOrderedBy) ? $"，點歌人：{displayOrderedBy}" : "");
+            }
+
+            FontFamily fontFamily = ParseFontFamily(settings.MarqueeSongAddedFontFamily);
+            Brush fillBrush = ParseBrush(settings.MarqueeSongAddedFillColor, Brushes.LightGreen);
+            double fontSize = Math.Clamp(settings.MarqueeSongAddedFontSize > 0 ? settings.MarqueeSongAddedFontSize : 48, 12, 128);
+            int timeout = Math.Clamp(settings.MarqueeSongAddedTimeDuration, 1, 60);
+
+            MarqueeManager.Instance.ShowStaticText(
+                formattedText,
+                fillBrush,
+                fontFamily,
+                fontSize,
+                MarqueePosition.Top,
+                timeout,
+                displayDevice,
+                MarqueePriority.High
+            );
+        }
+
+        /// <summary>
+        /// Shows song added notification using a pre-formatted text string
+        /// </summary>
+        public static void ShowSongAddedNotification(string text, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
+        {
+            var settings = SettingsManager.Instance.CurrentSettings;
+            if (settings.MarqueeSongAddedTimeDuration <= 0)
+                return;
+
+            int displayDevice = GetDisplayDeviceIndex(device);
+            FontFamily fontFamily = ParseFontFamily(settings.MarqueeSongAddedFontFamily);
+            Brush fillBrush = ParseBrush(settings.MarqueeSongAddedFillColor, Brushes.LightGreen);
+            double fontSize = Math.Clamp(settings.MarqueeSongAddedFontSize > 0 ? settings.MarqueeSongAddedFontSize : 48, 12, 128);
+            int timeout = Math.Clamp(settings.MarqueeSongAddedTimeDuration, 1, 60);
+
+            MarqueeManager.Instance.ShowStaticText(
+                text,
+                fillBrush,
+                fontFamily,
+                fontSize,
+                MarqueePosition.Top,
+                timeout,
+                displayDevice,
+                MarqueePriority.High
+            );
+        }
 
         /// <summary>
         /// Shows a welcome message marquee
@@ -145,15 +469,16 @@ namespace UltimateKtv
         /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowWelcome(string message, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
+            var settings = SettingsManager.Instance.CurrentSettings;
             int displayDevice = GetDisplayDeviceIndex(device);
             MarqueeManager.Instance.ShowMarquee(
                 message,
                 TextSettingsHandler.StaticTextForeground,
-                TextSettingsHandler.FontFamily,
-                TextSettingsHandler.Settings.MarqueeFontSize,
-                TextSettingsHandler.Settings.MarqueeRepeatCount,
+                ParseFontFamily(settings.MarqueeTextFontFamily),
+                settings.MarqueeTextFontSize,
+                settings.MarqueeTextPlayCount,
                 MarqueePosition.Top,
-                TextSettingsHandler.Settings.MarqueeSpeed,
+                settings.MarqueeTextTimeDuration,
                 displayDevice
             );
         }
@@ -165,30 +490,28 @@ namespace UltimateKtv
         /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowAlert(string alertText, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
+            var settings = SettingsManager.Instance.CurrentSettings;
             int displayDevice = GetDisplayDeviceIndex(device);
             MarqueeManager.Instance.ShowMarquee(
                 $"⚠ {alertText} ⚠", 
                 Brushes.Red,
                 new FontFamily("Microsoft JhengHei UI"), 
-                TextSettingsHandler.Settings.MarqueeFontSize, 
-                TextSettingsHandler.Settings.MarqueeRepeatCount, 
+                settings.MarqueeTextFontSize, 
+                settings.MarqueeTextPlayCount, 
                 MarqueePosition.Top, 
-                TextSettingsHandler.Settings.MarqueeSpeed, 
-                displayDevice
+                settings.MarqueeTextTimeDuration, 
+                displayDevice,
+                FontWeights.Bold,
+                Brushes.Black,
+                4,
+                500,
+                MarqueePriority.High
             );
         }
 
         /// <summary>
         /// Shows a custom marquee with full parameter control
         /// </summary>
-        /// <param name="text">Text to display</param>
-        /// <param name="color">Text color</param>
-        /// <param name="fontFamily">Font family</param>
-        /// <param name="fontSize">Font size</param>
-        /// <param name="repeatCount">Number of repeats</param>
-        /// <param name="position">Screen position</param>
-        /// <param name="speed">Animation speed (pixels per second)</param>
-        /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowCustom(string text, Brush color, FontFamily fontFamily, double fontSize,
             int repeatCount, MarqueePosition position, double speed, MarqueeDisplayDevice device)
         {
@@ -199,7 +522,6 @@ namespace UltimateKtv
         /// <summary>
         /// Stops marquee on specified device
         /// </summary>
-        /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void Stop(MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
             int displayDevice = GetDisplayDeviceIndex(device);
@@ -217,8 +539,6 @@ namespace UltimateKtv
         /// <summary>
         /// Checks if marquee is active on specified device
         /// </summary>
-        /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
-        /// <returns>True if active, false otherwise</returns>
         public static bool IsActive(MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
             int displayDevice = GetDisplayDeviceIndex(device);
@@ -228,17 +548,15 @@ namespace UltimateKtv
         /// <summary>
         /// Shows static text with countdown timer (no scrolling animation)
         /// </summary>
-        /// <param name="text">Text to display</param>
-        /// <param name="timeoutSeconds">Timer duration in seconds (0 = no timeout, display indefinitely)</param>
-        /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowStaticText(string text, int timeoutSeconds = 0, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
+            var settings = SettingsManager.Instance.CurrentSettings;
             int displayDevice = GetDisplayDeviceIndex(device);
             MarqueeManager.Instance.ShowStaticText(
                 text,
                 TextSettingsHandler.StaticTextForeground,
-                TextSettingsHandler.FontFamily,
-                TextSettingsHandler.Settings.NotificationFontSize,
+                ParseFontFamily(settings.MarqueeBroadcastFontFamily),
+                settings.MarqueeBroadcastFontSize,
                 MarqueePosition.Top,
                 timeoutSeconds,
                 displayDevice
@@ -246,35 +564,35 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Shows static announcement with countdown timer
+        /// Shows static announcement / broadcast with countdown timer using MarqueeBroadcast settings
         /// </summary>
-        /// <param name="text">Announcement text</param>
-        /// <param name="timeoutSeconds">Timer duration in seconds (0 = no timeout, display indefinitely)</param>
-        /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowStaticAnnouncement(string text, int timeoutSeconds = 0, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
+            var settings = SettingsManager.Instance.CurrentSettings;
+            int duration = timeoutSeconds > 0 ? timeoutSeconds : settings.MarqueeBroadcastTimeDuration;
+            if (duration <= 0)
+                return;
+
             int displayDevice = GetDisplayDeviceIndex(device);
+            FontFamily fontFamily = ParseFontFamily(settings.MarqueeBroadcastFontFamily);
+            Brush fillBrush = ParseBrush(settings.MarqueeBroadcastFillColor, Brushes.Gold);
+            double fontSize = Math.Clamp(settings.MarqueeBroadcastFontSize > 0 ? settings.MarqueeBroadcastFontSize : 38, 12, 128);
+
             MarqueeManager.Instance.ShowStaticText(
                 text,
-                TextSettingsHandler.AnnouncementForeground,
-                TextSettingsHandler.FontFamily,
-                TextSettingsHandler.Settings.NotificationFontSize,
+                fillBrush,
+                fontFamily,
+                fontSize,
                 MarqueePosition.Top,
-                timeoutSeconds,
-                displayDevice
+                duration,
+                displayDevice,
+                MarqueePriority.High
             );
         }
 
         /// <summary>
         /// Shows custom static text with full parameter control and countdown timer
         /// </summary>
-        /// <param name="text">Text to display</param>
-        /// <param name="color">Text color</param>
-        /// <param name="fontFamily">Font family</param>
-        /// <param name="fontSize">Font size</param>
-        /// <param name="position">Screen position</param>
-        /// <param name="timeoutSeconds">Timer duration in seconds (0 = no timeout, display indefinitely)</param>
-        /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowCustomStaticText(string text, Brush color, FontFamily fontFamily, double fontSize,
             MarqueePosition position, int timeoutSeconds, MarqueeDisplayDevice device)
         {
@@ -283,47 +601,45 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Shows a corner marquee with text
-        /// Ideal for local notifications like volume changes, status updates, etc.
+        /// Shows a corner marquee with text using MarqueeBroadcast settings
         /// </summary>
-        /// <param name="text">Text to display</param>
-        /// <param name="timeoutSeconds">Duration in seconds (0 = indefinite)</param>
-        /// <param name="position">Corner position (TopLeft, TopRight, BottomLeft, BottomRight)</param>
-        /// <param name="fontSize">Font size (default: 32)</param>
-        /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
-        public static void ShowCornerText(string text, int timeoutSeconds, MarqueePosition position, double fontSize = 32, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
+        public static void ShowCornerText(string text, int timeoutSeconds = 0, MarqueePosition position = MarqueePosition.BottomRight, double? fontSize = null, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
+            var settings = SettingsManager.Instance.CurrentSettings;
+            int duration = timeoutSeconds > 0 ? timeoutSeconds : settings.MarqueeBroadcastTimeDuration;
+            if (duration <= 0)
+                return;
+
             int displayDevice = GetDisplayDeviceIndex(device);
+            FontFamily fontFamily = ParseFontFamily(settings.MarqueeBroadcastFontFamily);
+            Brush fillBrush = ParseBrush(settings.MarqueeBroadcastFillColor, Brushes.Gold);
+            double size = fontSize ?? Math.Clamp(settings.MarqueeBroadcastFontSize > 0 ? settings.MarqueeBroadcastFontSize : 38, 12, 128);
+
             MarqueeManager.Instance.ShowStaticText(
                 text,
-                TextSettingsHandler.StaticTextForeground,
-                TextSettingsHandler.FontFamily,
-                fontSize,
+                fillBrush,
+                fontFamily,
+                size,
                 position,
-                timeoutSeconds,
+                duration,
                 displayDevice
             );
         }
 
         /// <summary>
-        /// Shows a corner notification in the top-right corner (common for status updates)
+        /// Shows a corner notification in the top-right corner
         /// </summary>
-        /// <param name="text">Text to display (keep it short)</param>
-        /// <param name="timeoutSeconds">Duration in seconds (default: 3)</param>
-        /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
-        public static void ShowCornerNotification(string text, int timeoutSeconds = 3, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
+        public static void ShowCornerNotification(string text, int timeoutSeconds = 0, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
-            ShowCornerText(text, timeoutSeconds, MarqueePosition.TopRight, TextSettingsHandler.Settings.NotificationFontSize, device);
+            ShowCornerText(text, timeoutSeconds, MarqueePosition.TopRight, null, device);
         }
 
         /// <summary>
         /// Shows volume level in bottom-right corner
         /// </summary>
-        /// <param name="volumeLevel">Volume level (e.g., "75", "100")</param>
-        /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowVolumeLevel(string volumeLevel, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
-            ShowCornerText($"🔊{volumeLevel}", 2, MarqueePosition.BottomRight, TextSettingsHandler.Settings.NotificationFontSize, device);
+            ShowCornerText($"🔊{volumeLevel}", 0, MarqueePosition.BottomRight, null, device);
         }
 
     }

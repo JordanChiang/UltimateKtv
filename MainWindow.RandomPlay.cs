@@ -332,11 +332,12 @@ namespace UltimateKtv
         /// </summary>
         private void ShowRandomPlayMarquee(string message)
         {
+            var settings = SettingsManager.Instance.CurrentSettings;
             MarqueeAPI.ShowCustomStaticText(
                 message,
                 TextSettingsHandler.StaticTextForeground,
-                TextSettingsHandler.FontFamily,
-                TextSettingsHandler.Settings.NotificationFontSize,
+                new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(settings.MarqueeBroadcastFontFamily) ? settings.MarqueeBroadcastFontFamily : "微軟正黑體"),
+                settings.MarqueeBroadcastFontSize,
                 MarqueePosition.Top,
                 0,
                 MarqueeDisplayDevice.ConsoleScreen

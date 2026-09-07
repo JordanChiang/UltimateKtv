@@ -102,3 +102,37 @@ UltimateKtv 使用者設定說明
     若在主畫面的「人聲」按鈕上進行長按 (或點擊滑鼠右鍵)，將開啟進階選單：
     *   **設定此聲道為伴唱**：修正或將目前的聲道狀態記錄為伴唱設定, 並寫入資料庫中。
     *   **固定此聲道播放**：強制鎖定全系統使用的聲道輸出。鎖定後，無論如何切換歌曲，系統都會強制維持使用此選定的聲道輸出 (例如只輸出左聲道)，直到您再次點選人聲/伴唱按鍵來解除鎖定。
+
+### 9. 跑馬燈與訊息提示進階設定 (settings.json)
+系統支援在 `settings.json` 中自訂三種跑馬燈與提示類別：
+
+*   **A. 播放中歌曲跑馬燈 (滾動式)**
+    *   `MarqueeTextString1`：播放點播歌曲且待播清單有歌時的文字範本 (`{0}`=當前歌名, `{1}`=當前歌手, `{2}`=下首歌名, `{3}`=下首歌手, `{4}`=區網網址, `{5}`=外網網址)
+    *   `MarqueeTextString2`：播放點播歌曲且待播清單無歌時的文字範本 (`{0}`=當前歌名, `{1}`=當前歌手, `{4}`=區網網址, `{5}`=外網網址)
+    *   `MarqueeTextString3`：播放隨機點播歌曲且待播清單無歌時的文字範本 (`{0}`=當前歌名, `{1}`=當前歌手, `{4}`=區網網址, `{5}`=外網網址)
+    *   `MarqueeTextStartup`：進入程式時在播放螢幕顯示的啟動字串範本
+    *   樣式與動畫參數：
+        *   `MarqueeTextFontFamily`：字型名稱 (預設: "微軟正黑體")
+        *   `MarqueeTextFontWeight`：字型粗細 (預設: "Bold")
+        *   `MarqueeTextFontSize`：字體大小 (範圍: 12-128, 預設: 72)
+        *   `MarqueeTextFontStrokeThickness`：文字描邊粗細 (範圍: 0-32, 預設: 8)
+        *   `MarqueeTextFillColor`：文字填滿顏色 (預設: "#FFFFFF")
+        *   `MarqueeTextStrokeColor`：文字描邊顏色 (預設: "#000000")
+        *   `MarqueeTextTimeHold`：單趟滾動完成後停留等待時間 (毫秒, 預設: 1000)
+        *   `MarqueeTextTimeDuration`：滾動速度 (像素/秒, 範圍: 100-1000, 預設: 200)
+        *   `MarqueeTextPlayCount`：重複播放次數 (範圍: 0-10, 0 代表不顯示, 預設: 2)
+
+*   **B. 點播成功提示 (靜態高優先)**
+    *   `MarqueeSongAddedString`：點歌成功時的文字範本 (`{0}`=歌名, `{1}`=歌手, `{4}`=區網網址, `{5}`=外網網址, `{6}`=網路點歌者名字, 預設: `"點播歌曲：「{1} - {0}」"`)
+    *   `MarqueeSongAddedFontFamily`：字型名稱 (預設: "微軟正黑體")
+    *   `MarqueeSongAddedFontSize`：字體大小 (範圍: 12-128, 預設: 48)
+    *   `MarqueeSongAddedFillColor`：文字顏色 (預設: "#90EE90")
+    *   `MarqueeSongAddedTimeDuration`：顯示時間秒數 (範圍: 0-60, 0 代表不顯示, 預設: 3)
+
+*   **C. 系統廣播/音量/音調提示 (獨立頻道提示)**
+    *   `MarqueeBroadcastFontFamily`：字型名稱 (預設: "微軟正黑體")
+    *   `MarqueeBroadcastFontSize`：字體大小 (範圍: 12-128, 預設: 48)
+    *   `MarqueeBroadcastFillColor`：文字顏色 (預設: "#FFD700")
+    *   `MarqueeBroadcastTimeDuration`：顯示時間秒數 (範圍: 0-60, 0 代表不顯示, 預設: 3)
+
+
