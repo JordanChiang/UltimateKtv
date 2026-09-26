@@ -305,7 +305,8 @@ namespace UltimateKtv
                     var nextSongItem = _waitingList?.FirstOrDefault(item => !string.IsNullOrEmpty(item.WaitingListSongName));
                     string? nextSong = nextSongItem?.WaitingListSongName;
                     string? nextSinger = nextSongItem?.WaitingListSingerName;
-                    MarqueeAPI.ShowSongPlaybackMarquee(songName, singerName, nextSong, nextSinger, _isRandomSongPlaying, _currentSongOrderedBy, MarqueeDisplayDevice.PlayerScreen);
+                    string? nextOrderedBy = nextSongItem?.OrderedBy;
+                    MarqueeAPI.ShowSongPlaybackMarquee(songName, singerName, nextSong, nextSinger, _isRandomSongPlaying, _currentSongOrderedBy, nextOrderedBy, MarqueeDisplayDevice.PlayerScreen);
 
                         // Ensure player window is on top in single monitor mode when song starts
                         if (IsSingleMonitorMode)
@@ -762,7 +763,7 @@ namespace UltimateKtv
             if (_isLoopPlay)
             {
                 RepeatBtn.Content = "循環";
-                RepeatBtn.Background = _fixedButtonBackground ?? TextSettingsHandler.PrimaryDarkBrush;
+                RepeatBtn.Background = _fixedButtonBackground ?? TextSettingsHandler.PrimaryBrush;
                 RepeatBtn.Foreground = _activeButtonForeground ?? new SolidColorBrush(Colors.White);
                 _repeatBtnFlashStoryboard?.Begin(RepeatBtn, true);
                 MarqueeAPI.ShowStaticAnnouncement("已開啟單曲循環播放", 5);

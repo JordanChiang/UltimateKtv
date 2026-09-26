@@ -9,7 +9,7 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>StyleSimulator</AssemblyName>
     <RootNamespace>StyleSimulator</RootNamespace>
-    <ApplicationIcon>..\icon.ico</ApplicationIcon>
+    <ApplicationIcon>StyleSimulator.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
@@ -39,5 +39,16 @@
   <ItemGroup>
     <Compile Include="..\AppSettings.cs" Link="Shared\AppSettings.cs" />
     <Compile Include="..\TextSettings.cs" Link="Shared\TextSettings.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="StyleSimulator.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 內建範本主題資源，維持以根目錄 SampleSettings 為單一來源 -->
+    <EmbeddedResource Include="..\SampleSettings\*.json">
+      <Link>SampleSettings\%(Filename)%(Extension)</Link>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

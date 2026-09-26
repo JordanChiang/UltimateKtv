@@ -691,6 +691,7 @@ namespace UltimateKtv
             
             // Apply text settings to XAML resources (colors, brushes, etc.)
             TextSettingsHandler.ApplyToResources(this);
+            ApplyResponsiveFontSizing();
             
             // Get monitor info first to validate settings before initializing display
             var monitors = VideoDisplayWindow.GetAvailableMonitorsInfo();
@@ -1176,9 +1177,9 @@ namespace UltimateKtv
         private void CacheActiveButtonBrushes()
         {
             // Use TextSettingsHandler brushes directly for consistent theming
-            _activeButtonBackground = TextSettingsHandler.PrimaryMidBrush;
-            _activeButtonForeground = TextSettingsHandler.PrimaryForegroundBrush;
-            _fixedButtonBackground = TextSettingsHandler.PrimaryDarkBrush;
+            _activeButtonBackground = TextSettingsHandler.PrimaryBrush;
+            _activeButtonForeground = Brushes.White;
+            _fixedButtonBackground = TextSettingsHandler.PrimaryBrush;
         }
 
         /// <summary>

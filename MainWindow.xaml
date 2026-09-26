@@ -43,13 +43,11 @@
         <SolidColorBrush x:Key="DataGridColumnHeaderBackground" Color="#FF4A4A4A"/>
         <SolidColorBrush x:Key="DataGridColumnHeaderForeground" Color="#FFFFFFFF"/>
 
-        <!-- A custom, static brush for a guaranteed bright border -->
-        <SolidColorBrush x:Key="BrightBorderBrush" Color="#FFD700"/>
+        <!-- Primary theme brush (overridden by TextSettings at startup) -->
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#FFC107"/>
 
         <!-- Singer Grid Button Colors (will be overridden by TextSettings at startup) -->
         <SolidColorBrush x:Key="SingerButtonBackground" Color="#FFC107"/>
-        <SolidColorBrush x:Key="SingerButtonBorderBrush" Color="#FF8F00"/>
-        <SolidColorBrush x:Key="SingerButtonForeground" Color="#FFFFFF"/>
 
         <!-- Converter for binding a boolean value to the Stretch property -->
         <local:BoolToStretchConverter x:Key="BoolToStretchConverter" />
@@ -146,9 +144,9 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 
-                                <!-- Indicator Backgrounds: Use Dark Brush for better White Text contrast -->
-                                <Border x:Name="LeftHighlight" Grid.Column="0" Background="{DynamicResource PrimaryHueDarkBrush}"/>
-                                <Border x:Name="RightHighlight" Grid.Column="1" Background="{DynamicResource PrimaryHueDarkBrush}"/>
+                                <!-- Indicator Backgrounds: Use Primary Brush for contrast with White Text -->
+                                <Border x:Name="LeftHighlight" Grid.Column="0" Background="{DynamicResource PrimaryBrush}"/>
+                                <Border x:Name="RightHighlight" Grid.Column="1" Background="{DynamicResource PrimaryBrush}"/>
 
                                 <!-- Text Labels -->
                                 <TextBlock x:Name="LeftText" Grid.Column="0" Text="歌曲" 
@@ -182,7 +180,7 @@
                             </Trigger>
 
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueDarkBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.5"/>
@@ -200,7 +198,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Grid Background="Transparent">
-                            <Border x:Name="Highlight" Background="{DynamicResource PrimaryHueDarkBrush}" Visibility="Hidden"/>
+                            <Border x:Name="Highlight" Background="{DynamicResource PrimaryBrush}" Visibility="Hidden"/>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="Content"/>
                         </Grid>
                         <ControlTemplate.Triggers>
@@ -264,11 +262,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryHueDarkBrush}"/>
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryHueDarkBrush}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -793,7 +791,7 @@
 
                             <!-- Static user input words (max 10) + actions -->
                             <Border x:Name="SearchSymbolPanel" Grid.Row="5" Margin="0,6,0,0" Visibility="Collapsed"
-                                    BorderBrush="{StaticResource BrightBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="6">
+                                    BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1" CornerRadius="4" Padding="6">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <!-- Fixed width text so buttons stay close -->
@@ -807,7 +805,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBox x:Name="SearchWords" Grid.Column="0" Text="" VerticalAlignment="Center" 
                                                  Background="Transparent" BorderThickness="0"
-                                                 Foreground="{StaticResource DataGridColumnHeaderForeground}"
+                                                 Foreground="{DynamicResource DataGridColumnHeaderForeground}"
                                                  Width="260" FontSize="{DynamicResource BottomButtonFontSize}" Margin="0,0,6,0" 
                                                  MaxLength="20"
                                                  TextChanged="SearchWords_TextChanged"

@@ -190,10 +190,6 @@ namespace UltimateKtv
         /// </summary>
         public static Brush DataGridColumnHeaderForeground => ParseBrush(Settings.DataGridColumnHeaderForegroundColor, Brushes.White);
 
-        /// <summary>
-        /// Gets the bright border brush.
-        /// </summary>
-        public static Brush BrightBorderBrush => ParseBrush(Settings.BrightBorderColor, Brushes.Gold);
 
         /// <summary>
         /// Gets the primary theme brush.
@@ -201,61 +197,21 @@ namespace UltimateKtv
         public static Brush PrimaryBrush => ParseBrush(Settings.PrimaryColor, new SolidColorBrush(Color.FromRgb(103, 58, 183)));
 
         /// <summary>
-        /// Gets the primary mid-tone brush.
+        /// Gets the primary mid-tone brush. Merged with PrimaryBrush for backwards compatibility.
         /// </summary>
-        public static Brush PrimaryMidBrush => ParseBrush(Settings.PrimaryMidColor, new SolidColorBrush(Color.FromRgb(126, 87, 194)));
+        public static Brush PrimaryMidBrush => PrimaryBrush;
 
         /// <summary>
-        /// Gets the primary dark brush.
+        /// Gets the primary dark brush. Merged with PrimaryBrush for backwards compatibility.
         /// </summary>
-        public static Brush PrimaryDarkBrush => ParseBrush(Settings.PrimaryDarkColor, new SolidColorBrush(Color.FromRgb(81, 45, 168)));
+        public static Brush PrimaryDarkBrush => PrimaryBrush;
 
         /// <summary>
         /// Gets the primary light brush.
         /// </summary>
         public static Brush PrimaryLightBrush => ParseBrush(Settings.PrimaryLightColor, new SolidColorBrush(Color.FromRgb(179, 157, 219)));
 
-        /// <summary>
-        /// Gets the primary foreground brush (text on primary-colored elements).
-        /// </summary>
-        public static Brush PrimaryForegroundBrush => ParseBrush(Settings.PrimaryForegroundColor, Brushes.White);
-
-
         #endregion
-
-        #region Pitch Control Dialog Brushes
-
-        /// <summary>
-        /// Gets the pitch dialog foreground brush.
-        /// </summary>
-        public static Brush PitchDialogForegroundBrush => ParseBrush(Settings.PitchDialogForegroundColor, Brushes.White);
-
-        /// <summary>
-        /// Gets the pitch dialog button foreground brush. Falls back to PrimaryForegroundBrush if not set.
-        /// </summary>
-        public static Brush PitchDialogButtonForegroundBrush => 
-            !string.IsNullOrWhiteSpace(Settings.PitchDialogButtonForegroundColor) 
-                ? ParseBrush(Settings.PitchDialogButtonForegroundColor, null) ?? PrimaryForegroundBrush
-                : PrimaryForegroundBrush;
-
-        /// <summary>
-        /// Gets the pitch dialog button border brush. Falls back to PrimaryMidBrush if not set.
-        /// </summary>
-        public static Brush PitchDialogButtonBorderBrush => 
-            !string.IsNullOrWhiteSpace(Settings.PitchDialogButtonBorderColor) 
-                ? ParseBrush(Settings.PitchDialogButtonBorderColor, null) ?? PrimaryMidBrush
-                : PrimaryMidBrush;
-
-        /// <summary>
-        /// Gets the pitch display button background brush. Falls back to PrimaryMidBrush if not set.
-        /// </summary>
-        public static Brush PitchDisplayButtonBackgroundBrush => 
-            !string.IsNullOrWhiteSpace(Settings.PitchDisplayButtonBackgroundColor) 
-                ? ParseBrush(Settings.PitchDisplayButtonBackgroundColor, null) ?? PrimaryMidBrush
-                : PrimaryMidBrush;
-
-        #endregion
-
 
         #region Apply Settings to XAML Resources
 
@@ -273,31 +229,33 @@ namespace UltimateKtv
                 // Window-level resources (defined in MainWindow.xaml Resources section)
                 window.Resources["DataGridColumnHeaderBackground"] = DataGridColumnHeaderBackground;
                 window.Resources["DataGridColumnHeaderForeground"] = DataGridColumnHeaderForeground;
-                window.Resources["BrightBorderBrush"] = BrightBorderBrush;
+                window.Resources["PrimaryBrush"] = PrimaryBrush;
 
-                // UI Font Size Overrides
-                window.Resources["FuncBtnFontSize"] = Settings.FuncBtnFontSize;
-                window.Resources["BottomButtonFontSize"] = Settings.BottomButtonFontSize;
-                window.Resources["WaitingListFontSize"] = Settings.WaitingListFontSize;
-                window.Resources["SongListFontSize"] = Settings.SongListFontSize;
+                // UI Font Size Overrides (must be double for WPF FontSize dependency properties)
+                window.Resources["FuncBtnFontSize"] = (double)Settings.FuncBtnFontSize;
+                window.Resources["BottomButtonFontSize"] = (double)Settings.BottomButtonFontSize;
+                window.Resources["WaitingListFontSize"] = (double)Settings.WaitingListFontSize;
+                window.Resources["SongListFontSize"] = (double)Settings.SongListFontSize;
 
-                // Application-level resources (Material Design brushes are defined at App level)
+                // Application-level resources (Material Design brushes and font size fallbacks are defined at App level)
                 // These must be set at Application.Resources to override DynamicResource lookups
-                var appResources = System.Windows.Application.Current.Resources;
-                
-                // Primary theme color family (used by buttons, borders, highlights)
-                appResources["PrimaryBrush"] = PrimaryBrush;
-                appResources["PrimaryHueLightBrush"] = PrimaryLightBrush;
-                appResources["PrimaryHueMidBrush"] = PrimaryMidBrush;
-                appResources["PrimaryHueDarkBrush"] = PrimaryDarkBrush;
-                appResources["PrimaryHueMidForegroundBrush"] = PrimaryForegroundBrush;
-                appResources["PrimaryHueLightForegroundBrush"] = PrimaryForegroundBrush;
-                appResources["PrimaryHueDarkForegroundBrush"] = PrimaryForegroundBrush;
+                var appResources = System.Windows.Application.Current?.Resources;
+                if (appResources != null)
+                {
+                    appResources["FuncBtnFontSize"] = (double)Settings.FuncBtnFontSize;
+                    appResources["BottomButtonFontSize"] = (double)Settings.BottomButtonFontSize;
+                    appResources["WaitingListFontSize"] = (double)Settings.WaitingListFontSize;
+                    appResources["SongListFontSize"] = (double)Settings.SongListFontSize;
 
-                // Singer grid button colors (these are Window-level resources)
-                window.Resources["SingerButtonBackground"] = PrimaryMidBrush;
-                window.Resources["SingerButtonBorderBrush"] = PrimaryDarkBrush;
-                window.Resources["SingerButtonForeground"] = PrimaryForegroundBrush;
+                    // Primary theme color family (used by Material Design buttons, borders, highlights)
+                    appResources["PrimaryBrush"] = PrimaryBrush;
+                    appResources["PrimaryHueLightBrush"] = PrimaryLightBrush;
+                    appResources["PrimaryHueMidBrush"] = PrimaryBrush;
+                    appResources["PrimaryHueMidForegroundBrush"] = Brushes.White;
+                }
+
+                // Singer grid button background (Window-level resource)
+                window.Resources["SingerButtonBackground"] = PrimaryBrush;
 
                 // Apply Material Design theme using PaletteHelper
                 ApplyMaterialDesignTheme();
@@ -322,7 +280,7 @@ namespace UltimateKtv
                 var theme = paletteHelper.GetTheme();
 
                 // Parse the primary color from settings
-                var primaryColor = ParseColor(Settings.PrimaryMidColor, System.Windows.Media.Colors.Goldenrod);
+                var primaryColor = ParseColor(Settings.PrimaryColor, System.Windows.Media.Colors.Goldenrod);
                 
                 // Set the primary color for Material Design
                 theme.SetPrimaryColor(primaryColor);
@@ -362,7 +320,7 @@ namespace UltimateKtv
         /// <param name="fontSize">Optional font size (default is 18)</param>
         public static void ApplyOutlinedButtonStyle(System.Windows.Controls.Button button, double fontSize = 18)
         {
-            var themeColor = PrimaryMidBrush;
+            var themeColor = PrimaryBrush;
             button.BorderBrush = themeColor;
             button.Foreground = themeColor;
             button.Background = System.Windows.Media.Brushes.Transparent;

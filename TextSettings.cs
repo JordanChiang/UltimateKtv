@@ -15,16 +15,16 @@ namespace UltimateKtv
         public string FontFamily { get; set; } = "Microsoft JhengHei";
 
         [Description("功能按鈕字體大小(32)")]
-        public int FuncBtnFontSize { get; set; } = 32;
+        public double FuncBtnFontSize { get; set; } = 32;
 
         [Description("底部按鈕字體大小(36)")]
-        public int BottomButtonFontSize { get; set; } = 36;
+        public double BottomButtonFontSize { get; set; } = 36;
 
         [Description("待播清單字體大小(24)")]
-        public int WaitingListFontSize { get; set; } = 24;
+        public double WaitingListFontSize { get; set; } = 24;
 
         [Description("歌曲清單字體大小(38)")]
-        public int SongListFontSize { get; set; } = 38;
+        public double SongListFontSize { get; set; } = 38;
 
         #endregion
 
@@ -45,7 +45,7 @@ namespace UltimateKtv
         #region Web Host Info Settings
 
         [Description("網路主機資訊字型大小: Font size for web host info display. Default is 32.")]
-        public int WebHostInfoFontSize { get; set; } = 32;
+        public double WebHostInfoFontSize { get; set; } = 32;
 
         [Description("網路主機資訊前景色: Foreground color for web host info in hex format. Default is '#FFFFFF' (White).")]
         public string WebHostInfoForegroundColor { get; set; } = "#FFFFFF";
@@ -60,39 +60,13 @@ namespace UltimateKtv
         [Description("資料表格標題前景色: DataGrid column header foreground color. Default is '#FFFFFFFF'.")]
         public string DataGridColumnHeaderForegroundColor { get; set; } = "#FFFFFFFF";
 
-        [Description("亮色邊框顏色: Bright border color for highlighted elements. Default is '#FFD700' (Gold).")]
-        public string BrightBorderColor { get; set; } = "#FFD700";
 
-        [Description("主要顏色: Primary theme color for borders and highlights. Default is '#FFC107' (Amber).")]
+        [Description("主要顏色: Primary theme color for buttons, borders, highlights, and controls. Default is '#FFC107' (Amber).")]
         public string PrimaryColor { get; set; } = "#FFC107";
 
-        [Description("主要中階顏色: Primary mid-tone color. Default is '#FFB300'.")]
-        public string PrimaryMidColor { get; set; } = "#FFB300";
 
-        [Description("主要深色顏色: Primary dark color. Default is '#FF8F00'.")]
-        public string PrimaryDarkColor { get; set; } = "#FF8F00";
-
-        [Description("主要淺色顏色: Primary light color for hover/focus states. Default is '#FFECB3'.")]
+        [Description("主要淺色顏色: Primary light color for hover/focus states and singer tags. Default is '#FFECB3'.")]
         public string PrimaryLightColor { get; set; } = "#FFECB3";
-
-        [Description("主要前景色: Foreground color on primary-colored buttons. Default is '#FFFFFF'.")]
-        public string PrimaryForegroundColor { get; set; } = "#FFFFFF";
-
-        #endregion
-
-        #region Pitch Control Dialog Settings
-
-        [Description("音調控制對話框前景色: Pitch control dialog foreground/text color. Default is '#FFFFFF'.")]
-        public string PitchDialogForegroundColor { get; set; } = "#FFFFFF";
-
-        [Description("音調控制按鈕前景色: Pitch control button foreground color. Default is null (uses PrimaryForegroundColor).")]
-        public string? PitchDialogButtonForegroundColor { get; set; } = null;
-
-        [Description("音調控制按鈕邊框色: Pitch control button border color. Default is null (uses PrimaryMidColor).")]
-        public string? PitchDialogButtonBorderColor { get; set; } = null;
-
-        [Description("音調顯示按鈕背景色: Current pitch display button background. Default is null (uses PrimaryMidColor).")]
-        public string? PitchDisplayButtonBackgroundColor { get; set; } = null;
 
         #endregion
 

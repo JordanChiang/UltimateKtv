@@ -10,6 +10,9 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Text;
 using Microsoft.Win32;
 
 namespace StyleSimulator
@@ -18,6 +21,7 @@ namespace StyleSimulator
     {
         private StyleSettingsModel _model = new StyleSettingsModel();
         private bool _isInitializing = true;
+        private int _currentTemplateIndex = 0; // 0: Song1, 1: Song2, 2: Song3, 3: Startup
 
         // Visual elements on player canvas
         private OutlinedTextBlock? _marqueeText;
@@ -35,7 +39,38 @@ namespace StyleSimulator
         public MainWindow()
         {
             InitializeComponent();
+            AdjustWindowSizeToScreen();
             Loaded += MainWindow_Loaded;
+        }
+
+        private void AdjustWindowSizeToScreen()
+        {
+            try
+            {
+                var workArea = SystemParameters.WorkArea;
+                // If work area is constrained (such as 1080p screen at 125% or 150% scaling, or lower-res displays)
+                if (workArea.Width <= 1536 || workArea.Height <= 864)
+                {
+                    WindowState = WindowState.Maximized;
+                    // Provide safe fallback dimensions if user later un-maximizes (restores)
+                    Width = Math.Min(1360, workArea.Width * 0.95);
+                    Height = Math.Min(760, workArea.Height * 0.95);
+                }
+                else
+                {
+                    // For high-res or 100% scale displays (e.g. 1920x1080 at 100%, 1440p, 4K)
+                    Width = Math.Min(1600, workArea.Width * 0.92);
+                    Height = Math.Min(920, workArea.Height * 0.92);
+                    Left = workArea.Left + (workArea.Width - Width) / 2;
+                    Top = workArea.Top + (workArea.Height - Height) / 2;
+                }
+            }
+            catch
+            {
+                // Fallback in case SystemParameters.WorkArea fails
+                Width = 1400;
+                Height = 820;
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -334,14 +369,67 @@ namespace StyleSimulator
             SldBottomButtonFontSize.Value = Math.Max(14, Math.Min(64, _model.BottomButtonFontSize));
             SldWebHostInfoFontSize.Value = Math.Max(12, Math.Min(60, _model.WebHostInfoFontSize));
 
-            TxtPrimaryColor.Text = _model.PrimaryColor;
-            TxtBrightBorderColor.Text = _model.BrightBorderColor;
-            TxtDataGridHeaderBg.Text = _model.DataGridHeaderBgColor;
             TxtAnnouncementFg.Text = _model.AnnouncementForegroundColor;
+            TxtStaticTextFg.Text = _model.StaticTextForegroundColor;
+            TxtWebHostInfoFg.Text = _model.WebHostInfoForegroundColor;
+            TxtDataGridHeaderFg.Text = _model.DataGridColumnHeaderForegroundColor;
+
+            TxtPrimaryColor.Text = _model.PrimaryColor;
+            TxtPrimaryLightColor.Text = _model.PrimaryLightColor;
+            TxtDataGridHeaderBg.Text = _model.DataGridHeaderBgColor;
+
+            // settings.json - 點歌網址 (內部 IP, port)
+            string localIp = !string.IsNullOrWhiteSpace(_model.HttpServerIp) && _model.HttpServerIp != "0.0.0.0"
+                ? _model.HttpServerIp
+                : GetLocalIPAddress();
+            int port = _model.HttpServerPort > 0 ? _model.HttpServerPort : 8080;
+            TxtMockLanIp.Text = $"{localIp}:{port}";
+
+            if (_model.PublicServerPort > 0)
+            {
+                string wanIp = "220.222.1.1";
+                if (!string.IsNullOrWhiteSpace(TxtMockWanIp.Text))
+                {
+                    var wanParts = TxtMockWanIp.Text.Split(':');
+                    if (wanParts.Length > 0 && !string.IsNullOrWhiteSpace(wanParts[0]))
+                        wanIp = wanParts[0];
+                }
+                TxtMockWanIp.Text = $"{wanIp}:{_model.PublicServerPort}";
+            }
 
             _isInitializing = false;
             UpdateColorPreviews();
             UpdateLabels();
+        }
+
+        private static string GetLocalIPAddress()
+        {
+            try
+            {
+                string localIP = "127.0.0.1";
+                foreach (var item in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (item.OperationalStatus == OperationalStatus.Up)
+                    {
+                        foreach (var ip in item.GetIPProperties().UnicastAddresses)
+                        {
+                            if (ip.Address.AddressFamily == AddressFamily.InterNetwork &&
+                                !ip.Address.ToString().StartsWith("169.") &&
+                                !ip.Address.ToString().StartsWith("127.") &&
+                                !ip.Address.ToString().StartsWith("192.168.56.") &&
+                                !ip.Address.ToString().StartsWith("172.16."))
+                            {
+                                return ip.Address.ToString();
+                            }
+                        }
+                    }
+                }
+                return localIP;
+            }
+            catch
+            {
+                return "127.0.0.1";
+            }
         }
 
         private void SelectComboBoxFont(ComboBox cbo, string fontName)
@@ -435,10 +523,31 @@ namespace StyleSimulator
             _model.BottomButtonFontSize = (int)Math.Round(SldBottomButtonFontSize.Value);
             _model.WebHostInfoFontSize = (int)Math.Round(SldWebHostInfoFontSize.Value);
 
-            _model.PrimaryColor = TxtPrimaryColor.Text.Trim();
-            _model.BrightBorderColor = TxtBrightBorderColor.Text.Trim();
-            _model.DataGridHeaderBgColor = TxtDataGridHeaderBg.Text.Trim();
             _model.AnnouncementForegroundColor = TxtAnnouncementFg.Text.Trim();
+            _model.StaticTextForegroundColor = TxtStaticTextFg.Text.Trim();
+            _model.WebHostInfoForegroundColor = TxtWebHostInfoFg.Text.Trim();
+            _model.DataGridColumnHeaderForegroundColor = TxtDataGridHeaderFg.Text.Trim();
+
+            _model.PrimaryColor = TxtPrimaryColor.Text.Trim();
+            _model.PrimaryLightColor = TxtPrimaryLightColor.Text.Trim();
+            _model.DataGridHeaderBgColor = TxtDataGridHeaderBg.Text.Trim();
+
+            if (!string.IsNullOrWhiteSpace(TxtMockLanIp.Text))
+            {
+                var parts = TxtMockLanIp.Text.Trim().Split(':');
+                if (parts.Length == 2 && int.TryParse(parts[1], out int p))
+                {
+                    _model.HttpServerPort = p;
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(TxtMockWanIp.Text))
+            {
+                var parts = TxtMockWanIp.Text.Trim().Split(':');
+                if (parts.Length == 2 && int.TryParse(parts[1], out int p))
+                {
+                    _model.PublicServerPort = p;
+                }
+            }
         }
 
         private void UpdateLabels()
@@ -447,7 +556,7 @@ namespace StyleSimulator
             if (LblStrokeThickness != null) LblStrokeThickness.Text = $"{SldStrokeThickness.Value:0} 像素";
             if (LblSpeed != null) LblSpeed.Text = $"{SldSpeed.Value:0} 像素/秒";
             if (LblHoldTime != null) LblHoldTime.Text = $"{SldHoldTime.Value:0.#} 秒";
-            if (LblPlayCount != null) LblPlayCount.Text = $"{SldPlayCount.Value:0} 次";
+            if (LblPlayCount != null) LblPlayCount.Text = SldPlayCount.Value <= 0 ? "0 次 (關閉)" : $"{SldPlayCount.Value:0} 次";
 
             if (LblSongAddedFontSize != null) LblSongAddedFontSize.Text = $"{SldSongAddedFontSize.Value:0} 像素";
             if (LblSongAddedDuration != null) LblSongAddedDuration.Text = $"{SldSongAddedDuration.Value:0} 秒";
@@ -469,46 +578,217 @@ namespace StyleSimulator
             if (RectSongAddedFillColor != null) RectSongAddedFillColor.Background = ParseBrush(TxtSongAddedFillColor.Text, Brushes.Gold);
             if (RectBroadcastFillColor != null) RectBroadcastFillColor.Background = ParseBrush(TxtBroadcastFillColor.Text, Brushes.Cyan);
 
-            if (RectPrimaryColor != null) RectPrimaryColor.Background = ParseBrush(TxtPrimaryColor.Text, Brushes.Orange);
-            if (RectBrightBorderColor != null) RectBrightBorderColor.Background = ParseBrush(TxtBrightBorderColor.Text, Brushes.Gold);
-            if (RectDataGridHeaderBg != null) RectDataGridHeaderBg.Background = ParseBrush(TxtDataGridHeaderBg.Text, Brushes.DarkSlateGray);
             if (RectAnnouncementFg != null) RectAnnouncementFg.Background = ParseBrush(TxtAnnouncementFg.Text, Brushes.White);
+            if (RectStaticTextFg != null) RectStaticTextFg.Background = ParseBrush(TxtStaticTextFg.Text, Brushes.White);
+            if (RectWebHostInfoFg != null) RectWebHostInfoFg.Background = ParseBrush(TxtWebHostInfoFg.Text, Brushes.White);
+            if (RectDataGridHeaderFg != null) RectDataGridHeaderFg.Background = ParseBrush(TxtDataGridHeaderFg.Text, Brushes.White);
+
+            if (RectPrimaryColor != null) RectPrimaryColor.Background = ParseBrush(TxtPrimaryColor.Text, Brushes.Orange);
+            if (RectPrimaryLightColor != null) RectPrimaryLightColor.Background = ParseBrush(TxtPrimaryLightColor.Text, Brushes.LightYellow);
+            if (RectDataGridHeaderBg != null) RectDataGridHeaderBg.Background = ParseBrush(TxtDataGridHeaderBg.Text, Brushes.DarkSlateGray);
         }
 
         private void UpdateLivePreviews()
         {
             var uiFont = (CboUiFontFamily.SelectedItem as FontDisplayItem)?.FontFamily ?? new FontFamily("Microsoft JhengHei");
+            var primaryBrush = ParseBrush(TxtPrimaryColor.Text, Brushes.Indigo);
+            var primaryLightBrush = ParseBrush(TxtPrimaryLightColor.Text, Brushes.LightYellow);
+            var gridHeaderBgBrush = ParseBrush(TxtDataGridHeaderBg.Text, Brushes.DarkSlateGray);
+            var gridHeaderFgBrush = ParseBrush(TxtDataGridHeaderFg.Text, Brushes.White);
+            var announcementFgBrush = ParseBrush(TxtAnnouncementFg.Text, Brushes.White);
+            var staticTextFgBrush = ParseBrush(TxtStaticTextFg.Text, Brushes.White);
+            var webHostInfoFgBrush = ParseBrush(TxtWebHostInfoFg.Text, Brushes.White);
 
-            if (TxtSongRow1 != null) { TxtSongRow1.FontFamily = uiFont; TxtSongRow1.FontSize = SldSongListFontSize.Value; }
-            if (TxtSongRow2 != null) { TxtSongRow2.FontFamily = uiFont; TxtSongRow2.FontSize = SldSongListFontSize.Value; }
-            if (TxtSongRow3 != null) { TxtSongRow3.FontFamily = uiFont; TxtSongRow3.FontSize = SldSongListFontSize.Value; }
-            if (TxtSongRow4 != null) { TxtSongRow4.FontFamily = uiFont; TxtSongRow4.FontSize = SldSongListFontSize.Value; }
+            // Update Window Resource Dictionary for DynamicResource bindings
+            this.Resources["PrimaryBrush"] = primaryBrush;
+            this.Resources["PrimaryLightBrush"] = primaryLightBrush;
+            this.Resources["DataGridHeaderBgBrush"] = gridHeaderBgBrush;
+            this.Resources["DataGridHeaderFgBrush"] = gridHeaderFgBrush;
+            this.Resources["AnnouncementFgBrush"] = announcementFgBrush;
+            this.Resources["StaticTextFgBrush"] = staticTextFgBrush;
+            this.Resources["WebHostInfoFgBrush"] = webHostInfoFgBrush;
 
-            if (TxtWaitRow1 != null) { TxtWaitRow1.FontFamily = uiFont; TxtWaitRow1.FontSize = SldWaitingListFontSize.Value; }
-            if (TxtWaitRow2 != null) { TxtWaitRow2.FontFamily = uiFont; TxtWaitRow2.FontSize = SldWaitingListFontSize.Value; }
-            if (TxtWaitRow3 != null) { TxtWaitRow3.FontFamily = uiFont; TxtWaitRow3.FontSize = SldWaitingListFontSize.Value; }
+            // 13 Song List rows (matching updated screenshot)
+            TextBlock?[] songRowNames = {
+                TxtSongRow1, TxtSongRow2, TxtSongRow3, TxtSongRow4, TxtSongRow5,
+                TxtSongRow6, TxtSongRow7, TxtSongRow8, TxtSongRow9, TxtSongRow10,
+                TxtSongRow11, TxtSongRow12, TxtSongRow13
+            };
+            TextBlock?[] songRowSingers = {
+                TxtSingerRow1, TxtSingerRow2, TxtSingerRow3, TxtSingerRow4, TxtSingerRow5,
+                TxtSingerRow6, TxtSingerRow7, TxtSingerRow8, TxtSingerRow9, TxtSingerRow10,
+                TxtSingerRow11, TxtSingerRow12, TxtSingerRow13
+            };
+            TextBlock?[] songRowLangs = {
+                TxtLangRow1, TxtLangRow2, TxtLangRow3, TxtLangRow4, TxtLangRow5,
+                TxtLangRow6, TxtLangRow7, TxtLangRow8, TxtLangRow9, TxtLangRow10,
+                TxtLangRow11, TxtLangRow12, TxtLangRow13
+            };
 
-            if (BtnFunc1 != null) { BtnFunc1.FontFamily = uiFont; BtnFunc1.FontSize = SldFuncBtnFontSize.Value; BtnFunc1.Background = ParseBrush(TxtPrimaryColor.Text, Brushes.Indigo); }
-            if (BtnFunc2 != null) { BtnFunc2.FontFamily = uiFont; BtnFunc2.FontSize = SldFuncBtnFontSize.Value; BtnFunc2.Background = ParseBrush(TxtPrimaryColor.Text, Brushes.Indigo); }
-            if (BtnFunc3 != null) { BtnFunc3.FontFamily = uiFont; BtnFunc3.FontSize = SldFuncBtnFontSize.Value; BtnFunc3.Background = ParseBrush(TxtPrimaryColor.Text, Brushes.Indigo); }
-            if (BtnFunc4 != null) { BtnFunc4.FontFamily = uiFont; BtnFunc4.FontSize = SldFuncBtnFontSize.Value; BtnFunc4.Background = ParseBrush(TxtPrimaryColor.Text, Brushes.Indigo); }
-
-            if (BtnBottom1 != null) { BtnBottom1.FontFamily = uiFont; BtnBottom1.FontSize = SldBottomButtonFontSize.Value; }
-            if (BtnBottom2 != null) { BtnBottom2.FontFamily = uiFont; BtnBottom2.FontSize = SldBottomButtonFontSize.Value; }
-            if (BtnBottom3 != null) { BtnBottom3.FontFamily = uiFont; BtnBottom3.FontSize = SldBottomButtonFontSize.Value; }
-            if (BtnBottom4 != null) { BtnBottom4.FontFamily = uiFont; BtnBottom4.FontSize = SldBottomButtonFontSize.Value; }
-
-            if (BorderSongList != null) BorderSongList.BorderBrush = ParseBrush(TxtBrightBorderColor.Text, Brushes.Gold);
-            if (BorderHeader != null) BorderHeader.BorderBrush = ParseBrush(TxtPrimaryColor.Text, Brushes.Orange);
-            if (BorderGridHeader != null) BorderGridHeader.Background = ParseBrush(TxtDataGridHeaderBg.Text, Brushes.DarkSlateGray);
-            if (TxtPreviewAnnouncement != null) { TxtPreviewAnnouncement.FontFamily = uiFont; TxtPreviewAnnouncement.Foreground = ParseBrush(TxtAnnouncementFg.Text, Brushes.White); }
-
-            if (TxtPreviewStatic != null)
+            for (int i = 0; i < songRowNames.Length; i++)
             {
-                TxtPreviewStatic.FontFamily = uiFont;
-                TxtPreviewStatic.FontSize = SldWebHostInfoFontSize.Value;
-                TxtPreviewStatic.Text = $"網路點歌: {TxtMockLanIp.Text}";
+                if (songRowNames[i] != null)
+                {
+                    songRowNames[i]!.FontFamily = uiFont;
+                    songRowNames[i]!.FontSize = SldSongListFontSize.Value;
+                    // In UltimateKtv (MainWindow.xaml & MainWindow.Converters.cs), non-Mandarin songs use LightSkyBlue
+                    bool isNonMandarin = songRowLangs[i] != null && !string.Equals(songRowLangs[i]!.Text?.Trim(), "國語", StringComparison.Ordinal);
+                    songRowNames[i]!.Foreground = isNonMandarin ? Brushes.LightSkyBlue : Brushes.White;
+                }
+                if (songRowSingers[i] != null) { songRowSingers[i]!.FontFamily = uiFont; songRowSingers[i]!.FontSize = SldSongListFontSize.Value; }
+                if (songRowLangs[i] != null) { songRowLangs[i]!.FontFamily = uiFont; songRowLangs[i]!.FontSize = SldSongListFontSize.Value; }
             }
+
+            // Waiting List rows & pagination
+            TextBlock?[] waitSongs = { TxtWaitSong1, TxtWaitSong2, TxtWaitSong3 };
+            TextBlock?[] waitSingers = { TxtWaitSinger1, TxtWaitSinger2, TxtWaitSinger3 };
+            for (int i = 0; i < waitSongs.Length; i++)
+            {
+                if (waitSongs[i] != null) { waitSongs[i]!.FontFamily = uiFont; waitSongs[i]!.FontSize = SldWaitingListFontSize.Value; }
+                if (waitSingers[i] != null) { waitSingers[i]!.FontFamily = uiFont; waitSingers[i]!.FontSize = SldWaitingListFontSize.Value; }
+            }
+            if (TxtWaitPageInfo != null)
+            {
+                TxtWaitPageInfo.FontFamily = uiFont;
+                TxtWaitPageInfo.FontSize = SldWaitingListFontSize.Value;
+                TxtWaitPageInfo.Foreground = staticTextFgBrush;
+            }
+            if (BorderWaitHeader != null) BorderWaitHeader.Background = gridHeaderBgBrush;
+            if (TxtWaitHeaderCol1 != null) { TxtWaitHeaderCol1.FontFamily = uiFont; TxtWaitHeaderCol1.FontSize = SldWaitingListFontSize.Value; TxtWaitHeaderCol1.Foreground = gridHeaderFgBrush; }
+            if (TxtWaitHeaderCol2 != null) { TxtWaitHeaderCol2.FontFamily = uiFont; TxtWaitHeaderCol2.FontSize = SldWaitingListFontSize.Value; TxtWaitHeaderCol2.Foreground = gridHeaderFgBrush; }
+
+            // 8 Top Function Buttons (FuncBtn5 "新進" is active with PrimaryColor, all outlined buttons use PrimaryColor)
+            Button?[] funcBtns = { FuncBtn1, FuncBtn2, FuncBtn3, FuncBtn4, FuncBtn5, FuncBtn6, FuncBtn7, FuncBtn8 };
+            foreach (var b in funcBtns)
+            {
+                if (b != null)
+                {
+                    b.FontFamily = uiFont;
+                    b.FontSize = SldFuncBtnFontSize.Value;
+                    if (b == FuncBtn5)
+                    {
+                        // Active Mode Button: uses PrimaryColor background & White text
+                        b.Background = primaryBrush;
+                        b.Foreground = Brushes.White;
+                        b.BorderBrush = primaryBrush;
+                        b.BorderThickness = new Thickness(1.5);
+                        b.FontWeight = FontWeights.Bold;
+                    }
+                    else
+                    {
+                        b.Background = Brushes.Transparent;
+                        b.Foreground = primaryBrush;
+                        b.BorderBrush = primaryBrush;
+                        b.BorderThickness = new Thickness(1);
+                        b.FontWeight = FontWeights.Normal;
+                    }
+                }
+            }
+
+            // 5 Category Filter Buttons (FilterBtn1 "國語-單曲" is active with PrimaryColor & White text, all outlined with PrimaryColor)
+            Button?[] filterBtns = { FilterBtn1, FilterBtn2, FilterBtn3, FilterBtn4, FilterBtn5 };
+            foreach (var b in filterBtns)
+            {
+                if (b != null)
+                {
+                    b.FontFamily = uiFont;
+                    b.FontSize = SldFuncBtnFontSize.Value;
+                    if (b == FilterBtn1)
+                    {
+                        // Selected Category Tab: uses PrimaryColor background & White text
+                        b.Background = primaryBrush;
+                        b.Foreground = Brushes.White;
+                        b.BorderBrush = primaryBrush;
+                        b.BorderThickness = new Thickness(1.5);
+                        b.FontWeight = FontWeights.Bold;
+                    }
+                    else
+                    {
+                        b.Background = Brushes.Transparent;
+                        b.Foreground = primaryBrush;
+                        b.BorderBrush = primaryBrush;
+                        b.BorderThickness = new Thickness(1);
+                        b.FontWeight = FontWeights.Normal;
+                    }
+                }
+            }
+
+            // Bottom Player Control & Pagination Buttons (Outlined with PrimaryColor, only BtnMusic "伴唱" is active)
+            Button?[] bottomBtns = { BtnPause, BtnRepeat, BtnVocal, BtnMusic, BtnPageUp, BtnPageDown };
+            foreach (var b in bottomBtns)
+            {
+                if (b != null)
+                {
+                    b.FontFamily = uiFont;
+                    b.FontSize = SldBottomButtonFontSize.Value;
+                    if (b == BtnMusic)
+                    {
+                        // Active toggle: only "伴唱" is pressed
+                        b.Background = primaryBrush;
+                        b.Foreground = Brushes.White;
+                        b.BorderBrush = primaryBrush;
+                        b.BorderThickness = new Thickness(1.5);
+                        b.FontWeight = FontWeights.Bold;
+                    }
+                    else
+                    {
+                        b.Background = Brushes.Transparent;
+                        b.Foreground = primaryBrush;
+                        b.BorderBrush = primaryBrush;
+                        b.BorderThickness = new Thickness(1);
+                        b.FontWeight = FontWeights.Normal;
+                    }
+                }
+            }
+
+            // Skip Song Button: Prominent Action Button using PrimaryColor
+            if (BtnSkipSong != null)
+            {
+                BtnSkipSong.FontFamily = uiFont;
+                BtnSkipSong.FontSize = SldBottomButtonFontSize.Value;
+                BtnSkipSong.Background = Brushes.Transparent;
+                BtnSkipSong.Foreground = primaryBrush;
+                BtnSkipSong.BorderBrush = primaryBrush;
+                BtnSkipSong.BorderThickness = new Thickness(2);
+                BtnSkipSong.FontWeight = FontWeights.Bold;
+            }
+
+            if (BtnWaitPageUp != null) { BtnWaitPageUp.FontFamily = uiFont; BtnWaitPageUp.BorderBrush = primaryBrush; BtnWaitPageUp.Foreground = primaryBrush; }
+            if (BtnWaitPageDown != null) { BtnWaitPageDown.FontFamily = uiFont; BtnWaitPageDown.BorderBrush = primaryBrush; BtnWaitPageDown.Foreground = primaryBrush; }
+
+            if (IconLock != null) IconLock.Foreground = primaryBrush;
+            if (IconMenu != null) IconMenu.Foreground = primaryBrush;
+            if (VideoProgressSliderPreview != null) VideoProgressSliderPreview.Foreground = primaryBrush;
+            if (VolumeSliderPreview != null) VolumeSliderPreview.Foreground = primaryBrush;
+
+            if (TxtGlobalPageInfo != null)
+            {
+                TxtGlobalPageInfo.FontFamily = uiFont;
+                TxtGlobalPageInfo.FontSize = SldBottomButtonFontSize.Value;
+                TxtGlobalPageInfo.Foreground = staticTextFgBrush;
+            }
+
+            if (TxtClockIcon != null) TxtClockIcon.Foreground = staticTextFgBrush;
+            if (TxtClockTime != null) { TxtClockTime.FontFamily = uiFont; TxtClockTime.Foreground = staticTextFgBrush; }
+
+            // Frames & Accents
+            if (BorderKtvFrame != null) BorderKtvFrame.BorderBrush = primaryBrush;
+            if (BorderHeader != null) BorderHeader.BorderBrush = primaryBrush;
+            if (BorderSongList != null) BorderSongList.BorderBrush = primaryBrush;
+            if (BorderWaitList != null) BorderWaitList.BorderBrush = primaryBrush;
+            if (BorderGridHeader != null) BorderGridHeader.Background = gridHeaderBgBrush;
+
+            // Row 1 Singer Highlight (showcases PrimaryLightColor)
+            if (BorderSingerRow1 != null) BorderSingerRow1.Background = primaryLightBrush;
+            if (TxtSingerRow1 != null) TxtSingerRow1.Foreground = Brushes.Black;
+
+            if (TxtGridHeaderCol1 != null) { TxtGridHeaderCol1.FontFamily = uiFont; TxtGridHeaderCol1.FontSize = SldSongListFontSize.Value; TxtGridHeaderCol1.Foreground = gridHeaderFgBrush; }
+            if (TxtGridHeaderCol2 != null) { TxtGridHeaderCol2.FontFamily = uiFont; TxtGridHeaderCol2.FontSize = SldSongListFontSize.Value; TxtGridHeaderCol2.Foreground = gridHeaderFgBrush; }
+            if (TxtGridHeaderCol3 != null) { TxtGridHeaderCol3.FontFamily = uiFont; TxtGridHeaderCol3.FontSize = SldSongListFontSize.Value; TxtGridHeaderCol3.Foreground = gridHeaderFgBrush; }
+
+            if (TxtPreviewAnnouncement != null) { TxtPreviewAnnouncement.FontFamily = uiFont; TxtPreviewAnnouncement.Foreground = announcementFgBrush; }
+            if (TxtPreviewWebHostInfo != null) { TxtPreviewWebHostInfo.FontFamily = uiFont; TxtPreviewWebHostInfo.Foreground = webHostInfoFgBrush; TxtPreviewWebHostInfo.FontSize = SldWebHostInfoFontSize.Value; }
+            if (TxtPreviewStaticText != null) { TxtPreviewStaticText.FontFamily = uiFont; TxtPreviewStaticText.Foreground = staticTextFgBrush; }
 
             // Update live marquee running properties
             if (_marqueeText != null)
@@ -574,9 +854,186 @@ namespace StyleSimulator
             return FontWeights.Normal;
         }
 
+        private bool _isHarmonizing = false;
+
+        private void TxtPrimaryColor_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            if (ChkAutoHarmonize != null && ChkAutoHarmonize.IsChecked == true && !_isHarmonizing)
+            {
+                HarmonizePalette(TxtPrimaryColor.Text.Trim(), false);
+            }
+
+            ParamChanged(sender, e);
+        }
+
+        private void BtnHarmonize_Click(object sender, RoutedEventArgs e)
+        {
+            HarmonizePalette(TxtPrimaryColor.Text.Trim(), true);
+        }
+
+        private void HarmonizePalette(string primaryHex, bool forceNotify)
+        {
+            if (string.IsNullOrWhiteSpace(primaryHex)) return;
+
+            Color primaryColor;
+            try
+            {
+                primaryColor = (Color)ColorConverter.ConvertFromString(primaryHex);
+            }
+            catch
+            {
+                return;
+            }
+
+            _isHarmonizing = true;
+            try
+            {
+                ColorToHsl(primaryColor, out double h, out double s, out double l);
+
+                // Derive complementary shades
+                // Light: soft high-lightness pastel (85% lightness, gentle saturation) for singer tag
+                var lightColor = HslToColor(h, Math.Clamp(s * 0.45, 0.15, 0.6), Math.Clamp(0.85, 0.75, 0.92));
+                // DataGrid header bg: deep slate tone tinted with primary hue
+                var gridHeaderBgColor = HslToColor(h, Math.Min(0.5, s * 0.5), Math.Clamp(l * 0.55, 0.18, 0.38));
+                // Static text: subtle soft tint or light contrast
+                var staticTextFgColor = HslToColor(h, Math.Clamp(s * 0.3, 0.1, 0.4), Math.Clamp(0.88, 0.8, 0.94));
+
+                if (TxtPrimaryLightColor != null) TxtPrimaryLightColor.Text = ColorToHex(lightColor);
+                if (TxtDataGridHeaderBg != null) TxtDataGridHeaderBg.Text = ColorToHex(gridHeaderBgColor);
+                if (TxtStaticTextFg != null) TxtStaticTextFg.Text = ColorToHex(staticTextFgColor);
+            }
+            finally
+            {
+                _isHarmonizing = false;
+            }
+
+            UpdateLabels();
+            UpdateColorPreviews();
+            UpdateSettingsFromUI();
+            UpdateLivePreviews();
+
+            if (forceNotify)
+            {
+                MessageBox.Show($"已依主要色彩 [{primaryHex}] 完成全套色階調配！\n(包含淺色標籤與標題列底色)", "調配成功", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private static string ColorToHex(Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+
+        private static void ColorToHsl(Color c, out double h, out double s, out double l)
+        {
+            double r = c.R / 255.0;
+            double g = c.G / 255.0;
+            double b = c.B / 255.0;
+
+            double max = Math.Max(r, Math.Max(g, b));
+            double min = Math.Min(r, Math.Min(g, b));
+            double delta = max - min;
+
+            l = (max + min) / 2.0;
+
+            if (delta == 0)
+            {
+                h = 0;
+                s = 0;
+            }
+            else
+            {
+                s = l > 0.5 ? delta / (2.0 - max - min) : delta / (max + min);
+
+                if (max == r)
+                    h = ((g - b) / delta) + (g < b ? 6 : 0);
+                else if (max == g)
+                    h = ((b - r) / delta) + 2;
+                else
+                    h = ((r - g) / delta) + 4;
+
+                h /= 6.0;
+            }
+        }
+
+        private static Color HslToColor(double h, double s, double l)
+        {
+            double r, g, b;
+
+            if (s == 0)
+            {
+                r = g = b = l;
+            }
+            else
+            {
+                double q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
+                double p = 2.0 * l - q;
+                r = HueToRgb(p, q, h + 1.0 / 3.0);
+                g = HueToRgb(p, q, h);
+                b = HueToRgb(p, q, h - 1.0 / 3.0);
+            }
+
+            return Color.FromRgb(
+                (byte)Math.Clamp((int)Math.Round(r * 255), 0, 255),
+                (byte)Math.Clamp((int)Math.Round(g * 255), 0, 255),
+                (byte)Math.Clamp((int)Math.Round(b * 255), 0, 255));
+        }
+
+        private static double HueToRgb(double p, double q, double t)
+        {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1.0 / 6.0) return p + (q - p) * 6.0 * t;
+            if (t < 1.0 / 2.0) return q;
+            if (t < 2.0 / 3.0) return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
+            return p;
+        }
+
+        private string GetCurrentFormattedMarqueeText()
+        {
+            return _currentTemplateIndex switch
+            {
+                0 => GetFormattedSong1(),
+                1 => GetFormattedSong2(),
+                2 => GetFormattedSong3(),
+                3 => GetFormattedStartup(),
+                _ => GetFormattedSong1()
+            };
+        }
+
+        private void TxtTemplate_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            int newIndex = _currentTemplateIndex;
+            if (ReferenceEquals(sender, TxtTemplate1)) newIndex = 0;
+            else if (ReferenceEquals(sender, TxtTemplate2)) newIndex = 1;
+            else if (ReferenceEquals(sender, TxtTemplate3)) newIndex = 2;
+            else if (ReferenceEquals(sender, TxtTemplateStartup)) newIndex = 3;
+
+            if (newIndex != _currentTemplateIndex)
+            {
+                _currentTemplateIndex = newIndex;
+                if (CboConfigFileType != null && CboConfigFileType.SelectedIndex == 0 &&
+                    CardPlayback != null && CardPlayback.Visibility == Visibility.Visible &&
+                    !_isSongAddedActive)
+                {
+                    string textToPlay = GetCurrentFormattedMarqueeText();
+                    if (!string.IsNullOrWhiteSpace(textToPlay))
+                    {
+                        StartMarquee(textToPlay, false);
+                    }
+                }
+            }
+        }
+
         private void ParamChanged(object sender, EventArgs e)
         {
             if (_isInitializing) return;
+
+            if (ReferenceEquals(sender, TxtTemplate1)) _currentTemplateIndex = 0;
+            else if (ReferenceEquals(sender, TxtTemplate2)) _currentTemplateIndex = 1;
+            else if (ReferenceEquals(sender, TxtTemplate3)) _currentTemplateIndex = 2;
+            else if (ReferenceEquals(sender, TxtTemplateStartup)) _currentTemplateIndex = 3;
+
             UpdateLabels();
             UpdateColorPreviews();
             UpdateSettingsFromUI();
@@ -586,7 +1043,7 @@ namespace StyleSimulator
                 CardPlayback != null && CardPlayback.Visibility == Visibility.Visible &&
                 !_isSongAddedActive)
             {
-                string textToPlay = !string.IsNullOrEmpty(_lastMarqueeText) ? _lastMarqueeText : GetFormattedSong1();
+                string textToPlay = GetCurrentFormattedMarqueeText();
                 if (!string.IsNullOrWhiteSpace(textToPlay))
                 {
                     StartMarquee(textToPlay, false);
@@ -650,51 +1107,45 @@ namespace StyleSimulator
         private void RectSongAddedFillColor_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtSongAddedFillColor);
         private void RectBroadcastFillColor_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtBroadcastFillColor);
 
-        private void RectPrimaryColor_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtPrimaryColor);
-        private void RectBrightBorderColor_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtBrightBorderColor);
-        private void RectDataGridHeaderBg_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtDataGridHeaderBg);
         private void RectAnnouncementFg_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtAnnouncementFg);
+        private void RectStaticTextFg_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtStaticTextFg);
+        private void RectWebHostInfoFg_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtWebHostInfoFg);
+        private void RectDataGridHeaderFg_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtDataGridHeaderFg);
+
+        private void RectPrimaryColor_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtPrimaryColor);
+        private void RectPrimaryLightColor_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtPrimaryLightColor);
+        private void RectDataGridHeaderBg_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtDataGridHeaderBg);
         #endregion
 
         #region String Formatting Helpers
         private string GetFormattedSong1()
         {
-            return FormatMarqueeString(TxtTemplate1.Text, TxtMockSong.Text, TxtMockSinger.Text, TxtMockNextSong.Text, TxtMockNextSinger.Text, TxtMockLanIp.Text, TxtMockWanIp.Text, TxtMockOrderedBy.Text.Trim());
+            return FormatMarqueeString(TxtTemplate1.Text, TxtMockSong.Text, TxtMockSinger.Text, TxtMockNextSong.Text, TxtMockNextSinger.Text, TxtMockLanIp.Text, TxtMockWanIp.Text, TxtMockOrderedBy.Text.Trim(), TxtMockNextOrderedBy?.Text.Trim() ?? "");
         }
 
         private string GetFormattedSong2()
         {
-            return FormatMarqueeString(TxtTemplate2.Text, TxtMockSong.Text, TxtMockSinger.Text, "", "", TxtMockLanIp.Text, TxtMockWanIp.Text, TxtMockOrderedBy.Text.Trim());
+            return FormatMarqueeString(TxtTemplate2.Text, TxtMockSong.Text, TxtMockSinger.Text, "", "", TxtMockLanIp.Text, TxtMockWanIp.Text, TxtMockOrderedBy.Text.Trim(), "");
         }
 
         private string GetFormattedSong3()
         {
-            return FormatMarqueeString(TxtTemplate3.Text, TxtMockSong.Text, TxtMockSinger.Text, "", "", TxtMockLanIp.Text, TxtMockWanIp.Text, TxtMockOrderedBy.Text.Trim());
+            return FormatMarqueeString(TxtTemplate3.Text, TxtMockSong.Text, TxtMockSinger.Text, "", "", TxtMockLanIp.Text, TxtMockWanIp.Text, TxtMockOrderedBy.Text.Trim(), "");
         }
 
         private string GetFormattedStartup()
         {
-            return FormatMarqueeString(TxtTemplateStartup.Text, "", "", "", "", TxtMockLanIp.Text, TxtMockWanIp.Text, "");
+            return FormatMarqueeString(TxtTemplateStartup.Text, "", "", "", "", TxtMockLanIp.Text, TxtMockWanIp.Text, "", "");
         }
 
         private string GetFormattedSongAdded()
         {
-            return FormatMarqueeString(TxtSongAddedTemplate.Text, TxtMockSong.Text, TxtMockSinger.Text, "", "", TxtMockLanIp.Text, TxtMockWanIp.Text, TxtMockOrderedBy.Text.Trim());
+            return FormatMarqueeString(TxtSongAddedTemplate.Text, TxtMockSong.Text, TxtMockSinger.Text, "", "", TxtMockLanIp.Text, TxtMockWanIp.Text, TxtMockOrderedBy.Text.Trim(), "");
         }
 
-        private string FormatMarqueeString(string template, string song, string singer, string nextSong, string nextSinger, string lanIp, string wanIp, string orderedBy)
+        private string FormatMarqueeString(string template, string song, string singer, string nextSong, string nextSinger, string lanIp, string wanIp, string orderedBy, string nextOrderedBy = "")
         {
             if (string.IsNullOrEmpty(template)) return "";
-
-            if (string.IsNullOrWhiteSpace(orderedBy) || orderedBy == "本機" || orderedBy == "隨機播放")
-            {
-                template = System.Text.RegularExpressions.Regex.Replace(template, @"[，,、\s]*點歌[人者]?[：:]\s*\{6\}", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                template = template.Replace("{6}", "");
-            }
-            else
-            {
-                template = template.Replace("{6}", orderedBy);
-            }
 
             return template
                 .Replace("{0}", song ?? "")
@@ -702,7 +1153,9 @@ namespace StyleSimulator
                 .Replace("{2}", nextSong ?? "")
                 .Replace("{3}", nextSinger ?? "")
                 .Replace("{4}", lanIp ?? "")
-                .Replace("{5}", wanIp ?? "");
+                .Replace("{5}", wanIp ?? "")
+                .Replace("{6}", orderedBy ?? "")
+                .Replace("{7}", nextOrderedBy ?? "");
         }
         #endregion
 
@@ -961,6 +1414,7 @@ namespace StyleSimulator
         #region Button Handlers & Navigation
         private void BtnPlaySong1_Click(object sender, RoutedEventArgs e)
         {
+            _currentTemplateIndex = 0;
             CboConfigFileType.SelectedIndex = 0;
             SelectMarqueeCategory(0);
             TxtTemplate1.Focus();
@@ -969,6 +1423,7 @@ namespace StyleSimulator
 
         private void BtnPlaySong2_Click(object sender, RoutedEventArgs e)
         {
+            _currentTemplateIndex = 1;
             CboConfigFileType.SelectedIndex = 0;
             SelectMarqueeCategory(0);
             TxtTemplate2.Focus();
@@ -977,6 +1432,7 @@ namespace StyleSimulator
 
         private void BtnPlaySong3_Click(object sender, RoutedEventArgs e)
         {
+            _currentTemplateIndex = 2;
             CboConfigFileType.SelectedIndex = 0;
             SelectMarqueeCategory(0);
             TxtTemplate3.Focus();
@@ -985,6 +1441,7 @@ namespace StyleSimulator
 
         private void BtnPlayStartup_Click(object sender, RoutedEventArgs e)
         {
+            _currentTemplateIndex = 3;
             CboConfigFileType.SelectedIndex = 0;
             SelectMarqueeCategory(0);
             TxtTemplateStartup.Focus();
@@ -1061,13 +1518,80 @@ namespace StyleSimulator
                 _model.ResetTextSettingsToDefaults();
                 ApplySettingsToUI();
                 UpdateLivePreviews();
+                if (CboThemePresets != null) CboThemePresets.SelectedIndex = 0;
                 MessageBox.Show("點歌介面字級與主題色彩已回復為預設值！\n(如欲永久生效請點擊「儲存目前檔」)", "已回復預設", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+        }
+
+        public static string? FindSampleSettingsDirectory()
+        {
+            string? dir = AppDomain.CurrentDomain.BaseDirectory;
+            while (!string.IsNullOrEmpty(dir))
+            {
+                string candidate = Path.Combine(dir, "SampleSettings");
+                if (Directory.Exists(candidate)) return candidate;
+                string? parent = Directory.GetParent(dir)?.FullName;
+                if (parent == dir) break;
+                dir = parent;
+            }
+            return null;
+        }
+
+        private void CboThemePresets_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isInitializing || CboThemePresets == null || CboThemePresets.SelectedItem is not ComboBoxItem item) return;
+            string? tag = item.Tag as string;
+            if (string.IsNullOrEmpty(tag)) return;
+
+            if (tag == "DEFAULT")
+            {
+                _model.ResetTextSettingsToDefaults();
+                ApplySettingsToUI();
+                UpdateLivePreviews();
+                return;
+            }
+
+            // 1. 優先從組件內建資源讀取 (Embedded Resource)
+            string resourceName = $"StyleSimulator.SampleSettings.{tag}";
+            var assembly = typeof(MainWindow).Assembly;
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream != null)
+                {
+                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    {
+                        string json = reader.ReadToEnd();
+                        if (_model.ApplyTextSettingsFromJson(json))
+                        {
+                            ApplySettingsToUI();
+                            UpdateLivePreviews();
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // 2. 若無內建資源，回退搜尋外部 SampleSettings 資料夾
+            string? sampleDir = FindSampleSettingsDirectory();
+            if (sampleDir != null)
+            {
+                string targetPath = Path.Combine(sampleDir, tag);
+                if (File.Exists(targetPath))
+                {
+                    _model.ApplyTextSettingsPreset(targetPath);
+                    ApplySettingsToUI();
+                    UpdateLivePreviews();
+                    return;
+                }
+            }
+
+            MessageBox.Show($"找不到主題範本資源或檔案:\n{tag}", "主題載入失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
         {
             bool isSettings = CboConfigFileType.SelectedIndex == 0;
+            string expectedFileName = isSettings ? "settings.json" : "textsettings.json";
             string currentPath = isSettings ? StyleSettingsModel.SettingsPath : StyleSettingsModel.TextSettingsPath;
 
             string initialDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -1086,14 +1610,24 @@ namespace StyleSimulator
 
             var dlg = new OpenFileDialog
             {
-                Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*",
-                Title = isSettings ? "選擇 settings.json" : "選擇 textsettings.json",
-                FileName = isSettings ? "settings.json" : "textsettings.json",
+                Filter = isSettings
+                    ? "設定檔 (settings.json)|settings.json"
+                    : "UI設定檔 (textsettings.json)|textsettings.json",
+                Title = isSettings ? "選擇 settings.json (跑馬燈/提示)" : "選擇 textsettings.json (UI介面)",
+                FileName = expectedFileName,
                 InitialDirectory = initialDir
             };
 
             if (dlg.ShowDialog() == true)
             {
+                string selectedFileName = Path.GetFileName(dlg.FileName);
+                if (!string.Equals(selectedFileName, expectedFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show($"目前模式為【{(isSettings ? "跑馬燈/提示" : "UI介面")}】，僅能載入「{expectedFileName}」！\n\n您選取的檔案為: {selectedFileName}\n為避免設定內容不相容或儲存時覆寫損壞，載入已取消。",
+                                    "檔案名稱不符合", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 if (isSettings)
                 {
                     _model.LoadSettingsJson(dlg.FileName);

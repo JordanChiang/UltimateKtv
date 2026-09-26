@@ -2,11 +2,25 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:StyleSimulator"
-        Title="UltimateKTV 樣式與效果模擬器" Height="900" Width="1600"
+        Title="UltimateKTV 樣式與效果模擬器"
+        MinWidth="1024" MinHeight="620"
         WindowStartupLocation="CenterScreen"
         FontSize="14"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="ClearType"
         Background="#141419" Foreground="#EAEAEA">
     <Window.Resources>
+        <!-- Dynamic Theme Brushes for Live KTV Preview -->
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#FFC107" />
+        <SolidColorBrush x:Key="PrimaryLightBrush" Color="#FFECB3" />
+        <SolidColorBrush x:Key="DataGridHeaderBgBrush" Color="#FF4A4A4A" />
+        <SolidColorBrush x:Key="DataGridHeaderFgBrush" Color="#FFFFFFFF" />
+        <SolidColorBrush x:Key="AnnouncementFgBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="StaticTextFgBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="WebHostInfoFgBrush" Color="#FFFFFF" />
+
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#EAEAEA" />
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -137,11 +151,16 @@
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Padding" Value="11,6" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4" 
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                     </ControlTemplate>
@@ -152,6 +171,76 @@
                     <Setter Property="Background" Value="#5C6BC0" />
                 </Trigger>
             </Style.Triggers>
+        </Style>
+        <Style TargetType="Button" x:Key="KtvOutlinedButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="2" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#25FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern KTV Player Slider Style with Dynamic Theme Color Binding -->
+        <Style x:Key="KtvSliderStyle" TargetType="Slider">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate>
+                                                <Border Height="6" CornerRadius="3" Background="{DynamicResource PrimaryBrush}" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate>
+                                                <Ellipse Width="14" Height="14" Fill="{DynamicResource PrimaryBrush}" Stroke="#FFFFFF" StrokeThickness="1.5" Cursor="Hand" />
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate>
+                                                <Border Height="6" CornerRadius="3" Background="#333344" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style TargetType="Button" x:Key="SuccessButton" BasedOn="{StaticResource ActionButton}">
             <Setter Property="Background" Value="#2E7D32" />
@@ -227,35 +316,38 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- File Selector & Actions -->
-                <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="目前編輯檔:" Foreground="#CCC" FontSize="14" Margin="0,0,6,0" />
-                    <ComboBox x:Name="CboConfigFileType" Width="225" Margin="0,0,6,0" SelectionChanged="CboConfigFileType_SelectionChanged">
-                        <ComboBoxItem Content="⚙️ settings.json (跑馬燈/提示)" IsSelected="True" />
-                        <ComboBoxItem Content="🎨 textsettings.json (UI介面)" />
-                    </ComboBox>
-                    <TextBox x:Name="TxtActiveFilePath" Width="290" IsReadOnly="True" Margin="0,0,6,0" ToolTip="目前載入的設定檔路徑" />
-                    <Button Content="📁 瀏覽..." Style="{StaticResource SecondaryButton}" Click="BtnBrowse_Click" Margin="0,0,6,0" />
-                    <Button Content="🔄 重新載入" Style="{StaticResource SecondaryButton}" Click="BtnReload_Click" Margin="0,0,6,0" />
-                    <Button Content="💾 儲存目前檔" Style="{StaticResource SuccessButton}" Click="BtnSaveCurrent_Click" Margin="0,0,6,0" />
-                    <Button Content="💾 儲存全部 (雙檔)" Style="{StaticResource ActionButton}" Click="BtnSaveAll_Click" />
-                </StackPanel>
+                <!-- File Selector & Actions (Responsive WrapPanel) -->
+                <WrapPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,6,2">
+                        <TextBlock Text="目前編輯檔:" Foreground="#CCC" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <ComboBox x:Name="CboConfigFileType" Width="235" SelectionChanged="CboConfigFileType_SelectionChanged">
+                            <ComboBoxItem Content="⚙️ settings.json (跑馬燈/提示)" IsSelected="True" />
+                            <ComboBoxItem Content="🎨 textsettings.json (UI介面)" />
+                        </ComboBox>
+                    </StackPanel>
+                    <TextBox x:Name="TxtActiveFilePath" MinWidth="130" MaxWidth="280" IsReadOnly="True" Margin="0,2,6,2" VerticalAlignment="Center" ToolTip="目前載入的設定檔路徑" />
+                    <Button Content="📁 瀏覽..." Style="{StaticResource SecondaryButton}" Click="BtnBrowse_Click" Margin="0,2,6,2" />
+                    <Button Content="🔄 重新載入" Style="{StaticResource SecondaryButton}" Click="BtnReload_Click" Margin="0,2,6,2" />
+                    <Button Content="💾 儲存目前檔" Style="{StaticResource SuccessButton}" Click="BtnSaveCurrent_Click" Margin="0,2,6,2" />
+                    <Button Content="💾 儲存全部 (雙檔)" Style="{StaticResource ActionButton}" Click="BtnSaveAll_Click" Margin="0,2,0,2" />
+                </WrapPanel>
 
-                <StackPanel Orientation="Horizontal" Grid.Column="2">
+                <StackPanel Orientation="Horizontal" Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0">
                     <Button Content="⏹️ 停止動畫" Style="{StaticResource DangerButton}" Click="BtnStop_Click" />
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Main Content Area -->
-        <Grid Grid.Row="1" Margin="10">
+        <Grid Grid.Row="1" Margin="10,8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" MinWidth="540" /> <!-- Left: Live Preview -->
-                <ColumnDefinition Width="2*" MinWidth="440" /> <!-- Right: Dedicated Settings -->
+                <ColumnDefinition Width="3*" MinWidth="460" /> <!-- Left: Live Preview -->
+                <ColumnDefinition Width="Auto" />              <!-- Draggable Splitter -->
+                <ColumnDefinition Width="2*" MinWidth="380" /> <!-- Right: Dedicated Settings -->
             </Grid.ColumnDefinitions>
 
             <!-- Left: Dynamic View (Switches automatically based on selected file) -->
-            <Grid Grid.Column="0" Margin="0,0,8,0">
+            <Grid Grid.Column="0" Margin="0,0,4,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" /> <!-- Test Buttons Toolbar -->
                     <RowDefinition Height="*" />    <!-- Screen Canvas -->
@@ -316,97 +408,450 @@
                         </Viewbox>
                     </Border>
 
-                    <!-- VIEW 2: 點歌機操作介面 (KTV UI View for textsettings.json) -->
-                    <Border x:Name="KtvUiView" Background="#101017" BorderBrush="#2F2F3F" BorderThickness="2" CornerRadius="8" Padding="8" Visibility="Collapsed">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" /> <!-- Top Header Announcement -->
-                                <RowDefinition Height="*" />    <!-- Middle Table & Waiting List -->
-                                <RowDefinition Height="Auto" /> <!-- Bottom Action Buttons -->
-                            </Grid.RowDefinitions>
+                    <!-- VIEW 2: 點歌機操作介面 (KTV UI View for textsettings.json - 1920x1080 Viewbox) -->
+                    <Border x:Name="KtvUiView" Background="#0A0A0E" BorderBrush="#333344" BorderThickness="2" CornerRadius="8" ClipToBounds="True" Padding="6" Visibility="Collapsed">
+                        <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border x:Name="BorderKtvFrame" Width="1920" Height="1080" Background="#1E1E1E" SnapsToDevicePixels="True" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="2" CornerRadius="4" ToolTip="由 [PrimaryColor] 主要主題色控制">
+                                <Grid Margin="10,8,10,8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" /> <!-- Marquee / Announcement banner -->
+                                        <RowDefinition Height="*" />    <!-- Main Content: Left & Right Panels -->
+                                    </Grid.RowDefinitions>
 
-                            <!-- Announcement Header -->
-                            <Border Grid.Row="0" x:Name="BorderHeader" Background="#1A1A24" BorderBrush="#FFC107" BorderThickness="0,0,0,2" Padding="10,8" Margin="0,0,0,8">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="TxtPreviewAnnouncement" Text="📢 [系統公告] 歡迎光臨 Ultimate KTV 歡唱系統！" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" />
-                                    <TextBlock x:Name="TxtPreviewStatic" Grid.Column="1" Text="網路點歌: 192.168.1.100:8080" FontSize="14" Foreground="#82B1FF" />
+                                    <!-- Announcement & Host Info Banner (Reflects PrimaryColor, AnnouncementForegroundColor, WebHostInfoForegroundColor, StaticTextForegroundColor) -->
+                                    <Border Grid.Row="0" x:Name="BorderHeader" Background="#141414" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="0,0,0,2" Padding="14,6" Margin="0,0,0,8" ToolTip="下邊框由 [PrimaryColor] 主要主題色控制">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="TxtPreviewAnnouncement" Text="📢 [系統公告] 歡迎光臨 Ultimate KTV 歡唱系統！" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource AnnouncementFgBrush}" VerticalAlignment="Center" ToolTip="由 [AnnouncementForegroundColor] 系統公告前景色控制" />
+                                            <TextBlock x:Name="TxtPreviewWebHostInfo" Grid.Column="1" Text="🌐 遠端點歌: http://192.168.1.100:8080" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource WebHostInfoFgBrush}" VerticalAlignment="Center" Margin="24,0" ToolTip="由 [WebHostInfoForegroundColor] 網路主機資訊前景色控制" />
+                                            <TextBlock x:Name="TxtPreviewStaticText" Grid.Column="2" Text="📌 提示: 點擊歌曲即可預約；長按可優先插播" FontSize="20" Foreground="{DynamicResource StaticTextFgBrush}" VerticalAlignment="Center" ToolTip="由 [StaticTextForegroundColor] 靜態文字前景色控制" />
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Main Content Area: Left Panel (406px) + Right Panel (*) -->
+                                    <Grid Grid.Row="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="406" /> <!-- Left Panel -->
+                                            <ColumnDefinition Width="10" />  <!-- Separator -->
+                                            <ColumnDefinition Width="*" />   <!-- Right Panel -->
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- ==================== LEFT PANEL ==================== -->
+                                        <DockPanel Grid.Column="0">
+                                            <!-- Top Function Buttons (2 rows x 4 cols) -->
+                                            <Border DockPanel.Dock="Top" Margin="0,0,0,8">
+                                                <UniformGrid Rows="2" Columns="4">
+                                                    <!-- Row 1 -->
+                                                    <Button x:Name="FuncBtn1" Content="歌星" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
+                                                    <Button x:Name="FuncBtn2" Content="最愛" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
+                                                    <Button x:Name="FuncBtn3" Content="編號" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
+                                                    <Button x:Name="FuncBtn4" Content="語系" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
+                                                    <!-- Row 2 -->
+                                                    <Button x:Name="FuncBtn5" Content="新進" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
+                                                    <Button x:Name="FuncBtn6" Content="排行" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
+                                                    <Button x:Name="FuncBtn7" Content="搜尋" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
+                                                    <Button x:Name="FuncBtn8" Content="設定" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
+                                                </UniformGrid>
+                                            </Border>
+
+                                            <!-- Bottom Player Controls (Cut Song + 2x2 buttons) -->
+                                            <Border DockPanel.Dock="Bottom" Height="116" Margin="0,6,0,0">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="122" />
+                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <!-- Large SkipSong Button -->
+                                                    <Button x:Name="BtnSkipSong" Content="切歌" Grid.Column="0" Style="{StaticResource KtvOutlinedButton}" FontSize="36" />
+
+                                                    <!-- 2x2 Controls: Pause, Repeat / Vocal, Music -->
+                                                    <Grid Grid.Column="2">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="*" />
+                                                            <RowDefinition Height="6" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="6" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button x:Name="BtnPause" Content="暫停" Grid.Row="0" Grid.Column="0" Style="{StaticResource KtvOutlinedButton}" />
+                                                        <Button x:Name="BtnRepeat" Content="重播" Grid.Row="0" Grid.Column="2" Style="{StaticResource KtvOutlinedButton}" />
+                                                        <Button x:Name="BtnVocal" Content="人聲" Grid.Row="2" Grid.Column="0" Style="{StaticResource KtvOutlinedButton}" />
+                                                        <Button x:Name="BtnMusic" Content="伴唱" Grid.Row="2" Grid.Column="2" Style="{StaticResource KtvOutlinedButton}" />
+                                                    </Grid>
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- Center: Waiting List (Height 444) + Mini Video Player -->
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="444" /> <!-- Waiting List DataGrid + Pagination -->
+                                                    <RowDefinition Height="*" />   <!-- Mini Video Player -->
+                                                </Grid.RowDefinitions>
+
+                                                <!-- Waiting List -->
+                                                <Grid Grid.Row="0" Margin="0,0,0,6">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" /> <!-- Table with Header & Rows -->
+                                                        <RowDefinition Height="Auto" /> <!-- Pagination -->
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- Waiting List Frame (PrimaryColor) -->
+                                                    <Border Grid.Row="0" x:Name="BorderWaitList" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1" CornerRadius="4" ClipToBounds="True" ToolTip="由 [PrimaryColor] 主要主題色控制">
+                                                        <Grid>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition Height="Auto" MinHeight="45" />   <!-- Header -->
+                                                                <RowDefinition Height="396" />  <!-- 9 Waiting Rows Area -->
+                                                            </Grid.RowDefinitions>
+
+                                                            <!-- Waiting List Header (Matches screenshot) -->
+                                                            <Border Grid.Row="0" x:Name="BorderWaitHeader" Background="{DynamicResource DataGridHeaderBgBrush}" BorderThickness="0" Padding="12,2" ToolTip="由 [DataGridColumnHeaderBackgroundColor] 表格標題背景色控制">
+                                                                <Grid VerticalAlignment="Center">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="260" />
+                                                                        <ColumnDefinition Width="*" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtWaitHeaderCol1" Text="歌名" FontWeight="Bold" FontSize="24" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
+                                                                    <Border Grid.Column="0" HorizontalAlignment="Right" Width="1" Background="#33FFFFFF" Margin="0,8" />
+                                                                    <TextBlock x:Name="TxtWaitHeaderCol2" Grid.Column="1" Text="歌手" FontWeight="Bold" FontSize="24" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" Margin="12,0,0,0" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
+                                                                </Grid>
+                                                            </Border>
+
+                                                            <!-- Waiting List 9 Rows (Alternating dark rows, matching WPF DataGrid) -->
+                                                            <UniformGrid Grid.Row="1" Rows="9" Columns="1" Background="#121212">
+                                                                <!-- Row 1 -->
+                                                                <Border Background="#141414" Padding="12,0">
+                                                                    <Grid VerticalAlignment="Center">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="260" />
+                                                                            <ColumnDefinition Width="*" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <TextBlock x:Name="TxtWaitSong1" Text="倒帶" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                        <TextBlock x:Name="TxtWaitSinger1" Grid.Column="1" Text="蔡依林" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    </Grid>
+                                                                </Border>
+                                                                <!-- Row 2 -->
+                                                                <Border Background="#1B1B1B" Padding="12,0">
+                                                                    <Grid VerticalAlignment="Center">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="260" />
+                                                                            <ColumnDefinition Width="*" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <TextBlock x:Name="TxtWaitSong2" Text="告白氣球" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                        <TextBlock x:Name="TxtWaitSinger2" Grid.Column="1" Text="周杰倫" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    </Grid>
+                                                                </Border>
+                                                                <!-- Row 3 -->
+                                                                <Border Background="#141414" Padding="12,0">
+                                                                    <Grid VerticalAlignment="Center">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="260" />
+                                                                            <ColumnDefinition Width="*" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <TextBlock x:Name="TxtWaitSong3" Text="修煉愛情" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                        <TextBlock x:Name="TxtWaitSinger3" Grid.Column="1" Text="林俊傑" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    </Grid>
+                                                                </Border>
+                                                                <!-- Row 4 -->
+                                                                <Border Background="#1B1B1B" Padding="12,0" />
+                                                                <!-- Row 5 -->
+                                                                <Border Background="#141414" Padding="12,0" />
+                                                                <!-- Row 6 -->
+                                                                <Border Background="#1B1B1B" Padding="12,0" />
+                                                                <!-- Row 7 -->
+                                                                <Border Background="#141414" Padding="12,0" />
+                                                                <!-- Row 8 -->
+                                                                <Border Background="#1B1B1B" Padding="12,0" />
+                                                                <!-- Row 9 -->
+                                                                <Border Background="#141414" Padding="12,0" />
+                                                            </UniformGrid>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- Waiting List Pagination (Matches screenshot) -->
+                                                    <Grid Grid.Row="1" Margin="2,8,2,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock x:Name="TxtWaitPageInfo" Text="第 1/1 頁&#x0a;(3 首歌曲)" VerticalAlignment="Center" Foreground="{DynamicResource StaticTextFgBrush}" LineHeight="20" ToolTip="由 [StaticTextForegroundColor] 靜態文字前景色控制" />
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <Button x:Name="BtnWaitPageUp" Content="上一頁" Height="38" Width="76" Margin="0,0,4,0" Style="{StaticResource KtvOutlinedButton}" />
+                                                            <Button x:Name="BtnWaitPageDown" Content="下一頁" Height="38" Width="76" Style="{StaticResource KtvOutlinedButton}" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Grid>
+
+                                                <!-- Mini Video Player -->
+                                                <Border Grid.Row="1" Background="#000000" BorderThickness="0" Margin="0,4,0,0">
+                                                    <Grid>
+                                                        <!-- Player Control Overlay Bar -->
+                                                        <Border VerticalAlignment="Bottom" Background="#EA080808" Padding="8,4">
+                                                            <StackPanel>
+                                                                <!-- Progress Slider Row -->
+                                                                <Grid Margin="0,0,0,4">
+                                                                    <Slider x:Name="VideoProgressSliderPreview" Minimum="0" Maximum="100" Value="25" VerticalAlignment="Center" Style="{StaticResource KtvSliderStyle}" ToolTip="進度軌道與滑塊由 [PrimaryColor] 主要主題色控制" />
+                                                                </Grid>
+                                                                <!-- Volume Row -->
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto" />
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="Auto" />
+                                                                        <ColumnDefinition Width="Auto" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock Text="🔊" FontSize="18" Foreground="{DynamicResource StaticTextFgBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                                                    <Slider x:Name="VolumeSliderPreview" Grid.Column="1" Minimum="0" Maximum="100" Value="100" VerticalAlignment="Center" Margin="0,0,10,0" Style="{StaticResource KtvSliderStyle}" ToolTip="音量軌道與滑塊由 [PrimaryColor] 主要主題色控制" />
+                                                                    <TextBlock x:Name="IconLock" Grid.Column="2" Text="🔒" FontSize="18" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryBrush}" ToolTip="由 [PrimaryColor] 主要主題色控制" />
+                                                                    <TextBlock x:Name="IconMenu" Grid.Column="3" Text="☰" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" ToolTip="由 [PrimaryColor] 主要主題色控制" />
+                                                                </Grid>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                            </Grid>
+                                        </DockPanel>
+
+                                        <!-- ==================== RIGHT PANEL ==================== -->
+                                        <Grid Grid.Column="2">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" /> <!-- Top 5 Filter Buttons -->
+                                                <RowDefinition Height="*" />    <!-- 13-row Song List DataGrid -->
+                                                <RowDefinition Height="Auto" /> <!-- Bottom Status Bar -->
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Top 5 Category Filter Buttons (Matches screenshot) -->
+                                            <UniformGrid Grid.Row="0" Rows="1" Columns="5" Margin="0,0,0,8">
+                                                <Button x:Name="FilterBtn1" Content="國語-單曲" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
+                                                <Button x:Name="FilterBtn2" Content="台語-單曲" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
+                                                <Button x:Name="FilterBtn3" Content="國語-合唱" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
+                                                <Button x:Name="FilterBtn4" Content="台語-合唱" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
+                                                <Button x:Name="FilterBtn5" Content="其它" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
+                                            </UniformGrid>
+
+                                            <!-- Center: 13-row Song List Table (Exact 1:1 match to screenshot) -->
+                                            <Border Grid.Row="1" x:Name="BorderSongList" Background="#121212" BorderThickness="1.5" BorderBrush="{DynamicResource PrimaryBrush}" CornerRadius="4" ClipToBounds="True" ToolTip="由 [PrimaryColor] 主要主題色控制">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" MinHeight="50" /> <!-- Column Header -->
+                                                        <RowDefinition Height="*" />  <!-- 13 Song Rows -->
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- DataGrid Column Header (Electric Blue, with subtle dividers) -->
+                                                    <Border Grid.Row="0" x:Name="BorderGridHeader" Background="{DynamicResource DataGridHeaderBgBrush}" Padding="0,2" ToolTip="由 [DataGridColumnHeaderBackgroundColor] 表格標題背景色控制">
+                                                        <Grid VerticalAlignment="Center">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtGridHeaderCol1" Text="歌名" FontWeight="Bold" FontSize="38" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" Margin="16,0" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
+                                                            <Border Grid.Column="0" HorizontalAlignment="Right" Width="1" Background="#33FFFFFF" Margin="0,8" />
+                                                            <TextBlock x:Name="TxtGridHeaderCol2" Grid.Column="1" Text="歌手" FontWeight="Bold" FontSize="38" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" Margin="16,0" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
+                                                            <Border Grid.Column="1" HorizontalAlignment="Right" Width="1" Background="#33FFFFFF" Margin="0,8" />
+                                                            <TextBlock x:Name="TxtGridHeaderCol3" Grid.Column="2" Text="語言" FontWeight="Bold" FontSize="38" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" Margin="16,0" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- 13 Song Rows (Alternating dark rows, white text, exact screenshot data) -->
+                                                    <UniformGrid Grid.Row="1" Rows="13" Columns="1">
+                                                        <!-- Row 1 -->
+                                                        <Grid Background="#121212">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow1" Text="突然好想你" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <Border x:Name="BorderSingerRow1" Grid.Column="1" Background="{DynamicResource PrimaryLightBrush}" CornerRadius="4" Padding="10,2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0" ToolTip="由 [PrimaryLightColor] 主要淺色顏色控制 (歌手懸停/標籤高亮)">
+                                                                <TextBlock x:Name="TxtSingerRow1" Text="五月天" Foreground="#000000" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                            </Border>
+                                                            <TextBlock x:Name="TxtLangRow1" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 2 -->
+                                                        <Grid Background="#181818">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow2" Text="如果可以" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow2" Grid.Column="1" Text="韋禮安" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow2" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 3 -->
+                                                        <Grid Background="#121212">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow3" Text="浪子回頭" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow3" Grid.Column="1" Text="茄子蛋" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow3" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 4 -->
+                                                        <Grid Background="#181818">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow4" Text="刻在我心底的名字" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow4" Grid.Column="1" Text="盧廣仲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow4" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 5 -->
+                                                        <Grid Background="#121212">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow5" Text="家後" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow5" Grid.Column="1" Text="江蕙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow5" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 6 -->
+                                                        <Grid Background="#181818">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow6" Text="連名帶姓" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow6" Grid.Column="1" Text="張惠妹" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow6" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 7 -->
+                                                        <Grid Background="#121212">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow7" Text="海闊天空" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow7" Grid.Column="1" Text="Beyond" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow7" Grid.Column="2" Text="粵語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 8 -->
+                                                        <Grid Background="#181818">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow8" Text="魚仔" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow8" Grid.Column="1" Text="盧廣仲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow8" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 9 -->
+                                                        <Grid Background="#121212">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow9" Text="演員" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow9" Grid.Column="1" Text="薛之謙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow9" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 10 -->
+                                                        <Grid Background="#181818">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow10" Text="愛如潮水" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow10" Grid.Column="1" Text="張信哲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow10" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 11 -->
+                                                        <Grid Background="#121212">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow11" Text="落雨聲" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow11" Grid.Column="1" Text="江蕙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow11" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 12 -->
+                                                        <Grid Background="#181818">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow12" Text="想見你想見你想見你" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow12" Grid.Column="1" Text="八三夭" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow12" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+
+                                                        <!-- Row 13 -->
+                                                        <Grid Background="#121212">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="380" />
+                                                                <ColumnDefinition Width="140" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock x:Name="TxtSongRow13" Text="洋蔥" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtSingerRow13" Grid.Column="1" Text="楊宗緯" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock x:Name="TxtLangRow13" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                        </Grid>
+                                                    </UniformGrid>
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- Bottom Status Bar (Matches screenshot: page info, digital clock, pagination) -->
+                                            <Grid Grid.Row="2" Margin="0,12,0,4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Global Page Info -->
+                                                <TextBlock x:Name="TxtGlobalPageInfo" Grid.Column="0" Text="第 1/124 頁 (新進 - 國語-單曲 - 1603 首歌曲)" VerticalAlignment="Center" Foreground="{DynamicResource StaticTextFgBrush}" Margin="6,0,10,0" ToolTip="由 [StaticTextForegroundColor] 靜態文字前景色控制" />
+
+                                                <!-- Digital Clock (🕒 00:02) -->
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,30,0">
+                                                    <TextBlock x:Name="TxtClockIcon" Text="🕒" FontSize="32" Foreground="{DynamicResource StaticTextFgBrush}" VerticalAlignment="Center" Margin="0,0,10,0" ToolTip="由 [StaticTextForegroundColor] 靜態文字前景色控制" />
+                                                    <TextBlock x:Name="TxtClockTime" Text="00:02" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource StaticTextFgBrush}" VerticalAlignment="Center" ToolTip="由 [StaticTextForegroundColor] 靜態文字前景色控制" />
+                                                </StackPanel>
+
+                                                <!-- Pagination Buttons -->
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                    <Button x:Name="BtnPageUp" Content="上一頁" Width="130" Height="50" Margin="0,0,10,0" Style="{StaticResource KtvOutlinedButton}" />
+                                                    <Button x:Name="BtnPageDown" Content="下一頁" Width="130" Height="50" Style="{StaticResource KtvOutlinedButton}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
                                 </Grid>
                             </Border>
-
-                            <!-- Middle Section -->
-                            <Grid Grid.Row="1">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="2*" />
-                                    <ColumnDefinition Width="1*" />
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Song List Table -->
-                                <Border Grid.Column="0" x:Name="BorderSongList" Background="#161620" BorderBrush="#FFD700" BorderThickness="1" CornerRadius="4" Margin="0,0,6,0">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="*" />
-                                        </Grid.RowDefinitions>
-                                        <!-- Header -->
-                                        <Border Grid.Row="0" x:Name="BorderGridHeader" Background="#FF4A4A4A" Padding="8,6">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="60" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="120" />
-                                                    <ColumnDefinition Width="70" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="編號" FontWeight="Bold" Foreground="#FFFFFF" />
-                                                <TextBlock Grid.Column="1" Text="歌名" FontWeight="Bold" Foreground="#FFFFFF" />
-                                                <TextBlock Grid.Column="2" Text="歌手" FontWeight="Bold" Foreground="#FFFFFF" />
-                                                <TextBlock Grid.Column="3" Text="字數" FontWeight="Bold" Foreground="#FFFFFF" />
-                                            </Grid>
-                                        </Border>
-                                        <!-- Rows -->
-                                        <StackPanel Grid.Row="1" Margin="8,6">
-                                            <TextBlock x:Name="TxtSongRow1" Text="001. 晴天 - 周杰倫 (2字)" Margin="0,4" Foreground="#FFFFFF" />
-                                            <TextBlock x:Name="TxtSongRow2" Text="002. 告白氣球 - 周杰倫 (4字)" Margin="0,4" Foreground="#DDD" />
-                                            <TextBlock x:Name="TxtSongRow3" Text="003. 稻香 - 周杰倫 (2字)" Margin="0,4" Foreground="#DDD" />
-                                            <TextBlock x:Name="TxtSongRow4" Text="004. 青花瓷 - 周杰倫 (3字)" Margin="0,4" Foreground="#DDD" />
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-
-                                <!-- Waiting List -->
-                                <Border Grid.Column="1" Background="#161620" BorderBrush="#353545" BorderThickness="1" CornerRadius="4" Padding="8">
-                                    <StackPanel>
-                                        <TextBlock Text="📋 待播清單" FontWeight="Bold" Foreground="#FFD54F" Margin="0,0,0,6" />
-                                        <TextBlock x:Name="TxtWaitRow1" Text="1. 晴天 (播放中)" Foreground="#81C784" Margin="0,3" />
-                                        <TextBlock x:Name="TxtWaitRow2" Text="2. 告白氣球" Foreground="#CCC" Margin="0,3" />
-                                        <TextBlock x:Name="TxtWaitRow3" Text="3. 稻香" Foreground="#CCC" Margin="0,3" />
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-
-                            <!-- Bottom Buttons -->
-                            <Grid Grid.Row="2" Margin="0,8,0,0">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <WrapPanel Grid.Row="0" Margin="0,0,0,6">
-                                    <Button x:Name="BtnFunc1" Content="🎤 國語點歌" Style="{StaticResource ActionButton}" Margin="0,0,6,0" Padding="12,6" />
-                                    <Button x:Name="BtnFunc2" Content="🎵 台語點歌" Style="{StaticResource ActionButton}" Margin="0,0,6,0" Padding="12,6" />
-                                    <Button x:Name="BtnFunc3" Content="🌏 粵語點歌" Style="{StaticResource ActionButton}" Margin="0,0,6,0" Padding="12,6" />
-                                    <Button x:Name="BtnFunc4" Content="⭐ 我的最愛" Style="{StaticResource ActionButton}" Margin="0,0,6,0" Padding="12,6" />
-                                </WrapPanel>
-                                <WrapPanel Grid.Row="1">
-                                    <Button x:Name="BtnBottom1" Content="⏭️ 切歌" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="14,6" />
-                                    <Button x:Name="BtnBottom2" Content="⏸️ 暫停" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="14,6" />
-                                    <Button x:Name="BtnBottom3" Content="🔁 重播" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="14,6" />
-                                    <Button x:Name="BtnBottom4" Content="🔊 音量 +" Style="{StaticResource SecondaryButton}" Margin="0,0,6,0" Padding="14,6" />
-                                </WrapPanel>
-                            </Grid>
-                        </Grid>
+                        </Viewbox>
                     </Border>
                 </Grid>
 
@@ -423,8 +868,11 @@
                 </Border>
             </Grid>
 
+            <!-- GridSplitter between Live Preview and Settings Panel -->
+            <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#222232" Cursor="SizeWE" Margin="2,0" />
+
             <!-- Right: Settings Panel Container -->
-            <Border Grid.Column="1" Background="#1B1B24" CornerRadius="8" Padding="10">
+            <Border Grid.Column="2" Background="#1B1B24" CornerRadius="8" Padding="10">
                 <Grid>
                     <!-- PANEL 1: settings.json 跑馬燈專屬設定 -->
                     <Grid x:Name="SettingsJsonGrid">
@@ -521,8 +969,12 @@
                                         <!-- ROW 1 Right: 字體大小 -->
                                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,6">
                                             <Grid Margin="0,0,0,2">
-                                                <TextBlock Text="字體大小 (12 ~ 128 像素):" FontWeight="SemiBold" />
-                                                <TextBlock x:Name="LblFontSize" HorizontalAlignment="Right" Text="72 像素" FontWeight="Bold" Foreground="#82B1FF" />
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="字體大小:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 12 ~ 128 像素" />
+                                                <TextBlock x:Name="LblFontSize" Grid.Column="1" Text="72 像素" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldFontSize" Minimum="12" Maximum="128" Value="72" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
                                         </StackPanel>
@@ -530,8 +982,12 @@
                                         <!-- ROW 2 Left: 文字描邊 -->
                                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,6">
                                             <Grid Margin="0,0,0,2">
-                                                <TextBlock Text="文字描邊 (0 ~ 32 像素):" FontWeight="SemiBold" />
-                                                <TextBlock x:Name="LblStrokeThickness" HorizontalAlignment="Right" Text="8 像素" FontWeight="Bold" Foreground="#82B1FF" />
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="文字描邊:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 0 ~ 32 像素" />
+                                                <TextBlock x:Name="LblStrokeThickness" Grid.Column="1" Text="8 像素" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldStrokeThickness" Minimum="0" Maximum="32" Value="8" ValueChanged="ParamChanged" />
                                         </StackPanel>
@@ -539,8 +995,12 @@
                                         <!-- ROW 2 Right: 滾動速度 -->
                                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,6">
                                             <Grid Margin="0,0,0,2">
-                                                <TextBlock Text="滾動速度 (100 ~ 1000 像素/秒):" FontWeight="SemiBold" />
-                                                <TextBlock x:Name="LblSpeed" HorizontalAlignment="Right" Text="200 像素/秒" FontWeight="Bold" Foreground="#82B1FF" />
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="滾動速度:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 100 ~ 1000 像素/秒" />
+                                                <TextBlock x:Name="LblSpeed" Grid.Column="1" Text="200 像素/秒" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldSpeed" Minimum="100" Maximum="1000" Value="200" TickFrequency="100" IsSnapToTickEnabled="True" SmallChange="100" LargeChange="100" ValueChanged="ParamChanged" />
                                         </StackPanel>
@@ -548,8 +1008,12 @@
                                         <!-- ROW 3 Left: 間隔時間 -->
                                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,6">
                                             <Grid Margin="0,0,0,2">
-                                                <TextBlock Text="間隔時間 (0 ~ 5 秒):" FontWeight="SemiBold" />
-                                                <TextBlock x:Name="LblHoldTime" HorizontalAlignment="Right" Text="1 秒" FontWeight="Bold" Foreground="#82B1FF" />
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="間隔時間:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 0 ~ 5 秒" />
+                                                <TextBlock x:Name="LblHoldTime" Grid.Column="1" Text="1 秒" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldHoldTime" Minimum="0" Maximum="5" Value="1" TickFrequency="0.5" IsSnapToTickEnabled="True" SmallChange="0.5" LargeChange="1" ValueChanged="ParamChanged" />
                                         </StackPanel>
@@ -557,8 +1021,12 @@
                                         <!-- ROW 3 Right: 重覆次數 -->
                                         <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,6">
                                             <Grid Margin="0,0,0,2">
-                                                <TextBlock Text="重覆次數 (0 ~ 10 次, 0=關閉):" FontWeight="SemiBold" />
-                                                <TextBlock x:Name="LblPlayCount" HorizontalAlignment="Right" Text="2 次" FontWeight="Bold" Foreground="#82B1FF" />
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="重覆次數:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 0 ~ 10 次 (0=關閉)" />
+                                                <TextBlock x:Name="LblPlayCount" Grid.Column="1" Text="2 次" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldPlayCount" Minimum="0" Maximum="10" Value="2" TickFrequency="1" IsSnapToTickEnabled="True" SmallChange="1" LargeChange="1" ValueChanged="ParamChanged" />
                                         </StackPanel>
@@ -567,18 +1035,18 @@
                                     <Separator Background="#353545" Margin="0,4,0,6" />
 
                                     <TextBlock Text="範本 1 (有待播歌曲 - MarqueeTextString1):" FontWeight="SemiBold" Margin="0,2,0,2" />
-                                    <TextBox x:Name="TxtTemplate1" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" />
+                                    <TextBox x:Name="TxtTemplate1" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" GotFocus="TxtTemplate_GotFocus" />
 
                                     <TextBlock Text="範本 2 (無待播歌曲 - MarqueeTextString2):" FontWeight="SemiBold" Margin="0,4,0,2" />
-                                    <TextBox x:Name="TxtTemplate2" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" />
+                                    <TextBox x:Name="TxtTemplate2" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" GotFocus="TxtTemplate_GotFocus" />
 
                                     <TextBlock Text="範本 3 (隨機播放無待播 - MarqueeTextString3):" FontWeight="SemiBold" Margin="0,4,0,2" />
-                                    <TextBox x:Name="TxtTemplate3" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" />
+                                    <TextBox x:Name="TxtTemplate3" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" GotFocus="TxtTemplate_GotFocus" />
 
                                     <TextBlock Text="啟動跑馬燈範本 (進入程式時 - MarqueeTextStartup):" FontWeight="SemiBold" Margin="0,4,0,2" />
-                                    <TextBox x:Name="TxtTemplateStartup" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" />
+                                    <TextBox x:Name="TxtTemplateStartup" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" GotFocus="TxtTemplate_GotFocus" />
 
-                                    <TextBlock Text="參數: {0}=歌名, {1}=歌手, {2}=下首歌名, {3}=下首歌手, {4}=區網網址, {5}=外網網址, {6}=點歌人" Foreground="#FFD54F" FontSize="13.5" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                    <TextBlock Text="參數: {0}=歌名, {1}=歌手, {2}=下首歌名, {3}=下首歌手, {4}=區網網址, {5}=外網網址, {6}=本首點播者, {7}=下首點播者" Foreground="#FFD54F" FontSize="13.5" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
 
                                 <!-- CARD 2: 點播成功提示 -->
@@ -588,7 +1056,7 @@
                                     </Border>
                                     <TextBlock Text="點播成功文字範本 (MarqueeSongAddedString):" FontWeight="SemiBold" Margin="0,4,0,2" />
                                     <TextBox x:Name="TxtSongAddedTemplate" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" />
-                                    <TextBlock Text="參數: {0}=歌名, {1}=歌手, {4}=區網網址, {5}=外網網址, {6}=點歌人" Foreground="#FFD54F" FontSize="13.5" FontWeight="SemiBold" Margin="0,4,0,8" TextWrapping="Wrap" />
+                                    <TextBlock Text="參數: {0}=歌名, {1}=歌手, {4}=區網網址, {5}=外網網址, {6}=本首點播者" Foreground="#FFD54F" FontSize="13.5" FontWeight="SemiBold" Margin="0,4,0,8" TextWrapping="Wrap" />
 
                                     <TextBlock Text="點播成功字型 (FontFamily):" FontWeight="SemiBold" Margin="0,4,0,2" />
                                     <ComboBox x:Name="CboSongAddedFontFamily" DisplayMemberPath="DisplayName" SelectionChanged="ParamChanged" />
@@ -686,8 +1154,11 @@
                                     <TextBlock Text="外網 IP:Port {5}:" FontWeight="SemiBold" Margin="0,6,0,2" />
                                     <TextBox x:Name="TxtMockWanIp" Text="220.222.1.1:8080" TextChanged="ParamChanged" />
 
-                                    <TextBlock Text="網路點歌人 {6}:" FontWeight="SemiBold" Margin="0,6,0,2" />
-                                    <TextBox x:Name="TxtMockOrderedBy" Text="UltimateKTV" TextChanged="ParamChanged" />
+                                    <TextBlock Text="本首點播者 {6}:" FontWeight="SemiBold" Margin="0,6,0,2" />
+                                    <TextBox x:Name="TxtMockOrderedBy" Text="小強" TextChanged="ParamChanged" />
+
+                                    <TextBlock Text="下首點播者 {7}:" FontWeight="SemiBold" Margin="0,6,0,2" />
+                                    <TextBox x:Name="TxtMockNextOrderedBy" Text="小明" TextChanged="ParamChanged" />
                                 </StackPanel>
 
                             </StackPanel>
@@ -711,103 +1182,184 @@
 
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,4,0,0">
                             <StackPanel Margin="0,0,8,0">
-                                <TextBlock Text="點歌機全域字型 (FontFamily):" FontWeight="SemiBold" Margin="0,4,0,2" />
-                                <ComboBox x:Name="CboUiFontFamily" DisplayMemberPath="DisplayName" SelectionChanged="ParamChanged" />
 
-                                <Grid Margin="0,6,0,2">
+                                <!-- THEME PRESETS SELECTOR -->
+                                <Border Background="#1C2438" BorderBrush="#3D5AFE" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,6">
+                                            <TextBlock Text="🎭 範本主題快速套用 (Sample Presets)" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" />
+                                            <TextBlock Text="參照 SampleSettings" FontSize="11" Foreground="#90CAF9" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <ComboBox x:Name="CboThemePresets" SelectionChanged="CboThemePresets_SelectionChanged">
+                                            <ComboBoxItem Content="-- 自訂或目前配置 (Custom) --" Tag="" IsSelected="True" />
+                                            <ComboBoxItem Content="⚡ 電光藍 (Electric Blue) [截圖範例]" Tag="textsettings_electric_blue.json" />
+                                            <ComboBoxItem Content="🌲 森林綠 (Forest Green)" Tag="textsettings_forest_green.json" />
+                                            <ComboBoxItem Content="💖 熱力粉 (Hot Pink)" Tag="textsettings_hot_pink.json" />
+                                            <ComboBoxItem Content="🌊 海洋青 (Ocean Cyan)" Tag="textsettings_ocean_cyan.json" />
+                                            <ComboBoxItem Content="🌅 日落橘 (Sunset Orange)" Tag="textsettings_sunset_orange.json" />
+                                            <ComboBoxItem Content="🔮 炫麗紫 (Vivid Purple)" Tag="textsettings_vivid_purple.json" />
+                                            <ComboBoxItem Content="🌟 原廠預設金琥珀 (Default Amber)" Tag="DEFAULT" />
+                                        </ComboBox>
+                                        <TextBlock Text="💡 選擇主題將即時更新下方各項參數並在右側 1:1 模擬畫面精確展現" FontSize="11" Foreground="#9E9E9E" Margin="2,4,0,0" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- SECTION 1: 字型與字級 -->
+                                <Border Background="#232332" CornerRadius="4" Padding="8,4" Margin="0,0,0,6">
+                                    <TextBlock Text="🔤 點歌機全域字型與字級" FontWeight="Bold" Foreground="#82B1FF" />
+                                </Border>
+
+                                <TextBlock Text="點歌機全域字型 (FontFamily):" FontWeight="SemiBold" Margin="0,2,0,2" />
+                                <ComboBox x:Name="CboUiFontFamily" DisplayMemberPath="DisplayName" SelectionChanged="ParamChanged" Margin="0,0,0,6" />
+
+                                <Grid Margin="0,4,0,2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="歌曲清單字體大小 (SongListFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblSongListFontSize" Grid.Column="1" Text="38 px" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblSongListFontSize" Grid.Column="1" Text="38 像素" FontWeight="Bold" Foreground="#82B1FF" />
                                 </Grid>
                                 <Slider x:Name="SldSongListFontSize" Minimum="16" Maximum="72" Value="38" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
-                                <Grid Margin="0,6,0,2">
+                                <Grid Margin="0,4,0,2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="待播清單字體大小 (WaitingListFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblWaitingListFontSize" Grid.Column="1" Text="24 px" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblWaitingListFontSize" Grid.Column="1" Text="24 像素" FontWeight="Bold" Foreground="#82B1FF" />
                                 </Grid>
                                 <Slider x:Name="SldWaitingListFontSize" Minimum="12" Maximum="60" Value="24" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
-                                <Grid Margin="0,6,0,2">
+                                <Grid Margin="0,4,0,2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="功能按鈕字體大小 (FuncBtnFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblFuncBtnFontSize" Grid.Column="1" Text="32 px" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblFuncBtnFontSize" Grid.Column="1" Text="32 像素" FontWeight="Bold" Foreground="#82B1FF" />
                                 </Grid>
                                 <Slider x:Name="SldFuncBtnFontSize" Minimum="14" Maximum="64" Value="32" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
-                                <Grid Margin="0,6,0,2">
+                                <Grid Margin="0,4,0,2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="底部按鈕字體大小 (BottomButtonFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblBottomButtonFontSize" Grid.Column="1" Text="36 px" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblBottomButtonFontSize" Grid.Column="1" Text="36 像素" FontWeight="Bold" Foreground="#82B1FF" />
                                 </Grid>
                                 <Slider x:Name="SldBottomButtonFontSize" Minimum="14" Maximum="64" Value="36" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
-                                <Grid Margin="0,6,0,2">
+                                <Grid Margin="0,4,0,2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="網路主機資訊字體大小 (WebHostInfoFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblWebHostInfoFontSize" Grid.Column="1" Text="32 px" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblWebHostInfoFontSize" Grid.Column="1" Text="32 像素" FontWeight="Bold" Foreground="#82B1FF" />
                                 </Grid>
                                 <Slider x:Name="SldWebHostInfoFontSize" Minimum="12" Maximum="60" Value="32" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
                                 <Separator Background="#353545" Margin="0,10" />
 
-                                <!-- Primary Color -->
-                                <TextBlock Text="主色調 (點擊色塊開啟調色盤):" FontWeight="SemiBold" Margin="0,4,0,2" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="40" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="TxtPrimaryColor" Text="#FFC107" TextChanged="ParamChanged" />
-                                    <Border x:Name="RectPrimaryColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectPrimaryColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
-                                </Grid>
-
-                                <!-- Bright Border Color -->
-                                <TextBlock Text="亮邊框顏色 (點擊色塊開啟調色盤):" FontWeight="SemiBold" Margin="0,6,0,2" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="40" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="TxtBrightBorderColor" Text="#FFD700" TextChanged="ParamChanged" />
-                                    <Border x:Name="RectBrightBorderColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectBrightBorderColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
-                                </Grid>
-
-                                <!-- DataGrid Header Bg -->
-                                <TextBlock Text="表格標題背景色 (點擊色塊開啟調色盤):" FontWeight="SemiBold" Margin="0,6,0,2" />
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="40" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="TxtDataGridHeaderBg" Text="#FF4A4A4A" TextChanged="ParamChanged" />
-                                    <Border x:Name="RectDataGridHeaderBg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectDataGridHeaderBg_MouseDown" ToolTip="點擊開啟調色盤選色" />
-                                </Grid>
+                                <!-- SECTION 2: 文字前景色 -->
+                                <Border Background="#232332" CornerRadius="4" Padding="8,4" Margin="0,0,0,6">
+                                    <TextBlock Text="💬 文字前景色 (Text Colors)" FontWeight="Bold" Foreground="#82B1FF" />
+                                </Border>
 
                                 <!-- Announcement Foreground -->
-                                <TextBlock Text="公告文字顏色 (點擊色塊開啟調色盤):" FontWeight="SemiBold" Margin="0,6,0,2" />
-                                <Grid>
+                                <TextBlock Text="系統公告前景色 (AnnouncementForegroundColor):" FontWeight="SemiBold" Margin="0,4,0,2" />
+                                <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TxtAnnouncementFg" Text="#FFFFFF" TextChanged="ParamChanged" />
                                     <Border x:Name="RectAnnouncementFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectAnnouncementFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                </Grid>
+
+                                <!-- Static Text Foreground -->
+                                <TextBlock Text="靜態文字前景色 (StaticTextForegroundColor):" FontWeight="SemiBold" Margin="0,4,0,2" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="40" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtStaticTextFg" Text="#FFFFFF" TextChanged="ParamChanged" />
+                                    <Border x:Name="RectStaticTextFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectStaticTextFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                </Grid>
+
+                                <!-- Web Host Info Foreground -->
+                                <TextBlock Text="網路主機資訊前景色 (WebHostInfoForegroundColor):" FontWeight="SemiBold" Margin="0,4,0,2" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="40" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtWebHostInfoFg" Text="#FFFFFF" TextChanged="ParamChanged" />
+                                    <Border x:Name="RectWebHostInfoFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectWebHostInfoFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                </Grid>
+
+
+                                <Separator Background="#353545" Margin="0,10" />
+
+                                <!-- SECTION 3: UI 佈景與主題色彩 -->
+                                <Border Background="#232332" CornerRadius="4" Padding="8,4" Margin="0,0,0,6">
+                                    <TextBlock Text="🎨 UI 佈景與主題筆刷 (Theme &amp; UI Brushes)" FontWeight="Bold" Foreground="#82B1FF" />
+                                </Border>
+
+                                <!-- Primary Color -->
+                                <TextBlock Text="主要主題色 (PrimaryColor - 視窗外框/按鈕/清單外框/滑桿):" FontWeight="SemiBold" Margin="0,4,0,2" />
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="40" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtPrimaryColor" Text="#FFC107" TextChanged="TxtPrimaryColor_TextChanged" />
+                                    <Border x:Name="RectPrimaryColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectPrimaryColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                </Grid>
+
+                                <!-- Harmonize Tools Box -->
+                                <Border Background="#1C2235" BorderBrush="#3949AB" BorderThickness="1" CornerRadius="4" Padding="8,6" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <CheckBox x:Name="ChkAutoHarmonize" Content="變更主色時自動調配全套衍生色彩" IsChecked="True" Foreground="#90CAF9" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="開啟時，變更 PrimaryColor 會自動依色彩學調配深色、淺色標籤與標題列底色" />
+                                        <Button x:Name="BtnHarmonize" Content="⚡ 依主要色彩自動調配全套配色" Click="BtnHarmonize_Click" Background="#303F9F" Foreground="#FFFFFF" FontWeight="Bold" FontSize="12.5" Padding="8,4" Margin="0,6,0,0" Height="28" Cursor="Hand" ToolTip="依據目前 PrimaryColor 重新調配下方所有主題關聯色階" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Primary Light Color -->
+                                <TextBlock Text="主要淺色顏色 (PrimaryLightColor - 歌曲懸停/歌手高亮標籤背景):" FontWeight="SemiBold" Margin="0,4,0,2" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="40" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtPrimaryLightColor" Text="#FFECB3" TextChanged="ParamChanged" />
+                                    <Border x:Name="RectPrimaryLightColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectPrimaryLightColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                </Grid>
+                                
+                                <!-- DataGrid Column Header Foreground -->
+                                <TextBlock Text="表格標題文字顏色 (DataGridColumnHeaderForegroundColor):" FontWeight="SemiBold" Margin="0,4,0,2" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="40" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtDataGridHeaderFg" Text="#FFFFFFFF" TextChanged="ParamChanged" />
+                                    <Border x:Name="RectDataGridHeaderFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectDataGridHeaderFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                </Grid>
+
+                                <!-- DataGrid Header Bg -->
+                                <TextBlock Text="表格標題背景顏色 (DataGridColumnHeaderBackgroundColor):" FontWeight="SemiBold" Margin="0,4,0,2" />
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="40" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtDataGridHeaderBg" Text="#FF4A4A4A" TextChanged="ParamChanged" />
+                                    <Border x:Name="RectDataGridHeaderBg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectDataGridHeaderBg_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
                             </StackPanel>
                         </ScrollViewer>

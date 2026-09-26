@@ -136,13 +136,13 @@ namespace UltimateKtv
         [Description("錄音檔存放路徑: 設定錄音檔的儲存目錄。")]
         public string RecordingPath { get; set; } = "Recordings";
 
-        [Description("跑馬燈文字範本(點播且有待播歌曲): 播放點播歌曲，待播清單有歌時的跑馬燈字串範本。{0}=當前歌名, {1}=當前歌手, {2}=下首歌名, {3}=下首歌手, {4}=區網IP:Port, {5}=外網IP:Port。")]
+        [Description("跑馬燈文字範本(點播且有待播歌曲): 播放點播歌曲，待播清單有歌時的跑馬燈字串範本。{0}=當前歌名, {1}=當前歌手, {2}=下首歌名, {3}=下首歌手, {4}=區網IP:Port, {5}=外網IP:Port, {6}=點歌人, {7}=下首點歌人。")]
         public string MarqueeTextString1 { get; set; } = "目前正在播放歌曲：「{1} - {0}」，下一首播放：「{3} - {2}」，請準備！！";
 
-        [Description("跑馬燈文字範本(點播且無待播歌曲): 播放點播歌曲，待播清單沒有歌時的跑馬燈字串範本。{0}=當前歌名, {1}=當前歌手, {4}=區網IP:Port, {5}=外網IP:Port。")]
+        [Description("跑馬燈文字範本(點播且無待播歌曲): 播放點播歌曲，待播清單沒有歌時的跑馬燈字串範本。{0}=當前歌名, {1}=當前歌手, {4}=區網IP:Port, {5}=外網IP:Port, {6}=點歌人。")]
         public string MarqueeTextString2 { get; set; } = "目前正在播放歌曲：「{1} - {0}」";
 
-        [Description("跑馬燈文字範本(隨機播放且無待播歌曲): 播放隨機點播歌曲，待播清單沒有歌時的跑馬燈字串範本。{0}=當前歌名, {1}=當前歌手, {4}=區網IP:Port, {5}=外網IP:Port。")]
+        [Description("跑馬燈文字範本(隨機播放且無待播歌曲): 播放隨機點播歌曲，待播清單沒有歌時的跑馬燈字串範本。{0}=當前歌名, {1}=當前歌手, {4}=區網IP:Port, {5}=外網IP:Port, {6}=點歌人。")]
         public string MarqueeTextString3 { get; set; } = "隨機播放歌曲：「{1} - {0}」";
 
         [Description("跑馬燈文字範本(啟動訊息): 進入程式時在播放螢幕顯示的跑馬燈字串範本。{4}=區網IP:Port, {5}=外網IP:Port。")]

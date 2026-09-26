@@ -138,13 +138,14 @@ namespace UltimateKtv
         /// <param name="device">Target display: PlayerScreen or ConsoleScreen</param>
         public static void ShowSongInfo(string songName, string artistName, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
-            ShowSongPlaybackMarquee(songName, artistName, null, null, false, null, device);
+            ShowSongPlaybackMarquee(songName, artistName, null, null, false, null, null, device);
         }
 
         /// <summary>
         /// Shows a customizable song playback marquee based on AppSettings
+        /// {0}=CurrentSong, {1}=CurrentSinger, {2}=NextSong, {3}=NextSinger, {4}=LAN IP:Port, {5}=WAN IP:Port, {6}=OrderedBy, {7}=NextOrderedBy
         /// </summary>
-        public static void ShowSongPlaybackMarquee(string currentSong, string currentSinger, string? nextSong, string? nextSinger, bool isRandomSong = false, string? orderedBy = null, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
+        public static void ShowSongPlaybackMarquee(string currentSong, string currentSinger, string? nextSong, string? nextSinger, bool isRandomSong = false, string? orderedBy = null, string? nextOrderedBy = null, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
             var settings = SettingsManager.Instance.CurrentSettings;
             int displayDevice = GetDisplayDeviceIndex(device);
@@ -155,54 +156,40 @@ namespace UltimateKtv
             string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{settings.HttpServerPort}";
             string wanIpPort = $"{HttpServer.GetPublicIPAddress()}:{settings.PublicServerPort}";
             string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放") ? orderedBy : "";
+            string displayNextOrderedBy = (!string.IsNullOrWhiteSpace(nextOrderedBy) && nextOrderedBy != "本機" && nextOrderedBy != "隨機播放") ? nextOrderedBy : "";
 
+            string template;
             if (isRandomSong && !hasNextSong)
             {
                 // MarqueeTextString3: 播放隨機點播歌曲, 待播清單沒有歌
-                string template = string.IsNullOrEmpty(settings.MarqueeTextString3)
+                template = string.IsNullOrEmpty(settings.MarqueeTextString3)
                     ? "隨機播放歌曲：「{1} - {0}」"
                     : settings.MarqueeTextString3;
-                string activeTemplate = CleanOrderedByPlaceholder(template, displayOrderedBy);
-                try
-                {
-                    formattedText = string.Format(activeTemplate, currentSong ?? "", currentSinger ?? "", "", "", lanIpPort, wanIpPort, displayOrderedBy);
-                }
-                catch
-                {
-                    formattedText = $"隨機播放歌曲：「{currentSinger} - {currentSong}」";
-                }
             }
             else if (hasNextSong)
             {
                 // MarqueeTextString1: 播放點播歌曲, 待播清單有歌 (或隨機播放但待播清單有歌)
-                string template = string.IsNullOrEmpty(settings.MarqueeTextString1)
+                template = string.IsNullOrEmpty(settings.MarqueeTextString1)
                     ? "目前正在播放歌曲：「{1} - {0}」，下一首播放：「{3} - {2}」，請準備！！"
                     : settings.MarqueeTextString1;
-                string activeTemplate = CleanOrderedByPlaceholder(template, displayOrderedBy);
-                try
-                {
-                    formattedText = string.Format(activeTemplate, currentSong ?? "", currentSinger ?? "", nextSong ?? "", nextSinger ?? "", lanIpPort, wanIpPort, displayOrderedBy);
-                }
-                catch
-                {
-                    formattedText = $"目前正在播放歌曲：「{currentSinger} - {currentSong}」，下一首播放：「{nextSinger} - {nextSong}」，請準備！！";
-                }
             }
             else
             {
                 // MarqueeTextString2: 播放點播歌曲, 待播清單沒有歌
-                string template = string.IsNullOrEmpty(settings.MarqueeTextString2)
+                template = string.IsNullOrEmpty(settings.MarqueeTextString2)
                     ? "目前正在播放歌曲：「{1} - {0}」"
                     : settings.MarqueeTextString2;
-                string activeTemplate = CleanOrderedByPlaceholder(template, displayOrderedBy);
-                try
-                {
-                    formattedText = string.Format(activeTemplate, currentSong ?? "", currentSinger ?? "", "", "", lanIpPort, wanIpPort, displayOrderedBy);
-                }
-                catch
-                {
-                    formattedText = $"目前正在播放歌曲：「{currentSinger} - {currentSong}」";
-                }
+            }
+
+            try
+            {
+                formattedText = string.Format(template, currentSong ?? "", currentSinger ?? "", nextSong ?? "", nextSinger ?? "", lanIpPort, wanIpPort, displayOrderedBy, displayNextOrderedBy);
+            }
+            catch
+            {
+                formattedText = hasNextSong
+                    ? $"目前正在播放歌曲：「{currentSinger} - {currentSong}」，下一首播放：「{nextSinger} - {nextSong}」，請準備！！"
+                    : (isRandomSong ? $"隨機播放歌曲：「{currentSinger} - {currentSong}」" : $"目前正在播放歌曲：「{currentSinger} - {currentSong}」");
             }
 
             ShowCustomStyledMarquee(formattedText, settings, displayDevice, isSongPlayback: true, priority: MarqueePriority.Normal);
@@ -368,25 +355,6 @@ namespace UltimateKtv
             return defaultBrush;
         }
 
-        private static string CleanOrderedByPlaceholder(string template, string orderedBy)
-        {
-            if (!string.IsNullOrWhiteSpace(orderedBy))
-                return template;
-
-            // When orderedBy is empty (e.g. local PC order), cleanly remove any ", 點歌人：{6}" or similar suffix
-            return template
-                .Replace("，點歌人：{6}", "")
-                .Replace("，點歌人:{6}", "")
-                .Replace(", 點歌人：{6}", "")
-                .Replace(", 點歌人:{6}", "")
-                .Replace(" (點歌人：{6})", "")
-                .Replace(" (點歌人:{6})", "")
-                .Replace("（點歌人：{6}）", "")
-                .Replace("點歌人：{6}", "")
-                .Replace("點歌人:{6}", "")
-                .Replace("{6}", "");
-        }
-
         /// <summary>
         /// Shows song added notification on player screen using MarqueeSongAdded settings (Template, Font, Size, Color, Time)
         /// {0}=SongName, {1}=SingerName, {4}=LAN IP:Port, {5}=WAN IP:Port, {6}=OrderedBy
@@ -406,12 +374,11 @@ namespace UltimateKtv
                 : settings.MarqueeSongAddedString;
 
             string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放") ? orderedBy : "";
-            string activeTemplate = CleanOrderedByPlaceholder(template, displayOrderedBy);
 
             string formattedText;
             try
             {
-                formattedText = string.Format(activeTemplate, songName ?? "", singerName ?? "", "", "", lanIpPort, wanIpPort, displayOrderedBy);
+                formattedText = string.Format(template, songName ?? "", singerName ?? "", "", "", lanIpPort, wanIpPort, displayOrderedBy);
             }
             catch
             {

@@ -189,6 +189,24 @@ namespace StyleSimulator
             get => _appSettings.MarqueeBroadcastTimeDuration;
             set { _appSettings.MarqueeBroadcastTimeDuration = value; OnPropertyChanged(); }
         }
+
+        public string HttpServerIp
+        {
+            get => _appSettings.HttpServerIp;
+            set { _appSettings.HttpServerIp = value; OnPropertyChanged(); }
+        }
+
+        public int HttpServerPort
+        {
+            get => _appSettings.HttpServerPort;
+            set { _appSettings.HttpServerPort = value; OnPropertyChanged(); }
+        }
+
+        public int PublicServerPort
+        {
+            get => _appSettings.PublicServerPort;
+            set { _appSettings.PublicServerPort = value; OnPropertyChanged(); }
+        }
         #endregion
 
         #region TextSettings.json Properties (UI Fonts & Colors)
@@ -198,31 +216,31 @@ namespace StyleSimulator
             set { _textSettings.FontFamily = value; OnPropertyChanged(); }
         }
 
-        public int SongListFontSize
+        public double SongListFontSize
         {
             get => _textSettings.SongListFontSize;
             set { _textSettings.SongListFontSize = value; OnPropertyChanged(); }
         }
 
-        public int WaitingListFontSize
+        public double WaitingListFontSize
         {
             get => _textSettings.WaitingListFontSize;
             set { _textSettings.WaitingListFontSize = value; OnPropertyChanged(); }
         }
 
-        public int FuncBtnFontSize
+        public double FuncBtnFontSize
         {
             get => _textSettings.FuncBtnFontSize;
             set { _textSettings.FuncBtnFontSize = value; OnPropertyChanged(); }
         }
 
-        public int BottomButtonFontSize
+        public double BottomButtonFontSize
         {
             get => _textSettings.BottomButtonFontSize;
             set { _textSettings.BottomButtonFontSize = value; OnPropertyChanged(); }
         }
 
-        public int WebHostInfoFontSize
+        public double WebHostInfoFontSize
         {
             get => _textSettings.WebHostInfoFontSize;
             set { _textSettings.WebHostInfoFontSize = value; OnPropertyChanged(); }
@@ -234,11 +252,6 @@ namespace StyleSimulator
             set { _textSettings.PrimaryColor = value; OnPropertyChanged(); }
         }
 
-        public string BrightBorderColor
-        {
-            get => _textSettings.BrightBorderColor;
-            set { _textSettings.BrightBorderColor = value; OnPropertyChanged(); }
-        }
 
         public string DataGridHeaderBgColor
         {
@@ -246,10 +259,35 @@ namespace StyleSimulator
             set { _textSettings.DataGridColumnHeaderBackgroundColor = value; OnPropertyChanged(); }
         }
 
+        public string DataGridColumnHeaderForegroundColor
+        {
+            get => _textSettings.DataGridColumnHeaderForegroundColor;
+            set { _textSettings.DataGridColumnHeaderForegroundColor = value; OnPropertyChanged(); }
+        }
+
         public string AnnouncementForegroundColor
         {
             get => _textSettings.AnnouncementForegroundColor;
             set { _textSettings.AnnouncementForegroundColor = value; OnPropertyChanged(); }
+        }
+
+        public string StaticTextForegroundColor
+        {
+            get => _textSettings.StaticTextForegroundColor;
+            set { _textSettings.StaticTextForegroundColor = value; OnPropertyChanged(); }
+        }
+
+        public string WebHostInfoForegroundColor
+        {
+            get => _textSettings.WebHostInfoForegroundColor;
+            set { _textSettings.WebHostInfoForegroundColor = value; OnPropertyChanged(); }
+        }
+
+
+        public string PrimaryLightColor
+        {
+            get => _textSettings.PrimaryLightColor;
+            set { _textSettings.PrimaryLightColor = value; OnPropertyChanged(); }
         }
         #endregion
 
@@ -313,6 +351,40 @@ namespace StyleSimulator
             }
         }
 
+        public bool ApplyTextSettingsFromJson(string json)
+        {
+            try
+            {
+                var loaded = JsonSerializer.Deserialize<TextSettings>(json, _jsonOptions);
+                if (loaded != null)
+                {
+                    _textSettings = loaded;
+                    OnPropertyChanged(null);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to parse text settings json: {ex.Message}");
+            }
+            return false;
+        }
+
+        public void ApplyTextSettingsPreset(string filePath)
+        {
+            if (!File.Exists(filePath)) return;
+
+            try
+            {
+                string json = File.ReadAllText(filePath);
+                ApplyTextSettingsFromJson(json);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load text settings preset: {ex.Message}");
+            }
+        }
+
         public void ResetSettingsToDefaults()
         {
             var defaults = new AppSettings();
@@ -340,6 +412,10 @@ namespace StyleSimulator
             MarqueeBroadcastFontSize = defaults.MarqueeBroadcastFontSize;
             MarqueeBroadcastFillColor = defaults.MarqueeBroadcastFillColor;
             MarqueeBroadcastTimeDuration = defaults.MarqueeBroadcastTimeDuration;
+
+            HttpServerIp = defaults.HttpServerIp;
+            HttpServerPort = defaults.HttpServerPort;
+            PublicServerPort = defaults.PublicServerPort;
         }
 
         public void ResetTextSettingsToDefaults()
@@ -352,9 +428,12 @@ namespace StyleSimulator
             BottomButtonFontSize = defaults.BottomButtonFontSize;
             WebHostInfoFontSize = defaults.WebHostInfoFontSize;
             PrimaryColor = defaults.PrimaryColor;
-            BrightBorderColor = defaults.BrightBorderColor;
+            PrimaryLightColor = defaults.PrimaryLightColor;
             DataGridHeaderBgColor = defaults.DataGridColumnHeaderBackgroundColor;
+            DataGridColumnHeaderForegroundColor = defaults.DataGridColumnHeaderForegroundColor;
             AnnouncementForegroundColor = defaults.AnnouncementForegroundColor;
+            StaticTextForegroundColor = defaults.StaticTextForegroundColor;
+            WebHostInfoForegroundColor = defaults.WebHostInfoForegroundColor;
         }
 
         public bool SaveSettingsJson(string? path = null)

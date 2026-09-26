@@ -56,7 +56,7 @@ namespace UltimateKtv
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 20),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Foreground = TextSettingsHandler.PitchDialogForegroundBrush
+                Foreground = Brushes.White
             };
             dialogPanel.Children.Add(title);
 
@@ -69,10 +69,10 @@ namespace UltimateKtv
                 Style = (Style)FindResource("MaterialDesignRaisedButton"),
                 IsEnabled = false,
                 FontSize = 22,
-                Foreground = TextSettingsHandler.PitchDialogButtonForegroundBrush,
+                Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
-                Background = TextSettingsHandler.PitchDisplayButtonBackgroundBrush,
-                BorderBrush = TextSettingsHandler.PitchDialogButtonBorderBrush,
+                Background = TextSettingsHandler.PrimaryBrush,
+                BorderBrush = TextSettingsHandler.PrimaryBrush,
                 BorderThickness = new Thickness(2),
                 Opacity = 1.0 // Ensure full opacity
             };
@@ -86,8 +86,8 @@ namespace UltimateKtv
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("MaterialDesignOutlinedButton"),
                 FontSize = 20,
-                BorderBrush = TextSettingsHandler.PitchDialogButtonBorderBrush,
-                Foreground = TextSettingsHandler.PitchDialogButtonForegroundBrush
+                BorderBrush = TextSettingsHandler.PrimaryBrush,
+                Foreground = Brushes.White
             };
             pitchUpBtn.Click += (s, e) => AdjustPitch(1);
             dialogPanel.Children.Add(pitchUpBtn);
@@ -100,8 +100,8 @@ namespace UltimateKtv
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("MaterialDesignOutlinedButton"),
                 FontSize = 20,
-                BorderBrush = TextSettingsHandler.PitchDialogButtonBorderBrush,
-                Foreground = TextSettingsHandler.PitchDialogButtonForegroundBrush
+                BorderBrush = TextSettingsHandler.PrimaryBrush,
+                Foreground = Brushes.White
             };
             originalPitchBtn.Click += (s, e) => SetOriginalPitch();
             dialogPanel.Children.Add(originalPitchBtn);
@@ -114,8 +114,8 @@ namespace UltimateKtv
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("MaterialDesignOutlinedButton"),
                 FontSize = 20,
-                BorderBrush = TextSettingsHandler.PitchDialogButtonBorderBrush,
-                Foreground = TextSettingsHandler.PitchDialogButtonForegroundBrush
+                BorderBrush = TextSettingsHandler.PrimaryBrush,
+                Foreground = Brushes.White
             };
             pitchDownBtn.Click += (s, e) => AdjustPitch(-1);
             dialogPanel.Children.Add(pitchDownBtn);
@@ -128,8 +128,8 @@ namespace UltimateKtv
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("MaterialDesignOutlinedButton"),
                 FontSize = 20,
-                BorderBrush = TextSettingsHandler.PitchDialogButtonBorderBrush,
-                Foreground = TextSettingsHandler.PitchDialogButtonForegroundBrush
+                BorderBrush = TextSettingsHandler.PrimaryBrush,
+                Foreground = Brushes.White
             };
             malePitchBtn.Click += (s, e) => SetMalePitch();
             dialogPanel.Children.Add(malePitchBtn);
@@ -142,8 +142,8 @@ namespace UltimateKtv
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("MaterialDesignOutlinedButton"),
                 FontSize = 20,
-                BorderBrush = TextSettingsHandler.PitchDialogButtonBorderBrush,
-                Foreground = TextSettingsHandler.PitchDialogButtonForegroundBrush
+                BorderBrush = TextSettingsHandler.PrimaryBrush,
+                Foreground = Brushes.White
             };
             femalePitchBtn.Click += (s, e) => SetFemalePitch();
             dialogPanel.Children.Add(femalePitchBtn);
@@ -156,8 +156,8 @@ namespace UltimateKtv
                 Margin = new Thickness(0, 0, 0, 20),
                 Style = (Style)FindResource("MaterialDesignOutlinedButton"),
                 FontSize = 20,
-                BorderBrush = TextSettingsHandler.PitchDialogButtonBorderBrush,
-                Foreground = TextSettingsHandler.PitchDialogButtonForegroundBrush
+                BorderBrush = TextSettingsHandler.PrimaryBrush,
+                Foreground = Brushes.White
             };
             _fixToggleBtn.Click += (s, e) => TogglePitchFix();
             dialogPanel.Children.Add(_fixToggleBtn);
@@ -171,7 +171,7 @@ namespace UltimateKtv
                 HorizontalAlignment = HorizontalAlignment.Right,
                 MinWidth = 100,
                 FontSize = 18,
-                Foreground = TextSettingsHandler.PitchDialogButtonForegroundBrush
+                Foreground = Brushes.White
             };
             closeBtn.Click += (s, e) => DialogHost.CloseDialogCommand.Execute(null, null);
             dialogPanel.Children.Add(closeBtn);
