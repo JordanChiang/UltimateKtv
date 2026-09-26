@@ -68,6 +68,11 @@ namespace UltimateKtv
             _isPlayingFromWaitingList = false;
             _isRandomSongPlaying = false;
             IsPlayingYoutube = false;
+            _currentPlayingSongName = string.Empty;
+            _currentPlayingSingerName = string.Empty;
+            _currentPlayingSongId = string.Empty;
+            _currentSongOrderedBy = string.Empty;
+            _playingSongData = null;
             
             // Clear Lyrics
             _currentLyrics = null;

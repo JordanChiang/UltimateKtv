@@ -1584,39 +1584,80 @@
             }
         }
 
+        // Helper function to build now playing HTML
+        function getNowPlayingHtml(nowPlaying) {
+            if (nowPlaying && nowPlaying.isPlaying && nowPlaying.songName) {
+                const singerPart = nowPlaying.singerName ? ` - ${nowPlaying.singerName}` : '';
+                const songTitle = `${nowPlaying.songName}${singerPart}`;
+                const orderedByText = nowPlaying.orderedBy ? ` <span style="color: #64748b; font-size: 14px; font-weight: normal;">(${nowPlaying.orderedBy})</span>` : '';
+                return `
+                    <div id="playlistNowPlaying" style="padding: 12px 14px; margin-bottom: 12px; background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%); border-radius: 8px; border-left: 4px solid #4f46e5; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(79, 70, 229, 0.1);">
+                        <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; width: 100%;">
+                            <span style="font-size: 18px; line-height: 1;">▶️</span>
+                            <span style="font-size: 12px; font-weight: bold; color: white; background: #4f46e5; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">正在播放</span>
+                            <div style="font-size: 17px; font-weight: bold; color: #1e1b4b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                                <span>${songTitle}</span>${orderedByText}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div id="playlistNowPlaying" style="padding: 10px 14px; margin-bottom: 12px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #94a3b8; display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 15px;">
+                        <span style="font-size: 16px; line-height: 1;">⏹️</span>
+                        <span style="font-size: 12px; font-weight: bold; color: #64748b; background: #e2e8f0; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">正在播放</span>
+                        <span>無</span>
+                    </div>
+                `;
+            }
+        }
+
         // Show playlist (waiting list)
         async function showPlaylist() {
             try {
-                const response = await fetch('?queryType=queryplaylist');
-                const playlist = await response.json();
+                const response = await fetch('?queryType=queryplaylist&value=withCurrent');
+                const data = await response.json();
 
-                if (!playlist || playlist.length === 0) {
-                    showToast('點播清單是空的', 'info');
+                let playlist = [];
+                let nowPlaying = null;
+                if (Array.isArray(data)) {
+                    playlist = data;
+                } else if (data && typeof data === 'object') {
+                    playlist = data.playlist || [];
+                    nowPlaying = data.nowPlaying || null;
+                }
+
+                const hasPlaying = nowPlaying && nowPlaying.isPlaying && nowPlaying.songName;
+                if ((!playlist || playlist.length === 0) && !hasPlaying) {
+                    showToast('目前無播放及待播歌曲', 'info');
                     return;
                 }
 
                 // Create playlist display
-                let playlistHtml = '<div style="background: white; padding: 10px; border-radius: 12px; width: 95%; max-width: 1080px; margin: 10px auto;">';
-                playlistHtml += '<h2 style="color: #333; margin-bottom: 10px; font-size: 20px;">📋 點播清單 (' + playlist.length + ' 首)</h2>';
-                playlistHtml += '<div style="max-height: 800px; overflow-y: auto;">';
+                let playlistHtml = '<div style="background: white; padding: 16px; border-radius: 12px; width: 95%; max-width: 1080px; margin: 10px auto; max-height: 90vh; display: flex; flex-direction: column;">';
+                playlistHtml += '<div id="playlistNowPlayingContainer">' + getNowPlayingHtml(nowPlaying) + '</div>';
+                playlistHtml += '<h2 id="playlistHeader" style="color: #333; margin-bottom: 10px; font-size: 20px;">📋 待播清單 (' + (playlist?.length || 0) + ' 首)</h2>';
+                playlistHtml += '<div id="playlistItemsContainer" style="max-height: 60vh; overflow-y: auto; flex: 1;">';
 
-                playlist.forEach((song, index) => {
-                    const orderedByText = song.OrderedBy ? ` <span style="color: #888; font-size: 16px;">(${song.OrderedBy})</span>` : '';
-
-                    // Use song.Id (GUID) for unique identification
-                    const uniqueId = song.Id || song.SongId;
-                    const escapedName = song.SongName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                    playlistHtml += `
-                        <div class="playlist-item" 
-                            data-id="${uniqueId}"
-                            data-name="${escapedName}"
-                            style="padding: 12px 15px; margin-bottom: 8px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #667eea; font-size: 16px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; cursor: pointer;">
-                            <span style="font-weight: bold;">${index + 1}. ${song.SongName}</span> - <span style="color: #555;">${song.SingerName}</span>${orderedByText}</div>
-                    `;
-                });
+                if (!playlist || playlist.length === 0) {
+                    playlistHtml += '<div style="text-align: center; color: #999; padding: 25px 20px; font-size: 16px;">待播清單目前無歌曲</div>';
+                } else {
+                    playlist.forEach((song, index) => {
+                        const orderedByText = song.OrderedBy ? ` <span style="color: #888; font-size: 16px;">(${song.OrderedBy})</span>` : '';
+                        const uniqueId = song.Id || song.SongId;
+                        const escapedName = song.SongName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        playlistHtml += `
+                            <div class="playlist-item" 
+                                data-id="${uniqueId}"
+                                data-name="${escapedName}"
+                                style="padding: 12px 15px; margin-bottom: 8px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #667eea; font-size: 16px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; cursor: pointer;">
+                                <span style="font-weight: bold;">${index + 1}. ${song.SongName}</span> - <span style="color: #555;">${song.SingerName}</span>${orderedByText}</div>
+                        `;
+                    });
+                }
 
                 playlistHtml += '</div>';
-                playlistHtml += '<button onclick="closePlaylistModal()" style="margin-top: 20px; padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 18px;">關閉</button>';
+                playlistHtml += '<button onclick="closePlaylistModal()" style="margin-top: 15px; padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 18px;">關閉</button>';
                 playlistHtml += '</div>';
 
                 // Create modal overlay
@@ -1667,22 +1708,46 @@
             if (!modal) return;
 
             try {
-                const response = await fetch('?queryType=queryplaylist');
-                const playlist = await response.json();
+                const response = await fetch('?queryType=queryplaylist&value=withCurrent');
+                const data = await response.json();
 
-                // Find the playlist container inside the modal
-                const container = modal.querySelector('div > div:nth-child(2)');
-                const header = modal.querySelector('h2');
-
-                if (!container) return;
-
-                // Update header count
-                if (header) {
-                    header.textContent = `📋 點播清單 (${playlist?.length || 0} 首)`;
+                let playlist = [];
+                let nowPlaying = null;
+                if (Array.isArray(data)) {
+                    playlist = data;
+                } else if (data && typeof data === 'object') {
+                    playlist = data.playlist || [];
+                    nowPlaying = data.nowPlaying || null;
                 }
 
+                // Update now playing section (independent above waiting list)
+                const nowPlayingContainer = document.getElementById('playlistNowPlayingContainer');
+                if (nowPlayingContainer) {
+                    nowPlayingContainer.innerHTML = getNowPlayingHtml(nowPlaying);
+                } else {
+                    const nowPlayingEl = document.getElementById('playlistNowPlaying');
+                    if (nowPlayingEl) {
+                        nowPlayingEl.outerHTML = getNowPlayingHtml(nowPlaying);
+                    } else {
+                        const headerEl = document.getElementById('playlistHeader') || modal.querySelector('h2');
+                        if (headerEl) {
+                            headerEl.insertAdjacentHTML('beforebegin', '<div id="playlistNowPlayingContainer">' + getNowPlayingHtml(nowPlaying) + '</div>');
+                        }
+                    }
+                }
+
+                // Update header count
+                const header = document.getElementById('playlistHeader') || modal.querySelector('h2');
+                if (header) {
+                    header.textContent = `📋 待播清單 (${playlist?.length || 0} 首)`;
+                }
+
+                // Find the playlist items container inside the modal
+                const container = document.getElementById('playlistItemsContainer') || modal.querySelector('#playlistModal > div > div:last-of-type');
+                if (!container) return;
+
                 if (!playlist || playlist.length === 0) {
-                    container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">清單是空的</div>';
+                    container.innerHTML = '<div style="text-align: center; color: #999; padding: 25px 20px; font-size: 16px;">待播清單目前無歌曲</div>';
                     return;
                 }
 
@@ -1696,7 +1761,7 @@
                         <div class="playlist-item" 
                             data-id="${uniqueId}"
                             data-name="${escapedName}"
-                            style="padding: 12px 15px; margin-bottom: 8px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #667eea; font-size: 20px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; cursor: pointer;">
+                            style="padding: 12px 15px; margin-bottom: 8px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #667eea; font-size: 16px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: none; cursor: pointer;">
                             <span style="font-weight: bold;">${index + 1}. ${song.SongName}</span> - <span style="color: #555;">${song.SingerName}</span>${orderedByText}</div>
                     `;
                 });

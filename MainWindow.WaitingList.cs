@@ -23,6 +23,44 @@ namespace UltimateKtv
         private int _currentWaitingListPage = 1;
         private int _totalWaitingListPages = 1;
         private string _currentSongOrderedBy = string.Empty;
+        private string _currentPlayingSongName = string.Empty;
+        private string _currentPlayingSingerName = string.Empty;
+        private string _currentPlayingSongId = string.Empty;
+
+        /// <summary>
+        /// Gets information about the currently playing song for HTTP/Web services.
+        /// </summary>
+        public (bool IsPlaying, string SongName, string SingerName, string SongId, string OrderedBy) GetCurrentPlayingSongInfo()
+        {
+            if (!_isPlayingFromWaitingList)
+            {
+                return (false, string.Empty, string.Empty, string.Empty, string.Empty);
+            }
+
+            string songName = _currentPlayingSongName;
+            string singerName = _currentPlayingSingerName;
+
+            if (string.IsNullOrEmpty(songName) && _playingSongData != null)
+            {
+                songName = _playingSongData.TryGetValue("Song_SongName", out var n) ? n?.ToString() ?? "" : "";
+            }
+            if (string.IsNullOrEmpty(singerName) && _playingSongData != null)
+            {
+                singerName = _playingSongData.TryGetValue("Song_Singer", out var s) ? s?.ToString() ?? "" : "";
+            }
+
+            return (true, songName, singerName, _currentPlayingSongId, _currentSongOrderedBy);
+        }
+
+        public int GetWaitingListCount()
+        {
+            return _waitingList?.Count ?? 0;
+        }
+
+        public List<WaitingListItem> GetWaitingListItems()
+        {
+            return _waitingList?.ToList() ?? new List<WaitingListItem>();
+        }
 
         // Queue for songs added during a transition
         private Queue<SongDisplayItem> _pendingSongs = new Queue<SongDisplayItem>();
@@ -355,6 +393,11 @@ namespace UltimateKtv
                 {
                     DebugLog("PlayNextSongFromWaitingList: No songs in waiting list.");
                     _isPlayingFromWaitingList = false;
+                    _currentPlayingSongName = string.Empty;
+                    _currentPlayingSingerName = string.Empty;
+                    _currentPlayingSongId = string.Empty;
+                    _currentSongOrderedBy = string.Empty;
+                    _playingSongData = null;
                     
                     // Stop playback first
                     SafeStop(mediaUriElement, nameof(mediaUriElement));
@@ -399,6 +442,9 @@ namespace UltimateKtv
                 _isPlayingFromWaitingList = true;
                 _isRandomSongPlaying = (firstSong.OrderedBy == "隨機播放");
                 _currentSongOrderedBy = firstSong.OrderedBy ?? string.Empty;
+                _currentPlayingSongName = firstSong.WaitingListSongName ?? string.Empty;
+                _currentPlayingSingerName = firstSong.WaitingListSingerName ?? string.Empty;
+                _currentPlayingSongId = firstSong.SongId ?? string.Empty;
                 IsPlayingYoutube = firstSong.IsYoutube;
 
 
@@ -580,6 +626,11 @@ namespace UltimateKtv
                 DebugLog($"Error playing from waiting list: {ex.Message}\n{ex}");
                 AppLogger.LogError("Error playing from waiting list", ex);
                 _isPlayingFromWaitingList = false;
+                _currentPlayingSongName = string.Empty;
+                _currentPlayingSingerName = string.Empty;
+                _currentPlayingSongId = string.Empty;
+                _currentSongOrderedBy = string.Empty;
+                _playingSongData = null;
                 _isTransitioningSong = false; // Release lock on any unexpected error.
                 ProcessPendingSongs(); // Retry pending adds even on error
                 SetPlayerControlsEnabled(true); // Also re-enable controls on error
@@ -688,6 +739,11 @@ namespace UltimateKtv
                 // Reset flags first to avoid race conditions with MediaEnded
                 _isRandomSongPlaying = false;
                 _isPlayingFromWaitingList = false;
+                _currentPlayingSongName = string.Empty;
+                _currentPlayingSingerName = string.Empty;
+                _currentPlayingSongId = string.Empty;
+                _currentSongOrderedBy = string.Empty;
+                _playingSongData = null;
                 
                 // Stop the player. This will trigger MediaEnded/MediaClosed, 
                 // but since _isPlayingFromWaitingList is now false, PlayNextSongFromWaitingList 

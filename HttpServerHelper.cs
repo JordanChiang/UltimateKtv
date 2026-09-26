@@ -647,19 +647,44 @@ public class HttpServerHelper
 
 	public static string QueryPlayerState(string value, object mainDataContext)
 	{
-		// Return basic player state info
 		try
 		{
+			bool isPlaying = false;
+			string songName = "";
+			string singerName = "";
+			string songId = "";
+			string orderedBy = "";
+			int playlistCount = 0;
+
+			System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+			{
+				if (System.Windows.Application.Current?.MainWindow is UltimateKtv.MainWindow mainWindow)
+				{
+					var info = mainWindow.GetCurrentPlayingSongInfo();
+					isPlaying = info.IsPlaying;
+					songName = info.SongName;
+					singerName = info.SingerName;
+					songId = info.SongId;
+					orderedBy = info.OrderedBy;
+					playlistCount = mainWindow.GetWaitingListCount();
+				}
+			});
+
 			var state = new JObject
 			{
-				{ "IsPlaying", false },
-				{ "CurrentSong", "" },
-				{ "PlaylistCount", SongDatas.PlayListData?.Rows.Count ?? 0 }
+				{ "IsPlaying", isPlaying },
+				{ "SongName", songName },
+				{ "SingerName", singerName },
+				{ "SongId", songId },
+				{ "CurrentSong", isPlaying ? (!string.IsNullOrEmpty(singerName) ? $"{songName} - {singerName}" : songName) : "" },
+				{ "OrderedBy", orderedBy },
+				{ "PlaylistCount", playlistCount }
 			};
 			return JsonConvert.SerializeObject(state);
 		}
-		catch
+		catch (Exception ex)
 		{
+			System.Diagnostics.Debug.WriteLine($"[QueryPlayerState] Exception: {ex.Message}");
 			return EmptyResult;
 		}
 	}
@@ -709,46 +734,67 @@ public class HttpServerHelper
 		try
 		{
 			var playlist = new JArray();
+			bool isPlaying = false;
+			string playingSongName = "";
+			string playingSingerName = "";
+			string playingSongId = "";
+			string playingOrderedBy = "";
 
-			// Access the waiting list on the UI thread
+			// Access the waiting list and current playing song on the UI thread
 			System.Windows.Application.Current?.Dispatcher.Invoke(() =>
 			{
-				var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-				if (mainWindow != null)
+				if (System.Windows.Application.Current?.MainWindow is UltimateKtv.MainWindow mainWindow)
 				{
-					// Use reflection to get the private _waitingList field
-					var waitingListField = mainWindow.GetType().GetField("_waitingList",
-						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+					var playInfo = mainWindow.GetCurrentPlayingSongInfo();
+					isPlaying = playInfo.IsPlaying;
+					playingSongName = playInfo.SongName;
+					playingSingerName = playInfo.SingerName;
+					playingSongId = playInfo.SongId;
+					playingOrderedBy = playInfo.OrderedBy;
 
-					if (waitingListField != null)
+					var waitingList = mainWindow.GetWaitingListItems();
+					foreach (var item in waitingList)
 					{
-						var waitingList = waitingListField.GetValue(mainWindow) as System.Collections.IList;
-						if (waitingList != null)
-						{
-							foreach (var item in waitingList)
-							{
-								var songName = item?.GetType().GetProperty("WaitingListSongName")?.GetValue(item)?.ToString();
-								var singerName = item?.GetType().GetProperty("WaitingListSingerName")?.GetValue(item)?.ToString();
-								var songId = item?.GetType().GetProperty("SongId")?.GetValue(item)?.ToString();
-								var orderedBy = item?.GetType().GetProperty("OrderedBy")?.GetValue(item)?.ToString();
+						var songName = item.WaitingListSongName;
+						var singerName = item.WaitingListSingerName;
+						var songId = item.SongId;
+						var orderedBy = item.OrderedBy;
 
-								if (!string.IsNullOrEmpty(songName))
-								{
-									var songObject = new JObject
-									{
-										{ "SongName", songName },
-										{ "SingerName", singerName },
-										{ "SongId", songId },
-										{ "OrderedBy", orderedBy ?? "" },
-                                        { "Id", item?.GetType().GetProperty("Id")?.GetValue(item)?.ToString() ?? "" }
-									};
-									playlist.Add(songObject);
-								}
-							}
+						if (!string.IsNullOrEmpty(songName))
+						{
+							var songObject = new JObject
+							{
+								{ "SongName", songName },
+								{ "SingerName", singerName },
+								{ "SongId", songId ?? "" },
+								{ "OrderedBy", orderedBy ?? "" },
+								{ "Id", item.Id.ToString() }
+							};
+							playlist.Add(songObject);
 						}
 					}
 				}
 			});
+
+			if (string.Equals(value, "withCurrent", StringComparison.OrdinalIgnoreCase) ||
+			    string.Equals(value, "includePlaying", StringComparison.OrdinalIgnoreCase))
+			{
+				var result = new JObject
+				{
+					{ "nowPlaying", new JObject
+						{
+							{ "isPlaying", isPlaying },
+							{ "songName", playingSongName },
+							{ "singerName", playingSingerName },
+							{ "songId", playingSongId },
+							{ "orderedBy", playingOrderedBy },
+							{ "currentSong", isPlaying ? (!string.IsNullOrEmpty(playingSingerName) ? $"{playingSongName} - {playingSingerName}" : playingSongName) : "" }
+						}
+					},
+					{ "playlist", playlist }
+				};
+				return JsonConvert.SerializeObject(result);
+			}
 
 			return JsonConvert.SerializeObject(playlist);
 		}
