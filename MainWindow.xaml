@@ -287,6 +287,35 @@
             <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
         </Style>
 
+        <!-- Style for the small player control buttons with submenu indicator (人聲, 重播) -->
+        <Style x:Key="SubmenuPlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
+            <Setter Property="Height" Value="{StaticResource PlayingBtnHeight}" />
+            <Setter Property="Width" Value="132" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="0" />
+            <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <Grid Background="Transparent">
+                            <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Path Data="M 0,8 L 8,0 L 8,8 Z" 
+                                  Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                  Opacity="0.85" 
+                                  HorizontalAlignment="Right" 
+                                  VerticalAlignment="Bottom" 
+                                  Margin="0,0,6,6" 
+                                  IsHitTestVisible="False" />
+                        </Grid>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Style for the large player control button (切歌) -->
         <Style x:Key="LargePlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
             <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
@@ -425,14 +454,14 @@
                                         
                                         <!-- First row - pause and repeat buttons fill the row11 fill the row -->
                                         <Button Name="PauseBtn" Content="暫停" Grid.Row="0" Grid.Column="0" Style="{DynamicResource PlayerControlButtonStyle}" Click="Pause_Click"/>
-                                        <Button Name="RepeatBtn" Content="重播" Grid.Row="0" Grid.Column="2" Style="{DynamicResource PlayerControlButtonStyle}" 
+                                        <Button Name="RepeatBtn" Content="重播" Grid.Row="0" Grid.Column="2" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
                                                 Click="Repeat_Click"
                                                 PreviewMouseDown="RepeatBtn_PreviewMouseDown" 
                                                 PreviewMouseUp="RepeatBtn_PreviewMouseUp" 
                                                 MouseRightButtonUp="RepeatBtn_RightClick"/>
                                         
                                         <!-- Second row - buttons 12 and 13 fill the row -->
-                                        <Button Name="VocalBtn" Content="人聲" Grid.Row="2" Grid.Column="0" Style="{DynamicResource PlayerControlButtonStyle}" 
+                                        <Button Name="VocalBtn" Content="人聲" Grid.Row="2" Grid.Column="0" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
                                                 Click="VocalBtn_Click" 
                                                 PreviewMouseDown="VocalBtn_PreviewMouseDown" 
                                                 PreviewMouseUp="VocalBtn_PreviewMouseUp" 

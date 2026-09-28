@@ -235,6 +235,7 @@ namespace UltimateKtv
                 "FunctionButtonStyle",
                 "SecondFilterButtonStyle",
                 "PlayerControlButtonStyle",
+                "SubmenuPlayerControlButtonStyle",
                 "LargePlayerControlButtonStyle",
                 "PaginationButtonStyle",
                 "SingerGridButtonStyle",
