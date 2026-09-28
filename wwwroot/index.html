@@ -1331,7 +1331,10 @@
                 const progressText = document.getElementById(`yt-progress-text-${data.videoId}`);
 
                 if (progressBar) progressBar.style.width = `${data.percentage}%`;
-                if (progressText) progressText.innerText = `下載中... ${Math.round(data.percentage)}%`;
+                if (progressText) {
+                    const statusStr = data.status || '下載中...';
+                    progressText.innerText = `${statusStr} ${Math.round(data.percentage)}%`;
+                }
             });
 
             eventSource.addEventListener('YoutubeComplete', (e) => {

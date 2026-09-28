@@ -216,7 +216,7 @@ namespace UltimateKtv
                     var psi = new ProcessStartInfo
                     {
                         FileName = ytDlpPath,
-                        Arguments = $"-g \"https://www.youtube.com/watch?v={videoId}\"",
+                        Arguments = $"--extractor-args \"youtube:player_client=android,web\" -g \"https://www.youtube.com/watch?v={videoId}\"",
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,
@@ -290,7 +290,7 @@ namespace UltimateKtv
                 var psi = new ProcessStartInfo
                 {
                     FileName = ytDlpPath,
-                    Arguments = $"{formatArg} --newline --no-playlist --ffmpeg-location \"{ffmpegDir}\" -o \"{outputFilePath}\" \"https://www.youtube.com/watch?v={videoId}\"",
+                    Arguments = $"{formatArg} --extractor-args \"youtube:player_client=android,web\" --newline --no-playlist --ffmpeg-location \"{ffmpegDir}\" -o \"{outputFilePath}\" \"https://www.youtube.com/watch?v={videoId}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -299,18 +299,133 @@ namespace UltimateKtv
 
                 using var process = new Process { StartInfo = psi };
                 var stderrBuilder = new StringBuilder();
-                double maxReportedPct = 0;
+                int totalStreams = 2; // Default to 2 streams (video + audio) for bestvideo+bestaudio
+                int currentStream = 0;
+                double maxStreamPct = 0;
+                double currentOverallPct = 0;
+                bool isMerging = false;
+                CancellationTokenSource? mergerCts = null;
+
+                void UpdateProgress(double pct, string? status = null)
+                {
+                    if (pct > currentOverallPct)
+                    {
+                        currentOverallPct = Math.Min(99.0, pct);
+                        progress?.Report(currentOverallPct / 100.0);
+                    }
+                    if (!string.IsNullOrEmpty(status))
+                    {
+                        statusCallback?.Invoke(status);
+                    }
+                }
 
                 process.OutputDataReceived += (s, e) =>
                 {
                     if (string.IsNullOrWhiteSpace(e.Data)) return;
-                    var match = ProgressRegex.Match(e.Data);
-                    if (match.Success && double.TryParse(match.Groups[1].Value, out double pct))
+
+                    // 1. Detect number of streams from format info if available
+                    // e.g. "[info] ...: Downloading 1 format(s): 398+251"
+                    var formatMatch = Regex.Match(e.Data, @"Downloading\s+\d+\s+format\(s\):\s*([^\s]+)");
+                    if (formatMatch.Success)
                     {
-                        if (pct > maxReportedPct)
+                        totalStreams = formatMatch.Groups[1].Value.Contains('+') ? 2 : 1;
+                    }
+
+                    // 2. Detect stream start: "[download] Destination: ..."
+                    if (e.Data.Contains("[download] Destination:"))
+                    {
+                        currentStream++;
+                        maxStreamPct = 0;
+                        if (totalStreams == 2)
                         {
-                            maxReportedPct = pct;
-                            progress?.Report(pct / 100.0);
+                            if (currentStream <= 1)
+                            {
+                                UpdateProgress(currentOverallPct, "下載視訊中...");
+                            }
+                            else
+                            {
+                                UpdateProgress(Math.Max(currentOverallPct, 75.0), "下載音訊中...");
+                            }
+                        }
+                        else
+                        {
+                            UpdateProgress(currentOverallPct, "下載影片中...");
+                        }
+                    }
+
+                    // 3. Handle already downloaded file / stream
+                    if (e.Data.Contains("has already been downloaded"))
+                    {
+                        if (totalStreams == 2 && currentStream <= 1)
+                        {
+                            UpdateProgress(75.0, "視訊已下載");
+                        }
+                        else
+                        {
+                            UpdateProgress(90.0, "音訊已下載");
+                        }
+                    }
+
+                    // 4. Parse stream percentage: "[download]  17.2% of ..."
+                    var match = ProgressRegex.Match(e.Data);
+                    if (match.Success && double.TryParse(match.Groups[1].Value, out double streamPct))
+                    {
+                        if (streamPct > maxStreamPct)
+                        {
+                            maxStreamPct = streamPct;
+                            double overallPct;
+                            string? statusMsg = null;
+
+                            if (totalStreams == 2)
+                            {
+                                if (currentStream <= 1)
+                                {
+                                    // Video stream: maps to 0% -> 75%
+                                    overallPct = (streamPct / 100.0) * 75.0;
+                                    statusMsg = "下載視訊中...";
+                                }
+                                else
+                                {
+                                    // Audio stream: maps to 75% -> 90%
+                                    overallPct = 75.0 + ((streamPct / 100.0) * 15.0);
+                                    statusMsg = "下載音訊中...";
+                                }
+                            }
+                            else
+                            {
+                                // Single combined stream: maps to 0% -> 92%
+                                overallPct = (streamPct / 100.0) * 92.0;
+                                statusMsg = "下載影片中...";
+                            }
+
+                            UpdateProgress(overallPct, statusMsg);
+                        }
+                    }
+
+                    // 5. Detect post-processing / merger: "[Merger] Merging formats into ..."
+                    if (e.Data.Contains("[Merger]") || e.Data.Contains("[Fixup") || e.Data.Contains("[VideoConvertor]"))
+                    {
+                        if (!isMerging)
+                        {
+                            isMerging = true;
+                            UpdateProgress(Math.Max(currentOverallPct, 92.0), "影片合併中...");
+
+                            // Gradually increment progress up to 98% while FFmpeg is merging
+                            mergerCts = new CancellationTokenSource();
+                            var mToken = mergerCts.Token;
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    while (!mToken.IsCancellationRequested && currentOverallPct < 98.0)
+                                    {
+                                        await Task.Delay(500, mToken);
+                                        if (mToken.IsCancellationRequested) break;
+                                        UpdateProgress(currentOverallPct + 1.0, "影片合併中...");
+                                    }
+                                }
+                                catch { }
+                            }, mToken);
                         }
                     }
                 };
@@ -333,10 +448,15 @@ namespace UltimateKtv
                 using (cancellationToken.Register(() =>
                 {
                     try { if (!process.HasExited) process.Kill(true); } catch { }
+                    try { mergerCts?.Cancel(); } catch { }
                 }))
                 {
                     await process.WaitForExitAsync(cancellationToken);
                 }
+
+                mergerCts?.Cancel();
+                mergerCts?.Dispose();
+                mergerCts = null;
 
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -366,6 +486,7 @@ namespace UltimateKtv
                 if (process.ExitCode == 0 && fileExists)
                 {
                     progress?.Report(1.0);
+                    statusCallback?.Invoke("下載完成");
                     return; // Successfully downloaded!
                 }
 

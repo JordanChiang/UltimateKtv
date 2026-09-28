@@ -136,12 +136,13 @@ namespace UltimateKtv
 
                 DebugLog($"YouTube Download: Starting for {song.SongName} ({videoId})");
                 bool isHighQualityEnabled = SettingsManager.Instance.CurrentSettings.HighQualityYoutube;
+                string currentStatus = "下載中...";
                 var progress = new Progress<double>(p => {
                     double newPct = Math.Round(p * 100);
-                    if (newPct > YoutubeDownloadPercentage)
+                    if (p == 0 || newPct > YoutubeDownloadPercentage)
                     {
                         YoutubeDownloadPercentage = newPct;
-                        HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = YoutubeDownloadPercentage });
+                        HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = YoutubeDownloadPercentage, status = currentStatus });
                     }
                 });
 
@@ -152,6 +153,7 @@ namespace UltimateKtv
                 {
                     await YtDlpHelper.DownloadVideoAsync(videoId, filePath, isHighQualityEnabled, progress, token, status =>
                     {
+                        currentStatus = status;
                         Dispatcher.BeginInvoke(() =>
                         {
                             if (YoutubeStatusText != null)
@@ -161,6 +163,7 @@ namespace UltimateKtv
                                 YoutubeStatusText.Visibility = Visibility.Visible;
                             }
                         });
+                        HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = YoutubeDownloadPercentage, status = currentStatus });
                     });
                     downloadedSuccess = true;
                 }
@@ -178,6 +181,19 @@ namespace UltimateKtv
                 {
                     try
                     {
+                        currentStatus = "備用引擎下載中...";
+                        YoutubeDownloadPercentage = 0;
+                        _ = Dispatcher.BeginInvoke(() =>
+                        {
+                            if (YoutubeStatusText != null)
+                            {
+                                int rem = _youtubeDownloadQueue.Count;
+                                YoutubeStatusText.Text = rem > 0 ? $" 備用引擎下載中... (剩餘: {rem})" : " 備用引擎下載中...";
+                                YoutubeStatusText.Visibility = Visibility.Visible;
+                            }
+                        });
+                        HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = 0, status = currentStatus });
+
                         var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(videoId, token);
                         var muxedStream = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
                         if (muxedStream != null)
