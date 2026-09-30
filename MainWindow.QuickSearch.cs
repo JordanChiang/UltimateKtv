@@ -939,7 +939,14 @@ namespace UltimateKtv
                         .ToList();
                     
                     // Apply sorting based on settings (using centralized method)
-                    return SongDatas.ApplySongSorting(results, (s, key) => s.GetType().GetProperty(key)?.GetValue(s, null));
+                    return SongDatas.ApplySongSorting(results, (s, key) => key switch
+                    {
+                        "Song_PlayCount" or "PlayCount" => s.Song_PlayCount,
+                        "Song_CreatDate" => s.Song_CreatDate,
+                        "Song_WordCount" => s.Song_WordCount,
+                        "Song_SongName" or "SongName" => s.SongName,
+                        _ => null
+                    });
                 }, cancellationToken);
 
                 // Cache and compute paging (8 per grid page, 16 per youtube page)

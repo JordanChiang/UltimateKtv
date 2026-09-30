@@ -3,26 +3,27 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 using UltimateKtv.Enums;
 
 namespace UltimateKtv
 {
     /// <summary>
-    /// A customizable marquee control that displays scrolling text with various configuration options
+    /// A high-performance hardware-accelerated marquee control.
+    /// Uses RenderTransform (TranslateTransform) to animate position entirely on the GPU,
+    /// avoiding WPF layout passes (Measure/Arrange) and maintaining 60 FPS hardware VSync.
     /// </summary>
-    public class MarqueeControl : UserControl
+    public class MarqueeControl : UserControl, IDisposable
     {
         private Canvas _canvas = null!;
         private OutlinedTextBlock _textBlock = null!;
-        private Storyboard? _scrollStoryboard;
-        private DispatcherTimer _repeatTimer = null!;
+        private TranslateTransform _transform = null!;
+        private DispatcherTimer? _holdTimer;
+        private DispatcherTimer? _timeoutTimer;
         private int _currentRepeatCount = 0;
-        private int _maxRepeatCount = 1;
         private bool _isAnimating = false;
 
-        // Marquee properties
+        // Public properties
         public string MarqueeText { get; set; } = string.Empty;
         public Brush TextColor { get; set; } = Brushes.White;
         public Brush StrokeColor { get; set; } = Brushes.Transparent;
@@ -33,13 +34,12 @@ namespace UltimateKtv
         public int RepeatCount { get; set; } = 1;
         public int HoldTimeMs { get; set; } = 500;
         public MarqueePosition Position { get; set; } = MarqueePosition.Bottom;
-        public double Speed { get; set; } = 50; // pixels per second
-        public int DesiredDisplayDevice { get; set; } = 0; // 0 = main window, 1+ = secondary displays
-        
-        // Static text properties
+        public double Speed { get; set; } = 50;
+        public int DesiredDisplayDevice { get; set; } = 0;
         public bool IsStaticMode { get; set; } = false;
         public int TimeoutSeconds { get; set; } = 0;
-        private DispatcherTimer? _timeoutTimer;
+
+        public event EventHandler? MarqueeCompleted;
 
         public MarqueeControl()
         {
@@ -48,18 +48,20 @@ namespace UltimateKtv
 
         private void InitializeComponent()
         {
-            // CRITICAL FIX: Set explicit positioning to avoid NaN
             this.HorizontalAlignment = HorizontalAlignment.Stretch;
             this.VerticalAlignment = VerticalAlignment.Top;
             this.Margin = new Thickness(0);
-            
-            // Force the UserControl to have a valid position
-            Canvas.SetLeft(this, 0);
-            Canvas.SetTop(this, 0);
-            Grid.SetRow(this, 0);
-            Grid.SetColumn(this, 0);
-            
-            // Create the canvas container
+            this.IsHitTestVisible = false;
+            this.ClipToBounds = true;
+            this.UseLayoutRounding = false;
+            this.SnapsToDevicePixels = false;
+
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Ideal);
+            TextOptions.SetTextRenderingMode(this, TextRenderingMode.Auto);
+            RenderOptions.SetEdgeMode(this, EdgeMode.Unspecified);
+            RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.Linear);
+            RenderOptions.SetCachingHint(this, CachingHint.Cache);
+
             _canvas = new Canvas
             {
                 ClipToBounds = true,
@@ -67,8 +69,10 @@ namespace UltimateKtv
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch
             };
+            RenderOptions.SetCachingHint(_canvas, CachingHint.Cache);
 
-            // Create the outlined text block
+            _transform = new TranslateTransform();
+
             _textBlock = new OutlinedTextBlock
             {
                 Fill = TextColor,
@@ -77,52 +81,87 @@ namespace UltimateKtv
                 FontFamily = TextFontFamily,
                 FontWeight = TextFontWeight,
                 FontSize = TextFontSize,
-                VerticalAlignment = VerticalAlignment.Center
+                VerticalAlignment = VerticalAlignment.Center,
+                RenderTransform = _transform,
+                CacheMode = new BitmapCache
+                {
+                    EnableClearType = false,
+                    SnapsToDevicePixels = false
+                }
             };
+            RenderOptions.SetCachingHint(_textBlock, CachingHint.Cache);
 
-            // CRITICAL FIX: Set explicit Canvas positioning to avoid NaN
             Canvas.SetLeft(_textBlock, 0);
             Canvas.SetTop(_textBlock, 0);
 
             _canvas.Children.Add(_textBlock);
-            Content = _canvas;
-
-            // Initialize the repeat timer
-            _repeatTimer = new DispatcherTimer();
-            _repeatTimer.Tick += RepeatTimer_Tick!;
+            this.Content = _canvas;
         }
 
-        /// <summary>
-        /// Starts the marquee animation with the current settings
-        /// </summary>
+        public void UpdateMarquee(string text, Brush color, FontFamily fontFamily, double fontSize,
+            int repeatCount, MarqueePosition position, double speed, int displayDevice,
+            FontWeight? fontWeight = null, Brush? strokeColor = null, double strokeThickness = 0, int holdTimeMs = 500)
+        {
+            bool wasAnimating = _isAnimating;
+            if (wasAnimating) StopMarquee();
+
+            MarqueeText          = text;
+            TextColor            = color;
+            StrokeColor          = strokeColor ?? Brushes.Transparent;
+            StrokeThickness      = strokeThickness;
+            TextFontFamily       = fontFamily;
+            TextFontWeight       = fontWeight ?? FontWeights.Normal;
+            TextFontSize         = fontSize;
+            RepeatCount          = repeatCount;
+            HoldTimeMs           = holdTimeMs;
+            Position             = position;
+            Speed                = speed;
+            DesiredDisplayDevice = displayDevice;
+            IsStaticMode         = false;
+
+            if (wasAnimating && !string.IsNullOrEmpty(text)) StartMarquee();
+        }
+
+        public void UpdateStaticText(string text, Brush color, FontFamily fontFamily, double fontSize,
+            MarqueePosition position, int timeoutSeconds, int displayDevice,
+            FontWeight? fontWeight = null, Brush? strokeColor = null, double strokeThickness = 0)
+        {
+            StopMarquee();
+            MarqueeText          = text;
+            TextColor            = color;
+            StrokeColor          = strokeColor ?? Brushes.Transparent;
+            StrokeThickness      = strokeThickness;
+            TextFontFamily       = fontFamily;
+            TextFontWeight       = fontWeight ?? FontWeights.Normal;
+            TextFontSize         = fontSize;
+            Position             = position;
+            TimeoutSeconds       = timeoutSeconds;
+            DesiredDisplayDevice = displayDevice;
+            IsStaticMode         = true;
+        }
+
+        public void EnsureVisible()
+        {
+            this.Visibility = Visibility.Visible;
+            _canvas.Visibility = Visibility.Visible;
+            _textBlock.Visibility = Visibility.Visible;
+            this.Opacity = 1.0;
+            Panel.SetZIndex(this, 100);
+        }
+
         public void StartMarquee()
         {
-            if (string.IsNullOrEmpty(MarqueeText) || _isAnimating)
-            {
-                System.Diagnostics.Debug.WriteLine($"StartMarquee aborted: Text empty={string.IsNullOrEmpty(MarqueeText)}, IsAnimating={_isAnimating}");
-                return;
-            }
+            if (string.IsNullOrEmpty(MarqueeText) || _isAnimating) return;
 
- //           System.Diagnostics.Debug.WriteLine($"=== StartMarquee Called ===");
- //           System.Diagnostics.Debug.WriteLine($"MarqueeText: '{MarqueeText}'");
- //           System.Diagnostics.Debug.WriteLine($"Control Size: {Width}x{Height}");
- //           System.Diagnostics.Debug.WriteLine($"ActualSize: {ActualWidth}x{ActualHeight}");
-
-            // Force layout update if ActualSize is 0
             if (ActualWidth == 0 || ActualHeight == 0)
             {
-//                System.Diagnostics.Debug.WriteLine("ActualSize is 0, forcing layout update...");
                 Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                Arrange(new Rect(0, 0, Width > 0 ? Width : 404, Height > 0 ? Height : 80));
+                Arrange(new Rect(0, 0, Width > 0 ? Width : 800, Height > 0 ? Height : 80));
                 UpdateLayout();
-                
-//                System.Diagnostics.Debug.WriteLine($"After layout update - ActualSize: {ActualWidth}x{ActualHeight}");
-                
-                // If still 0, use a dispatcher to delay execution
+
                 if (ActualWidth == 0 || ActualHeight == 0)
                 {
-                    System.Diagnostics.Debug.WriteLine("Still no actual size, using Dispatcher.BeginInvoke to delay...");
-                    Dispatcher.BeginInvoke(new Action(() => StartMarqueeInternal()), DispatcherPriority.Loaded);
+                    Dispatcher.BeginInvoke(new Action(StartMarqueeInternal), DispatcherPriority.Loaded);
                     return;
                 }
             }
@@ -132,69 +171,45 @@ namespace UltimateKtv
 
         private void StartMarqueeInternal()
         {
-//            System.Diagnostics.Debug.WriteLine($"=== StartMarqueeInternal Called ===");
-//            System.Diagnostics.Debug.WriteLine($"Final ActualSize: {ActualWidth}x{ActualHeight}");
+            ApplyTextProperties();
 
-            // Update text properties
-            _textBlock.Text = MarqueeText;
-            _textBlock.Fill = TextColor;
-            _textBlock.Stroke = StrokeColor;
-            _textBlock.StrokeThickness = StrokeThickness;
-            _textBlock.FontFamily = TextFontFamily;
-            _textBlock.FontWeight = TextFontWeight;
-            _textBlock.FontSize = TextFontSize;
-
-            // Force measure to get actual text dimensions
             _textBlock.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            var textWidth = _textBlock.DesiredSize.Width;
-            var textHeight = _textBlock.DesiredSize.Height;
+            double textWidth = _textBlock.DesiredSize.Width;
+            double textHeight = _textBlock.DesiredSize.Height;
 
- //           System.Diagnostics.Debug.WriteLine($"Text Size: {textWidth}x{textHeight}");
+            double canvasWidth = ActualWidth > 0 ? ActualWidth : (Width > 0 ? Width : 800);
+            double canvasHeight = Math.Max(textHeight, ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 80));
 
-            // Use ActualWidth/ActualHeight if available, otherwise fall back to Width/Height, ensuring enough height for text
-            var canvasWidth = ActualWidth > 0 ? ActualWidth : (Width > 0 ? Width : 404);
-            var canvasHeight = Math.Max(textHeight, ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 80));
-
-//            System.Diagnostics.Debug.WriteLine($"Canvas Size: {canvasWidth}x{canvasHeight}");
-
-            // Update canvas size to match control
             _canvas.Width = canvasWidth;
             _canvas.Height = canvasHeight;
-            _canvas.Background = new SolidColorBrush(Colors.Transparent); // Ensure it has a background for hit testing
-
-            // Force canvas layout
-            _canvas.Measure(new Size(canvasWidth, canvasHeight));
-            _canvas.Arrange(new Rect(0, 0, canvasWidth, canvasHeight));
 
             double startY = Position switch
             {
                 MarqueePosition.Top or MarqueePosition.TopLeft or MarqueePosition.TopRight => 0,
                 MarqueePosition.Center => Math.Max(0, (canvasHeight - textHeight) / 2),
-                _ => Math.Max(0, canvasHeight - textHeight - 5) // Bottom positions with better margin
+                _ => Math.Max(0, canvasHeight - textHeight - 5)
             };
-            
-            Canvas.SetTop(_textBlock, startY);
-//            System.Diagnostics.Debug.WriteLine($"Text Y Position: {startY}");
 
-            // Set initial position (start from right edge)
+            Canvas.SetLeft(_textBlock, 0);
+            Canvas.SetTop(_textBlock, startY);
+
+            _currentRepeatCount = 0;
+            _isAnimating = true;
+
+            StartScrollAnimation(canvasWidth, textWidth);
+        }
+
+        private void StartScrollAnimation(double canvasWidth, double textWidth)
+        {
+            if (!_isAnimating) return;
+
             double startX = canvasWidth;
             double endX = -textWidth;
-            
-            // Debug positioning
-//            System.Diagnostics.Debug.WriteLine($"Canvas dimensions: {canvasWidth}x{canvasHeight}");
-//            System.Diagnostics.Debug.WriteLine($"Text dimensions: {textWidth}x{textHeight}");
-//            System.Diagnostics.Debug.WriteLine($"Control bounds: Left={Canvas.GetLeft(this)}, Top={Canvas.GetTop(this)}");
-//            System.Diagnostics.Debug.WriteLine($"Parent container: {this.Parent?.GetType().Name}");
-            
-            Canvas.SetLeft(_textBlock, startX);
-//            System.Diagnostics.Debug.WriteLine($"Text X Animation: {startX} -> {endX}");
+            double distance = startX - endX;
+            double speed = Math.Max(1.0, Speed);
+            var duration = TimeSpan.FromSeconds(distance / speed);
 
-            // Calculate animation duration based on speed
-            var distance = startX - endX;
-            var duration = TimeSpan.FromSeconds(distance / Speed);
-
-            // Create the scroll animation
-            var scrollAnimation = new DoubleAnimation
+            var anim = new DoubleAnimation
             {
                 From = startX,
                 To = endX,
@@ -202,138 +217,54 @@ namespace UltimateKtv
                 EasingFunction = null
             };
 
-            scrollAnimation.Completed += ScrollAnimation_Completed!;
-
-            // Create and start the storyboard
-            _scrollStoryboard = new Storyboard();
-            _scrollStoryboard.Children.Add(scrollAnimation);
-            Storyboard.SetTarget(scrollAnimation, _textBlock);
-            Storyboard.SetTargetProperty(scrollAnimation, new PropertyPath("(Canvas.Left)"));
-
-            _currentRepeatCount = 0;
-            _maxRepeatCount = RepeatCount;
-            _isAnimating = true;
-
-//            System.Diagnostics.Debug.WriteLine($"Starting animation: Duration={duration.TotalSeconds}s, Speed={Speed}px/s");
-//            System.Diagnostics.Debug.WriteLine($"TextBlock Visibility: {_textBlock.Visibility}");
-//            System.Diagnostics.Debug.WriteLine($"Canvas Visibility: {_canvas.Visibility}");
-//            System.Diagnostics.Debug.WriteLine($"Control Visibility: {this.Visibility}");
-
-            // Try direct animation first, then storyboard as fallback
-            try
+            anim.Completed += (s, e) =>
             {
-                // Direct animation approach
-                _textBlock.BeginAnimation(Canvas.LeftProperty, scrollAnimation);
-//                System.Diagnostics.Debug.WriteLine("Animation started successfully using BeginAnimation");
-                
-                // Add a test to verify animation is working by checking position after 1 second
-                System.Windows.Threading.DispatcherTimer testTimer = new System.Windows.Threading.DispatcherTimer();
-                testTimer.Interval = TimeSpan.FromSeconds(1);
-                testTimer.Tick += (s, e) =>
+                if (!_isAnimating) return;
+
+                _currentRepeatCount++;
+                if (_currentRepeatCount < RepeatCount)
                 {
-                    var currentLeft = Canvas.GetLeft(_textBlock);
-//                    System.Diagnostics.Debug.WriteLine($"Animation check: TextBlock position after 1s = {currentLeft}");
-                    testTimer.Stop();
-                };
-                testTimer.Start();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"BeginAnimation failed: {ex.Message}, trying Storyboard...");
-                // Fallback to storyboard
-                _scrollStoryboard.Begin(_canvas, true);
-//                System.Diagnostics.Debug.WriteLine("Animation started successfully using Storyboard");
-            }
+                    int holdMs = Math.Max(50, HoldTimeMs);
+                    _holdTimer = new DispatcherTimer
+                    {
+                        Interval = TimeSpan.FromMilliseconds(holdMs)
+                    };
+                    _holdTimer.Tick += (_, __) =>
+                    {
+                        _holdTimer?.Stop();
+                        _holdTimer = null;
+                        if (_isAnimating)
+                        {
+                            StartScrollAnimation(canvasWidth, textWidth);
+                        }
+                    };
+                    _holdTimer.Start();
+                }
+                else
+                {
+                    _isAnimating = false;
+                    _transform.BeginAnimation(TranslateTransform.XProperty, null);
+                    _transform.X = endX;
+                    MarqueeCompleted?.Invoke(this, EventArgs.Empty);
+                }
+            };
+
+            _transform.BeginAnimation(TranslateTransform.XProperty, anim);
         }
 
-        /// <summary>
-        /// Stops the marquee animation or static display
-        /// </summary>
-        public void StopMarquee()
-        {
-            _isAnimating = false;
-            _scrollStoryboard?.Stop();
-            _repeatTimer?.Stop();
-            _timeoutTimer?.Stop();
-            _currentRepeatCount = 0;
-        }
-
-        /// <summary>
-        /// Updates the marquee with new parameters and restarts if currently running
-        /// </summary>
-        public void UpdateMarquee(string text, Brush color, FontFamily fontFamily, double fontSize, 
-            int repeatCount, MarqueePosition position, double speed, int displayDevice,
-            FontWeight? fontWeight = null, Brush? strokeColor = null, double strokeThickness = 0, int holdTimeMs = 500)
-        {
-            var wasAnimating = _isAnimating;
-            
-            if (wasAnimating)
-                StopMarquee();
-
-            MarqueeText = text;
-            TextColor = color;
-            StrokeColor = strokeColor ?? Brushes.Transparent;
-            StrokeThickness = strokeThickness;
-            TextFontFamily = fontFamily;
-            TextFontWeight = fontWeight ?? FontWeights.Normal;
-            TextFontSize = fontSize;
-            RepeatCount = repeatCount;
-            HoldTimeMs = holdTimeMs;
-            Position = position;
-            Speed = speed;
-            DesiredDisplayDevice = displayDevice;
-            IsStaticMode = false;
-
-            if (wasAnimating && !string.IsNullOrEmpty(text))
-                StartMarquee();
-        }
-
-        /// <summary>
-        /// Updates the control for static text display with countdown timer
-        /// </summary>
-        public void UpdateStaticText(string text, Brush color, FontFamily fontFamily, double fontSize,
-            MarqueePosition position, int timeoutSeconds, int displayDevice,
-            FontWeight? fontWeight = null, Brush? strokeColor = null, double strokeThickness = 0)
-        {
-            StopMarquee(); // Stop any existing animation
-
-            MarqueeText = text;
-            TextColor = color;
-            StrokeColor = strokeColor ?? Brushes.Transparent;
-            StrokeThickness = strokeThickness;
-            TextFontFamily = fontFamily;
-            TextFontWeight = fontWeight ?? FontWeights.Normal;
-            TextFontSize = fontSize;
-            Position = position;
-            TimeoutSeconds = timeoutSeconds;
-            DesiredDisplayDevice = displayDevice;
-            IsStaticMode = true;
-        }
-
-        /// <summary>
-        /// Starts static text display with countdown timer
-        /// </summary>
         public void StartStaticDisplay()
         {
-            if (string.IsNullOrEmpty(MarqueeText))
-            {
-                System.Diagnostics.Debug.WriteLine("StartStaticDisplay aborted: Text is empty");
-                return;
-            }
+            if (string.IsNullOrEmpty(MarqueeText)) return;
 
-//            System.Diagnostics.Debug.WriteLine($"=== StartStaticDisplay Called ===");
-//            System.Diagnostics.Debug.WriteLine($"Text: '{MarqueeText}', Timeout: {TimeoutSeconds}s");
-
-            // Force layout update if needed
             if (ActualWidth == 0 || ActualHeight == 0)
             {
                 Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                Arrange(new Rect(0, 0, Width > 0 ? Width : 404, Height > 0 ? Height : 80));
+                Arrange(new Rect(0, 0, Width > 0 ? Width : 800, Height > 0 ? Height : 80));
                 UpdateLayout();
-                
+
                 if (ActualWidth == 0 || ActualHeight == 0)
                 {
-                    Dispatcher.BeginInvoke(new Action(() => StartStaticDisplayInternal()), DispatcherPriority.Loaded);
+                    Dispatcher.BeginInvoke(new Action(StartStaticDisplayInternal), DispatcherPriority.Loaded);
                     return;
                 }
             }
@@ -343,31 +274,19 @@ namespace UltimateKtv
 
         private void StartStaticDisplayInternal()
         {
-//            System.Diagnostics.Debug.WriteLine($"=== StartStaticDisplayInternal Called ===");
+            StopMarquee();
+            ApplyTextProperties();
 
-            // Update text properties
-            _textBlock.Text = MarqueeText;
-            _textBlock.Fill = TextColor;
-            _textBlock.Stroke = StrokeColor;
-            _textBlock.StrokeThickness = StrokeThickness;
-            _textBlock.FontFamily = TextFontFamily;
-            _textBlock.FontWeight = TextFontWeight;
-            _textBlock.FontSize = TextFontSize;
-
-            // Force measure to get actual text dimensions
             _textBlock.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            var textWidth = _textBlock.DesiredSize.Width;
-            var textHeight = _textBlock.DesiredSize.Height;
+            double textWidth = _textBlock.DesiredSize.Width;
+            double textHeight = _textBlock.DesiredSize.Height;
 
-            var canvasWidth = ActualWidth > 0 ? ActualWidth : (Width > 0 ? Width : 404);
-            var canvasHeight = ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 80);
+            double canvasWidth = ActualWidth > 0 ? ActualWidth : (Width > 0 ? Width : 800);
+            double canvasHeight = Math.Max(textHeight, ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 80));
 
-            // Update canvas size
             _canvas.Width = canvasWidth;
             _canvas.Height = canvasHeight;
-            _canvas.Background = new SolidColorBrush(Colors.Transparent);
 
-            // Position text based on MarqueePosition
             double textY = Position switch
             {
                 MarqueePosition.Top or MarqueePosition.TopLeft or MarqueePosition.TopRight => 5,
@@ -379,138 +298,67 @@ namespace UltimateKtv
             {
                 MarqueePosition.TopLeft or MarqueePosition.BottomLeft => 10,
                 MarqueePosition.TopRight or MarqueePosition.BottomRight => Math.Max(10, canvasWidth - textWidth - 10),
-                _ => Math.Max(10, (canvasWidth - textWidth) / 2) // Center horizontally for other positions
+                _ => Math.Max(10, (canvasWidth - textWidth) / 2)
             };
 
-            // Ensure text fits within canvas bounds
-            if (textY + textHeight > canvasHeight)
-                textY = Math.Max(0, canvasHeight - textHeight);
-            if (textX + textWidth > canvasWidth)
-                textX = Math.Max(0, canvasWidth - textWidth);
+            _transform.BeginAnimation(TranslateTransform.XProperty, null);
+            _transform.X = 0;
+            _transform.Y = 0;
 
             Canvas.SetLeft(_textBlock, textX);
             Canvas.SetTop(_textBlock, textY);
 
- //           System.Diagnostics.Debug.WriteLine($"Static text positioned at ({textX}, {textY})");
+            _isAnimating = true;
 
-            // Set up timeout timer if specified
             if (TimeoutSeconds > 0)
             {
-                _timeoutTimer = new DispatcherTimer();
-                _timeoutTimer.Interval = TimeSpan.FromSeconds(TimeoutSeconds);
-                _timeoutTimer.Tick += (sender, e) =>
+                _timeoutTimer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromSeconds(TimeoutSeconds)
+                };
+                _timeoutTimer.Tick += (_, __) =>
                 {
                     _timeoutTimer?.Stop();
-//                    System.Diagnostics.Debug.WriteLine($"Static text timeout reached ({TimeoutSeconds}s)");
-                    OnMarqueeCompleted();
+                    _timeoutTimer = null;
+                    _isAnimating = false;
+                    MarqueeCompleted?.Invoke(this, EventArgs.Empty);
                 };
                 _timeoutTimer.Start();
-//                System.Diagnostics.Debug.WriteLine($"Timeout timer started for {TimeoutSeconds} seconds");
-            }
-            else
-            {
- //               System.Diagnostics.Debug.WriteLine("No timeout set - text will display indefinitely");
-            }
-
-            _isAnimating = true; // Mark as active even though it's static
-        }
-
-
-
-        /// <summary>
-        /// Sets the marquee to be clearly visible (for production use)
-        /// </summary>
-        public void EnsureVisible()
-        {
-            this.Visibility = Visibility.Visible;
-            _canvas.Visibility = Visibility.Visible;
-            _textBlock.Visibility = Visibility.Visible;
-            this.Opacity = 1.0;
-            
-            // Ensure proper layering
-            Panel.SetZIndex(this, 100);
-            
-            this.UpdateLayout();
-        }
-
-        private void ScrollAnimation_Completed(object sender, EventArgs e)
-        {
-            _currentRepeatCount++;
-
-            if (_currentRepeatCount < _maxRepeatCount)
-            {
-                // Start the next repeat after hold time
-                _repeatTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(50, HoldTimeMs));
-                _repeatTimer.Start();
-            }
-            else
-            {
-                // Animation complete
-                _isAnimating = false;
-                OnMarqueeCompleted();
             }
         }
 
-        private void RepeatTimer_Tick(object sender, EventArgs e)
+        public void StopMarquee()
         {
-            _repeatTimer.Stop();
-            
-            if (_currentRepeatCount < _maxRepeatCount)
-            {
-                // Restart the animation
-                var canvasWidth = ActualWidth > 0 ? ActualWidth : 800;
-                var textWidth = _textBlock.DesiredSize.Width;
-                
-                double startX = canvasWidth;
-                double endX = -textWidth;
-                Canvas.SetLeft(_textBlock, startX);
+            _isAnimating = false;
+            _holdTimer?.Stop();
+            _holdTimer = null;
+            _timeoutTimer?.Stop();
+            _timeoutTimer = null;
 
-                var distance = startX - endX;
-                var duration = TimeSpan.FromSeconds(distance / Speed);
-
-                var scrollAnimation = new DoubleAnimation
-                {
-                    From = startX,
-                    To = endX,
-                    Duration = duration,
-                    EasingFunction = null
-                };
-
-                scrollAnimation.Completed += ScrollAnimation_Completed!;
-
-                // Use direct animation for repeat as well
-                try
-                {
-                    _textBlock.BeginAnimation(Canvas.LeftProperty, scrollAnimation);
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Repeat BeginAnimation failed: {ex.Message}");
-                    _scrollStoryboard = new Storyboard();
-                    _scrollStoryboard.Children.Add(scrollAnimation);
-                    Storyboard.SetTarget(scrollAnimation, _textBlock);
-                    Storyboard.SetTargetProperty(scrollAnimation, new PropertyPath("(Canvas.Left)"));
-                    _scrollStoryboard.Begin(_canvas, true);
-                }
-            }
+            _transform.BeginAnimation(TranslateTransform.XProperty, null);
         }
 
-        /// <summary>
-        /// Event raised when the marquee animation completes all repeats
-        /// </summary>
-        public event EventHandler? MarqueeCompleted;
-
-        protected virtual void OnMarqueeCompleted()
+        public void Dispose()
         {
-            MarqueeCompleted?.Invoke(this, EventArgs.Empty);
+            StopMarquee();
+        }
+
+
+        private void ApplyTextProperties()
+        {
+            _textBlock.Text = MarqueeText;
+            _textBlock.Fill = TextColor;
+            _textBlock.Stroke = StrokeColor;
+            _textBlock.StrokeThickness = StrokeThickness;
+            _textBlock.FontFamily = TextFontFamily;
+            _textBlock.FontWeight = TextFontWeight;
+            _textBlock.FontSize = TextFontSize;
         }
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
             base.OnRenderSizeChanged(sizeInfo);
-            
-            // If marquee is running, restart with new dimensions
-            if (_isAnimating)
+            if (_isAnimating && !IsStaticMode)
             {
                 StopMarquee();
                 StartMarquee();

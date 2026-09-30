@@ -67,7 +67,8 @@ namespace UltimateKtv
                     var previewRectangle = new Rectangle();
                     var visualBrush = new VisualBrush(mediaUriElement)
                     {
-                        Stretch = Stretch.Uniform
+                        Stretch = Stretch.Uniform,
+                        AutoLayoutContent = false
                     };
                     previewRectangle.Fill = visualBrush;
 
@@ -110,7 +111,8 @@ namespace UltimateKtv
                         var previewRectangle = new Rectangle();
                         var visualBrush = new VisualBrush(mediaUriElement)
                         {
-                            Stretch = Stretch.Uniform
+                            Stretch = Stretch.Uniform,
+                            AutoLayoutContent = false
                         };
                         previewRectangle.Fill = visualBrush;
 

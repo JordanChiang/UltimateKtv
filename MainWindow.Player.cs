@@ -485,15 +485,23 @@ namespace UltimateKtv
                     var currentPosition = TimeSpan.FromTicks(currentPositionTicks);
                     var totalDuration = TimeSpan.FromTicks(totalDurationTicks);
 
-                    // Update time displays (only if user is not dragging - during drag, ValueChanged updates the preview time)
+                    // Update time displays only when text actually changes (avoids constant relayout on every tick)
                     if (!_isUserDraggingProgressSlider)
                     {
-                        CurrentTimeText.Text = FormatTime(currentPosition);
+                        string currentFormatted = FormatTime(currentPosition);
+                        if (CurrentTimeText.Text != currentFormatted)
+                        {
+                            CurrentTimeText.Text = currentFormatted;
+                        }
                     }
 
                     if (totalDurationTicks > 0)
                     {
-                        TotalTimeText.Text = FormatTime(totalDuration);
+                        string totalFormatted = FormatTime(totalDuration);
+                        if (TotalTimeText.Text != totalFormatted)
+                        {
+                            TotalTimeText.Text = totalFormatted;
+                        }
 
                         // Update lyrics synchronously with position
                         if (_currentLyrics != null && _currentLyrics.Count > 0)
@@ -510,7 +518,6 @@ namespace UltimateKtv
                             while (_currentLyricIndex < _currentLyrics.Count && currentPosition >= _currentLyrics[_currentLyricIndex].Timestamp)
                             {
                                 _videoDisplayWindow?.UpdateLyrics(_currentLyrics[_currentLyricIndex].Text, Visibility.Visible);
-                                // DebugLog($"[LRC] Showing lyric: {_currentLyrics[_currentLyricIndex].Text}"); // Can be spammy, leave commented unless needed
                                 _currentLyricIndex++;
                             }
                         }
@@ -518,10 +525,14 @@ namespace UltimateKtv
                         // Calculate progress percentage (used for both slider and play count check)
                         var progressPercentage = ((double)currentPositionTicks / totalDurationTicks) * 100.0;
 
-                        // Update progress slider only if user is not dragging
+                        // Update progress slider only if user is not dragging and progress moved noticeably (>= 0.25%)
                         if (!_isUserDraggingProgressSlider)
                         {
-                            VideoProgressSlider.Value = Math.Max(0, Math.Min(100, progressPercentage));
+                            double newSliderVal = Math.Max(0, Math.Min(100, progressPercentage));
+                            if (Math.Abs(VideoProgressSlider.Value - newSliderVal) >= 0.25)
+                            {
+                                VideoProgressSlider.Value = newSliderVal;
+                            }
                         }
 
                         // Increment play count if position more than user criteria and not already incremented

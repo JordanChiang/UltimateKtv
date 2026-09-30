@@ -105,30 +105,17 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Refreshes marquee sizes when window dimensions change
+        /// Refreshes marquee sizes when window dimensions change.
+        /// NOTE: We intentionally do NOT reassign MarqueeControl.Width here.
+        /// Setting .Width on a running MarqueeControl triggers a WPF layout pass
+        /// (MeasureOverride → ArrangeOverride) which shifts the TranslateTransform
+        /// baseline mid-animation, causing the marquee to visually jerk right then left.
+        /// MarqueeControl uses HorizontalAlignment.Stretch and fixes its canvas width
+        /// at StartMarquee time, so no runtime width update is required.
         /// </summary>
         private void RefreshMarqueeSizes()
         {
-            foreach (var kvp in _deviceStates)
-            {
-                var state = kvp.Value;
-                var deviceId = kvp.Key;
-                
-                double width = 0;
-                if (deviceId == 0)
-                {
-                    width = _mainWindow?.MarqueeContainer?.ActualWidth ?? _mainWindow?.MediaPlayerContainer?.ActualWidth ?? 0;
-                }
-                else
-                {
-                    width = _videoDisplayWindow?.MarqueeContainer?.ActualWidth ?? _videoDisplayWindow?.VideoContainer?.ActualWidth ?? 0;
-                }
-
-                if (width > 0 && state.ActiveMainControl != null)
-                {
-                    state.ActiveMainControl.Width = width;
-                }
-            }
+            // Intentionally left empty — see note above.
         }
 
         /// <summary>
@@ -569,6 +556,7 @@ namespace UltimateKtv
         {
             try
             {
+                marquee.Dispose();
                 if (displayDevice == 0)
                 {
                     _mainWindow?.MarqueeContainer?.Children.Remove(marquee);

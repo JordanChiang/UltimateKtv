@@ -136,64 +136,85 @@ namespace UltimateKtv
             WaitListPageUp.IsEnabled = _currentWaitingListPage > 1;
             WaitListPageDown.IsEnabled = _currentWaitingListPage < _totalWaitingListPages;
 
-            // Notify web clients that waiting list has changed
-            HttpServer.BroadcastEvent("playlistChanged", new { count = nonEmptySongs.Count });
+            // Notify web clients that waiting list has changed in background
+            Task.Run(() => HttpServer.BroadcastEvent("playlistChanged", new { count = nonEmptySongs.Count }));
 
-            // Pre-loading logic: cache the first song file content if enabled
+            // Pre-loading logic: cache the first song file content in background if enabled
             if (SettingsManager.Instance.CurrentSettings.EnablePreLoading && nonEmptySongs.Any())
             {
                 var firstSong = nonEmptySongs.First();
                 if (firstSong.FilePath != _preLoadedSongPath)
                 {
-                    try
-                    {
-                        // Clear old cache before loading new one to free memory
-                        if (_preLoadedFileContent != null)
-                        {
-                            _preLoadedFileContent = null;
-                            GC.Collect();
-                            GC.WaitForPendingFinalizers();
-                        }
+                    string targetFilePath = firstSong.FilePath;
+                    string songName = firstSong.WaitingListSongName;
 
-                        if (File.Exists(firstSong.FilePath))
+                    // Offload heavy I/O and GC to background thread to never block UI thread / Marquee
+                    Task.Run(() =>
+                    {
+                        try
                         {
-                            var fileInfo = new FileInfo(firstSong.FilePath);
-                            long fileSize = fileInfo.Length;
-                            
-                            try
+                            // Clear old cache before loading new one to free memory
+                            if (_preLoadedFileContent != null)
                             {
-                                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                                _preLoadedFileContent = File.ReadAllBytes(firstSong.FilePath);
-                                stopwatch.Stop();
-                                
-                                _preLoadedSongPath = firstSong.FilePath;
-                                _preLoadedMemoryUsage = _preLoadedFileContent.Length;
-                                _preLoadingCacheCount++;
-                                AppLogger.Log($"Pre-loading: Cached '{firstSong.WaitingListSongName}' ({FormatBytes(_preLoadedMemoryUsage)}) in {stopwatch.ElapsedMilliseconds}ms [#{_preLoadingCacheCount}]");
+                                _preLoadedFileContent = null;
+                                GC.Collect();
+                                GC.WaitForPendingFinalizers();
                             }
-                            catch (OutOfMemoryException)
+
+                            if (!string.IsNullOrEmpty(targetFilePath) && File.Exists(targetFilePath))
                             {
-                                AppLogger.LogError($"Pre-loading: OutOfMemory - File '{Path.GetFileName(firstSong.FilePath)}' size {FormatBytes(fileSize)} exceeds available memory", null);
+                                var fileInfo = new FileInfo(targetFilePath);
+                                long fileSize = fileInfo.Length;
+
+                                try
+                                {
+                                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                                    byte[] content = File.ReadAllBytes(targetFilePath);
+                                    stopwatch.Stop();
+
+                                    _preLoadedFileContent = content;
+                                    _preLoadedSongPath = targetFilePath;
+                                    _preLoadedMemoryUsage = content.Length;
+                                    _preLoadingCacheCount++;
+                                    AppLogger.Log($"Pre-loading: Cached '{songName}' ({FormatBytes(_preLoadedMemoryUsage)}) in {stopwatch.ElapsedMilliseconds}ms [#{_preLoadingCacheCount}]");
+                                }
+                                catch (OutOfMemoryException)
+                                {
+                                    AppLogger.LogError($"Pre-loading: OutOfMemory - File '{Path.GetFileName(targetFilePath)}' size {FormatBytes(fileSize)} exceeds available memory", null);
+                                    _preLoadedSongPath = null;
+                                    _preLoadedFileContent = null;
+                                    _preLoadedMemoryUsage = 0;
+                                }
+                            }
+                            else
+                            {
                                 _preLoadedSongPath = null;
                                 _preLoadedFileContent = null;
                                 _preLoadedMemoryUsage = 0;
                             }
                         }
-                        else
+                        catch (Exception ex)
                         {
+                            AppLogger.LogError($"Pre-loading: Error caching '{songName}'", ex);
                             _preLoadedSongPath = null;
                             _preLoadedFileContent = null;
                             _preLoadedMemoryUsage = 0;
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        AppLogger.LogError($"Pre-loading: Error caching '{Path.GetFileName(firstSong.FilePath)}'", ex);
-                        _preLoadedSongPath = null;
-                        _preLoadedFileContent = null;
-                        _preLoadedMemoryUsage = 0;
-                    }
+                    });
                 }
+            }
+            else if (!nonEmptySongs.Any() && _preLoadedFileContent != null)
+            {
+                // Clear preloaded content in background if waiting list is empty
+                Task.Run(() =>
+                {
+                    _preLoadedSongPath = null;
+                    _preLoadedFileContent = null;
+                    _preLoadedMemoryUsage = 0;
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    AppLogger.Log("Pre-loading: Cleared cache (waiting list empty)");
+                });
             }
 
             // Auto-play logic: if list is not empty and nothing is currently playing
@@ -671,15 +692,38 @@ namespace UltimateKtv
         /// Adds a song to the waiting list with duplicate checking
         /// </summary>
         /// <param name="song">The song to add</param>
-        private void AddSongToWaitingList(SongDisplayItem song)
+        private async void AddSongToWaitingList(SongDisplayItem song)
         {
             // Check if file path is valid
             bool isYoutube = song.IsYoutube;
-            if (!isYoutube && (string.IsNullOrEmpty(song.FilePath) || !File.Exists(song.FilePath)))
+            if (!isYoutube && string.IsNullOrEmpty(song.FilePath))
             {
-                DebugLog($"Invalid file path for song '{song.SongName}': {song.FilePath ?? "(empty)"}");
-                AppLogger.Log($"Invalid file path for song '{song.SongName}': {song.FilePath ?? "(empty)"}");
+                DebugLog($"Invalid file path for song '{song.SongName}': (empty)");
+                AppLogger.Log($"Invalid file path for song '{song.SongName}': (empty)");
                 return;
+            }
+
+            // Perform file existence check on background thread to prevent UI/Marquee freeze (e.g. NAS/HDD latency)
+            if (!isYoutube)
+            {
+                bool exists = await Task.Run(() =>
+                {
+                    try
+                    {
+                        return File.Exists(song.FilePath);
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                });
+
+                if (!exists)
+                {
+                    DebugLog($"Invalid file path for song '{song.SongName}': {song.FilePath ?? "(empty)"}");
+                    AppLogger.Log($"Invalid file path for song '{song.SongName}': {song.FilePath ?? "(empty)"}");
+                    return;
+                }
             }
 
             if(_isTransitioningSong)

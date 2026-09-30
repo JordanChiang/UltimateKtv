@@ -9,12 +9,14 @@
         xmlns:local="clr-namespace:UltimateKtv"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        materialDesign:RippleAssist.IsDisabled="True"
+        materialDesign:TransitionAssist.DisableTransitions="True"
         mc:Ignorable="d"
         WindowStyle="None"
         WindowState="Maximized"
         ResizeMode="NoResize"
-        AllowsTransparency="True"
-        Background="Transparent"
+        AllowsTransparency="False"
+        Background="{DynamicResource MaterialDesignPaper}"
         Topmost="False"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
@@ -108,6 +110,8 @@
 
         <!-- Style for the top function buttons -->
         <Style x:Key="FunctionButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+            <Setter Property="materialDesign:RippleAssist.IsDisabled" Value="True" />
+            <Setter Property="materialDesign:TransitionAssist.DisableTransitions" Value="True" />
             <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
             <Setter Property="Height" Value="{StaticResource FunBtnHeight}" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -121,6 +125,8 @@
 
         <!-- Style for the function toggle buttons -->
         <Style x:Key="FunctionToggleButtonStyle" TargetType="ToggleButton">
+            <Setter Property="materialDesign:RippleAssist.IsDisabled" Value="True" />
+            <Setter Property="materialDesign:TransitionAssist.DisableTransitions" Value="True" />
             <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
             <Setter Property="Height" Value="{StaticResource FunBtnHeight}" />
             <Setter Property="Background" Value="Transparent" />
@@ -153,11 +159,6 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="RightText" Grid.Column="1" Text="歌星" 
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                           
-                                <!-- Click Ripple -->
-                                <materialDesign:Ripple Grid.ColumnSpan="2" 
-                                                    Feedback="White"
-                                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -609,10 +610,9 @@
                                         </Grid.RowDefinitions>
                                         
                                         <!-- Video Player Container -->
-                                        <Grid x:Name="MediaPlayerContainer" Grid.Row="0" ClipToBounds="False" Background="Transparent" MouseLeftButtonDown="MediaPlayerContainer_MouseLeftButtonDown">
-                                            <!-- Marquee Container for overlay text -->
-                                            <Grid x:Name="MarqueeContainer" Panel.ZIndex="100" ClipToBounds="False" IsHitTestVisible="False" />
-                                        </Grid>
+                                        <Grid x:Name="MediaPlayerContainer" Grid.Row="0" ClipToBounds="False" Background="Transparent" MouseLeftButtonDown="MediaPlayerContainer_MouseLeftButtonDown" />
+                                        <!-- Marquee Container for overlay text -->
+                                        <Grid x:Name="MarqueeContainer" Grid.Row="0" Panel.ZIndex="100" ClipToBounds="False" IsHitTestVisible="False" />
                                         
                                         <!-- Control Sliders Panel -->
                                         <Grid Grid.Row="1" Background="#CC000000" Margin="5,0,5,5">

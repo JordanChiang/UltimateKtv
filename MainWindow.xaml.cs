@@ -391,7 +391,11 @@ namespace UltimateKtv
             };
             clockTimer.Tick += (s, e) =>
             {
-                DigitalClockText.Text = DateTime.Now.ToString("HH:mm");
+                string newTime = DateTime.Now.ToString("HH:mm");
+                if (DigitalClockText.Text != newTime)
+                {
+                    DigitalClockText.Text = newTime;
+                }
             };
             clockTimer.Start();
         }
@@ -1040,7 +1044,14 @@ namespace UltimateKtv
             }
 
             // Sort songs based on the selected sort method
-            _allSongs = SongDatas.ApplySongSorting(songs, (s, key) => s.GetType().GetProperty(key)?.GetValue(s, null));
+            _allSongs = SongDatas.ApplySongSorting(songs, (s, key) => key switch
+            {
+                "Song_PlayCount" or "PlayCount" => s.Song_PlayCount,
+                "Song_CreatDate" => s.Song_CreatDate,
+                "Song_WordCount" => s.Song_WordCount,
+                "Song_SongName" or "SongName" => s.SongName,
+                _ => null
+            });
 
             // Calculate pagination for songs
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + SongPageSize - 1) / SongPageSize;

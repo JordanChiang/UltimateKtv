@@ -63,8 +63,11 @@ namespace StyleSimulator
 
         public OutlinedTextBlock()
         {
-            this.UseLayoutRounding = true;
-            this.SnapsToDevicePixels = true;
+            this.UseLayoutRounding = false;
+            this.SnapsToDevicePixels = false;
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Ideal);
+            TextOptions.SetTextRenderingMode(this, TextRenderingMode.Auto);
+            RenderOptions.SetEdgeMode(this, EdgeMode.Unspecified);
             UpdatePen();
         }
 

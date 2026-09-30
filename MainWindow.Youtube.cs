@@ -44,7 +44,7 @@ namespace UltimateKtv
             }
         }
 
-        private void DownloadYoutubeVideo(SongDisplayItem song)
+        private async void DownloadYoutubeVideo(SongDisplayItem song)
         {
             // Always prevent adding duplicate Youtube songs to queue or waiting list
             if (_waitingList.Any(w => w.SongId == song.SongId) || _youtubeDownloadQueue.Any(q => q.SongId == song.SongId))
@@ -67,7 +67,12 @@ namespace UltimateKtv
                 filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filePath);
             }
 
-            if (File.Exists(filePath))
+            bool exists = await Task.Run(() =>
+            {
+                try { return File.Exists(filePath); } catch { return false; }
+            });
+
+            if (exists)
             {
                 DebugLog($"YouTube: File already exists in cache: {filePath}");
                 song.FilePath = filePath;

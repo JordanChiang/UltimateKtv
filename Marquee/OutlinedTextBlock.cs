@@ -44,8 +44,14 @@ namespace UltimateKtv
 
         public OutlinedTextBlock()
         {
-            this.UseLayoutRounding = true;
-            this.SnapsToDevicePixels = true;
+            // Disable layout rounding and device pixel snapping to prevent discrete 1px/2px jitter during animation
+            this.UseLayoutRounding = false;
+            this.SnapsToDevicePixels = false;
+
+            // Enable sub-pixel positioning and smooth edge rendering
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Ideal);
+            TextOptions.SetTextRenderingMode(this, TextRenderingMode.Auto);
+            RenderOptions.SetEdgeMode(this, EdgeMode.Unspecified);
         }
 
         public string Text
@@ -139,6 +145,7 @@ namespace UltimateKtv
                 var geometry = formattedText.BuildGeometry(origin);
                 if (geometry != null)
                 {
+                    geometry.Freeze();
                     // Draw outer stroke border behind the text (thickness * 2 because half is covered by the fill)
                     var pen = new Pen(Stroke, StrokeThickness * 2)
                     {
