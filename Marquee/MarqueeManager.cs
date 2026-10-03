@@ -33,6 +33,29 @@ namespace UltimateKtv
         public int HoldTimeMs { get; set; } = 500;
         public int DisplayDevice { get; set; }
         public bool IsSongPlayback { get; set; }
+
+        public MarqueeItem Clone()
+        {
+            return new MarqueeItem
+            {
+                Priority = this.Priority,
+                IsStatic = this.IsStatic,
+                Text = this.Text,
+                Color = this.Color,
+                FontFamily = this.FontFamily,
+                FontWeight = this.FontWeight,
+                FontSize = this.FontSize,
+                StrokeColor = this.StrokeColor,
+                StrokeThickness = this.StrokeThickness,
+                Position = this.Position,
+                TimeoutSeconds = this.TimeoutSeconds,
+                RepeatCount = this.RepeatCount,
+                Speed = this.Speed,
+                HoldTimeMs = this.HoldTimeMs,
+                DisplayDevice = this.DisplayDevice,
+                IsSongPlayback = this.IsSongPlayback
+            };
+        }
     }
 
     internal class DeviceMarqueeState
@@ -248,16 +271,16 @@ namespace UltimateKtv
         {
             if (item.IsSongPlayback)
             {
-                // This is the latest song playback marquee for the current song
-                state.PendingSongPlaybackItem = item;
-
                 // If a high-priority notification (like "點播: 歌名 - 歌手") is currently displaying on screen:
-                // Keep the notification showing; do NOT interrupt it.
-                // When the notification completes (3s timer), OnMainMarqueeCompleted will automatically start PendingSongPlaybackItem!
+                // Keep the notification showing; save this playback marquee to PendingSongPlaybackItem
+                // so it will automatically play as soon as the notification finishes.
                 if (state.ActiveMainItem != null && state.ActiveMainItem.Priority == MarqueePriority.High)
                 {
+                    state.PendingSongPlaybackItem = item;
                     return;
                 }
+
+                state.PendingSongPlaybackItem = item;
 
                 // Otherwise, play immediately
                 PlayMainItem(state, item);
@@ -266,11 +289,26 @@ namespace UltimateKtv
 
             if (item.Priority == MarqueePriority.High)
             {
-                // If a song playback marquee is currently running, save it as PendingSongPlaybackItem
-                // so it will resume/start after this notification finishes
+                // If a song playback marquee is currently running, interrupt it,
+                // deduct 1 repeat count ONLY if the current cycle has progressed > 50% (otherwise keep the current cycle count),
+                // and resume it after the high-priority notification finishes
                 if (state.ActiveMainItem != null && state.ActiveMainItem.IsSongPlayback)
                 {
-                    state.PendingSongPlaybackItem = state.ActiveMainItem;
+                    bool deductOne = state.ActiveMainControl != null && state.ActiveMainControl.CurrentCycleProgress >= 0.5;
+                    int remaining = state.ActiveMainControl != null
+                        ? state.ActiveMainControl.RemainingRepeatCount - (deductOne ? 1 : 0)
+                        : state.ActiveMainItem.RepeatCount - 1;
+
+                    if (remaining > 0)
+                    {
+                        var resumeItem = state.ActiveMainItem.Clone();
+                        resumeItem.RepeatCount = remaining;
+                        state.PendingSongPlaybackItem = resumeItem;
+                    }
+                    else
+                    {
+                        state.PendingSongPlaybackItem = null;
+                    }
                 }
 
                 // Show the high-priority notification immediately
@@ -348,6 +386,7 @@ namespace UltimateKtv
                 if (state.PendingSongPlaybackItem != null)
                 {
                     var pending = state.PendingSongPlaybackItem;
+                    state.PendingSongPlaybackItem = null;
                     PlayMainItem(state, pending);
                 }
             }
@@ -426,10 +465,20 @@ namespace UltimateKtv
             var containerWidth = container.ActualWidth > 0 ? container.ActualWidth : 404;
             var containerHeight = container.ActualHeight > 0 ? container.ActualHeight : 300;
 
+            // Scale font size and stroke thickness for the small preview video box
+            // (MediaPlayerContainer is ~404x300 while full TV screen is 1920x1080)
+            // Enlarged by 20% per user request: scale factor multiplied by 1.2
+            double scale = Math.Clamp(containerHeight / 1080.0 * 1.50, 0.34, 0.48);
+            marquee.TextFontSize = Math.Clamp(Math.Round(marquee.TextFontSize * scale), 20.0, 36.0);
+            if (marquee.StrokeThickness > 0)
+            {
+                marquee.StrokeThickness = Math.Clamp(Math.Round(marquee.StrokeThickness * scale, 1), 1.2, 3.6);
+            }
+
             if (IsCornerPosition(position))
             {
-                marquee.Width = 300;
-                marquee.Height = 80;
+                marquee.Width = Math.Min(containerWidth * 0.8, 240);
+                marquee.Height = Math.Max(44, (marquee.TextFontSize + marquee.StrokeThickness * 2) * 1.25);
 
                 switch (position)
                 {
@@ -458,7 +507,7 @@ namespace UltimateKtv
             else
             {
                 marquee.Width = containerWidth;
-                marquee.Height = Math.Max(60, (marquee.TextFontSize + marquee.StrokeThickness * 2) * 1.3);
+                marquee.Height = Math.Max(44, (marquee.TextFontSize + marquee.StrokeThickness * 2) * 1.25);
                 marquee.HorizontalAlignment = HorizontalAlignment.Stretch;
 
                 if (position == MarqueePosition.Top)

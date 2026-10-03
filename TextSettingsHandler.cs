@@ -181,9 +181,50 @@ namespace UltimateKtv
         #region Convenience Properties - UI Brushes
 
         /// <summary>
-        /// Gets the DataGrid column header background brush.
+        /// Gets the DataGrid column header background brush (橫向科技微漸層，支援自訂顏色演算).
         /// </summary>
-        public static Brush DataGridColumnHeaderBackground => ParseBrush(Settings.DataGridColumnHeaderBackgroundColor, new SolidColorBrush(Color.FromRgb(74, 74, 74)));
+        public static Brush DataGridColumnHeaderBackground
+        {
+            get
+            {
+                var hex = Settings.DataGridColumnHeaderBackgroundColor;
+                // 若為預設值 "#FF4A4A4A"、空值或未特別自訂，使用深藍科技卡片微光漸層 (#D1121826 -> #D91C263C)
+                if (string.IsNullOrWhiteSpace(hex) || string.Equals(hex, "#FF4A4A4A", StringComparison.OrdinalIgnoreCase))
+                {
+                    return CreateHeaderGradient(
+                        Color.FromArgb(0xD1, 0x12, 0x18, 0x26),
+                        Color.FromArgb(0xD9, 0x1C, 0x26, 0x3C));
+                }
+
+                // 若有自訂顏色，則依該基準色演算左至右微漸層 (起點略暗加強質感，終點略亮呈現微光)
+                var baseColor = ParseColor(hex, Color.FromRgb(74, 74, 74));
+                var startColor = Color.FromArgb(
+                    baseColor.A,
+                    (byte)(baseColor.R * 0.82),
+                    (byte)(baseColor.G * 0.82),
+                    (byte)(baseColor.B * 0.82));
+                var endColor = Color.FromArgb(
+                    baseColor.A,
+                    (byte)Math.Min(255, baseColor.R * 1.18 + 15),
+                    (byte)Math.Min(255, baseColor.G * 1.18 + 15),
+                    (byte)Math.Min(255, baseColor.B * 1.18 + 15));
+
+                return CreateHeaderGradient(startColor, endColor);
+            }
+        }
+
+        private static LinearGradientBrush CreateHeaderGradient(Color startColor, Color endColor)
+        {
+            var gradient = new LinearGradientBrush
+            {
+                StartPoint = new System.Windows.Point(0, 0),
+                EndPoint = new System.Windows.Point(1, 0)
+            };
+            gradient.GradientStops.Add(new GradientStop(startColor, 0.0));
+            gradient.GradientStops.Add(new GradientStop(endColor, 1.0));
+            gradient.Freeze();
+            return gradient;
+        }
 
         /// <summary>
         /// Gets the DataGrid column header foreground brush.
@@ -213,6 +254,76 @@ namespace UltimateKtv
 
         #endregion
 
+        #region Dynamic Cyber Accent Brushes & Colors
+
+        /// <summary>
+        /// Gets the resolved Accent/Glow color. If AccentColor is configured, uses it; otherwise derives from PrimaryColor.
+        /// </summary>
+        public static System.Windows.Media.Color ResolvedAccentColor
+        {
+            get
+            {
+                var primary = ParseColor(Settings.PrimaryColor, System.Windows.Media.Colors.Goldenrod);
+                if (!string.IsNullOrWhiteSpace(Settings.AccentColor))
+                {
+                    return ParseColor(Settings.AccentColor, primary);
+                }
+                return primary;
+            }
+        }
+
+        /// <summary>
+        /// Gets the resolved Accent Brush.
+        /// </summary>
+        public static SolidColorBrush AccentBrush
+        {
+            get
+            {
+                var brush = new SolidColorBrush(ResolvedAccentColor);
+                brush.Freeze();
+                return brush;
+            }
+        }
+
+        /// <summary>
+        /// Gets the resolved Accent Dim Brush (15% opacity for hover backgrounds).
+        /// </summary>
+        public static SolidColorBrush AccentDimBrush
+        {
+            get
+            {
+                var c = ResolvedAccentColor;
+                var dim = System.Windows.Media.Color.FromArgb((byte)(255 * 0.15), c.R, c.G, c.B);
+                var brush = new SolidColorBrush(dim);
+                brush.Freeze();
+                return brush;
+            }
+        }
+
+        /// <summary>
+        /// Gets the resolved Cyber Active Gradient Brush (40% alpha -> 25% darkened alpha).
+        /// </summary>
+        public static LinearGradientBrush CyberActiveGradientBrush
+        {
+            get
+            {
+                var c = ResolvedAccentColor;
+                var startColor = System.Windows.Media.Color.FromArgb(102, c.R, c.G, c.B); // ~40%
+                var endColor = System.Windows.Media.Color.FromArgb(64, (byte)(c.R * 0.55), (byte)(c.G * 0.55), (byte)(c.B * 0.55)); // ~25% darkened
+                var gradient = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(1, 1)
+                };
+                gradient.GradientStops.Add(new GradientStop(startColor, 0.0));
+                gradient.GradientStops.Add(new GradientStop(endColor, 1.0));
+                gradient.Freeze();
+                return gradient;
+            }
+        }
+
+        #endregion
+
         #region Apply Settings to XAML Resources
 
         /// <summary>
@@ -226,10 +337,27 @@ namespace UltimateKtv
             {
                 AppLogger.Log("Applying TextSettings to XAML resources...");
 
+                // Dynamic Cyber Accent Brushes & Colors
+                var accentColor = ResolvedAccentColor;
+                var accentBrush = AccentBrush;
+                var accentDimBrush = AccentDimBrush;
+                var cyberGradient = CyberActiveGradientBrush;
+
                 // Window-level resources (defined in MainWindow.xaml Resources section)
                 window.Resources["DataGridColumnHeaderBackground"] = DataGridColumnHeaderBackground;
                 window.Resources["DataGridColumnHeaderForeground"] = DataGridColumnHeaderForeground;
                 window.Resources["PrimaryBrush"] = PrimaryBrush;
+
+                // Window-level cyber accent resources
+                window.Resources["ColorAccentCyan"] = accentColor;
+                window.Resources["BrushAccentCyan"] = accentBrush;
+                window.Resources["BrushAccentCyanDim"] = accentDimBrush;
+                window.Resources["BrushCyberActiveGradient"] = cyberGradient;
+
+                // Dynamic UI Font Family
+                var uiFont = FontFamily;
+                window.FontFamily = uiFont;
+                window.Resources["UiFontFamily"] = uiFont;
 
                 // UI Font Size Overrides (must be double for WPF FontSize dependency properties)
                 window.Resources["FuncBtnFontSize"] = (double)Settings.FuncBtnFontSize;
@@ -242,6 +370,7 @@ namespace UltimateKtv
                 var appResources = System.Windows.Application.Current?.Resources;
                 if (appResources != null)
                 {
+                    appResources["UiFontFamily"] = uiFont;
                     appResources["FuncBtnFontSize"] = (double)Settings.FuncBtnFontSize;
                     appResources["BottomButtonFontSize"] = (double)Settings.BottomButtonFontSize;
                     appResources["WaitingListFontSize"] = (double)Settings.WaitingListFontSize;
@@ -252,6 +381,12 @@ namespace UltimateKtv
                     appResources["PrimaryHueLightBrush"] = PrimaryLightBrush;
                     appResources["PrimaryHueMidBrush"] = PrimaryBrush;
                     appResources["PrimaryHueMidForegroundBrush"] = Brushes.White;
+
+                    // Cyber Accent resources at application level
+                    appResources["ColorAccentCyan"] = accentColor;
+                    appResources["BrushAccentCyan"] = accentBrush;
+                    appResources["BrushAccentCyanDim"] = accentDimBrush;
+                    appResources["BrushCyberActiveGradient"] = cyberGradient;
                 }
 
                 // Singer grid button background (Window-level resource)
@@ -318,7 +453,7 @@ namespace UltimateKtv
         /// </summary>
         /// <param name="button">The button to style</param>
         /// <param name="fontSize">Optional font size (default is 18)</param>
-        public static void ApplyOutlinedButtonStyle(System.Windows.Controls.Button button, double fontSize = 18)
+        public static void ApplyOutlinedButtonStyle(System.Windows.Controls.Button button, double fontSize = 16)
         {
             var themeColor = PrimaryBrush;
             button.BorderBrush = themeColor;
@@ -326,7 +461,9 @@ namespace UltimateKtv
             button.Background = System.Windows.Media.Brushes.Transparent;
             button.BorderThickness = new System.Windows.Thickness(1);
             button.FontSize = fontSize;
-            button.Padding = new System.Windows.Thickness(8, 5, 8, 5);
+            button.Padding = new System.Windows.Thickness(10, 0, 10, 0);
+            button.VerticalContentAlignment = System.Windows.VerticalAlignment.Center;
+            button.HorizontalContentAlignment = System.Windows.HorizontalAlignment.Center;
         }
 
         #endregion

@@ -68,6 +68,9 @@ namespace UltimateKtv
         [Description("主要淺色顏色: Primary light color for hover/focus states and singer tags. Default is '#FFECB3'.")]
         public string PrimaryLightColor { get; set; } = "#FFECB3";
 
+        [Description("按鈕發光與選中強調色: Button glow and active highlight accent color. Default is empty (auto-derived from PrimaryColor).")]
+        public string AccentColor { get; set; } = "";
+
         #endregion
 
     }

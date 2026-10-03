@@ -55,6 +55,12 @@ namespace UltimateKtv
 
         private void PageUp_Click(object sender, RoutedEventArgs e)
         {
+            if (SearchStyleBtnPanel?.Visibility == Visibility.Visible || QuickResultsContainer?.Visibility == Visibility.Visible)
+            {
+                QuickPageUp_Click(sender, e);
+                return;
+            }
+
             if (SongListGrid.Visibility == Visibility.Visible || LanguageSongListGrid.Visibility == Visibility.Visible)
             {
                 // Handle song pagination
@@ -73,6 +79,12 @@ namespace UltimateKtv
 
         private void PageDown_Click(object sender, RoutedEventArgs e)
         {
+            if (SearchStyleBtnPanel?.Visibility == Visibility.Visible || QuickResultsContainer?.Visibility == Visibility.Visible)
+            {
+                QuickPageDown_Click(sender, e);
+                return;
+            }
+
             if (SongListGrid.Visibility == Visibility.Visible || LanguageSongListGrid.Visibility == Visibility.Visible)
             {
                 // Handle song pagination
@@ -124,7 +136,7 @@ namespace UltimateKtv
         private void LoadSongPage(int page)
         {
             // Use LINQ to get the correct subset of songs for the page
-            var songsForPage = _allSongs.Skip((page - 1) * SongPageSize).Take(SongPageSize).ToList();
+            var songsForPage = _allSongs.Skip((page - 1) * CurrentSongPageSize).Take(CurrentSongPageSize).ToList();
 
             // Set the ItemsSource of the correct DataGrid
             if (_isLanguageMode)
@@ -149,7 +161,7 @@ namespace UltimateKtv
             _currentSongsTitle = title;
             _isLanguageMode = false;
             _allSongs = songs;
-            _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + SongPageSize - 1) / SongPageSize;
+            _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;
             _currentSongPage = 1;
 
             LoadSongPage(_currentSongPage);
@@ -164,7 +176,7 @@ namespace UltimateKtv
             _currentSongsTitle = title;
             _isLanguageMode = true;
             _allSongs = songs;
-            _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + SongPageSize - 1) / SongPageSize;
+            _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;
             _currentSongPage = 1;
 
             LoadSongPage(_currentSongPage);
@@ -290,7 +302,7 @@ namespace UltimateKtv
             });
 
             // Calculate pagination for songs
-            _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + SongPageSize - 1) / SongPageSize;
+            _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;
             _currentSongPage = 1;
 
             // Load first page of songs

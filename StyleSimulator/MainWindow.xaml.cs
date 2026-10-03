@@ -378,6 +378,14 @@ namespace StyleSimulator
             TxtPrimaryLightColor.Text = _model.PrimaryLightColor;
             TxtDataGridHeaderBg.Text = _model.DataGridHeaderBgColor;
 
+            bool isAutoAccent = string.IsNullOrWhiteSpace(_model.AccentColor);
+            if (ChkAutoAccentColor != null) ChkAutoAccentColor.IsChecked = isAutoAccent;
+            if (TxtAccentColor != null)
+            {
+                TxtAccentColor.IsEnabled = !isAutoAccent;
+                TxtAccentColor.Text = isAutoAccent ? _model.PrimaryColor : _model.AccentColor;
+            }
+
             // settings.json - 點歌網址 (內部 IP, port)
             string localIp = !string.IsNullOrWhiteSpace(_model.HttpServerIp) && _model.HttpServerIp != "0.0.0.0"
                 ? _model.HttpServerIp
@@ -531,6 +539,10 @@ namespace StyleSimulator
             _model.PrimaryColor = TxtPrimaryColor.Text.Trim();
             _model.PrimaryLightColor = TxtPrimaryLightColor.Text.Trim();
             _model.DataGridHeaderBgColor = TxtDataGridHeaderBg.Text.Trim();
+            if (TxtAccentColor != null)
+            {
+                _model.AccentColor = (ChkAutoAccentColor?.IsChecked == true) ? "" : TxtAccentColor.Text.Trim();
+            }
 
             if (!string.IsNullOrWhiteSpace(TxtMockLanIp.Text))
             {
@@ -584,6 +596,7 @@ namespace StyleSimulator
             if (RectDataGridHeaderFg != null) RectDataGridHeaderFg.Background = ParseBrush(TxtDataGridHeaderFg.Text, Brushes.White);
 
             if (RectPrimaryColor != null) RectPrimaryColor.Background = ParseBrush(TxtPrimaryColor.Text, Brushes.Orange);
+            if (RectAccentColor != null) RectAccentColor.Background = ParseBrush(TxtAccentColor.Text, Brushes.Cyan);
             if (RectPrimaryLightColor != null) RectPrimaryLightColor.Background = ParseBrush(TxtPrimaryLightColor.Text, Brushes.LightYellow);
             if (RectDataGridHeaderBg != null) RectDataGridHeaderBg.Background = ParseBrush(TxtDataGridHeaderBg.Text, Brushes.DarkSlateGray);
         }
@@ -593,11 +606,63 @@ namespace StyleSimulator
             var uiFont = (CboUiFontFamily.SelectedItem as FontDisplayItem)?.FontFamily ?? new FontFamily("Microsoft JhengHei");
             var primaryBrush = ParseBrush(TxtPrimaryColor.Text, Brushes.Indigo);
             var primaryLightBrush = ParseBrush(TxtPrimaryLightColor.Text, Brushes.LightYellow);
-            var gridHeaderBgBrush = ParseBrush(TxtDataGridHeaderBg.Text, Brushes.DarkSlateGray);
+            var headerBgHex = TxtDataGridHeaderBg.Text?.Trim();
+            Brush gridHeaderBgBrush;
+            if (string.IsNullOrWhiteSpace(headerBgHex) || string.Equals(headerBgHex, "#FF4A4A4A", StringComparison.OrdinalIgnoreCase))
+            {
+                var grad = new LinearGradientBrush
+                {
+                    StartPoint = new Point(0, 0),
+                    EndPoint = new Point(1, 0),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(Color.FromArgb(0xD1, 0x12, 0x18, 0x26), 0.0),
+                        new GradientStop(Color.FromArgb(0xD9, 0x1C, 0x26, 0x3C), 1.0)
+                    }
+                };
+                grad.Freeze();
+                gridHeaderBgBrush = grad;
+            }
+            else
+            {
+                var baseCol = ParseColor(headerBgHex, Color.FromRgb(74, 74, 74));
+                var grad = new LinearGradientBrush
+                {
+                    StartPoint = new Point(0, 0),
+                    EndPoint = new Point(1, 0),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(Color.FromArgb(baseCol.A, (byte)(baseCol.R * 0.82), (byte)(baseCol.G * 0.82), (byte)(baseCol.B * 0.82)), 0.0),
+                        new GradientStop(Color.FromArgb(baseCol.A, (byte)Math.Min(255, baseCol.R * 1.18 + 15), (byte)Math.Min(255, baseCol.G * 1.18 + 15), (byte)Math.Min(255, baseCol.B * 1.18 + 15)), 1.0)
+                    }
+                };
+                grad.Freeze();
+                gridHeaderBgBrush = grad;
+            }
             var gridHeaderFgBrush = ParseBrush(TxtDataGridHeaderFg.Text, Brushes.White);
             var announcementFgBrush = ParseBrush(TxtAnnouncementFg.Text, Brushes.White);
             var staticTextFgBrush = ParseBrush(TxtStaticTextFg.Text, Brushes.White);
             var webHostInfoFgBrush = ParseBrush(TxtWebHostInfoFg.Text, Brushes.White);
+
+            Color primaryColor = ParseColor(TxtPrimaryColor.Text, Color.FromRgb(0, 240, 255));
+            Color accentColor = ParseColor(TxtAccentColor?.Text, primaryColor);
+            if (accentColor.A == 0) accentColor = primaryColor;
+
+            var accentBrush = new SolidColorBrush(accentColor);
+            var accentDimBrush = new SolidColorBrush(Color.FromArgb(38, accentColor.R, accentColor.G, accentColor.B));
+            var cyberActiveGradient = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(102, accentColor.R, accentColor.G, accentColor.B), 0.0),
+                    new GradientStop(Color.FromArgb(64, (byte)(accentColor.R * 0.55), (byte)(accentColor.G * 0.55), (byte)(accentColor.B * 0.55)), 1.0)
+                }
+            };
+            accentBrush.Freeze();
+            accentDimBrush.Freeze();
+            cyberActiveGradient.Freeze();
 
             // Update Window Resource Dictionary for DynamicResource bindings
             this.Resources["PrimaryBrush"] = primaryBrush;
@@ -607,6 +672,16 @@ namespace StyleSimulator
             this.Resources["AnnouncementFgBrush"] = announcementFgBrush;
             this.Resources["StaticTextFgBrush"] = staticTextFgBrush;
             this.Resources["WebHostInfoFgBrush"] = webHostInfoFgBrush;
+            this.Resources["ColorAccentCyan"] = accentColor;
+            this.Resources["BrushAccentCyan"] = accentBrush;
+            this.Resources["BrushAccentCyanDim"] = accentDimBrush;
+            this.Resources["BrushCyberActiveGradient"] = cyberActiveGradient;
+            this.Resources["UiFontFamily"] = uiFont;
+            var appRes = Application.Current?.Resources;
+            if (appRes != null)
+            {
+                appRes["UiFontFamily"] = uiFont;
+            }
 
             // 13 Song List rows (matching updated screenshot)
             TextBlock?[] songRowNames = {
@@ -657,7 +732,9 @@ namespace StyleSimulator
             if (TxtWaitHeaderCol1 != null) { TxtWaitHeaderCol1.FontFamily = uiFont; TxtWaitHeaderCol1.FontSize = SldWaitingListFontSize.Value; TxtWaitHeaderCol1.Foreground = gridHeaderFgBrush; }
             if (TxtWaitHeaderCol2 != null) { TxtWaitHeaderCol2.FontFamily = uiFont; TxtWaitHeaderCol2.FontSize = SldWaitingListFontSize.Value; TxtWaitHeaderCol2.Foreground = gridHeaderFgBrush; }
 
-            // 8 Top Function Buttons (FuncBtn5 "新進" is active with PrimaryColor, all outlined buttons use PrimaryColor)
+            var cyberBg = (Brush)FindResource("BrushBgSecondary");
+
+            // 8 Top Function Buttons (FuncBtn5 "新進" is active with CyberActiveGradient, all outlined buttons use PrimaryColor)
             Button?[] funcBtns = { FuncBtn1, FuncBtn2, FuncBtn3, FuncBtn4, FuncBtn5, FuncBtn6, FuncBtn7, FuncBtn8 };
             foreach (var b in funcBtns)
             {
@@ -667,25 +744,27 @@ namespace StyleSimulator
                     b.FontSize = SldFuncBtnFontSize.Value;
                     if (b == FuncBtn5)
                     {
-                        // Active Mode Button: uses PrimaryColor background & White text
-                        b.Background = primaryBrush;
+                        // Active Mode Button: uses CyberActiveGradient background & White text with accent border
+                        b.Background = cyberActiveGradient;
                         b.Foreground = Brushes.White;
-                        b.BorderBrush = primaryBrush;
+                        b.BorderBrush = accentBrush;
                         b.BorderThickness = new Thickness(1.5);
                         b.FontWeight = FontWeights.Bold;
+                        b.Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = accentColor, BlurRadius = 16, ShadowDepth = 0, Opacity = 0.6 };
                     }
                     else
                     {
-                        b.Background = Brushes.Transparent;
+                        b.Background = cyberBg;
                         b.Foreground = primaryBrush;
                         b.BorderBrush = primaryBrush;
                         b.BorderThickness = new Thickness(1);
-                        b.FontWeight = FontWeights.Normal;
+                        b.FontWeight = FontWeights.SemiBold;
+                        b.Effect = null;
                     }
                 }
             }
 
-            // 5 Category Filter Buttons (FilterBtn1 "國語-單曲" is active with PrimaryColor & White text, all outlined with PrimaryColor)
+            // 5 Category Filter Buttons (FilterBtn1 "國語-單曲" is active with CyberActiveGradient & White text)
             Button?[] filterBtns = { FilterBtn1, FilterBtn2, FilterBtn3, FilterBtn4, FilterBtn5 };
             foreach (var b in filterBtns)
             {
@@ -695,20 +774,22 @@ namespace StyleSimulator
                     b.FontSize = SldFuncBtnFontSize.Value;
                     if (b == FilterBtn1)
                     {
-                        // Selected Category Tab: uses PrimaryColor background & White text
-                        b.Background = primaryBrush;
+                        // Selected Category Tab: uses CyberActiveGradient background & White text with accent border
+                        b.Background = cyberActiveGradient;
                         b.Foreground = Brushes.White;
-                        b.BorderBrush = primaryBrush;
+                        b.BorderBrush = accentBrush;
                         b.BorderThickness = new Thickness(1.5);
                         b.FontWeight = FontWeights.Bold;
+                        b.Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = accentColor, BlurRadius = 16, ShadowDepth = 0, Opacity = 0.6 };
                     }
                     else
                     {
-                        b.Background = Brushes.Transparent;
+                        b.Background = cyberBg;
                         b.Foreground = primaryBrush;
                         b.BorderBrush = primaryBrush;
                         b.BorderThickness = new Thickness(1);
-                        b.FontWeight = FontWeights.Normal;
+                        b.FontWeight = FontWeights.SemiBold;
+                        b.Effect = null;
                     }
                 }
             }
@@ -724,37 +805,59 @@ namespace StyleSimulator
                     if (b == BtnMusic)
                     {
                         // Active toggle: only "伴唱" is pressed
-                        b.Background = primaryBrush;
+                        b.Background = cyberActiveGradient;
                         b.Foreground = Brushes.White;
-                        b.BorderBrush = primaryBrush;
+                        b.BorderBrush = accentBrush;
                         b.BorderThickness = new Thickness(1.5);
                         b.FontWeight = FontWeights.Bold;
+                        b.Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = accentColor, BlurRadius = 16, ShadowDepth = 0, Opacity = 0.6 };
                     }
                     else
                     {
-                        b.Background = Brushes.Transparent;
+                        b.Background = cyberBg;
                         b.Foreground = primaryBrush;
                         b.BorderBrush = primaryBrush;
                         b.BorderThickness = new Thickness(1);
-                        b.FontWeight = FontWeights.Normal;
+                        b.FontWeight = FontWeights.SemiBold;
+                        b.Effect = null;
                     }
                 }
             }
 
-            // Skip Song Button: Prominent Action Button using PrimaryColor
+            // Skip Song Button: Matches LargePlayerControlButtonStyle (uses primaryBrush and textsettings.json)
             if (BtnSkipSong != null)
             {
                 BtnSkipSong.FontFamily = uiFont;
                 BtnSkipSong.FontSize = SldBottomButtonFontSize.Value;
-                BtnSkipSong.Background = Brushes.Transparent;
+                BtnSkipSong.Background = cyberBg;
                 BtnSkipSong.Foreground = primaryBrush;
                 BtnSkipSong.BorderBrush = primaryBrush;
-                BtnSkipSong.BorderThickness = new Thickness(2);
-                BtnSkipSong.FontWeight = FontWeights.Bold;
+                BtnSkipSong.BorderThickness = new Thickness(1);
+                BtnSkipSong.FontWeight = FontWeights.SemiBold;
+                BtnSkipSong.Effect = null;
             }
 
-            if (BtnWaitPageUp != null) { BtnWaitPageUp.FontFamily = uiFont; BtnWaitPageUp.BorderBrush = primaryBrush; BtnWaitPageUp.Foreground = primaryBrush; }
-            if (BtnWaitPageDown != null) { BtnWaitPageDown.FontFamily = uiFont; BtnWaitPageDown.BorderBrush = primaryBrush; BtnWaitPageDown.Foreground = primaryBrush; }
+            // Waiting List Pagination Buttons: Font size 26
+            if (BtnWaitPageUp != null)
+            {
+                BtnWaitPageUp.FontFamily = uiFont;
+                BtnWaitPageUp.FontSize = 26;
+                BtnWaitPageUp.BorderBrush = primaryBrush;
+                BtnWaitPageUp.Foreground = primaryBrush;
+                BtnWaitPageUp.Background = cyberBg;
+            }
+            if (BtnWaitPageDown != null)
+            {
+                BtnWaitPageDown.FontFamily = uiFont;
+                BtnWaitPageDown.FontSize = 26;
+                BtnWaitPageDown.BorderBrush = primaryBrush;
+                BtnWaitPageDown.Foreground = primaryBrush;
+                BtnWaitPageDown.Background = cyberBg;
+            }
+
+            // Bottom Right Pagination Buttons: Center text alignment
+            if (BtnPageUp != null) { BtnPageUp.Padding = new Thickness(0); BtnPageUp.HorizontalContentAlignment = HorizontalAlignment.Center; BtnPageUp.VerticalContentAlignment = VerticalAlignment.Center; }
+            if (BtnPageDown != null) { BtnPageDown.Padding = new Thickness(0); BtnPageDown.HorizontalContentAlignment = HorizontalAlignment.Center; BtnPageDown.VerticalContentAlignment = VerticalAlignment.Center; }
 
             if (IconLock != null) IconLock.Foreground = primaryBrush;
             if (IconMenu != null) IconMenu.Foreground = primaryBrush;
@@ -836,6 +939,19 @@ namespace StyleSimulator
             }
         }
 
+        private Color ParseColor(string? colorStr, Color fallback)
+        {
+            if (string.IsNullOrWhiteSpace(colorStr)) return fallback;
+            try
+            {
+                return (Color)ColorConverter.ConvertFromString(colorStr.Trim());
+            }
+            catch
+            {
+                return fallback;
+            }
+        }
+
         private FontWeight ParseFontWeight(object? item)
         {
             if (item is FontWeightDisplayItem fwItem) return fwItem.FontWeight;
@@ -859,6 +975,11 @@ namespace StyleSimulator
         private void TxtPrimaryColor_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_isInitializing) return;
+
+            if (ChkAutoAccentColor != null && ChkAutoAccentColor.IsChecked == true && TxtAccentColor != null)
+            {
+                TxtAccentColor.Text = TxtPrimaryColor.Text.Trim();
+            }
 
             if (ChkAutoHarmonize != null && ChkAutoHarmonize.IsChecked == true && !_isHarmonizing)
             {
@@ -903,6 +1024,10 @@ namespace StyleSimulator
                 if (TxtPrimaryLightColor != null) TxtPrimaryLightColor.Text = ColorToHex(lightColor);
                 if (TxtDataGridHeaderBg != null) TxtDataGridHeaderBg.Text = ColorToHex(gridHeaderBgColor);
                 if (TxtStaticTextFg != null) TxtStaticTextFg.Text = ColorToHex(staticTextFgColor);
+                if (ChkAutoAccentColor != null && ChkAutoAccentColor.IsChecked == true && TxtAccentColor != null)
+                {
+                    TxtAccentColor.Text = primaryHex;
+                }
             }
             finally
             {
@@ -1113,6 +1238,28 @@ namespace StyleSimulator
         private void RectDataGridHeaderFg_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtDataGridHeaderFg);
 
         private void RectPrimaryColor_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtPrimaryColor);
+        private void RectAccentColor_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (ChkAutoAccentColor.IsChecked == true)
+            {
+                ChkAutoAccentColor.IsChecked = false;
+                TxtAccentColor.IsEnabled = true;
+            }
+            PickColor(TxtAccentColor);
+        }
+        private void ChkAutoAccentColor_Click(object sender, RoutedEventArgs e)
+        {
+            if (ChkAutoAccentColor.IsChecked == true)
+            {
+                TxtAccentColor.IsEnabled = false;
+                TxtAccentColor.Text = TxtPrimaryColor.Text.Trim();
+            }
+            else
+            {
+                TxtAccentColor.IsEnabled = true;
+            }
+            ParamChanged(sender, e);
+        }
         private void RectPrimaryLightColor_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtPrimaryLightColor);
         private void RectDataGridHeaderBg_MouseDown(object sender, MouseButtonEventArgs e) => PickColor(TxtDataGridHeaderBg);
         #endregion
@@ -1147,6 +1294,9 @@ namespace StyleSimulator
         {
             if (string.IsNullOrEmpty(template)) return "";
 
+            string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放" && orderedBy != "網路點歌") ? orderedBy : "";
+            string displayNextOrderedBy = (!string.IsNullOrWhiteSpace(nextOrderedBy) && nextOrderedBy != "本機" && nextOrderedBy != "隨機播放" && nextOrderedBy != "網路點歌") ? nextOrderedBy : "";
+
             return template
                 .Replace("{0}", song ?? "")
                 .Replace("{1}", singer ?? "")
@@ -1154,8 +1304,8 @@ namespace StyleSimulator
                 .Replace("{3}", nextSinger ?? "")
                 .Replace("{4}", lanIp ?? "")
                 .Replace("{5}", wanIp ?? "")
-                .Replace("{6}", orderedBy ?? "")
-                .Replace("{7}", nextOrderedBy ?? "");
+                .Replace("{6}", displayOrderedBy)
+                .Replace("{7}", displayNextOrderedBy);
         }
         #endregion
 
@@ -1588,26 +1738,17 @@ namespace StyleSimulator
             MessageBox.Show($"找不到主題範本資源或檔案:\n{tag}", "主題載入失敗", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
+        // Windows API 對話框 ClientGuid：讓 Windows Shell 自動獨立記憶此模擬器上次瀏覽的資料夾與偏好
+        private static readonly Guid StyleSimulatorFileDialogGuid = new Guid("8A4C6251-5D2B-4BC2-9118-E9E67B92C23C");
+
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
         {
             bool isSettings = CboConfigFileType.SelectedIndex == 0;
             string expectedFileName = isSettings ? "settings.json" : "textsettings.json";
-            string currentPath = isSettings ? StyleSettingsModel.SettingsPath : StyleSettingsModel.TextSettingsPath;
+            string otherFileName = isSettings ? "textsettings.json" : "settings.json";
 
-            string initialDir = AppDomain.CurrentDomain.BaseDirectory;
-            if (File.Exists(currentPath))
-            {
-                try
-                {
-                    string? dir = Path.GetDirectoryName(currentPath);
-                    if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
-                    {
-                        initialDir = dir;
-                    }
-                }
-                catch { }
-            }
-
+            // 使用 Windows API 內建對話框機制：
+            // 不指定 InitialDirectory，並指派 ClientGuid，Windows 會自動記住上次使用者瀏覽開啟的資料夾
             var dlg = new OpenFileDialog
             {
                 Filter = isSettings
@@ -1615,7 +1756,8 @@ namespace StyleSimulator
                     : "UI設定檔 (textsettings.json)|textsettings.json",
                 Title = isSettings ? "選擇 settings.json (跑馬燈/提示)" : "選擇 textsettings.json (UI介面)",
                 FileName = expectedFileName,
-                InitialDirectory = initialDir
+                ClientGuid = StyleSimulatorFileDialogGuid,
+                RestoreDirectory = false
             };
 
             if (dlg.ShowDialog() == true)
@@ -1626,6 +1768,29 @@ namespace StyleSimulator
                     MessageBox.Show($"目前模式為【{(isSettings ? "跑馬燈/提示" : "UI介面")}】，僅能載入「{expectedFileName}」！\n\n您選取的檔案為: {selectedFileName}\n為避免設定內容不相容或儲存時覆寫損壞，載入已取消。",
                                     "檔案名稱不符合", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
+                }
+
+                // 若同一目錄下也存在另一份設定檔，且目前另一檔案仍指向模擬器自身預設目錄，自動一併對齊載入
+                string? selectedDir = Path.GetDirectoryName(dlg.FileName);
+                if (!string.IsNullOrEmpty(selectedDir))
+                {
+                    string otherFilePath = Path.Combine(selectedDir, otherFileName);
+                    if (File.Exists(otherFilePath))
+                    {
+                        string otherCurrentPath = isSettings ? StyleSettingsModel.TextSettingsPath : StyleSettingsModel.SettingsPath;
+                        string myBaseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
+                        if (otherCurrentPath.StartsWith(myBaseDir, StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (isSettings)
+                            {
+                                _model.LoadTextSettingsJson(otherFilePath);
+                            }
+                            else
+                            {
+                                _model.LoadSettingsJson(otherFilePath);
+                            }
+                        }
+                    }
                 }
 
                 if (isSettings)

@@ -432,7 +432,7 @@ namespace UltimateKtv
                         AppLogger.LogError("Error stopping recording in PlayNextSongFromWaitingList (idle)", ex);
                     }
 
-                    SetPlayerControlsEnabled(false); // Nothing to control
+                    SetPlayerControlsEnabled(true); // Keep controls interactive when idle
                     PauseBtn.Content = "暫停"; // Reset pause button text
                     
                     // Clear pre-loaded cache when list is empty
@@ -454,6 +454,7 @@ namespace UltimateKtv
                     AppLogger.Log($"Video file not found: {firstSong.FilePath}. Removing and trying next.");
                     _waitingList!.Remove(firstSong);
                     _isTransitioningSong = false; // Release lock before letting Update trigger a new attempt.
+                    SetPlayerControlsEnabled(true);
                     ProcessPendingSongs(); // Check if any songs were added while we were trying this one
                     UpdateWaitingListDisplay(); // This will re-trigger this method if more songs exist.
                     return;
@@ -806,9 +807,6 @@ namespace UltimateKtv
                 Enums.MarqueeDisplayDevice.PlayerScreen
             );
 
-            // If a song is currently playing, refresh the playback marquee to reflect the latest next song info (e.g. MarqueeTextString1)
-            RefreshCurrentPlaybackMarquee();
-
             UpdateWaitingListDisplay();
         }
 
@@ -860,11 +858,15 @@ namespace UltimateKtv
             var okButton = new Button
             {
                 Content = "確定",
+                Width = 140,
+                Height = 48,
+                FontSize = 20,
+                FontWeight = FontWeights.SemiBold,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Command = DialogHost.CloseDialogCommand,
                 CommandParameter = true
             };
-            TextSettingsHandler.ApplyOutlinedButtonStyle(okButton, 16);
+            TextSettingsHandler.ApplyOutlinedButtonStyle(okButton, 20);
             dialogContent.Children.Add(okButton);
 
             // Show dialog

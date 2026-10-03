@@ -642,12 +642,24 @@ namespace UltimateKtv
             }
         }
 
+        /// <summary>
+        /// 判斷目前是否有歌曲正在播放或處於載入播放流程中（含暫停中）
+        /// </summary>
+        private bool IsSongPlaybackActive => mediaUriElement?.Source != null || _isPlayingFromWaitingList || _isRandomSongPlaying;
+
         public void SkipSong_Click(object sender, RoutedEventArgs e)
         {
             // The button's IsEnabled state, controlled by the transition lock,
             // now serves as the primary guard against spamming.
             try
             {
+                // 只有在歌曲播放（或載入中）時才真正作動
+                if (!IsSongPlaybackActive)
+                {
+                    DebugLog("SkipSong_Click: No song is currently playing, ignoring.");
+                    return;
+                }
+
                 SaveCurrentSongVolume();
                 AppLogger.Log("User action: Skip song button clicked");
                 DebugLog("SkipSong_Click: Skip song button clicked");
@@ -683,6 +695,13 @@ namespace UltimateKtv
             // Pause/Resume toggle
             try
             {
+                // 只有在歌曲播放（或載入中）時才真正作動
+                if (!IsSongPlaybackActive)
+                {
+                    DebugLog("Pause_Click: No song is currently playing, ignoring.");
+                    return;
+                }
+
                 if (mediaUriElement.IsPlaying)
                 {
                     AppLogger.Log("User action: Pause button clicked");
@@ -720,6 +739,13 @@ namespace UltimateKtv
             {
                 // 點1下後則取消循環播放變成原來的"重播"功能
                 SetLoopPlay(false);
+                return;
+            }
+
+            // 只有在歌曲播放或有正在/剛播放歌曲時才真正作動
+            if (!IsSongPlaybackActive && string.IsNullOrEmpty(PlayingFilePath))
+            {
+                DebugLog("Repeat_Click: No song is currently playing, ignoring.");
                 return;
             }
 
@@ -1043,6 +1069,13 @@ namespace UltimateKtv
         {
             DebugLog($"VocalBtn_Click: audio track count={mediaUriElement.AudioStreams?.Count ?? 0} _isVocalTrackFixed={_isVocalTrackFixed}");
 
+            // 只有在歌曲播放（或載入中）時才真正作動（若處於固定聲道狀態則允許點擊解除）
+            if (!IsSongPlaybackActive && !_isVocalTrackFixed)
+            {
+                DebugLog("VocalBtn_Click: No song is currently playing, ignoring.");
+                return;
+            }
+
             // If track is fixed, a normal click on the vocal button will disable the fixed state.
             if (_isVocalTrackFixed)
             {
@@ -1148,6 +1181,13 @@ namespace UltimateKtv
 
         public void MusicBtn_Click(object sender, RoutedEventArgs e)
         {
+            // 只有在歌曲播放（或載入中）時才真正作動（若處於固定聲道狀態則允許點擊解除）
+            if (!IsSongPlaybackActive && !_isVocalTrackFixed)
+            {
+                DebugLog("MusicBtn_Click: No song is currently playing, ignoring.");
+                return;
+            }
+
             // For YouTube songs, simply set AudioChannel to 3
             if (IsPlayingYoutube && mediaUriElement != null)
             {
@@ -1323,17 +1363,18 @@ namespace UltimateKtv
                 // Create the dialog content with reduced padding
                 var dialogBorder = new Border
                 {
-                    Background = new SolidColorBrush(Colors.White),
-                    BorderBrush = new SolidColorBrush(Colors.Gray),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(5),
-                    Height = 44, // Match button height + margins
+                    Background = new SolidColorBrush(Color.FromRgb(0x12, 0x18, 0x26)),
+                    BorderBrush = TextSettingsHandler.PrimaryBrush,
+                    BorderThickness = new Thickness(1.5),
+                    CornerRadius = new CornerRadius(8),
+                    Height = 60,
+                    Padding = new Thickness(8, 6, 8, 6),
                     Effect = new System.Windows.Media.Effects.DropShadowEffect
                     {
                         Color = Colors.Black,
                         Direction = 315,
                         ShadowDepth = 5,
-                        Opacity = 0.3
+                        Opacity = 0.5
                     }
                 };
 
@@ -1341,32 +1382,34 @@ namespace UltimateKtv
                 var buttonPanel = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
-                    Height = 40,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(4) // Small margin for the buttons
+                    Margin = new Thickness(0)
                 };
 
                 var setAsMusicButton = new Button
                 {
                     Content = "設定此聲道為伴唱",
+                    Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(setAsMusicButton, 18);
+                TextSettingsHandler.ApplyOutlinedButtonStyle(setAsMusicButton, 16);
 
                 var setFixeTrackButton = new Button
                 {
                     Content = "固定此聲道播放",
+                    Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(setFixeTrackButton, 18);
+                TextSettingsHandler.ApplyOutlinedButtonStyle(setFixeTrackButton, 16);
 
                 var cancelButton = new Button
                 {
                     Content = "取消",
+                    Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 18);
+                TextSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 16);
 
                 buttonPanel.Children.Add(setAsMusicButton);
                 buttonPanel.Children.Add(cancelButton);
@@ -1604,17 +1647,18 @@ namespace UltimateKtv
                 // Create the dialog content with styling matching Vocal dialog
                 var dialogBorder = new Border
                 {
-                    Background = new SolidColorBrush(Colors.White),
-                    BorderBrush = new SolidColorBrush(Colors.Gray),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(5),
-                    Height = 44,
+                    Background = new SolidColorBrush(Color.FromRgb(0x12, 0x18, 0x26)),
+                    BorderBrush = TextSettingsHandler.PrimaryBrush,
+                    BorderThickness = new Thickness(1.5),
+                    CornerRadius = new CornerRadius(8),
+                    Height = 60,
+                    Padding = new Thickness(8, 6, 8, 6),
                     Effect = new System.Windows.Media.Effects.DropShadowEffect
                     {
                         Color = Colors.Black,
                         Direction = 315,
                         ShadowDepth = 5,
-                        Opacity = 0.3
+                        Opacity = 0.5
                     }
                 };
 
@@ -1622,25 +1666,26 @@ namespace UltimateKtv
                 var buttonPanel = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
-                    Height = 40,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(4)
+                    Margin = new Thickness(0)
                 };
 
                 var loopPlayButton = new Button
                 {
                     Content = _isLoopPlay ? "取消循環" : "循環播放",
+                    Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(loopPlayButton, 18);
+                TextSettingsHandler.ApplyOutlinedButtonStyle(loopPlayButton, 16);
 
                 var cancelButton = new Button
                 {
                     Content = "取消",
+                    Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 18);
+                TextSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 16);
 
                 buttonPanel.Children.Add(loopPlayButton);
                 buttonPanel.Children.Add(cancelButton);

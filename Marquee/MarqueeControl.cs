@@ -23,6 +23,9 @@ namespace UltimateKtv
         private int _currentRepeatCount = 0;
         private bool _isAnimating = false;
 
+        private DateTime _cycleStartTime;
+        private TimeSpan _cycleDuration;
+
         // Public properties
         public string MarqueeText { get; set; } = string.Empty;
         public Brush TextColor { get; set; } = Brushes.White;
@@ -38,6 +41,23 @@ namespace UltimateKtv
         public int DesiredDisplayDevice { get; set; } = 0;
         public bool IsStaticMode { get; set; } = false;
         public int TimeoutSeconds { get; set; } = 0;
+        public int RemainingRepeatCount => Math.Max(0, RepeatCount - _currentRepeatCount);
+
+        /// <summary>
+        /// Gets the scroll progress of the current cycle (0.0 to 1.0).
+        /// Returns 1.0 if currently in the hold interval after completing a cycle.
+        /// </summary>
+        public double CurrentCycleProgress
+        {
+            get
+            {
+                if (!_isAnimating) return 0.0;
+                if (_holdTimer != null) return 1.0;
+                if (_cycleDuration.TotalMilliseconds <= 0) return 0.0;
+                double elapsed = (DateTime.UtcNow - _cycleStartTime).TotalMilliseconds;
+                return Math.Clamp(elapsed / _cycleDuration.TotalMilliseconds, 0.0, 1.0);
+            }
+        }
 
         public event EventHandler? MarqueeCompleted;
 
@@ -208,6 +228,9 @@ namespace UltimateKtv
             double distance = startX - endX;
             double speed = Math.Max(1.0, Speed);
             var duration = TimeSpan.FromSeconds(distance / speed);
+
+            _cycleStartTime = DateTime.UtcNow;
+            _cycleDuration = duration;
 
             var anim = new DoubleAnimation
             {

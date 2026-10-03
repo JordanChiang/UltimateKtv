@@ -15,7 +15,10 @@
         <!-- Dynamic Theme Brushes for Live KTV Preview -->
         <SolidColorBrush x:Key="PrimaryBrush" Color="#FFC107" />
         <SolidColorBrush x:Key="PrimaryLightBrush" Color="#FFECB3" />
-        <SolidColorBrush x:Key="DataGridHeaderBgBrush" Color="#FF4A4A4A" />
+        <LinearGradientBrush x:Key="DataGridHeaderBgBrush" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#D1121826" Offset="0.0"/>
+            <GradientStop Color="#D91C263C" Offset="1.0"/>
+        </LinearGradientBrush>
         <SolidColorBrush x:Key="DataGridHeaderFgBrush" Color="#FFFFFFFF" />
         <SolidColorBrush x:Key="AnnouncementFgBrush" Color="#FFFFFF" />
         <SolidColorBrush x:Key="StaticTextFgBrush" Color="#FFFFFF" />
@@ -172,32 +175,95 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        <Style TargetType="Button" x:Key="KtvOutlinedButton">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
-            <Setter Property="BorderThickness" Value="1.5" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Cursor" Value="Hand" />
+        <!-- Style for the top function buttons (Matches MainWindow.xaml) -->
+        <Style x:Key="FunctionButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
+            <Setter Property="FontSize" Value="32" />
+            <Setter Property="Height" Value="50" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="2" />
-            <Setter Property="Template">
+            <Setter Property="Margin" Value="4,0,4,0" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+        </Style>
+
+        <!-- Style for player control buttons (Matches MainWindow.xaml) -->
+        <Style x:Key="PlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
+            <Setter Property="FontSize" Value="36" />
+            <Setter Property="Height" Value="50" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+        </Style>
+
+        <!-- Style for submenu player control buttons (人聲, 重播 - Matches MainWindow.xaml) -->
+        <Style x:Key="SubmenuPlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberSubmenuButton}">
+            <Setter Property="FontSize" Value="36" />
+            <Setter Property="Height" Value="50" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="ContentTemplate">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="2" 
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#25FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
+                    <DataTemplate>
+                        <Grid Background="Transparent">
+                            <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Path Data="M 0,8 L 8,0 L 8,8 Z" 
+                                  Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                  Opacity="0.85" 
+                                  HorizontalAlignment="Right" 
+                                  VerticalAlignment="Bottom" 
+                                  Margin="0,0,6,6" 
+                                  IsHitTestVisible="False" />
+                        </Grid>
+                    </DataTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Style for large player control button (切歌 - Matches MainWindow.xaml) -->
+        <Style x:Key="LargePlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
+            <Setter Property="FontSize" Value="36" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Height" Value="110" />
+            <Setter Property="Width" Value="122" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+        </Style>
+
+        <!-- Style for pagination buttons (上一頁 / 下一頁 - Matches MainWindow.xaml) -->
+        <Style x:Key="PaginationButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
+            <Setter Property="FontSize" Value="36" />
+            <Setter Property="Width" Value="140" />
+            <Setter Property="Height" Value="50" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+        </Style>
+
+        <!-- Style for category filter buttons (Matches MainWindow.xaml) -->
+        <Style x:Key="SecondFilterButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
+            <Setter Property="FontSize" Value="32" />
+            <Setter Property="Height" Value="50" />
+            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+        </Style>
+
+        <Style TargetType="Button" x:Key="KtvOutlinedButton" BasedOn="{StaticResource CyberButton}">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
         </Style>
 
         <!-- Modern KTV Player Slider Style with Dynamic Theme Color Binding -->
@@ -442,24 +508,28 @@
 
                                         <!-- ==================== LEFT PANEL ==================== -->
                                         <DockPanel Grid.Column="0">
-                                            <!-- Top Function Buttons (2 rows x 4 cols) -->
-                                            <Border DockPanel.Dock="Top" Margin="0,0,0,8">
-                                                <UniformGrid Rows="2" Columns="4">
+                                            <!-- Top Function Buttons (2 rows x 4 cols with 8px spacing) -->
+                                            <Border DockPanel.Dock="Top" Margin="0,0,0,10">
+                                                <StackPanel Margin="0">
                                                     <!-- Row 1 -->
-                                                    <Button x:Name="FuncBtn1" Content="歌星" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
-                                                    <Button x:Name="FuncBtn2" Content="最愛" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
-                                                    <Button x:Name="FuncBtn3" Content="編號" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
-                                                    <Button x:Name="FuncBtn4" Content="語系" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
+                                                    <UniformGrid Rows="1" Margin="0,0,0,8">
+                                                        <Button x:Name="FuncBtn1" Content="歌星" Style="{StaticResource FunctionButtonStyle}" />
+                                                        <Button x:Name="FuncBtn2" Content="最愛" Style="{StaticResource FunctionButtonStyle}" />
+                                                        <Button x:Name="FuncBtn3" Content="編號" Style="{StaticResource FunctionButtonStyle}" />
+                                                        <Button x:Name="FuncBtn4" Content="語系" Style="{StaticResource FunctionButtonStyle}" />
+                                                    </UniformGrid>
                                                     <!-- Row 2 -->
-                                                    <Button x:Name="FuncBtn5" Content="新進" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
-                                                    <Button x:Name="FuncBtn6" Content="排行" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
-                                                    <Button x:Name="FuncBtn7" Content="搜尋" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
-                                                    <Button x:Name="FuncBtn8" Content="設定" Style="{StaticResource KtvOutlinedButton}" Margin="1,2" Padding="0" Height="48" />
-                                                </UniformGrid>
+                                                    <UniformGrid Rows="1">
+                                                        <Button x:Name="FuncBtn5" Content="新進" Style="{StaticResource FunctionButtonStyle}" />
+                                                        <Button x:Name="FuncBtn6" Content="排行" Style="{StaticResource FunctionButtonStyle}" />
+                                                        <Button x:Name="FuncBtn7" Content="搜尋" Style="{StaticResource FunctionButtonStyle}" />
+                                                        <Button x:Name="FuncBtn8" Content="設定" Style="{StaticResource FunctionButtonStyle}" />
+                                                    </UniformGrid>
+                                                </StackPanel>
                                             </Border>
 
                                             <!-- Bottom Player Controls (Cut Song + 2x2 buttons) -->
-                                            <Border DockPanel.Dock="Bottom" Height="116" Margin="0,6,0,0">
+                                            <Border DockPanel.Dock="Bottom" Height="110" Margin="0,10,0,0">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="122" />
@@ -468,24 +538,24 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <!-- Large SkipSong Button -->
-                                                    <Button x:Name="BtnSkipSong" Content="切歌" Grid.Column="0" Style="{StaticResource KtvOutlinedButton}" FontSize="36" />
+                                                    <Button x:Name="BtnSkipSong" Content="切歌" Grid.Column="0" Style="{StaticResource LargePlayerControlButtonStyle}" />
 
                                                     <!-- 2x2 Controls: Pause, Repeat / Vocal, Music -->
                                                     <Grid Grid.Column="2">
                                                         <Grid.RowDefinitions>
                                                             <RowDefinition Height="*" />
-                                                            <RowDefinition Height="6" />
+                                                            <RowDefinition Height="5" />
                                                             <RowDefinition Height="*" />
                                                         </Grid.RowDefinitions>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="6" />
+                                                            <ColumnDefinition Width="8" />
                                                             <ColumnDefinition Width="*" />
                                                         </Grid.ColumnDefinitions>
-                                                        <Button x:Name="BtnPause" Content="暫停" Grid.Row="0" Grid.Column="0" Style="{StaticResource KtvOutlinedButton}" />
-                                                        <Button x:Name="BtnRepeat" Content="重播" Grid.Row="0" Grid.Column="2" Style="{StaticResource KtvOutlinedButton}" />
-                                                        <Button x:Name="BtnVocal" Content="人聲" Grid.Row="2" Grid.Column="0" Style="{StaticResource KtvOutlinedButton}" />
-                                                        <Button x:Name="BtnMusic" Content="伴唱" Grid.Row="2" Grid.Column="2" Style="{StaticResource KtvOutlinedButton}" />
+                                                        <Button x:Name="BtnPause" Content="暫停" Grid.Row="0" Grid.Column="0" Style="{StaticResource PlayerControlButtonStyle}" />
+                                                        <Button x:Name="BtnRepeat" Content="重播" Grid.Row="0" Grid.Column="2" Style="{StaticResource SubmenuPlayerControlButtonStyle}" />
+                                                        <Button x:Name="BtnVocal" Content="人聲" Grid.Row="2" Grid.Column="0" Style="{StaticResource SubmenuPlayerControlButtonStyle}" />
+                                                        <Button x:Name="BtnMusic" Content="伴唱" Grid.Row="2" Grid.Column="2" Style="{StaticResource PlayerControlButtonStyle}" />
                                                     </Grid>
                                                 </Grid>
                                             </Border>
@@ -584,8 +654,8 @@
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock x:Name="TxtWaitPageInfo" Text="第 1/1 頁&#x0a;(3 首歌曲)" VerticalAlignment="Center" Foreground="{DynamicResource StaticTextFgBrush}" LineHeight="20" ToolTip="由 [StaticTextForegroundColor] 靜態文字前景色控制" />
                                                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <Button x:Name="BtnWaitPageUp" Content="上一頁" Height="38" Width="76" Margin="0,0,4,0" Style="{StaticResource KtvOutlinedButton}" />
-                                                            <Button x:Name="BtnWaitPageDown" Content="下一頁" Height="38" Width="76" Style="{StaticResource KtvOutlinedButton}" />
+                                                            <Button x:Name="BtnWaitPageUp" Content="上一頁" Height="50" Width="100" Margin="0" FontSize="26" Style="{StaticResource FunctionButtonStyle}" />
+                                                            <Button x:Name="BtnWaitPageDown" Content="下一頁" Height="50" Width="100" Margin="10,0,0,0" FontSize="26" Style="{StaticResource FunctionButtonStyle}" />
                                                         </StackPanel>
                                                     </Grid>
                                                 </Grid>
@@ -630,11 +700,11 @@
 
                                             <!-- Top 5 Category Filter Buttons (Matches screenshot) -->
                                             <UniformGrid Grid.Row="0" Rows="1" Columns="5" Margin="0,0,0,8">
-                                                <Button x:Name="FilterBtn1" Content="國語-單曲" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
-                                                <Button x:Name="FilterBtn2" Content="台語-單曲" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
-                                                <Button x:Name="FilterBtn3" Content="國語-合唱" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
-                                                <Button x:Name="FilterBtn4" Content="台語-合唱" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
-                                                <Button x:Name="FilterBtn5" Content="其它" Style="{StaticResource KtvOutlinedButton}" Height="48" Margin="2,0" />
+                                                <Button x:Name="FilterBtn1" Content="國語-單曲" Style="{StaticResource SecondFilterButtonStyle}" />
+                                                <Button x:Name="FilterBtn2" Content="台語-單曲" Style="{StaticResource SecondFilterButtonStyle}" />
+                                                <Button x:Name="FilterBtn3" Content="國語-合唱" Style="{StaticResource SecondFilterButtonStyle}" />
+                                                <Button x:Name="FilterBtn4" Content="台語-合唱" Style="{StaticResource SecondFilterButtonStyle}" />
+                                                <Button x:Name="FilterBtn5" Content="其它" Style="{StaticResource SecondFilterButtonStyle}" />
                                             </UniformGrid>
 
                                             <!-- Center: 13-row Song List Table (Exact 1:1 match to screenshot) -->
@@ -843,8 +913,8 @@
 
                                                 <!-- Pagination Buttons -->
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                                    <Button x:Name="BtnPageUp" Content="上一頁" Width="130" Height="50" Margin="0,0,10,0" Style="{StaticResource KtvOutlinedButton}" />
-                                                    <Button x:Name="BtnPageDown" Content="下一頁" Width="130" Height="50" Style="{StaticResource KtvOutlinedButton}" />
+                                                    <Button x:Name="BtnPageUp" Content="上一頁" Width="140" Height="50" Margin="0,0,10,0" Style="{StaticResource PaginationButtonStyle}" />
+                                                    <Button x:Name="BtnPageDown" Content="下一頁" Width="140" Height="50" Style="{StaticResource PaginationButtonStyle}" />
                                                 </StackPanel>
                                             </Grid>
                                         </Grid>
@@ -1339,6 +1409,18 @@
                                     <TextBox x:Name="TxtPrimaryLightColor" Text="#FFECB3" TextChanged="ParamChanged" />
                                     <Border x:Name="RectPrimaryLightColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectPrimaryLightColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
+                                
+                                <!-- Accent / Glow Color -->
+                                <TextBlock Text="按鈕發光與選中強調色 (AccentColor - Cyber 按鈕發光與選中高亮):" FontWeight="SemiBold" Margin="0,4,0,2" />
+                                <Grid Margin="0,0,0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="40" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtAccentColor" Text="" TextChanged="ParamChanged" ToolTip="留空時自動依 PrimaryColor 計算" />
+                                    <Border x:Name="RectAccentColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectAccentColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                </Grid>
+                                <CheckBox x:Name="ChkAutoAccentColor" Content="自動根據主色調生成發光色 (Auto Derive)" IsChecked="True" Foreground="#80D8FF" FontWeight="Normal" Margin="0,0,0,6" Click="ChkAutoAccentColor_Click" ToolTip="打勾時發光與選中色彩自動跟隨 PrimaryColor；取消打勾可自由指定顏色" />
                                 
                                 <!-- DataGrid Column Header Foreground -->
                                 <TextBlock Text="表格標題文字顏色 (DataGridColumnHeaderForegroundColor):" FontWeight="SemiBold" Margin="0,4,0,2" />

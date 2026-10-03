@@ -43,14 +43,25 @@
     <SolidColorBrush x:Key="BrushTextDim" Color="{StaticResource ColorTextDim}"/>
     <SolidColorBrush x:Key="BrushTextMuted" Color="{StaticResource ColorTextMuted}"/>
 
-    <!-- === 特殊漸層筆刷 (選中/啟動狀態) === -->
+    <!-- === 特殊漸層筆刷 (選中/啟動狀態、表格標題) === -->
     <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Color="#4D00C6FF" Offset="0.0"/>
         <GradientStop Color="#660072FF" Offset="1.0"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushTableHeaderGradient" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#D1121826" Offset="0.0"/>
+        <GradientStop Color="#D91C263C" Offset="1.0"/>
     </LinearGradientBrush>
 
     <!-- 圓角大小統一規格 -->
     <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
     <CornerRadius x:Key="RadiusMedium">10</CornerRadius>
     <CornerRadius x:Key="RadiusLarge">14</CornerRadius>
+
+    <!-- 外框粗細統一規格 -->
+    <Thickness x:Key="BorderThicknessButton">1.5</Thickness>
+    <Thickness x:Key="BorderThicknessGrid">0</Thickness>
+
+    <!-- UI 字型設定 (全域預設字型) -->
+    <FontFamily x:Key="UiFontFamily">Microsoft JhengHei, Segoe UI, sans-serif</FontFamily>
 </ResourceDictionary>

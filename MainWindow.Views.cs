@@ -28,6 +28,9 @@ namespace UltimateKtv
                 if (SearchInputGrid != null) 
                     SearchInputGrid.Visibility = (_searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
                 
+                if (QuickSongListGrid != null)
+                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 846 : 580;
+                
                 if (SearchSymbolPanel != null) SearchSymbolPanel.Visibility = Visibility.Visible;
                 
                 bool useYoutubeGrid = (_searchMode == SearchMode.Youtube && _currentQuickMethod != QuickMethod.YoutubeHistory);
@@ -40,9 +43,9 @@ namespace UltimateKtv
                 // Hide language grid when in quick search
                 if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
 
-                // Important: Collapse the main singer/song grid area in YouTube mode to give space for Row 4
+                // Collapse the main singer/song grid area in quick search mode to prevent background bleeding
                 if (SingerSongContentGrid != null)
-                    SingerSongContentGrid.Visibility = (_searchMode == SearchMode.Youtube) ? Visibility.Collapsed : Visibility.Visible;
+                    SingerSongContentGrid.Visibility = Visibility.Collapsed;
             }
             else
             {
@@ -56,6 +59,10 @@ namespace UltimateKtv
                 // Restore the main singer/song grid area visibility when leaving quick search
                 if (SingerSongContentGrid != null)
                     SingerSongContentGrid.Visibility = Visibility.Visible;
+
+                // Restore global bottom pagination when leaving quick search
+                if (BottomPaginationPanel != null)
+                    BottomPaginationPanel.Visibility = Visibility.Visible;
             }
         }
 
@@ -67,7 +74,10 @@ namespace UltimateKtv
             if (VisualSingerGrid != null) VisualSingerGrid.Visibility = vis;
             if (SongListGrid != null) SongListGrid.Visibility = vis;
             if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
+            if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Collapsed;
+            if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Collapsed;
             _isLanguageMode = false;
+            _searchMode = SearchMode.Song;
 
             if (show) 
             {

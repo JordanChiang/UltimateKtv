@@ -29,13 +29,13 @@ namespace StyleSimulator
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             string[] searchPaths = new[]
             {
+                Path.Combine(baseDir, "..", "..", "..", "..", "bin", "x64", "Debug", "net8.0-windows", fileName),
+                Path.Combine(baseDir, "..", "..", "..", "..", "bin", "x86", "Release", "net8.0-windows", fileName),
+                Path.Combine(baseDir, "..", "..", "..", "..", fileName),
                 Path.Combine(baseDir, fileName),
                 Path.Combine(baseDir, "..", fileName),
                 Path.Combine(baseDir, "..", "..", fileName),
-                Path.Combine(baseDir, "..", "..", "..", fileName),
-                Path.Combine(baseDir, "..", "..", "..", "..", fileName),
-                Path.Combine(baseDir, "..", "..", "..", "..", "bin", "x64", "Debug", "net8.0-windows", fileName),
-                Path.Combine(baseDir, "..", "..", "..", "..", "bin", "x86", "Release", "net8.0-windows", fileName)
+                Path.Combine(baseDir, "..", "..", "..", fileName)
             };
 
             foreach (var path in searchPaths)
@@ -288,6 +288,12 @@ namespace StyleSimulator
         {
             get => _textSettings.PrimaryLightColor;
             set { _textSettings.PrimaryLightColor = value; OnPropertyChanged(); }
+        }
+
+        public string AccentColor
+        {
+            get => _textSettings.AccentColor;
+            set { _textSettings.AccentColor = value; OnPropertyChanged(); }
         }
         #endregion
 

@@ -53,6 +53,8 @@ namespace UltimateKtv
         // This is needed for properties like ReplayGain
         private Dictionary<string, object?>? _playingSongData = null;
         private const int SongPageSize = 13; // Adjust based on DataGrid display capacity
+        private const int LanguageSongPageSize = 12; // 語系結果列表 12 筆
+        private int CurrentSongPageSize => _isLanguageMode ? LanguageSongPageSize : SongPageSize;
 
         // Fields for theme switcher functionality
         private List<string> _themeKeys = new();
@@ -69,7 +71,7 @@ namespace UltimateKtv
         private WaitingListItem? _waitingListContextItem;
 
         // Waiting list pagination
-        private const int WaitingListPageSize = 9; // Maximum 9 rows per page
+        private const int WaitingListPageSize = 8; // Maximum 8 rows per page
 
         // Pre-loading cache for network access optimization
         private string? _preLoadedSongPath = null;
@@ -1002,14 +1004,19 @@ namespace UltimateKtv
         private void LoadSongsForSinger(string singerName)
         {
             _currentSongsTitle = singerName;
+            _isLanguageMode = false;
+
             if (SongDatas.SongData == null)
             {
                 _allSongs = new List<SongDisplayItem>();
-                SongListGrid.ItemsSource = _allSongs;
+                if (SongListGrid != null) SongListGrid.ItemsSource = _allSongs;
                 return;
             }
 
             var songs = new List<SongDisplayItem>();
+
+            char[] delimiters = { '&', '/', ',', '、', '；', ';', '|' };
+            var primarySinger = singerName.Split(delimiters, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? singerName;
 
             foreach (var song in SongDatas.SongData)
             {
@@ -1018,8 +1025,8 @@ namespace UltimateKtv
                 // Get the singer field from the song data
                 var songSinger = song.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? "" : "";
 
-                // Check if the singer name matches (handle multiple singers separated by common delimiters)
-                if (SongDatas.ContainsSinger(songSinger, singerName))
+                // Check if the singer name matches (match full target, or primary singer)
+                if (SongDatas.ContainsSinger(songSinger, singerName) || (!string.IsNullOrEmpty(primarySinger) && SongDatas.ContainsSinger(songSinger, primarySinger)))
                 {
                     var songItem = new SongDisplayItem
                     {
@@ -1054,7 +1061,7 @@ namespace UltimateKtv
             });
 
             // Calculate pagination for songs
-            _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + SongPageSize - 1) / SongPageSize;
+            _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;
             _currentSongPage = 1; // Reset to first page when loading new singer
 
             // Load first page of songs
@@ -1062,7 +1069,7 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Handles clicks on the song grids (QuickSongListGrid and SongListGrid).
+        /// Handles clicks on the song grids (QuickSongListGrid, SongListGrid, LanguageSongListGrid).
         /// Determines which column was clicked and performs the appropriate action.
         /// </summary>
         private void SongGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -1088,12 +1095,18 @@ namespace UltimateKtv
                 {
                     Debug.WriteLine($"[SingerSearch] Selected singer: {singerName}");
                     _selectedSinger = singerName;
+                    _isLanguageMode = false;
                     LoadSongsForSinger(singerName);
 
                     // Switch view
-                    SingerGrid.Visibility = Visibility.Collapsed;
-                    SongListGrid.Visibility = Visibility.Visible;
                     ShowQuickInputPanels(false);
+                    if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
+                    if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Collapsed;
+                    if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Collapsed;
+                    if (SingerGrid != null) SingerGrid.Visibility = Visibility.Collapsed;
+                    if (VisualSingerGrid != null) VisualSingerGrid.Visibility = Visibility.Collapsed;
+                    if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Visible;
+                    if (SongListGrid != null) SongListGrid.Visibility = Visibility.Visible;
                     SetupFilterButtons(MainFilterMode.Singer);
                     
                     e.Handled = true;
@@ -1125,25 +1138,40 @@ namespace UltimateKtv
             // QuickSongListGrid sets the header via Style so Header might be null, use DisplayIndex 1 as fallback
             string? columnHeader = cell.Column.Header?.ToString();
 
-            if ((columnHeader == "歌手" || cell.Column.DisplayIndex == 1) && _searchMode != SearchMode.Youtube) // "歌手" is "Singer"
+            bool isSingerColumn = (columnHeader == "歌手" || cell.Column.DisplayIndex == 1);
+            if (sender == QuickSongListGrid && _searchMode == SearchMode.Youtube)
+            {
+                isSingerColumn = false; // YouTube search uses this column for duration
+            }
+
+            if (isSingerColumn && !string.IsNullOrWhiteSpace(selectedSong.SingerName))
             {
                 // --- Special Action for Singer Column ---
-                // The user clicked on the "Singer" column.
-                // You can now perform a singer-specific action, like showing all songs by that artist.
                 Debug.WriteLine($"Singer column clicked for singer: {selectedSong.SingerName}");
 
-                // Example action: Load all songs for the clicked singer
+                // Cancel long press timer and clear item
+                _longPressTimer?.Stop();
+                _longPressSongItem = null;
+
+                // Reset mode flags
+                _isLanguageMode = false;
+                _searchMode = SearchMode.Song;
+
+                // Load all songs for the clicked singer
                 _selectedSinger = selectedSong.SingerName;
                 LoadSongsForSinger(selectedSong.SingerName);
 
                 // Switch the view to the song list
-                SingerGrid.Visibility = Visibility.Collapsed;
-                SongListGrid.Visibility = Visibility.Visible;
                 ShowQuickInputPanels(false); // Hide quick search if it was open
+                if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
+                if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Collapsed;
+                if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Collapsed;
+                if (SingerGrid != null) SingerGrid.Visibility = Visibility.Collapsed;
+                if (VisualSingerGrid != null) VisualSingerGrid.Visibility = Visibility.Collapsed;
+                if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Visible;
+                if (SongListGrid != null) SongListGrid.Visibility = Visibility.Visible;
+
                 SetupFilterButtons(MainFilterMode.Singer);
-                
-                // Cancel long press since were navigating
-                _longPressTimer?.Stop();
             }
             else
             {
@@ -1224,7 +1252,7 @@ namespace UltimateKtv
                 var viewbox = border.Child as Viewbox;
                 if (viewbox?.Child is TextBlock textBlock)
                 {
-                    textBlock.Foreground = TryFindResource("MaterialDesignBody") as Brush ?? new SolidColorBrush(Colors.White);
+                    textBlock.Foreground = TryFindResource("BrushTextDim") as Brush ?? new SolidColorBrush(Color.FromRgb(148, 163, 184));
                 }
             }
         }

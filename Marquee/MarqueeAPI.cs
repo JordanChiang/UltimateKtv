@@ -155,8 +155,8 @@ namespace UltimateKtv
 
             string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{settings.HttpServerPort}";
             string wanIpPort = $"{HttpServer.GetPublicIPAddress()}:{settings.PublicServerPort}";
-            string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放") ? orderedBy : "";
-            string displayNextOrderedBy = (!string.IsNullOrWhiteSpace(nextOrderedBy) && nextOrderedBy != "本機" && nextOrderedBy != "隨機播放") ? nextOrderedBy : "";
+            string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放" && orderedBy != "網路點歌") ? orderedBy : "";
+            string displayNextOrderedBy = (!string.IsNullOrWhiteSpace(nextOrderedBy) && nextOrderedBy != "本機" && nextOrderedBy != "隨機播放" && nextOrderedBy != "網路點歌") ? nextOrderedBy : "";
 
             string template;
             if (isRandomSong && !hasNextSong)
@@ -373,7 +373,8 @@ namespace UltimateKtv
                 ? "點播歌曲：「{1} - {0}」"
                 : settings.MarqueeSongAddedString;
 
-            string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放") ? orderedBy : "";
+            // 若為網路點歌但無使用者名稱("網路點歌")，或為本機/隨機，則等同本機點歌(displayOrderedBy為空字串)
+            string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放" && orderedBy != "網路點歌") ? orderedBy : "";
 
             string formattedText;
             try
@@ -382,7 +383,7 @@ namespace UltimateKtv
             }
             catch
             {
-                formattedText = $"點播歌曲：{singerName} - {songName}" + (!string.IsNullOrWhiteSpace(displayOrderedBy) ? $"，點歌人：{displayOrderedBy}" : "");
+                formattedText = $"點播歌曲：「{singerName} - {songName}」";
             }
 
             FontFamily fontFamily = ParseFontFamily(settings.MarqueeSongAddedFontFamily);

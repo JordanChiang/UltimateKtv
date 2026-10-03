@@ -35,8 +35,10 @@ namespace UltimateKtv
         private SearchMode _searchMode = SearchMode.Song;
         private bool _isSingerSearchMode => _searchMode == SearchMode.Singer;
         
-        // Centralized page size for Quick Search
-        private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube) ? (_currentQuickMethod == QuickMethod.YoutubeHistory ? 15 : 16) : 10;
+        // Centralized page size for Quick Search (Keyboard uses 12 rows to utilize available vertical space)
+        private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube) 
+            ? (_currentQuickMethod == QuickMethod.YoutubeHistory ? 15 : 16) 
+            : (_currentQuickMethod == QuickMethod.Keyboard ? 12 : 8);
 
         // For async quick search to prevent UI lag
         private CancellationTokenSource? _quickSearchCts;
@@ -459,6 +461,7 @@ namespace UltimateKtv
                     }
 
                     if (SearchInputGrid != null) SearchInputGrid.Visibility = (_currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
+                    if (QuickSongListGrid != null) QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 846 : 580;
                     // Other visibilities will be handled by UpdateSearchWords -> RefreshQuickResultsPage
                 }
 
@@ -525,6 +528,7 @@ namespace UltimateKtv
 
                 // Restore visibility after updates
                 if (SearchInputGrid != null) SearchInputGrid.Visibility = (method == QuickMethod.Keyboard || _searchMode == SearchMode.Youtube) ? Visibility.Collapsed : Visibility.Visible;
+                if (QuickSongListGrid != null) QuickSongListGrid.Height = (method == QuickMethod.Keyboard) ? 846 : 580;
             }
 
             // Update the display with the preserved state for the selected method.
@@ -1000,12 +1004,13 @@ namespace UltimateKtv
                 }
                 else
                 {
-                    // Restore primary content visibility when not in YouTube mode
-                    if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Visible;
+                    // Hide primary content when search results exist to prevent bleeding underneath
+                    if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = (pageItems.Any()) ? Visibility.Collapsed : Visibility.Visible;
                 }
 
                 if (QuickSongListGrid != null)
                 {
+                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 846 : 580;
                     QuickSongListGrid.ItemsSource = !useYoutubeGrid ? pageItems : null;
                     if (!useYoutubeGrid)
                     {
@@ -1036,8 +1041,14 @@ namespace UltimateKtv
                         QuickSongCountText.Visibility = Visibility.Collapsed;
                     }
                 }
-                if (QuickPageUpBtn != null) QuickPageUpBtn.IsEnabled = currentPage > 1;
-                if (QuickPageDownBtn != null) QuickPageDownBtn.IsEnabled = currentPage < _quickTotalPages;
+
+                // Update bottom global pagination bar with search results status
+                if (PageInfoTextBlock != null)
+                {
+                    PageInfoTextBlock.Text = total > 0 ? $"第 {currentPage} / {_quickTotalPages} 頁 (共 {total} 首)" : "第 1 頁";
+                }
+                if (PageUp != null) PageUp.IsEnabled = currentPage > 1;
+                if (PageDown != null) PageDown.IsEnabled = currentPage < _quickTotalPages;
             }
             catch (Exception)
             {

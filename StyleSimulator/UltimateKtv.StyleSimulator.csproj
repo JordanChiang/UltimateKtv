@@ -42,6 +42,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Include="..\Themes\Colors.xaml" Link="Themes\Colors.xaml" />
+    <Page Include="..\Themes\Buttons.xaml" Link="Themes\Buttons.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="StyleSimulator.ico" />
   </ItemGroup>
 

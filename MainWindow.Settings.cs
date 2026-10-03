@@ -245,11 +245,7 @@ namespace UltimateKtv
                     Style targetBaseStyle = baseMdStyle;
                     if (styleKey == "CyberButton")
                     {
-                        if (key == "LargePlayerControlButtonStyle" && this.TryFindResource("CyberAccentGoldButton") is Style goldStyle)
-                        {
-                            targetBaseStyle = goldStyle;
-                        }
-                        else if (key == "SubmenuPlayerControlButtonStyle" && this.TryFindResource("CyberSubmenuButton") is Style subStyle)
+                        if (key == "SubmenuPlayerControlButtonStyle" && this.TryFindResource("CyberSubmenuButton") is Style subStyle)
                         {
                             targetBaseStyle = subStyle;
                         }
