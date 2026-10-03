@@ -86,13 +86,13 @@
         </Style>
 
         <!-- Style for the buttons inside the singer grid -->
-        <Style x:Key="SingerGridButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Style x:Key="SingerGridButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
             <Setter Property="FontSize" Value="48" />
             <Setter Property="Margin" Value="2" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="VerticalAlignment" Value="Stretch" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
             <!-- Force a minimum height for each button to ensure cells are tall enough -->
             <Setter Property="MinHeight" Value="75" />
             <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
@@ -109,7 +109,7 @@
         </Style>
 
         <!-- Style for the top function buttons -->
-        <Style x:Key="FunctionButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Style x:Key="FunctionButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
             <Setter Property="materialDesign:RippleAssist.IsDisabled" Value="True" />
             <Setter Property="materialDesign:TransitionAssist.DisableTransitions" Value="True" />
             <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
@@ -117,7 +117,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="2" />
-            <Setter Property="Margin" Value="0,0,2,0" />
+            <Setter Property="Margin" Value="4,0,4,0" />
             <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
             <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
@@ -192,23 +192,42 @@
             </Setter>
         </Style>
 
-        <!-- Style for 3-segment RadioButton (Youtube, Song, Singer) -->
+        <!-- Style for 3-segment RadioButton (Youtube, Song, Singer) - Cyber Aesthetic -->
         <Style x:Key="SearchSegmentRadioButtonStyle" TargetType="RadioButton">
             <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
+            <Setter Property="FontFamily" Value="Segoe UI, Microsoft JhengHei UI, sans-serif" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource BrushTextDim}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Grid Background="Transparent">
-                            <Border x:Name="Highlight" Background="{DynamicResource PrimaryBrush}" Visibility="Hidden"/>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="Content"/>
-                        </Grid>
+                        <Border x:Name="tabBorder"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="6,2">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center" 
+                                              x:Name="Content"/>
+                        </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Highlight" Property="Visibility" Value="Visible"/>
-                                <Setter Property="Foreground" Value="White"/>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="tabBorder" Property="Background" Value="{StaticResource BrushAccentCyanDim}"/>
+                                <Setter Property="Foreground" Value="{StaticResource BrushAccentCyan}"/>
                             </Trigger>
-                            <Trigger Property="IsChecked" Value="False">
-                                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="tabBorder" Property="Background" Value="{StaticResource BrushCyberActiveGradient}"/>
+                                <Setter TargetName="tabBorder" Property="BorderBrush" Value="{StaticResource BrushAccentCyan}"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter TargetName="tabBorder" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="{StaticResource ColorAccentCyan}" BlurRadius="12" ShadowDepth="0" Opacity="0.55"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -237,10 +256,13 @@
         </Style>
 
         <!-- Style for the singer filter buttons -->
-        <Style x:Key="SecondFilterButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Style x:Key="SecondFilterButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
             <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
             <Setter Property="Height" Value="50" />
             <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="2" />
             <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
             <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
@@ -276,7 +298,7 @@
         </Style>
 
         <!-- Style for the small player control buttons -->
-        <Style x:Key="PlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Style x:Key="PlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
             <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
             <Setter Property="Height" Value="{StaticResource PlayingBtnHeight}" />
             <Setter Property="Width" Value="132" />
@@ -289,7 +311,7 @@
         </Style>
 
         <!-- Style for the small player control buttons with submenu indicator (人聲, 重播) -->
-        <Style x:Key="SubmenuPlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Style x:Key="SubmenuPlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberSubmenuButton}">
             <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
             <Setter Property="Height" Value="{StaticResource PlayingBtnHeight}" />
             <Setter Property="Width" Value="132" />
@@ -318,7 +340,7 @@
         </Style>
 
         <!-- Style for the large player control button (切歌) -->
-        <Style x:Key="LargePlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Style x:Key="LargePlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberAccentGoldButton}">
             <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -331,10 +353,13 @@
         </Style>
 
         <!-- Style for the pagination buttons (上一頁 / 下一頁) -->
-        <Style x:Key="PaginationButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+        <Style x:Key="PaginationButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
             <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
             <Setter Property="Width" Value="{StaticResource ExtendedBtnWidth}" />
             <Setter Property="Height" Value="{StaticResource PlayingBtnHeight}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="0" />
             <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
             <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
@@ -596,8 +621,8 @@
                                     </Grid.ColumnDefinitions>
                                 <TextBlock Name="WaitListPageInfo" Margin="10,0,0,0" Grid.Column="0" Text="第 1/10 頁&#x0A;(0 首歌曲)" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="{DynamicResource WaitingListFontSize}" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}" />
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <Button Name="WaitListPageUp" Content="上一頁" Style="{StaticResource FunctionButtonStyle}" Width="100"/>
-                                        <Button Name="WaitListPageDown" Content="下一頁" Style="{StaticResource FunctionButtonStyle}" Margin="10,0,0,0" Width="100"/>
+                                        <Button Name="WaitListPageUp" Content="上一頁" Style="{StaticResource FunctionButtonStyle}" Margin="0" Width="100" FontSize="26"/>
+                                        <Button Name="WaitListPageDown" Content="下一頁" Style="{StaticResource FunctionButtonStyle}" Margin="10,0,0,0" Width="100" FontSize="26"/>
                                     </StackPanel>
                                 </Grid>
 
@@ -686,17 +711,18 @@
                                                     </materialDesign:ToggleButtonAssist.OnContent>
                                                 </ToggleButton>
                                                 
-                                                <!-- Pitch Control Button - 3 horizontal lines -->
+                                                <!-- Pitch Control Button - 3 horizontal lines (Cyber Style) -->
                                                 <Button Grid.Column="4" Name="PitchControlBtn"
                                                         Click="PitchControlBtn_Click"
-                                                        Style="{StaticResource MaterialDesignIconButton}"
+                                                        Style="{StaticResource CyberButton}"
                                                         ToolTip="音調控制"
                                                         Margin="0"
-                                                        Width="40" Height="40">
+                                                        Padding="0"
+                                                        Width="44" Height="40">
                                                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                        <Rectangle Width="24" Height="3" Fill="White" Margin="0,2"/>
-                                                        <Rectangle Width="24" Height="3" Fill="White" Margin="0,2"/>
-                                                        <Rectangle Width="24" Height="3" Fill="White" Margin="0,2"/>
+                                                        <Rectangle Width="22" Height="3" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Margin="0,2"/>
+                                                        <Rectangle Width="22" Height="3" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Margin="0,2"/>
+                                                        <Rectangle Width="22" Height="3" Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Margin="0,2"/>
                                                     </StackPanel>
                                                 </Button>
                                             </Grid>
@@ -781,7 +807,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- 3-Way Mode Toggle -->
-                                <Border Grid.Column="0" BorderBrush="{DynamicResource PrimaryHueMidBrush}" BorderThickness="1" CornerRadius="4" Margin="0,0,8,0" UseLayoutRounding="True">
+                                <Border Grid.Column="0" Background="#121826" BorderBrush="{StaticResource BrushBorderDefault}" BorderThickness="1" CornerRadius="{StaticResource RadiusMedium}" Margin="0,0,8,0" Padding="2" UseLayoutRounding="True">
                                     <UniformGrid x:Name="SearchModeSegment" Columns="3">
                                         <RadioButton x:Name="YoutubeRadio" Content="Youtube" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
                                         <RadioButton x:Name="SongRadio" Content="歌曲" IsChecked="True" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
@@ -789,9 +815,9 @@
                                     </UniformGrid>
                                 </Border>
 
-                                <Button x:Name="BopomofoListBtn" Grid.Column="1" Content="注音" Style="{StaticResource FunctionButtonStyle}" Click="BopomofoListBtn_Click"/>
-                                <Button x:Name="PenStyleListBtn" Grid.Column="2" Content="筆劃" Style="{StaticResource FunctionButtonStyle}" Click="PenStyleListBtn_Click"/>
-                                <Button x:Name="EngAndNumListBtn" Grid.Column="3" Content="英數" Style="{StaticResource FunctionButtonStyle}" Click="EngAndNumListBtn_Click"/>
+                                <Button x:Name="BopomofoListBtn" Grid.Column="1" Content="注音" Style="{StaticResource FunctionButtonStyle}" Click="BopomofoListBtn_Click" Margin="0,0,2,0"/>
+                                <Button x:Name="PenStyleListBtn" Grid.Column="2" Content="筆劃" Style="{StaticResource FunctionButtonStyle}" Click="PenStyleListBtn_Click" Margin="0,0,2,0"/>
+                                <Button x:Name="EngAndNumListBtn" Grid.Column="3" Content="英數" Style="{StaticResource FunctionButtonStyle}" Click="EngAndNumListBtn_Click" Margin="0,0,2,0"/>
                                 <Button x:Name="SongIdListBtn" Grid.Column="4" Content="編號" Style="{StaticResource FunctionButtonStyle}" Click="SongIdListBtn_Click" Margin="0"/>
                                 
                                 <Button x:Name="YoutubeHistoryBtn" Grid.Column="1" Grid.ColumnSpan="2" Content="Youtube點播記錄" Style="{StaticResource FunctionButtonStyle}" Click="YoutubeHistoryBtn_Click" Margin="0" Visibility="Collapsed"/>
@@ -1417,9 +1443,12 @@
                                     <TextBlock Name="DigitalClockText" Text="00:00" FontSize="40" FontWeight="Medium" VerticalAlignment="Center" Foreground="White" FontFamily="Consolas"/>
                                 </StackPanel>
                                 
-                                <Button Name="PageUp" Grid.Column="2" Content="上一頁" Margin="0,0,10,10" VerticalAlignment="Top" Click="PageUp_Click">
+                                <Button Name="PageUp" Grid.Column="2" Content="上一頁" Margin="0,0,10,0" VerticalAlignment="Top" Click="PageUp_Click">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource PaginationButtonStyle}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="0" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding ElementName=SearchStyleBtnPanel, Path=Visibility}" Value="Visible">
                                                     <Setter Property="Visibility" Value="Collapsed"/>
@@ -1431,6 +1460,9 @@
                                 <Button Name="PageDown" Grid.Column="3" Content="下一頁" Margin="0,0,10,0" VerticalAlignment="Top" Click="PageDown_Click">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource PaginationButtonStyle}">
+                                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                                            <Setter Property="Padding" Value="0" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding ElementName=SearchStyleBtnPanel, Path=Visibility}" Value="Visible">
                                                     <Setter Property="Visibility" Value="Collapsed"/>

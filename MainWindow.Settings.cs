@@ -26,14 +26,11 @@ namespace UltimateKtv
             // This assumes the Material Design resources are loaded in App.xaml.
             _buttonStyleKeys = new List<string>
             {
+                "CyberButton",
+                "MaterialDesignOutlinedButton",
                 "MaterialDesignRaisedButton",
                 "MaterialDesignFlatButton",
-                "MaterialDesignOutlinedButton",
-                //"MaterialDesignRaisedDarkButton",
-                //"MaterialDesignRaisedLightButton",
-                //"MaterialDesignFloatingActionButton",
                 "MaterialDesignPaperSecondaryDarkButton"
-                //"MaterialDesignToolButton"
             };
         }
 
@@ -60,11 +57,10 @@ namespace UltimateKtv
                 // Ensure the style keys are initialized
                 if (_buttonStyleKeys == null || _buttonStyleKeys.Count == 0) return;
 
-                // ButtonStyle_Click increments index before use. We want index 2 (Outlined), so preset to 1.
-                // _buttonStyleKeys: [0]=Raised, [1]=Flat, [2]=Outlined, [3]=PaperSecondaryDark
-                _currentStyleIndex = 1;
+                // Preset to last index so ButtonStyle_Click increments to index 0 ("CyberButton")
+                _currentStyleIndex = _buttonStyleKeys.Count - 1;
 
-                // Invoke the existing handler to apply styles to all relevant keys and update Button8's content.
+                // Invoke handler to apply CyberButton style to all buttons on startup
                 ButtonStyle_Click(null!, new RoutedEventArgs());
             }
             catch (Exception ex)
@@ -246,7 +242,20 @@ namespace UltimateKtv
             {
                 if (FindResource(key) is Style originalStyle)
                 {
-                    var newStyle = new Style(originalStyle.TargetType, baseMdStyle);
+                    Style targetBaseStyle = baseMdStyle;
+                    if (styleKey == "CyberButton")
+                    {
+                        if (key == "LargePlayerControlButtonStyle" && this.TryFindResource("CyberAccentGoldButton") is Style goldStyle)
+                        {
+                            targetBaseStyle = goldStyle;
+                        }
+                        else if (key == "SubmenuPlayerControlButtonStyle" && this.TryFindResource("CyberSubmenuButton") is Style subStyle)
+                        {
+                            targetBaseStyle = subStyle;
+                        }
+                    }
+
+                    var newStyle = new Style(originalStyle.TargetType, targetBaseStyle);
                     foreach (var setter in originalStyle.Setters.OfType<Setter>())
                     {
                         newStyle.Setters.Add(setter);

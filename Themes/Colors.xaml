@@ -1,0 +1,56 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- === 核心色碼 (Color) === -->
+    <!-- 深色背景色調 -->
+    <Color x:Key="ColorBgPrimary">#0A0C14</Color>
+    <Color x:Key="ColorBgSecondary">#121624</Color>
+    <Color x:Key="ColorBgCard">#D1121826</Color>
+    <Color x:Key="ColorBgCardHover">#D91C263C</Color>
+
+    <!-- 邊框與光暈 -->
+    <Color x:Key="ColorBorderDefault">#1FFFFFFF</Color>
+    <Color x:Key="ColorBorderGlowCyan">#5900F0FF</Color>
+    <Color x:Key="ColorBorderGlowGold">#59FFB703</Color>
+    <Color x:Key="ColorBorderGlowMagenta">#59FF0077</Color>
+
+    <!-- 霓虹強調色 -->
+    <Color x:Key="ColorAccentCyan">#00F0FF</Color>
+    <Color x:Key="ColorAccentCyanDim">#2600F0FF</Color>
+    <Color x:Key="ColorAccentMagenta">#FF0077</Color>
+    <Color x:Key="ColorAccentGold">#FFB703</Color>
+    <Color x:Key="ColorAccentGreen">#00FF88</Color>
+    <Color x:Key="ColorAccentBlue">#0072FF</Color>
+
+    <!-- 文字色調 -->
+    <Color x:Key="ColorTextMain">#F8FAFC</Color>
+    <Color x:Key="ColorTextDim">#94A3B8</Color>
+    <Color x:Key="ColorTextMuted">#64748B</Color>
+
+    <!-- === 筆刷定義 (SolidColorBrush) === -->
+    <SolidColorBrush x:Key="BrushBgPrimary" Color="{StaticResource ColorBgPrimary}"/>
+    <SolidColorBrush x:Key="BrushBgSecondary" Color="{StaticResource ColorBgSecondary}"/>
+    <SolidColorBrush x:Key="BrushBgCard" Color="{StaticResource ColorBgCard}"/>
+    <SolidColorBrush x:Key="BrushBorderDefault" Color="{StaticResource ColorBorderDefault}"/>
+
+    <SolidColorBrush x:Key="BrushAccentCyan" Color="{StaticResource ColorAccentCyan}"/>
+    <SolidColorBrush x:Key="BrushAccentCyanDim" Color="{StaticResource ColorAccentCyanDim}"/>
+    <SolidColorBrush x:Key="BrushAccentMagenta" Color="{StaticResource ColorAccentMagenta}"/>
+    <SolidColorBrush x:Key="BrushAccentGold" Color="{StaticResource ColorAccentGold}"/>
+    <SolidColorBrush x:Key="BrushAccentGreen" Color="{StaticResource ColorAccentGreen}"/>
+
+    <SolidColorBrush x:Key="BrushTextMain" Color="{StaticResource ColorTextMain}"/>
+    <SolidColorBrush x:Key="BrushTextDim" Color="{StaticResource ColorTextDim}"/>
+    <SolidColorBrush x:Key="BrushTextMuted" Color="{StaticResource ColorTextMuted}"/>
+
+    <!-- === 特殊漸層筆刷 (選中/啟動狀態) === -->
+    <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#4D00C6FF" Offset="0.0"/>
+        <GradientStop Color="#660072FF" Offset="1.0"/>
+    </LinearGradientBrush>
+
+    <!-- 圓角大小統一規格 -->
+    <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
+    <CornerRadius x:Key="RadiusMedium">10</CornerRadius>
+    <CornerRadius x:Key="RadiusLarge">14</CornerRadius>
+</ResourceDictionary>

@@ -1,0 +1,261 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Colors.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- ========================================================= -->
+    <!-- 1. 標準賽博龐克按鈕 (CyberButton)                           -->
+    <!-- ========================================================= -->
+    <Style x:Key="CyberButton" TargetType="{x:Type Button}">
+        <Setter Property="Background" Value="#121826"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BrushBorderDefault}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{StaticResource BrushTextMain}"/>
+        <Setter Property="FontFamily" Value="Segoe UI, Microsoft JhengHei UI, sans-serif"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource RadiusMedium}">
+                        <ContentPresenter x:Name="contentPresenter"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Margin="{TemplateBinding Padding}"
+                                          RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- 滑鼠移入：動態青色發光與高亮 -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource BrushAccentCyanDim}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushAccentCyan}"/>
+                            <Setter Property="Foreground" Value="{StaticResource BrushAccentCyan}"/>
+                            <Setter TargetName="border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentCyan}" 
+                                                      BlurRadius="15" 
+                                                      ShadowDepth="0" 
+                                                      Opacity="0.5"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <!-- 按下狀態：位移回饋與深色縮排 -->
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#3300F0FF"/>
+                            <Setter TargetName="border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentCyan}" 
+                                                      BlurRadius="8" 
+                                                      ShadowDepth="0" 
+                                                      Opacity="0.4"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <!-- 停用狀態 -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="border" Property="Opacity" Value="0.38"/>
+                            <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 設為全域預設 Button 樣式 -->
+    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource CyberButton}"/>
+
+    <!-- ========================================================= -->
+    <!-- 2. 右下角帶三角標的子選單按鈕 (CyberSubmenuButton)           -->
+    <!-- ========================================================= -->
+    <Style x:Key="CyberSubmenuButton" TargetType="{x:Type Button}" BasedOn="{StaticResource CyberButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Grid>
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource RadiusMedium}">
+                            <ContentPresenter x:Name="contentPresenter"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <!-- 右下角向量三角指示符 -->
+                        <Path x:Name="triangleMark"
+                              Data="M 0,8 L 8,8 L 8,0 Z"
+                              Fill="{StaticResource BrushAccentCyan}"
+                              Opacity="0.8"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Bottom"
+                              Margin="0,0,5,5"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource BrushAccentCyanDim}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushAccentCyan}"/>
+                            <Setter Property="Foreground" Value="{StaticResource BrushAccentCyan}"/>
+                            <Setter TargetName="triangleMark" Property="Opacity" Value="1.0"/>
+                            <Setter TargetName="border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentCyan}" BlurRadius="15" ShadowDepth="0" Opacity="0.5"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#3300F0FF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ========================================================= -->
+    <!-- 3. 分類切換 / 開關按鈕 (CyberToggleButton)                  -->
+    <!-- ========================================================= -->
+    <Style x:Key="CyberToggleButton" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Background" Value="#121826"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BrushBorderDefault}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{StaticResource BrushTextMain}"/>
+        <Setter Property="FontFamily" Value="Segoe UI, Microsoft JhengHei UI, sans-serif"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource RadiusMedium}">
+                        <ContentPresenter x:Name="contentPresenter"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="{TemplateBinding Padding}"
+                                          RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- 滑鼠移入狀態 -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource BrushAccentCyanDim}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushAccentCyan}"/>
+                            <Setter Property="Foreground" Value="{StaticResource BrushAccentCyan}"/>
+                            <Setter TargetName="border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentCyan}" BlurRadius="12" ShadowDepth="0" Opacity="0.4"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <!-- 選中狀態 (IsChecked = True) active 藍青漸層與強烈光暈 -->
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource BrushCyberActiveGradient}"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushAccentCyan}"/>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                            <Setter TargetName="border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentCyan}" BlurRadius="18" ShadowDepth="0" Opacity="0.6"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ========================================================= -->
+    <!-- 4. 強調色按鈕：琥珀金 (CyberAccentGoldButton，如：切歌)       -->
+    <!-- ========================================================= -->
+    <Style x:Key="CyberAccentGoldButton" TargetType="{x:Type Button}" BasedOn="{StaticResource CyberButton}">
+        <Setter Property="Foreground" Value="{StaticResource BrushAccentGold}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BrushAccentGold}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="border"
+                            Background="#1AFFB703"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusMedium}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                                          Margin="{TemplateBinding Padding}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#33FFB703"/>
+                            <Setter Property="Foreground" Value="#FFF2A7"/>
+                            <Setter TargetName="border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentGold}" BlurRadius="16" ShadowDepth="0" Opacity="0.6"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#55FFB703"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ========================================================= -->
+    <!-- 5. 強調色按鈕：桃紅 (CyberAccentMagentaButton，如：重唱、刪歌)  -->
+    <!-- ========================================================= -->
+    <Style x:Key="CyberAccentMagentaButton" TargetType="{x:Type Button}" BasedOn="{StaticResource CyberButton}">
+        <Setter Property="Foreground" Value="{StaticResource BrushAccentMagenta}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BrushAccentMagenta}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="border"
+                            Background="#1AFF0077"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusMedium}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                                          Margin="{TemplateBinding Padding}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#33FF0077"/>
+                            <Setter Property="Foreground" Value="#FFA3CF"/>
+                            <Setter TargetName="border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentMagenta}" BlurRadius="16" ShadowDepth="0" Opacity="0.6"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#55FF0077"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

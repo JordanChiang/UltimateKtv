@@ -38,15 +38,22 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Creates the pitch control dialog with 7 buttons
+        /// Creates the pitch control dialog with 7 buttons (Cyber Aesthetic)
         /// </summary>
-        private StackPanel CreatePitchControlDialog()
+        private FrameworkElement CreatePitchControlDialog()
         {
-            var dialogPanel = new StackPanel
+            var dialogContainer = new Border
             {
-                Margin = new Thickness(20),
-                MinWidth = 300
+                Background = (Brush)FindResource("BrushBgSecondary"),
+                BorderBrush = (Brush)FindResource("BrushBorderDefault"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = (CornerRadius)FindResource("RadiusLarge"),
+                Padding = new Thickness(24),
+                MinWidth = 320
             };
+
+            var dialogPanel = new StackPanel();
+            dialogContainer.Child = dialogPanel;
 
             // Title
             var title = new TextBlock
@@ -54,27 +61,35 @@ namespace UltimateKtv
                 Text = "音調控制",
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
-                Margin = new Thickness(0, 0, 0, 20),
+                Margin = new Thickness(0, 0, 0, 16),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Foreground = Brushes.White
+                Foreground = (Brush)FindResource("BrushAccentCyan")
             };
             dialogPanel.Children.Add(title);
 
-            // Button 1: Current pitch display - with theme background
+            // Button 1: Current pitch display banner - high contrast vibrant cyber style
             _currentPitchDisplayBtn = new Button
             {
                 Content = GetPitchDisplayText(),
-                Height = 50,
-                Margin = new Thickness(0, 0, 0, 10),
-                Style = (Style)FindResource("MaterialDesignRaisedButton"),
-                IsEnabled = false,
+                Height = 52,
+                Margin = new Thickness(0, 0, 0, 14),
+                Style = (Style)FindResource("CyberButton"),
+                IsHitTestVisible = false, // Non-clickable display banner without dimming
+                Focusable = false,
                 FontSize = 22,
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
-                Background = TextSettingsHandler.PrimaryBrush,
-                BorderBrush = TextSettingsHandler.PrimaryBrush,
-                BorderThickness = new Thickness(2),
-                Opacity = 1.0 // Ensure full opacity
+                Background = (Brush)FindResource("BrushCyberActiveGradient"),
+                BorderBrush = (Brush)FindResource("BrushAccentCyan"),
+                BorderThickness = new Thickness(1.5),
+                Opacity = 1.0,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = (Color)FindResource("ColorAccentCyan"),
+                    BlurRadius = 15,
+                    ShadowDepth = 0,
+                    Opacity = 0.55
+                }
             };
             dialogPanel.Children.Add(_currentPitchDisplayBtn);
 
@@ -82,12 +97,10 @@ namespace UltimateKtv
             var pitchUpBtn = new Button
             {
                 Content = "升調",
-                Height = 50,
+                Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
-                Style = (Style)FindResource("MaterialDesignOutlinedButton"),
-                FontSize = 20,
-                BorderBrush = TextSettingsHandler.PrimaryBrush,
-                Foreground = Brushes.White
+                Style = (Style)FindResource("CyberButton"),
+                FontSize = 20
             };
             pitchUpBtn.Click += (s, e) => AdjustPitch(1);
             dialogPanel.Children.Add(pitchUpBtn);
@@ -96,12 +109,10 @@ namespace UltimateKtv
             var originalPitchBtn = new Button
             {
                 Content = "原調",
-                Height = 50,
+                Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
-                Style = (Style)FindResource("MaterialDesignOutlinedButton"),
-                FontSize = 20,
-                BorderBrush = TextSettingsHandler.PrimaryBrush,
-                Foreground = Brushes.White
+                Style = (Style)FindResource("CyberButton"),
+                FontSize = 20
             };
             originalPitchBtn.Click += (s, e) => SetOriginalPitch();
             dialogPanel.Children.Add(originalPitchBtn);
@@ -110,12 +121,10 @@ namespace UltimateKtv
             var pitchDownBtn = new Button
             {
                 Content = "降調",
-                Height = 50,
+                Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
-                Style = (Style)FindResource("MaterialDesignOutlinedButton"),
-                FontSize = 20,
-                BorderBrush = TextSettingsHandler.PrimaryBrush,
-                Foreground = Brushes.White
+                Style = (Style)FindResource("CyberButton"),
+                FontSize = 20
             };
             pitchDownBtn.Click += (s, e) => AdjustPitch(-1);
             dialogPanel.Children.Add(pitchDownBtn);
@@ -124,12 +133,10 @@ namespace UltimateKtv
             var malePitchBtn = new Button
             {
                 Content = "男調",
-                Height = 50,
+                Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
-                Style = (Style)FindResource("MaterialDesignOutlinedButton"),
-                FontSize = 20,
-                BorderBrush = TextSettingsHandler.PrimaryBrush,
-                Foreground = Brushes.White
+                Style = (Style)FindResource("CyberButton"),
+                FontSize = 20
             };
             malePitchBtn.Click += (s, e) => SetMalePitch();
             dialogPanel.Children.Add(malePitchBtn);
@@ -138,12 +145,10 @@ namespace UltimateKtv
             var femalePitchBtn = new Button
             {
                 Content = "女調",
-                Height = 50,
+                Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
-                Style = (Style)FindResource("MaterialDesignOutlinedButton"),
-                FontSize = 20,
-                BorderBrush = TextSettingsHandler.PrimaryBrush,
-                Foreground = Brushes.White
+                Style = (Style)FindResource("CyberButton"),
+                FontSize = 20
             };
             femalePitchBtn.Click += (s, e) => SetFemalePitch();
             dialogPanel.Children.Add(femalePitchBtn);
@@ -152,12 +157,10 @@ namespace UltimateKtv
             _fixToggleBtn = new Button
             {
                 Content = _isPitchFixed ? "解除" : "固定",
-                Height = 50,
-                Margin = new Thickness(0, 0, 0, 20),
-                Style = (Style)FindResource("MaterialDesignOutlinedButton"),
-                FontSize = 20,
-                BorderBrush = TextSettingsHandler.PrimaryBrush,
-                Foreground = Brushes.White
+                Height = 48,
+                Margin = new Thickness(0, 0, 0, 16),
+                Style = (Style)FindResource(_isPitchFixed ? "CyberAccentGoldButton" : "CyberButton"),
+                FontSize = 20
             };
             _fixToggleBtn.Click += (s, e) => TogglePitchFix();
             dialogPanel.Children.Add(_fixToggleBtn);
@@ -166,17 +169,15 @@ namespace UltimateKtv
             var closeBtn = new Button
             {
                 Content = "關閉",
-                Height = 45,
-                Style = (Style)FindResource("MaterialDesignFlatButton"),
-                HorizontalAlignment = HorizontalAlignment.Right,
-                MinWidth = 100,
-                FontSize = 18,
-                Foreground = Brushes.White
+                Height = 42,
+                Style = (Style)FindResource("CyberButton"),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                FontSize = 18
             };
             closeBtn.Click += (s, e) => DialogHost.CloseDialogCommand.Execute(null, null);
             dialogPanel.Children.Add(closeBtn);
 
-            return dialogPanel;
+            return dialogContainer;
         }
 
         /// <summary>
@@ -307,6 +308,7 @@ namespace UltimateKtv
             if (_fixToggleBtn != null)
             {
                 _fixToggleBtn.Content = _isPitchFixed ? "解除" : "固定";
+                _fixToggleBtn.Style = (Style)FindResource(_isPitchFixed ? "CyberAccentGoldButton" : "CyberButton");
             }
             
             if (_isPitchFixed)
