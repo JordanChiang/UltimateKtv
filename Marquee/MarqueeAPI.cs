@@ -18,25 +18,14 @@ namespace UltimateKtv
         /// <exception cref="InvalidOperationException">Thrown when in single screen mode</exception>
         private static int GetDisplayDeviceIndex(MarqueeDisplayDevice device)
         {
-            var settings = SettingsManager.Instance.CurrentSettings;
-            bool isSingleMonitorMode = settings.ConsoleScreen == settings.PlayerScreen;
-
-            if (isSingleMonitorMode)
-            {
-                // In single monitor mode, both screens are the same
-                // Always display on the VideoDisplayWindow (device 1)
-                return 1;
-            }
-
-            // Multi-monitor mode
             if (device == MarqueeDisplayDevice.PlayerScreen)
             {
-                // PlayerScreen uses the secondary display window
+                // PlayerScreen uses the secondary display window (device 1)
                 return 1;
             }
             else // ConsoleScreen
             {
-                // ConsoleScreen uses the main window
+                // ConsoleScreen uses the main window (device 0)
                 return 0;
             }
         }
@@ -511,6 +500,15 @@ namespace UltimateKtv
         {
             int displayDevice = GetDisplayDeviceIndex(device);
             return MarqueeManager.Instance.IsMarqueeActive(displayDevice);
+        }
+
+        /// <summary>
+        /// Checks if a song playback marquee is currently active on screen or pending resumption on specified device.
+        /// </summary>
+        public static bool IsSongPlaybackMarqueeActiveOrPending(MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
+        {
+            int displayDevice = GetDisplayDeviceIndex(device);
+            return MarqueeManager.Instance.IsSongPlaybackMarqueeActiveOrPending(displayDevice);
         }
 
         /// <summary>

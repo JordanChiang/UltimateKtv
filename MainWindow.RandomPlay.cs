@@ -333,6 +333,7 @@ namespace UltimateKtv
         private void ShowRandomPlayMarquee(string message)
         {
             var settings = SettingsManager.Instance.CurrentSettings;
+            // Always display on PlayerScreen so users can see random play status/errors on the TV/Player screen
             MarqueeAPI.ShowCustomStaticText(
                 message,
                 TextSettingsHandler.StaticTextForeground,
@@ -340,8 +341,22 @@ namespace UltimateKtv
                 settings.MarqueeBroadcastFontSize,
                 MarqueePosition.Top,
                 0,
-                MarqueeDisplayDevice.ConsoleScreen
+                MarqueeDisplayDevice.PlayerScreen
             );
+
+            // In multi-monitor mode, also display on ConsoleScreen
+            if (!IsSingleMonitorMode)
+            {
+                MarqueeAPI.ShowCustomStaticText(
+                    message,
+                    TextSettingsHandler.StaticTextForeground,
+                    new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(settings.MarqueeBroadcastFontFamily) ? settings.MarqueeBroadcastFontFamily : "微軟正黑體"),
+                    settings.MarqueeBroadcastFontSize,
+                    MarqueePosition.Top,
+                    0,
+                    MarqueeDisplayDevice.ConsoleScreen
+                );
+            }
         }
 
 
@@ -349,10 +364,10 @@ namespace UltimateKtv
         private System.Windows.Threading.DispatcherTimer? _randomPlayDelayTimer;
 
         /// <summary>
-        /// Starts a 1-second delayed check for random play when playlist becomes empty.
+        /// Starts a delayed check for random play when playlist becomes empty.
         /// Cancels any existing delay timer before starting a new one.
         /// </summary>
-        private void StartDelayedRandomPlayWhenEmpty()
+        public void StartDelayedRandomPlayWhenEmpty()
         {
             var settings = SettingsManager.Instance.CurrentSettings;
             if (!settings.RandomPlayEnabled) return;

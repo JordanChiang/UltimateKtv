@@ -757,14 +757,19 @@ namespace UltimateKtv
                 AppLogger.Log("Cursor limiting applied at startup.");
             }
 
-            // Display web host IP/port info on player screen for 10 seconds in single-monitor mode
-            if (IsSingleMonitorMode && _httpServer != null)
+            // If random play is enabled, prioritize random play and skip startup welcome marquees.
+            // Otherwise, display startup welcome marquee and single-monitor web host info.
+            if (!settings.RandomPlayEnabled)
             {
-                DisplayWebHostInfoMarquee();
-            }
+                // Display web host IP/port info on player screen for 10 seconds in single-monitor mode
+                if (IsSingleMonitorMode && _httpServer != null)
+                {
+                    DisplayWebHostInfoMarquee();
+                }
 
-            // Display startup welcome marquee on player screen if configured
-            MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+                // Display startup welcome marquee on player screen if configured
+                MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+            }
 
             // Trigger random play timer on startup if playlist is empty and random play is enabled
             StartDelayedRandomPlayWhenEmpty();

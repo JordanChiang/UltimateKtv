@@ -293,17 +293,20 @@ namespace UltimateKtv
                 }
 
                 var songCount = _playingSongData.TryGetValue("Song_PlayCount", out var pcObj);
-                // Display marquee on main window
+                // Display marquee on main window (only in multi-monitor mode, to avoid conflicting with VideoDisplayWindow in single monitor mode)
                 var marqueeSettings = SettingsManager.Instance.CurrentSettings;
-                MarqueeAPI.ShowCustomStaticText(
-                    $"{singerName} {songName}",
-                    TextSettingsHandler.ParseBrush(marqueeSettings.MarqueeTextFillColor, System.Windows.Media.Brushes.White),
-                    new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(marqueeSettings.MarqueeBroadcastFontFamily) ? marqueeSettings.MarqueeBroadcastFontFamily : "微軟正黑體"),
-                    marqueeSettings.MarqueeBroadcastFontSize,
-                    MarqueePosition.Top,
-                    0,
-                    MarqueeDisplayDevice.ConsoleScreen
-                );
+                if (!IsSingleMonitorMode)
+                {
+                    MarqueeAPI.ShowCustomStaticText(
+                        $"{singerName} {songName}",
+                        TextSettingsHandler.ParseBrush(marqueeSettings.MarqueeTextFillColor, System.Windows.Media.Brushes.White),
+                        new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(marqueeSettings.MarqueeBroadcastFontFamily) ? marqueeSettings.MarqueeBroadcastFontFamily : "微軟正黑體"),
+                        marqueeSettings.MarqueeBroadcastFontSize,
+                        MarqueePosition.Top,
+                        0,
+                        MarqueeDisplayDevice.ConsoleScreen
+                    );
+                }
                 // Display marquee on player display device
                 if (_videoDisplayWindow != null)
                 {

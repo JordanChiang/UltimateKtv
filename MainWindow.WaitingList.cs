@@ -664,10 +664,15 @@ namespace UltimateKtv
         /// Refreshes the song playback marquee on player screen with the latest next song info.
         /// Useful when songs are added, removed, or reordered in the waiting list during playback.
         /// </summary>
-        private void RefreshCurrentPlaybackMarquee()
+        private void RefreshCurrentPlaybackMarquee(bool onlyIfActiveOrPending = false)
         {
             if (_isPlayingFromWaitingList && _videoDisplayWindow != null && _playingSongData != null)
             {
+                if (onlyIfActiveOrPending && !MarqueeAPI.IsSongPlaybackMarqueeActiveOrPending(Enums.MarqueeDisplayDevice.PlayerScreen))
+                {
+                    return;
+                }
+
                 var nextSongItem = _waitingList?.FirstOrDefault(item => !string.IsNullOrEmpty(item.WaitingListSongName));
                 string? nextSong = nextSongItem?.WaitingListSongName;
                 string? nextSinger = nextSongItem?.WaitingListSingerName;
@@ -776,7 +781,8 @@ namespace UltimateKtv
                 (!string.IsNullOrEmpty(song.OrderedBy) ? $" (Ordered by: {song.OrderedBy})" : ""));
             
             // If a random song is currently playing, cut it off so the user's song can play immediately
-            if (_isRandomSongPlaying && _isPlayingFromWaitingList)
+            bool wasRandomSongPlaying = _isRandomSongPlaying && _isPlayingFromWaitingList;
+            if (wasRandomSongPlaying)
             {
                 DebugLog("AddSongToWaitingList: User ordered a song while random song is playing. Cutting off random song.");
                 AppLogger.Log("Random play cutoff: User ordered a song, stopping random playback.");
@@ -799,13 +805,25 @@ namespace UltimateKtv
             Debug.WriteLine($"Added to waiting list: {song.SongName} by {song.SingerName}" + 
                 (!string.IsNullOrEmpty(song.OrderedBy) ? $" (Ordered by: {song.OrderedBy})" : ""));
 
-            // Show marquee on player screen using customizable settings
-            MarqueeAPI.ShowSongAddedNotification(
-                song.SongName,
-                song.SingerName,
-                song.OrderedBy,
-                Enums.MarqueeDisplayDevice.PlayerScreen
-            );
+            // Show marquee on player screen using customizable settings ONLY if not cutting off a random song
+            if (!wasRandomSongPlaying)
+            {
+                // Check if playback marquee is active before showing notification (which moves it to pending)
+                bool wasPlaybackActive = MarqueeAPI.IsSongPlaybackMarqueeActiveOrPending(Enums.MarqueeDisplayDevice.PlayerScreen);
+
+                MarqueeAPI.ShowSongAddedNotification(
+                    song.SongName,
+                    song.SingerName,
+                    song.OrderedBy,
+                    Enums.MarqueeDisplayDevice.PlayerScreen
+                );
+
+                // If playback marquee was active on screen (or pending), update it to reflect the new next song (MarqueeTextString1)
+                if (wasPlaybackActive)
+                {
+                    RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
+                }
+            }
 
             UpdateWaitingListDisplay();
         }
@@ -916,7 +934,7 @@ namespace UltimateKtv
                 _waitingList.RemoveAt(idx);
                 _waitingList.Insert(0, item);
                 UpdateWaitingListDisplay();
-                RefreshCurrentPlaybackMarquee();
+                RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
             }
             catch (Exception ex)
             {
@@ -943,7 +961,7 @@ namespace UltimateKtv
                     AppLogger.Log($"{source} action: Remove song '{item.WaitingListSongName}' from waiting list");
                     _waitingList.RemoveAt(idx);
                     UpdateWaitingListDisplay();
-                    RefreshCurrentPlaybackMarquee();
+                    RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
                 }
             }
             catch (Exception ex)
@@ -974,7 +992,7 @@ namespace UltimateKtv
                     _waitingList[idx + 1] = _waitingList[idx];
                     _waitingList[idx] = temp;
                     UpdateWaitingListDisplay();
-                    RefreshCurrentPlaybackMarquee();
+                    RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
                 }
             }
             catch (Exception ex)

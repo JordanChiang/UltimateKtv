@@ -451,6 +451,12 @@ namespace UltimateKtv
             // Rebuild song file paths to apply the new library path immediately
             SongDatas.RebuildSongFilePaths();
 
+            // If random play was enabled, trigger delayed check if waiting list is empty and nothing is currently playing
+            if (settings.RandomPlayEnabled && _parentWindow != null)
+            {
+                _parentWindow.StartDelayedRandomPlayWhenEmpty();
+            }
+
             MessageBox.Show("設定已套用", "完成", MessageBoxButton.OK, MessageBoxImage.Information);
             this.Close();
         }

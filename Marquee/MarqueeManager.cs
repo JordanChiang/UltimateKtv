@@ -276,8 +276,17 @@ namespace UltimateKtv
                 // so it will automatically play as soon as the notification finishes.
                 if (state.ActiveMainItem != null && state.ActiveMainItem.Priority == MarqueePriority.High)
                 {
+                    if (state.PendingSongPlaybackItem != null && state.PendingSongPlaybackItem.IsSongPlayback)
+                    {
+                        item.RepeatCount = state.PendingSongPlaybackItem.RepeatCount;
+                    }
                     state.PendingSongPlaybackItem = item;
                     return;
+                }
+
+                if (state.ActiveMainControl != null && state.ActiveMainItem != null && state.ActiveMainItem.IsSongPlayback)
+                {
+                    item.RepeatCount = Math.Max(1, state.ActiveMainControl.RemainingRepeatCount);
                 }
 
                 state.PendingSongPlaybackItem = item;
@@ -448,6 +457,19 @@ namespace UltimateKtv
             if (_deviceStates.TryGetValue(displayDevice, out var state))
             {
                 return state.ActiveMainControl != null || state.ActiveCornerControls.Count > 0;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a song playback marquee is currently active on screen or pending resumption on specified device.
+        /// </summary>
+        public bool IsSongPlaybackMarqueeActiveOrPending(int displayDevice)
+        {
+            if (_deviceStates.TryGetValue(displayDevice, out var state))
+            {
+                return (state.ActiveMainItem != null && state.ActiveMainItem.IsSongPlayback)
+                    || (state.PendingSongPlaybackItem != null && state.PendingSongPlaybackItem.IsSongPlayback);
             }
             return false;
         }
