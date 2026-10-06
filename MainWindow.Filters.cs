@@ -261,6 +261,13 @@ namespace UltimateKtv
             if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = System.Windows.Visibility.Visible;
             if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = System.Windows.Visibility.Visible;
 
+            var activeBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberActiveGradient") ?? TryFindResource("PrimaryHueMidBrush") ?? System.Windows.Media.Brushes.DarkOrange);
+            var inactiveBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberButtonGradient") ?? System.Windows.Media.Brushes.Transparent);
+            var activeFg = System.Windows.Media.Brushes.White;
+            var inactiveFg = (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
+            var activeBorder = (System.Windows.Media.Brush)(TryFindResource("BrushAccentCyan") ?? TryFindResource("PrimaryHueMidBrush") ?? activeBg);
+            var inactiveBorder = (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
+
             // 1. Update top language buttons
             foreach (var filterBtn in _filterButtons)
             {
@@ -269,9 +276,9 @@ namespace UltimateKtv
                 bool isSelected = _selectedLanguages.Contains(btnTag);
                 
                 filterBtn.FontWeight = isSelected ? System.Windows.FontWeights.ExtraBold : System.Windows.FontWeights.Normal;
-                filterBtn.Background = isSelected ? (System.Windows.Media.Brush)TryFindResource("PrimaryHueMidBrush") : System.Windows.Media.Brushes.Transparent;
-                filterBtn.Foreground = isSelected ? System.Windows.Media.Brushes.White : (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
-                filterBtn.BorderBrush = isSelected ? (System.Windows.Media.Brush)TryFindResource("PrimaryHueMidBrush") : (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
+                filterBtn.Background = isSelected ? activeBg : inactiveBg;
+                filterBtn.Foreground = isSelected ? activeFg : inactiveFg;
+                filterBtn.BorderBrush = isSelected ? activeBorder : inactiveBorder;
             }
 
             // 1.5 Update Duet toggle button state and background
@@ -294,8 +301,9 @@ namespace UltimateKtv
                 bool isSelected = !_isDuetOnly && _selectedSingerType == btnTag;
 
                 btn.FontWeight = isSelected ? System.Windows.FontWeights.ExtraBold : System.Windows.FontWeights.Normal;
-                btn.Background = isSelected ? (System.Windows.Media.Brush)TryFindResource("PrimaryHueMidBrush") : System.Windows.Media.Brushes.Transparent;
-                btn.Foreground = isSelected ? System.Windows.Media.Brushes.White : (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
+                btn.Background = isSelected ? activeBg : inactiveBg;
+                btn.Foreground = isSelected ? activeFg : inactiveFg;
+                btn.BorderBrush = isSelected ? activeBorder : inactiveBorder;
             }
 
             // 3. Word count buttons - they are in LanguageWordCountFilterGrid
@@ -309,8 +317,9 @@ namespace UltimateKtv
                         bool isSelected = _selectedWordCountRange == btnTag;
 
                         btn.FontWeight = isSelected ? System.Windows.FontWeights.ExtraBold : System.Windows.FontWeights.Normal;
-                        btn.Background = isSelected ? (System.Windows.Media.Brush)TryFindResource("PrimaryHueMidBrush") : System.Windows.Media.Brushes.Transparent;
-                        btn.Foreground = isSelected ? System.Windows.Media.Brushes.White : (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
+                        btn.Background = isSelected ? activeBg : inactiveBg;
+                        btn.Foreground = isSelected ? activeFg : inactiveFg;
+                        btn.BorderBrush = isSelected ? activeBorder : inactiveBorder;
                     }
                 }
             }

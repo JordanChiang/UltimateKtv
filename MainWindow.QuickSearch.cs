@@ -510,10 +510,12 @@ namespace UltimateKtv
 
 
                 // Visual selection: highlight clicked by changing colors, de-emphasize others
-                var activeBg = (System.Windows.Media.Brush)FindResource("SingerButtonBackground");
+                var activeBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberActiveGradient") ?? FindResource("SingerButtonBackground"));
                 var activeFg = System.Windows.Media.Brushes.White;
-                var inactiveBg = System.Windows.Media.Brushes.Transparent;
+                var inactiveBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberButtonGradient") ?? System.Windows.Media.Brushes.Transparent);
                 var inactiveFg = (System.Windows.Media.Brush)FindResource("SingerButtonBackground");
+                var activeBorder = (System.Windows.Media.Brush)(TryFindResource("BrushAccentCyan") ?? TryFindResource("PrimaryHueMidBrush") ?? activeBg);
+                var inactiveBorder = (System.Windows.Media.Brush)FindResource("SingerButtonBackground");
 
                 var buttons = new[] { BopomofoListBtn, EngAndNumListBtn, PenStyleListBtn, SongIdListBtn, KeyboardListBtn, YoutubeHistoryBtn };
                 foreach (var btn in buttons)
@@ -521,9 +523,10 @@ namespace UltimateKtv
                     if (btn == null) continue;
                     bool isActive = btn == clicked;
                     btn.FontWeight = isActive ? FontWeights.Bold : FontWeights.Normal;
-                    btn.Opacity = isActive ? 1.0 : 0.8;
+                    btn.Opacity = isActive ? 1.0 : 0.85;
                     btn.Background = isActive ? activeBg : inactiveBg;
                     btn.Foreground = isActive ? activeFg : inactiveFg;
+                    btn.BorderBrush = isActive ? activeBorder : inactiveBorder;
                 }
 
                 // Restore visibility after updates

@@ -610,18 +610,37 @@ namespace StyleSimulator
             Brush gridHeaderBgBrush;
             if (string.IsNullOrWhiteSpace(headerBgHex) || string.Equals(headerBgHex, "#FF4A4A4A", StringComparison.OrdinalIgnoreCase))
             {
-                var grad = new LinearGradientBrush
+                if (!string.IsNullOrWhiteSpace(TxtPrimaryColor.Text))
                 {
-                    StartPoint = new Point(0, 0),
-                    EndPoint = new Point(1, 0),
-                    GradientStops = new GradientStopCollection
+                    var pCol = ParseColor(TxtPrimaryColor.Text, Color.FromRgb(255, 193, 7));
+                    var grad = new LinearGradientBrush
                     {
-                        new GradientStop(Color.FromArgb(0xD1, 0x12, 0x18, 0x26), 0.0),
-                        new GradientStop(Color.FromArgb(0xD9, 0x1C, 0x26, 0x3C), 1.0)
-                    }
-                };
-                grad.Freeze();
-                gridHeaderBgBrush = grad;
+                        StartPoint = new Point(0, 0),
+                        EndPoint = new Point(1, 0),
+                        GradientStops = new GradientStopCollection
+                        {
+                            new GradientStop(Color.FromArgb(255, (byte)(pCol.R * 0.7), (byte)(pCol.G * 0.7), (byte)(pCol.B * 0.7)), 0.0),
+                            new GradientStop(Color.FromArgb(255, (byte)Math.Min(255, pCol.R * 0.95 + 10), (byte)Math.Min(255, pCol.G * 0.95 + 10), (byte)Math.Min(255, pCol.B * 0.95 + 10)), 1.0)
+                        }
+                    };
+                    grad.Freeze();
+                    gridHeaderBgBrush = grad;
+                }
+                else
+                {
+                    var grad = new LinearGradientBrush
+                    {
+                        StartPoint = new Point(0, 0),
+                        EndPoint = new Point(1, 0),
+                        GradientStops = new GradientStopCollection
+                        {
+                            new GradientStop(Color.FromArgb(0xD1, 0x12, 0x18, 0x26), 0.0),
+                            new GradientStop(Color.FromArgb(0xD9, 0x1C, 0x26, 0x3C), 1.0)
+                        }
+                    };
+                    grad.Freeze();
+                    gridHeaderBgBrush = grad;
+                }
             }
             else
             {
@@ -644,24 +663,39 @@ namespace StyleSimulator
             var staticTextFgBrush = ParseBrush(TxtStaticTextFg.Text, Brushes.White);
             var webHostInfoFgBrush = ParseBrush(TxtWebHostInfoFg.Text, Brushes.White);
 
-            Color primaryColor = ParseColor(TxtPrimaryColor.Text, Color.FromRgb(0, 240, 255));
+            Color primaryColor = ParseColor(TxtPrimaryColor.Text, Color.FromRgb(255, 193, 7));
             Color accentColor = ParseColor(TxtAccentColor?.Text, primaryColor);
             if (accentColor.A == 0) accentColor = primaryColor;
 
             var accentBrush = new SolidColorBrush(accentColor);
             var accentDimBrush = new SolidColorBrush(Color.FromArgb(38, accentColor.R, accentColor.G, accentColor.B));
+
+            // 全按鈕通用賽博微漸層 (Normal Buttons)
+            var cyberButtonGradient = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(65, accentColor.R, accentColor.G, accentColor.B), 0.0),
+                    new GradientStop(Color.FromArgb(20, (byte)(accentColor.R * 0.35), (byte)(accentColor.G * 0.35), (byte)(accentColor.B * 0.35)), 1.0)
+                }
+            };
+
+            // 啟動/選中狀態高亮漸層 (Active Buttons)
             var cyberActiveGradient = new LinearGradientBrush
             {
                 StartPoint = new Point(0, 0),
                 EndPoint = new Point(0, 1),
                 GradientStops = new GradientStopCollection
                 {
-                    new GradientStop(Color.FromArgb(102, accentColor.R, accentColor.G, accentColor.B), 0.0),
-                    new GradientStop(Color.FromArgb(64, (byte)(accentColor.R * 0.55), (byte)(accentColor.G * 0.55), (byte)(accentColor.B * 0.55)), 1.0)
+                    new GradientStop(Color.FromArgb(230, (byte)(accentColor.R * 0.94), (byte)(accentColor.G * 0.94), (byte)(accentColor.B * 0.94)), 0.0),
+                    new GradientStop(Color.FromArgb(215, (byte)(accentColor.R * 0.58), (byte)(accentColor.G * 0.55), (byte)(accentColor.B * 0.52)), 1.0)
                 }
             };
             accentBrush.Freeze();
             accentDimBrush.Freeze();
+            cyberButtonGradient.Freeze();
             cyberActiveGradient.Freeze();
 
             // Update Window Resource Dictionary for DynamicResource bindings
@@ -676,6 +710,7 @@ namespace StyleSimulator
             this.Resources["BrushAccentCyan"] = accentBrush;
             this.Resources["BrushAccentCyanDim"] = accentDimBrush;
             this.Resources["BrushCyberActiveGradient"] = cyberActiveGradient;
+            this.Resources["BrushCyberButtonGradient"] = cyberButtonGradient;
             this.Resources["UiFontFamily"] = uiFont;
             var appRes = Application.Current?.Resources;
             if (appRes != null)
@@ -732,9 +767,7 @@ namespace StyleSimulator
             if (TxtWaitHeaderCol1 != null) { TxtWaitHeaderCol1.FontFamily = uiFont; TxtWaitHeaderCol1.FontSize = SldWaitingListFontSize.Value; TxtWaitHeaderCol1.Foreground = gridHeaderFgBrush; }
             if (TxtWaitHeaderCol2 != null) { TxtWaitHeaderCol2.FontFamily = uiFont; TxtWaitHeaderCol2.FontSize = SldWaitingListFontSize.Value; TxtWaitHeaderCol2.Foreground = gridHeaderFgBrush; }
 
-            var cyberBg = (Brush)FindResource("BrushBgSecondary");
-
-            // 8 Top Function Buttons (FuncBtn5 "新進" is active with CyberActiveGradient, all outlined buttons use PrimaryColor)
+            // 8 Top Function Buttons (FuncBtn5 "新進" is active with CyberActiveGradient, all other buttons apply cyberButtonGradient)
             Button?[] funcBtns = { FuncBtn1, FuncBtn2, FuncBtn3, FuncBtn4, FuncBtn5, FuncBtn6, FuncBtn7, FuncBtn8 };
             foreach (var b in funcBtns)
             {
@@ -754,17 +787,17 @@ namespace StyleSimulator
                     }
                     else
                     {
-                        b.Background = cyberBg;
+                        b.Background = cyberButtonGradient;
                         b.Foreground = primaryBrush;
                         b.BorderBrush = primaryBrush;
-                        b.BorderThickness = new Thickness(1);
+                        b.BorderThickness = new Thickness(1.5);
                         b.FontWeight = FontWeights.SemiBold;
                         b.Effect = null;
                     }
                 }
             }
 
-            // 5 Category Filter Buttons (FilterBtn1 "國語-單曲" is active with CyberActiveGradient & White text)
+            // 5 Category Filter Buttons (FilterBtn1 "國語-單曲" is active with CyberActiveGradient, all others apply cyberButtonGradient)
             Button?[] filterBtns = { FilterBtn1, FilterBtn2, FilterBtn3, FilterBtn4, FilterBtn5 };
             foreach (var b in filterBtns)
             {
@@ -784,17 +817,17 @@ namespace StyleSimulator
                     }
                     else
                     {
-                        b.Background = cyberBg;
+                        b.Background = cyberButtonGradient;
                         b.Foreground = primaryBrush;
                         b.BorderBrush = primaryBrush;
-                        b.BorderThickness = new Thickness(1);
+                        b.BorderThickness = new Thickness(1.5);
                         b.FontWeight = FontWeights.SemiBold;
                         b.Effect = null;
                     }
                 }
             }
 
-            // Bottom Player Control & Pagination Buttons (Outlined with PrimaryColor, only BtnMusic "伴唱" is active)
+            // Bottom Player Control & Pagination Buttons (All apply gradient, only BtnMusic "伴唱" is active)
             Button?[] bottomBtns = { BtnPause, BtnRepeat, BtnVocal, BtnMusic, BtnPageUp, BtnPageDown };
             foreach (var b in bottomBtns)
             {
@@ -814,37 +847,38 @@ namespace StyleSimulator
                     }
                     else
                     {
-                        b.Background = cyberBg;
+                        b.Background = cyberButtonGradient;
                         b.Foreground = primaryBrush;
                         b.BorderBrush = primaryBrush;
-                        b.BorderThickness = new Thickness(1);
+                        b.BorderThickness = new Thickness(1.5);
                         b.FontWeight = FontWeights.SemiBold;
                         b.Effect = null;
                     }
                 }
             }
 
-            // Skip Song Button: Matches LargePlayerControlButtonStyle (uses primaryBrush and textsettings.json)
+            // Skip Song Button: Matches LargePlayerControlButtonStyle (uses cyberButtonGradient and primaryBrush)
             if (BtnSkipSong != null)
             {
                 BtnSkipSong.FontFamily = uiFont;
                 BtnSkipSong.FontSize = SldBottomButtonFontSize.Value;
-                BtnSkipSong.Background = cyberBg;
+                BtnSkipSong.Background = cyberButtonGradient;
                 BtnSkipSong.Foreground = primaryBrush;
                 BtnSkipSong.BorderBrush = primaryBrush;
-                BtnSkipSong.BorderThickness = new Thickness(1);
-                BtnSkipSong.FontWeight = FontWeights.SemiBold;
+                BtnSkipSong.BorderThickness = new Thickness(1.5);
+                BtnSkipSong.FontWeight = FontWeights.Bold;
                 BtnSkipSong.Effect = null;
             }
 
-            // Waiting List Pagination Buttons: Font size 26
+            // Waiting List Pagination Buttons: Font size 26, apply cyberButtonGradient
             if (BtnWaitPageUp != null)
             {
                 BtnWaitPageUp.FontFamily = uiFont;
                 BtnWaitPageUp.FontSize = 26;
                 BtnWaitPageUp.BorderBrush = primaryBrush;
                 BtnWaitPageUp.Foreground = primaryBrush;
-                BtnWaitPageUp.Background = cyberBg;
+                BtnWaitPageUp.Background = cyberButtonGradient;
+                BtnWaitPageUp.BorderThickness = new Thickness(1.5);
             }
             if (BtnWaitPageDown != null)
             {
@@ -852,12 +886,31 @@ namespace StyleSimulator
                 BtnWaitPageDown.FontSize = 26;
                 BtnWaitPageDown.BorderBrush = primaryBrush;
                 BtnWaitPageDown.Foreground = primaryBrush;
-                BtnWaitPageDown.Background = cyberBg;
+                BtnWaitPageDown.Background = cyberButtonGradient;
+                BtnWaitPageDown.BorderThickness = new Thickness(1.5);
             }
 
-            // Bottom Right Pagination Buttons: Center text alignment
-            if (BtnPageUp != null) { BtnPageUp.Padding = new Thickness(0); BtnPageUp.HorizontalContentAlignment = HorizontalAlignment.Center; BtnPageUp.VerticalContentAlignment = VerticalAlignment.Center; }
-            if (BtnPageDown != null) { BtnPageDown.Padding = new Thickness(0); BtnPageDown.HorizontalContentAlignment = HorizontalAlignment.Center; BtnPageDown.VerticalContentAlignment = VerticalAlignment.Center; }
+            // Bottom Right Pagination Buttons: Center text alignment, apply cyberButtonGradient
+            if (BtnPageUp != null)
+            {
+                BtnPageUp.Padding = new Thickness(0);
+                BtnPageUp.HorizontalContentAlignment = HorizontalAlignment.Center;
+                BtnPageUp.VerticalContentAlignment = VerticalAlignment.Center;
+                BtnPageUp.Background = cyberButtonGradient;
+                BtnPageUp.BorderBrush = primaryBrush;
+                BtnPageUp.Foreground = primaryBrush;
+                BtnPageUp.BorderThickness = new Thickness(1.5);
+            }
+            if (BtnPageDown != null)
+            {
+                BtnPageDown.Padding = new Thickness(0);
+                BtnPageDown.HorizontalContentAlignment = HorizontalAlignment.Center;
+                BtnPageDown.VerticalContentAlignment = VerticalAlignment.Center;
+                BtnPageDown.Background = cyberButtonGradient;
+                BtnPageDown.BorderBrush = primaryBrush;
+                BtnPageDown.Foreground = primaryBrush;
+                BtnPageDown.BorderThickness = new Thickness(1.5);
+            }
 
             if (IconLock != null) IconLock.Foreground = primaryBrush;
             if (IconMenu != null) IconMenu.Foreground = primaryBrush;
@@ -1695,10 +1748,7 @@ namespace StyleSimulator
 
             if (tag == "DEFAULT")
             {
-                _model.ResetTextSettingsToDefaults();
-                ApplySettingsToUI();
-                UpdateLivePreviews();
-                return;
+                tag = "textsettings_default_amber.json";
             }
 
             // 1. 優先從組件內建資源讀取 (Embedded Resource)
@@ -1733,6 +1783,14 @@ namespace StyleSimulator
                     UpdateLivePreviews();
                     return;
                 }
+            }
+
+            if (tag == "textsettings_default_amber.json")
+            {
+                _model.ResetTextSettingsToDefaults();
+                ApplySettingsToUI();
+                UpdateLivePreviews();
+                return;
             }
 
             MessageBox.Show($"找不到主題範本資源或檔案:\n{tag}", "主題載入失敗", MessageBoxButton.OK, MessageBoxImage.Warning);

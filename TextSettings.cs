@@ -54,19 +54,19 @@ namespace UltimateKtv
 
         #region UI Brush Settings
 
-        [Description("資料表格標題背景色: DataGrid column header background color. Default is '#FF4A4A4A'.")]
-        public string DataGridColumnHeaderBackgroundColor { get; set; } = "#FF4A4A4A";
+        [Description("資料表格標題背景色: DataGrid column header background color. Default is '#FFA000'.")]
+        public string DataGridColumnHeaderBackgroundColor { get; set; } = "#FFA000";
 
         [Description("資料表格標題前景色: DataGrid column header foreground color. Default is '#FFFFFFFF'.")]
         public string DataGridColumnHeaderForegroundColor { get; set; } = "#FFFFFFFF";
 
 
-        [Description("主要顏色: Primary theme color for buttons, borders, highlights, and controls. Default is '#FFC107' (Amber).")]
-        public string PrimaryColor { get; set; } = "#FFC107";
+        [Description("主要顏色: Primary theme color for buttons, borders, highlights, and controls. Default is '#FFB300' (Amber).")]
+        public string PrimaryColor { get; set; } = "#FFB300";
 
 
-        [Description("主要淺色顏色: Primary light color for hover/focus states and singer tags. Default is '#FFECB3'.")]
-        public string PrimaryLightColor { get; set; } = "#FFECB3";
+        [Description("主要淺色顏色: Primary light color for hover/focus states and singer tags. Default is '#FFE082'.")]
+        public string PrimaryLightColor { get; set; } = "#FFE082";
 
         [Description("按鈕發光與選中強調色: Button glow and active highlight accent color. Default is empty (auto-derived from PrimaryColor).")]
         public string AccentColor { get; set; } = "";

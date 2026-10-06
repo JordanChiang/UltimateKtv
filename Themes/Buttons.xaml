@@ -9,7 +9,7 @@
     <!-- 1. 標準賽博龐克按鈕 (CyberButton)                           -->
     <!-- ========================================================= -->
     <Style x:Key="CyberButton" TargetType="{x:Type Button}">
-        <Setter Property="Background" Value="#121826"/>
+        <Setter Property="Background" Value="{DynamicResource BrushCyberButtonGradient}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BrushBorderDefault}"/>
         <Setter Property="BorderThickness" Value="{DynamicResource BorderThicknessButton}"/>
         <Setter Property="Foreground" Value="{StaticResource BrushTextMain}"/>

@@ -188,9 +188,25 @@ namespace UltimateKtv
             get
             {
                 var hex = Settings.DataGridColumnHeaderBackgroundColor;
-                // 若為預設值 "#FF4A4A4A"、空值或未特別自訂，使用深藍科技卡片微光漸層 (#D1121826 -> #D91C263C)
+                // 若為預設舊值 "#FF4A4A4A"、空值或未特別自訂，依主要顏色演算微光漸層 (若無則使用深藍科技微光漸層)
                 if (string.IsNullOrWhiteSpace(hex) || string.Equals(hex, "#FF4A4A4A", StringComparison.OrdinalIgnoreCase))
                 {
+                    if (!string.IsNullOrWhiteSpace(Settings.PrimaryColor))
+                    {
+                        var primary = ParseColor(Settings.PrimaryColor, System.Windows.Media.Colors.Goldenrod);
+                        var startCol = Color.FromArgb(
+                            255,
+                            (byte)(primary.R * 0.7),
+                            (byte)(primary.G * 0.7),
+                            (byte)(primary.B * 0.7));
+                        var endCol = Color.FromArgb(
+                            255,
+                            (byte)Math.Min(255, primary.R * 0.95 + 10),
+                            (byte)Math.Min(255, primary.G * 0.95 + 10),
+                            (byte)Math.Min(255, primary.B * 0.95 + 10));
+                        return CreateHeaderGradient(startCol, endCol);
+                    }
+
                     return CreateHeaderGradient(
                         Color.FromArgb(0xD1, 0x12, 0x18, 0x26),
                         Color.FromArgb(0xD9, 0x1C, 0x26, 0x3C));
@@ -301,19 +317,42 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Gets the resolved Cyber Active Gradient Brush (40% alpha -> 25% darkened alpha).
+        /// Gets the resolved Cyber Active Gradient Brush (matching the prominent "歌星" selected appearance, tuned warm and comfortable).
         /// </summary>
         public static LinearGradientBrush CyberActiveGradientBrush
         {
             get
             {
                 var c = ResolvedAccentColor;
-                var startColor = System.Windows.Media.Color.FromArgb(102, c.R, c.G, c.B); // ~40%
-                var endColor = System.Windows.Media.Color.FromArgb(64, (byte)(c.R * 0.55), (byte)(c.G * 0.55), (byte)(c.B * 0.55)); // ~25% darkened
+                // High-visibility rich warm amber gradient (subtly toned down from max brightness)
+                var startColor = System.Windows.Media.Color.FromArgb(230, (byte)(c.R * 0.94), (byte)(c.G * 0.94), (byte)(c.B * 0.94)); // ~90% opacity, softly toned
+                var endColor = System.Windows.Media.Color.FromArgb(215, (byte)(c.R * 0.58), (byte)(c.G * 0.55), (byte)(c.B * 0.52)); // ~84% opacity deep tone
                 var gradient = new LinearGradientBrush
                 {
                     StartPoint = new System.Windows.Point(0, 0),
-                    EndPoint = new System.Windows.Point(1, 1)
+                    EndPoint = new System.Windows.Point(0, 1)
+                };
+                gradient.GradientStops.Add(new GradientStop(startColor, 0.0));
+                gradient.GradientStops.Add(new GradientStop(endColor, 1.0));
+                gradient.Freeze();
+                return gradient;
+            }
+        }
+
+        /// <summary>
+        /// Gets the resolved Cyber Button Gradient Brush for default button background (all buttons).
+        /// </summary>
+        public static LinearGradientBrush CyberButtonGradientBrush
+        {
+            get
+            {
+                var c = ResolvedAccentColor;
+                var startColor = System.Windows.Media.Color.FromArgb(65, c.R, c.G, c.B); // ~25%
+                var endColor = System.Windows.Media.Color.FromArgb(20, (byte)(c.R * 0.35), (byte)(c.G * 0.35), (byte)(c.B * 0.35)); // ~8% darkened
+                var gradient = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(0, 1)
                 };
                 gradient.GradientStops.Add(new GradientStop(startColor, 0.0));
                 gradient.GradientStops.Add(new GradientStop(endColor, 1.0));
@@ -342,6 +381,7 @@ namespace UltimateKtv
                 var accentBrush = AccentBrush;
                 var accentDimBrush = AccentDimBrush;
                 var cyberGradient = CyberActiveGradientBrush;
+                var cyberButtonGradient = CyberButtonGradientBrush;
 
                 // Window-level resources (defined in MainWindow.xaml Resources section)
                 window.Resources["DataGridColumnHeaderBackground"] = DataGridColumnHeaderBackground;
@@ -353,6 +393,7 @@ namespace UltimateKtv
                 window.Resources["BrushAccentCyan"] = accentBrush;
                 window.Resources["BrushAccentCyanDim"] = accentDimBrush;
                 window.Resources["BrushCyberActiveGradient"] = cyberGradient;
+                window.Resources["BrushCyberButtonGradient"] = cyberButtonGradient;
 
                 // Dynamic UI Font Family
                 var uiFont = FontFamily;
@@ -387,6 +428,7 @@ namespace UltimateKtv
                     appResources["BrushAccentCyan"] = accentBrush;
                     appResources["BrushAccentCyanDim"] = accentDimBrush;
                     appResources["BrushCyberActiveGradient"] = cyberGradient;
+                    appResources["BrushCyberButtonGradient"] = cyberButtonGradient;
                 }
 
                 // Singer grid button background (Window-level resource)

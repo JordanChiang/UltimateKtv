@@ -435,6 +435,7 @@ namespace StyleSimulator
             WebHostInfoFontSize = defaults.WebHostInfoFontSize;
             PrimaryColor = defaults.PrimaryColor;
             PrimaryLightColor = defaults.PrimaryLightColor;
+            AccentColor = defaults.AccentColor;
             DataGridHeaderBgColor = defaults.DataGridColumnHeaderBackgroundColor;
             DataGridColumnHeaderForegroundColor = defaults.DataGridColumnHeaderForegroundColor;
             AnnouncementForegroundColor = defaults.AnnouncementForegroundColor;

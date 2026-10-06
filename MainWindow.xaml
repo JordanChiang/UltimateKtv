@@ -49,10 +49,10 @@
         <SolidColorBrush x:Key="DataGridColumnHeaderForeground" Color="#FFFFFFFF"/>
 
         <!-- Primary theme brush (overridden by TextSettings at startup) -->
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#FFC107"/>
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#FFB300"/>
 
         <!-- Singer Grid Button Colors (will be overridden by TextSettings at startup) -->
-        <SolidColorBrush x:Key="SingerButtonBackground" Color="#FFC107"/>
+        <SolidColorBrush x:Key="SingerButtonBackground" Color="#FFB300"/>
 
         <!-- Converter for binding a boolean value to the Stretch property -->
         <local:BoolToStretchConverter x:Key="BoolToStretchConverter" />
@@ -469,17 +469,24 @@
             </Setter>
         </Style>
 
-        <!-- Style for the small player control buttons -->
+        <!-- Style for the small player control buttons (暫停, 伴唱) -->
         <Style x:Key="PlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
             <Setter Property="FontSize" Value="{DynamicResource BottomButtonFontSize}" />
             <Setter Property="Height" Value="{StaticResource PlayingBtnHeight}" />
             <Setter Property="Width" Value="132" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="2" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="0" />
             <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
             <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- Style for the small player control buttons with submenu indicator (人聲, 重播) -->
@@ -497,7 +504,7 @@
                 <Setter.Value>
                     <DataTemplate>
                         <Grid Background="Transparent">
-                            <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" />
                             <Path Data="M 0,8 L 8,0 L 8,8 Z" 
                                   Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
                                   Opacity="0.85" 

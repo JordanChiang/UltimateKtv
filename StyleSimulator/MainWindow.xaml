@@ -13,11 +13,19 @@
         Background="#141419" Foreground="#EAEAEA">
     <Window.Resources>
         <!-- Dynamic Theme Brushes for Live KTV Preview -->
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#FFC107" />
-        <SolidColorBrush x:Key="PrimaryLightBrush" Color="#FFECB3" />
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#FFB300" />
+        <SolidColorBrush x:Key="PrimaryLightBrush" Color="#FFE082" />
         <LinearGradientBrush x:Key="DataGridHeaderBgBrush" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#D1121826" Offset="0.0"/>
-            <GradientStop Color="#D91C263C" Offset="1.0"/>
+            <GradientStop Color="#FFA000" Offset="0.0"/>
+            <GradientStop Color="#FFCA28" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#E6FFB300" Offset="0.0"/>
+            <GradientStop Color="#D08A6403" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushCyberButtonGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#42FFB300" Offset="0.0"/>
+            <GradientStop Color="#14664D00" Offset="1.0"/>
         </LinearGradientBrush>
         <SolidColorBrush x:Key="DataGridHeaderFgBrush" Color="#FFFFFFFF" />
         <SolidColorBrush x:Key="AnnouncementFgBrush" Color="#FFFFFF" />
@@ -191,11 +199,18 @@
         <Style x:Key="PlayerControlButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
             <Setter Property="FontSize" Value="36" />
             <Setter Property="Height" Value="50" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="2" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="0" />
             <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" />
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- Style for submenu player control buttons (人聲, 重播 - Matches MainWindow.xaml) -->
@@ -211,7 +226,7 @@
                 <Setter.Value>
                     <DataTemplate>
                         <Grid Background="Transparent">
-                            <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" />
                             <Path Data="M 0,8 L 8,0 L 8,8 Z" 
                                   Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
                                   Opacity="0.85" 
@@ -1268,7 +1283,7 @@
                                             <ComboBoxItem Content="🌊 海洋青 (Ocean Cyan)" Tag="textsettings_ocean_cyan.json" />
                                             <ComboBoxItem Content="🌅 日落橘 (Sunset Orange)" Tag="textsettings_sunset_orange.json" />
                                             <ComboBoxItem Content="🔮 炫麗紫 (Vivid Purple)" Tag="textsettings_vivid_purple.json" />
-                                            <ComboBoxItem Content="🌟 原廠預設金琥珀 (Default Amber)" Tag="DEFAULT" />
+                                            <ComboBoxItem Content="🌟 原廠預設金琥珀 (Default Amber)" Tag="textsettings_default_amber.json" />
                                         </ComboBox>
                                         <TextBlock Text="💡 選擇主題將即時更新下方各項參數並在右側 1:1 模擬畫面精確展現" FontSize="11" Foreground="#9E9E9E" Margin="2,4,0,0" />
                                     </StackPanel>
@@ -1387,7 +1402,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="TxtPrimaryColor" Text="#FFC107" TextChanged="TxtPrimaryColor_TextChanged" />
+                                    <TextBox x:Name="TxtPrimaryColor" Text="#FFB300" TextChanged="TxtPrimaryColor_TextChanged" />
                                     <Border x:Name="RectPrimaryColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectPrimaryColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
 

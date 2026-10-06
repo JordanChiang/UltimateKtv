@@ -43,12 +43,16 @@
     <SolidColorBrush x:Key="BrushTextDim" Color="{StaticResource ColorTextDim}"/>
     <SolidColorBrush x:Key="BrushTextMuted" Color="{StaticResource ColorTextMuted}"/>
 
-    <!-- === 特殊漸層筆刷 (選中/啟動狀態、表格標題) === -->
-    <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#4D00C6FF" Offset="0.0"/>
-        <GradientStop Color="#660072FF" Offset="1.0"/>
+    <!-- === 特殊漸層筆刷 (選中/啟動狀態、按鈕一般背景、表格標題) === -->
+    <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F000F0FF" Offset="0.0"/>
+        <GradientStop Color="#DC0066CC" Offset="1.0"/>
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="BrushTableHeaderGradient" StartPoint="0,0" EndPoint="1,0">
+    <LinearGradientBrush x:Key="BrushCyberButtonGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#4D00F0FF" Offset="0.0"/>
+        <GradientStop Color="#1A004080" Offset="1.0"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushTableHeaderGradient" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#D1121826" Offset="0.0"/>
         <GradientStop Color="#D91C263C" Offset="1.0"/>
     </LinearGradientBrush>
