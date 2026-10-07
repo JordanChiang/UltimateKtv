@@ -347,8 +347,8 @@ namespace UltimateKtv
             get
             {
                 var c = ResolvedAccentColor;
-                var startColor = System.Windows.Media.Color.FromArgb(65, c.R, c.G, c.B); // ~25%
-                var endColor = System.Windows.Media.Color.FromArgb(20, (byte)(c.R * 0.35), (byte)(c.G * 0.35), (byte)(c.B * 0.35)); // ~8% darkened
+                var startColor = System.Windows.Media.Color.FromArgb(120, c.R, c.G, c.B); // ~47% translucent glass gradient
+                var endColor = System.Windows.Media.Color.FromArgb(50, (byte)(c.R * 0.45), (byte)(c.G * 0.45), (byte)(c.B * 0.45)); // ~20% darkened
                 var gradient = new LinearGradientBrush
                 {
                     StartPoint = new System.Windows.Point(0, 0),
@@ -387,6 +387,7 @@ namespace UltimateKtv
                 window.Resources["DataGridColumnHeaderBackground"] = DataGridColumnHeaderBackground;
                 window.Resources["DataGridColumnHeaderForeground"] = DataGridColumnHeaderForeground;
                 window.Resources["PrimaryBrush"] = PrimaryBrush;
+                window.Resources["PrimaryLightBrush"] = PrimaryLightBrush;
 
                 // Window-level cyber accent resources
                 window.Resources["ColorAccentCyan"] = accentColor;
@@ -406,6 +407,180 @@ namespace UltimateKtv
                 window.Resources["WaitingListFontSize"] = (double)Settings.WaitingListFontSize;
                 window.Resources["SongListFontSize"] = (double)Settings.SongListFontSize;
 
+                // Dynamic Theme-calculated Brushes for Option 2 (Capsule) & Option 3 (AccentStrip)
+                var primaryCol = ParseColor(Settings.PrimaryColor, System.Windows.Media.Colors.Goldenrod);
+                var primaryLightCol = ParseColor(Settings.PrimaryLightColor, System.Windows.Media.Color.FromRgb(255, 224, 130));
+                var capsuleBorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(56, primaryCol.R, primaryCol.G, primaryCol.B));
+                capsuleBorderBrush.Freeze();
+                var capsuleHoverBgBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(56, primaryCol.R, primaryCol.G, primaryCol.B));
+                capsuleHoverBgBrush.Freeze();
+                var capsuleHoverBorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(204, primaryCol.R, primaryCol.G, primaryCol.B));
+                capsuleHoverBorderBrush.Freeze();
+                var capsuleActiveBgBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(76, primaryCol.R, primaryCol.G, primaryCol.B));
+                capsuleActiveBgBrush.Freeze();
+                var capsuleActiveHoverBgBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(85, primaryCol.R, primaryCol.G, primaryCol.B));
+                capsuleActiveHoverBgBrush.Freeze();
+                // Option 3 AccentStrip 專用立體金屬漸層筆刷 (Active, Hover, Inactive, Glow)
+                var accentStripActiveBrush = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(0, 1),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(primaryCol, 0.0),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(255,
+                            (byte)Math.Min(255, primaryLightCol.R + 25),
+                            (byte)Math.Min(255, primaryLightCol.G + 25),
+                            (byte)Math.Min(255, primaryLightCol.B + 25)), 0.4),
+                        new GradientStop(primaryLightCol, 0.6),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(255,
+                            (byte)(primaryCol.R * 0.75),
+                            (byte)(primaryCol.G * 0.75),
+                            (byte)(primaryCol.B * 0.75)), 1.0)
+                    }
+                };
+                accentStripActiveBrush.Freeze();
+
+                var accentStripHoverBrush = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(0, 1),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(primaryLightCol, 0.0),
+                        new GradientStop(System.Windows.Media.Colors.White, 0.45),
+                        new GradientStop(primaryLightCol, 1.0)
+                    }
+                };
+                accentStripHoverBrush.Freeze();
+
+                var accentStripInactiveBrush = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(0, 1),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(System.Windows.Media.Color.FromArgb(180, 84, 110, 122), 0.0),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(220, 207, 216, 220), 0.45),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(190, 144, 164, 174), 0.6),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(180, 55, 71, 79), 1.0)
+                    }
+                };
+                accentStripInactiveBrush.Freeze();
+
+                var accentStripGlowBrush = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(1, 0),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(System.Windows.Media.Color.FromArgb(80, primaryCol.R, primaryCol.G, primaryCol.B), 0.0),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(24, primaryCol.R, primaryCol.G, primaryCol.B), 0.5),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(0, primaryCol.R, primaryCol.G, primaryCol.B), 1.0)
+                    }
+                };
+                accentStripGlowBrush.Freeze();
+
+                var textSelectedGradientBrush = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(0, 1),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(System.Windows.Media.Color.FromArgb(255, 255, 253, 231), 0.0),
+                        new GradientStop(primaryLightCol, 0.35),
+                        new GradientStop(primaryCol, 0.75),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(255,
+                            (byte)(primaryCol.R * 0.8),
+                            (byte)(primaryCol.G * 0.8),
+                            (byte)(primaryCol.B * 0.8)), 1.0)
+                    }
+                };
+                textSelectedGradientBrush.Freeze();
+
+                window.Resources["BrushCapsuleRowBorder"] = capsuleBorderBrush;
+                window.Resources["BrushCapsuleHoverBg"] = capsuleHoverBgBrush;
+                window.Resources["BrushCapsuleHoverBorder"] = capsuleHoverBorderBrush;
+                window.Resources["BrushCapsuleActiveBg"] = capsuleActiveBgBrush;
+                window.Resources["BrushCapsuleActiveBorder"] = PrimaryBrush;
+                window.Resources["BrushCapsuleActiveHoverBg"] = capsuleActiveHoverBgBrush;
+                window.Resources["BrushAccentStripActive"] = accentStripActiveBrush;
+                window.Resources["BrushAccentStripHover"] = accentStripHoverBrush;
+                window.Resources["BrushAccentStripInactive"] = accentStripInactiveBrush;
+                window.Resources["BrushAccentStripGlow"] = accentStripGlowBrush;
+                window.Resources["BrushTextSelectedGradient"] = textSelectedGradientBrush;
+
+                // Option 4 Inward Glow (朝內微光) 專用筆刷 (未選取時純色無橫線，選取/懸停平滑無斷點)
+                var innerGlowDefaultBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(24, 27, 36));
+                innerGlowDefaultBrush.Freeze();
+
+                var innerGlowHoverBrush = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(0, 1),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(System.Windows.Media.Color.FromArgb(96, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B), 0.0),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(24, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B), 1.0)
+                    }
+                };
+                innerGlowHoverBrush.Freeze();
+
+                var innerGlowActiveBrush = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(0, 1),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(System.Windows.Media.Color.FromArgb(160, primaryCol.R, primaryCol.G, primaryCol.B), 0.0),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(48, primaryCol.R, primaryCol.G, primaryCol.B), 1.0)
+                    }
+                };
+                innerGlowActiveBrush.Freeze();
+
+                var innerGlowActiveHoverBrush = new LinearGradientBrush
+                {
+                    StartPoint = new System.Windows.Point(0, 0),
+                    EndPoint = new System.Windows.Point(0, 1),
+                    GradientStops = new GradientStopCollection
+                    {
+                        new GradientStop(System.Windows.Media.Color.FromArgb(192, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B), 0.0),
+                        new GradientStop(System.Windows.Media.Color.FromArgb(64, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B), 1.0)
+                    }
+                };
+                innerGlowActiveHoverBrush.Freeze();
+
+                // Option 4 inward glow dynamic brushes (從外框向內擴散約 4~5px，核心維持深黑背景)
+                var innerGlowRim1Brush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(115, primaryCol.R, primaryCol.G, primaryCol.B));
+                var innerGlowRim2Brush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(50, primaryCol.R, primaryCol.G, primaryCol.B));
+                var innerGlowRim3Brush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(20, primaryCol.R, primaryCol.G, primaryCol.B));
+                var innerGlowHoverRim1Brush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(90, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B));
+                var innerGlowHoverRim2Brush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(40, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B));
+                var innerGlowHoverRim3Brush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(16, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B));
+
+                innerGlowRim1Brush.Freeze();
+                innerGlowRim2Brush.Freeze();
+                innerGlowRim3Brush.Freeze();
+                innerGlowHoverRim1Brush.Freeze();
+                innerGlowHoverRim2Brush.Freeze();
+                innerGlowHoverRim3Brush.Freeze();
+
+                window.Resources["BrushInnerGlowDefault"] = innerGlowDefaultBrush;
+                window.Resources["BrushInnerGlowHover"] = innerGlowHoverBrush;
+                window.Resources["BrushInnerGlowActive"] = innerGlowActiveBrush;
+                window.Resources["BrushInnerGlowActiveHover"] = innerGlowActiveHoverBrush;
+                window.Resources["BrushInnerGlowRim1"] = innerGlowRim1Brush;
+                window.Resources["BrushInnerGlowRim2"] = innerGlowRim2Brush;
+                window.Resources["BrushInnerGlowRim3"] = innerGlowRim3Brush;
+                window.Resources["BrushInnerGlowHoverRim1"] = innerGlowHoverRim1Brush;
+                window.Resources["BrushInnerGlowHoverRim2"] = innerGlowHoverRim2Brush;
+                window.Resources["BrushInnerGlowHoverRim3"] = innerGlowHoverRim3Brush;
+                window.Resources["ColorRowGlowActive"] = primaryCol;
+                window.Resources["ColorRowGlowHover"] = primaryLightCol;
+
+                // Singer grid button background (Window-level resource)
+                window.Resources["SingerButtonBackground"] = PrimaryBrush;
+
                 // Application-level resources (Material Design brushes and font size fallbacks are defined at App level)
                 // These must be set at Application.Resources to override DynamicResource lookups
                 var appResources = System.Windows.Application.Current?.Resources;
@@ -419,6 +594,7 @@ namespace UltimateKtv
 
                     // Primary theme color family (used by Material Design buttons, borders, highlights)
                     appResources["PrimaryBrush"] = PrimaryBrush;
+                    appResources["PrimaryLightBrush"] = PrimaryLightBrush;
                     appResources["PrimaryHueLightBrush"] = PrimaryLightBrush;
                     appResources["PrimaryHueMidBrush"] = PrimaryBrush;
                     appResources["PrimaryHueMidForegroundBrush"] = Brushes.White;
@@ -429,10 +605,74 @@ namespace UltimateKtv
                     appResources["BrushAccentCyanDim"] = accentDimBrush;
                     appResources["BrushCyberActiveGradient"] = cyberGradient;
                     appResources["BrushCyberButtonGradient"] = cyberButtonGradient;
+
+                    // Option 2 & 3 dynamic theme brushes at application level
+                    appResources["BrushCapsuleRowBorder"] = capsuleBorderBrush;
+                    appResources["BrushCapsuleHoverBg"] = capsuleHoverBgBrush;
+                    appResources["BrushCapsuleHoverBorder"] = capsuleHoverBorderBrush;
+                    appResources["BrushCapsuleActiveBg"] = capsuleActiveBgBrush;
+                    appResources["BrushCapsuleActiveBorder"] = PrimaryBrush;
+                    appResources["BrushCapsuleActiveHoverBg"] = capsuleActiveHoverBgBrush;
+                    appResources["BrushAccentStripActive"] = accentStripActiveBrush;
+                    appResources["BrushAccentStripHover"] = accentStripHoverBrush;
+                    appResources["BrushAccentStripInactive"] = accentStripInactiveBrush;
+                    appResources["BrushAccentStripGlow"] = accentStripGlowBrush;
+                    appResources["BrushTextSelectedGradient"] = textSelectedGradientBrush;
+
+                    // Option 4 inward glow dynamic brushes at application level
+                    appResources["BrushInnerGlowDefault"] = innerGlowDefaultBrush;
+                    appResources["BrushInnerGlowHover"] = innerGlowHoverBrush;
+                    appResources["BrushInnerGlowActive"] = innerGlowActiveBrush;
+                    appResources["BrushInnerGlowActiveHover"] = innerGlowActiveHoverBrush;
+                    appResources["BrushInnerGlowRim1"] = innerGlowRim1Brush;
+                    appResources["BrushInnerGlowRim2"] = innerGlowRim2Brush;
+                    appResources["BrushInnerGlowRim3"] = innerGlowRim3Brush;
+                    appResources["BrushInnerGlowHoverRim1"] = innerGlowHoverRim1Brush;
+                    appResources["BrushInnerGlowHoverRim2"] = innerGlowHoverRim2Brush;
+                    appResources["BrushInnerGlowHoverRim3"] = innerGlowHoverRim3Brush;
+                    appResources["ColorRowGlowActive"] = primaryCol;
+                    appResources["ColorRowGlowHover"] = primaryLightCol;
                 }
 
-                // Singer grid button background (Window-level resource)
-                window.Resources["SingerButtonBackground"] = PrimaryBrush;
+                // Song list row style selection (1=FloatingCard, 2=Capsule, 3=AccentStrip, 4=Glow)
+                int rowStyleOpt = Settings.SongListRowStyle;
+                string rowStyleKey = rowStyleOpt switch
+                {
+                    2 => "SongListRowStyle_Capsule",
+                    3 => "SongListRowStyle_AccentStrip",
+                    4 => "SongListRowStyle_Glow",
+                    _ => "SongListRowStyle_FloatingCard"
+                };
+
+                var targetWindow = (window as MainWindow) ?? (System.Windows.Application.Current?.MainWindow as MainWindow);
+                if (targetWindow != null)
+                {
+                    AppLogger.Log($"[RowStyleLog] Target MainWindow found. Window.Resources contains '{rowStyleKey}': {targetWindow.Resources.Contains(rowStyleKey)}");
+                    AppLogger.Log($"[RowStyleLog] BrushCyberButtonGradient in Window: {targetWindow.Resources["BrushCyberButtonGradient"]}");
+
+                    if (targetWindow.Resources.Contains(rowStyleKey) && targetWindow.Resources[rowStyleKey] is System.Windows.Style targetRowStyle)
+                    {
+                        targetWindow.Resources["FloatingDataGridRowStyle"] = targetRowStyle;
+                        AppLogger.Log($"[RowStyleLog] Applied {rowStyleKey} to FloatingDataGridRowStyle. Triggers={targetRowStyle.Triggers.Count}, Setters={targetRowStyle.Setters.Count}");
+                        if (targetWindow.SongListGrid != null) { targetWindow.SongListGrid.RowStyle = targetRowStyle; AppLogger.Log("[RowStyleLog] Set SongListGrid.RowStyle"); }
+                        if (targetWindow.WaitingListGrid != null) { targetWindow.WaitingListGrid.RowStyle = targetRowStyle; AppLogger.Log("[RowStyleLog] Set WaitingListGrid.RowStyle"); }
+                        if (targetWindow.QuickSongListGrid != null) { targetWindow.QuickSongListGrid.RowStyle = targetRowStyle; AppLogger.Log("[RowStyleLog] Set QuickSongListGrid.RowStyle"); }
+                        if (targetWindow.LanguageSongListGrid != null) { targetWindow.LanguageSongListGrid.RowStyle = targetRowStyle; AppLogger.Log("[RowStyleLog] Set LanguageSongListGrid.RowStyle"); }
+                    }
+                    else
+                    {
+                        AppLogger.LogError($"[RowStyleLog] FAILED to find style '{rowStyleKey}' in MainWindow.Resources!", null);
+                    }
+                }
+                else
+                {
+                    AppLogger.Log($"[RowStyleLog] Skipping DataGrid row style for non-MainWindow ({window.GetType().Name})");
+                }
+
+                var gridLines = (rowStyleOpt == 0)
+                    ? System.Windows.Controls.DataGridGridLinesVisibility.Horizontal
+                    : System.Windows.Controls.DataGridGridLinesVisibility.None;
+                window.Resources["DataGridLinesVisibility"] = gridLines;
 
                 // Apply Material Design theme using PaletteHelper
                 ApplyMaterialDesignTheme();

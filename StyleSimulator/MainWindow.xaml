@@ -32,6 +32,54 @@
         <SolidColorBrush x:Key="StaticTextFgBrush" Color="#FFFFFF" />
         <SolidColorBrush x:Key="WebHostInfoFgBrush" Color="#FFFFFF" />
 
+        <!-- Option 4 Inward Glow Dynamic Brushes (朝內微光，未選取純淨無橫紋) -->
+        <SolidColorBrush x:Key="BrushInnerGlowDefault" Color="#181B24"/>
+        <LinearGradientBrush x:Key="BrushInnerGlowHover" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#60FFE082" Offset="0.0"/>
+            <GradientStop Color="#18FFE082" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushInnerGlowActive" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#A0FFB300" Offset="0.0"/>
+            <GradientStop Color="#30FFB300" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushInnerGlowActiveHover" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#C0FFE082" Offset="0.0"/>
+            <GradientStop Color="#40FFE082" Offset="1.0"/>
+        </LinearGradientBrush>
+
+        <!-- 風格 3 (AccentStrip) 預設漸層筆刷 -->
+        <LinearGradientBrush x:Key="BrushAccentStripActive" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F59E0B" Offset="0.0"/>
+            <GradientStop Color="#FFF9C4" Offset="0.4"/>
+            <GradientStop Color="#FFCA28" Offset="0.6"/>
+            <GradientStop Color="#D97706" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushAccentStripHover" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#FFE082" Offset="0.0"/>
+            <GradientStop Color="#FFFFFF" Offset="0.45"/>
+            <GradientStop Color="#FFD54F" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushAccentStripInactive" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#546E7A" Offset="0.0"/>
+            <GradientStop Color="#CFD8DC" Offset="0.45"/>
+            <GradientStop Color="#90A4AE" Offset="0.6"/>
+            <GradientStop Color="#37474F" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushAccentStripGlow" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#50FFA000" Offset="0.0"/>
+            <GradientStop Color="#18FFA000" Offset="0.5"/>
+            <GradientStop Color="#00FFA000" Offset="1.0"/>
+        </LinearGradientBrush>
+
+        <!-- 選中文字立體金屬漸層筆刷 -->
+        <LinearGradientBrush x:Key="BrushTextSelectedGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#FFFFFFF0" Offset="0.0"/>
+            <GradientStop Color="#FFFDE7" Offset="0.25"/>
+            <GradientStop Color="#FFE082" Offset="0.55"/>
+            <GradientStop Color="#FFB300" Offset="0.85"/>
+            <GradientStop Color="#FF8F00" Offset="1.0"/>
+        </LinearGradientBrush>
+
         <Style TargetType="TextBlock">
             <Setter Property="Foreground" Value="#EAEAEA" />
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -401,9 +449,9 @@
                 <WrapPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,6,2">
                         <TextBlock Text="目前編輯檔:" Foreground="#CCC" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
-                        <ComboBox x:Name="CboConfigFileType" Width="235" SelectionChanged="CboConfigFileType_SelectionChanged">
-                            <ComboBoxItem Content="⚙️ settings.json (跑馬燈/提示)" IsSelected="True" />
-                            <ComboBoxItem Content="🎨 textsettings.json (UI介面)" />
+                        <ComboBox x:Name="CboConfigFileType" Width="160" SelectionChanged="CboConfigFileType_SelectionChanged">
+                            <ComboBoxItem Content="🎨 UI介面" IsSelected="True" />
+                            <ComboBoxItem Content="⚙️ 跑馬燈/提示" />
                         </ComboBox>
                     </StackPanel>
                     <TextBox x:Name="TxtActiveFilePath" MinWidth="130" MaxWidth="280" IsReadOnly="True" Margin="0,2,6,2" VerticalAlignment="Center" ToolTip="目前載入的設定檔路徑" />
@@ -590,73 +638,180 @@
                                                     </Grid.RowDefinitions>
 
                                                     <!-- Waiting List Frame (PrimaryColor) -->
-                                                    <Border Grid.Row="0" x:Name="BorderWaitList" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1" CornerRadius="4" ClipToBounds="True" ToolTip="由 [PrimaryColor] 主要主題色控制">
+                                                    <Border Grid.Row="0" x:Name="BorderWaitList" Background="#121212" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1.5" CornerRadius="4" ClipToBounds="True" ToolTip="由 [PrimaryColor] 主要主題色控制">
                                                         <Grid>
                                                             <Grid.RowDefinitions>
                                                                 <RowDefinition Height="Auto" MinHeight="45" />   <!-- Header -->
-                                                                <RowDefinition Height="396" />  <!-- 9 Waiting Rows Area -->
+                                                                <RowDefinition Height="396" />  <!-- 8 Waiting Rows Area -->
                                                             </Grid.RowDefinitions>
 
                                                             <!-- Waiting List Header (Matches screenshot) -->
-                                                            <Border Grid.Row="0" x:Name="BorderWaitHeader" Background="{DynamicResource DataGridHeaderBgBrush}" BorderThickness="0" Padding="12,2" ToolTip="由 [DataGridColumnHeaderBackgroundColor] 表格標題背景色控制">
+                                                            <Border Grid.Row="0" x:Name="BorderWaitHeader" Background="{DynamicResource DataGridHeaderBgBrush}" BorderThickness="0" Padding="0,2" Margin="8,2,8,2" CornerRadius="8" ToolTip="由 [DataGridColumnHeaderBackgroundColor] 表格標題背景色控制">
                                                                 <Grid VerticalAlignment="Center">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="260" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtWaitHeaderCol1" Text="歌名" FontWeight="Bold" FontSize="24" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
+                                                                    <TextBlock x:Name="TxtWaitHeaderCol1" Text="歌名" FontWeight="Bold" FontSize="24" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" Margin="16,0" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
                                                                     <Border Grid.Column="0" HorizontalAlignment="Right" Width="1" Background="#33FFFFFF" Margin="0,8" />
-                                                                    <TextBlock x:Name="TxtWaitHeaderCol2" Grid.Column="1" Text="歌手" FontWeight="Bold" FontSize="24" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" Margin="12,0,0,0" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
+                                                                    <TextBlock x:Name="TxtWaitHeaderCol2" Grid.Column="1" Text="歌手" FontWeight="Bold" FontSize="24" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" Margin="16,0" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
                                                                 </Grid>
                                                             </Border>
 
-                                                            <!-- Waiting List 9 Rows (Alternating dark rows, matching WPF DataGrid) -->
-                                                            <UniformGrid Grid.Row="1" Rows="9" Columns="1" Background="#121212">
+                                                            <!-- Waiting List 8 Rows (Alternating dark rows, matching WPF DataGrid, -1 for card style height) -->
+                                                            <UniformGrid Grid.Row="1" Rows="8" Columns="1">
                                                                 <!-- Row 1 -->
-                                                                <Border Background="#141414" Padding="12,0">
-                                                                    <Grid VerticalAlignment="Center">
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="260" />
-                                                                            <ColumnDefinition Width="*" />
-                                                                        </Grid.ColumnDefinitions>
-                                                                        <TextBlock x:Name="TxtWaitSong1" Text="倒帶" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                        <TextBlock x:Name="TxtWaitSinger1" Grid.Column="1" Text="蔡依林" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                <Border x:Name="BorderWaitRow1" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                                    <Grid>
+                                                                        <Border x:Name="InnerGlowWaitRow1" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                            <Border.Effect>
+                                                                                <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                            </Border.Effect>
+                                                                        </Border>
+                                                                        <Border x:Name="AccentBarWaitRow1" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                        <Grid VerticalAlignment="Center" Margin="16,0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="260" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock x:Name="TxtWaitSong1" Text="倒帶" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                            <TextBlock x:Name="TxtWaitSinger1" Grid.Column="1" Text="蔡依林" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                        </Grid>
                                                                     </Grid>
                                                                 </Border>
                                                                 <!-- Row 2 -->
-                                                                <Border Background="#1B1B1B" Padding="12,0">
-                                                                    <Grid VerticalAlignment="Center">
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="260" />
-                                                                            <ColumnDefinition Width="*" />
-                                                                        </Grid.ColumnDefinitions>
-                                                                        <TextBlock x:Name="TxtWaitSong2" Text="告白氣球" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                        <TextBlock x:Name="TxtWaitSinger2" Grid.Column="1" Text="周杰倫" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                <Border x:Name="BorderWaitRow2" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                                    <Grid>
+                                                                        <Border x:Name="InnerGlowWaitRow2" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                            <Border.Effect>
+                                                                                <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                            </Border.Effect>
+                                                                        </Border>
+                                                                        <Border x:Name="AccentBarWaitRow2" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                        <Grid VerticalAlignment="Center" Margin="16,0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="260" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock x:Name="TxtWaitSong2" Text="告白氣球" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                            <TextBlock x:Name="TxtWaitSinger2" Grid.Column="1" Text="周杰倫" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                        </Grid>
                                                                     </Grid>
                                                                 </Border>
                                                                 <!-- Row 3 -->
-                                                                <Border Background="#141414" Padding="12,0">
-                                                                    <Grid VerticalAlignment="Center">
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="260" />
-                                                                            <ColumnDefinition Width="*" />
-                                                                        </Grid.ColumnDefinitions>
-                                                                        <TextBlock x:Name="TxtWaitSong3" Text="修煉愛情" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                        <TextBlock x:Name="TxtWaitSinger3" Grid.Column="1" Text="林俊傑" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                <Border x:Name="BorderWaitRow3" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                                    <Grid>
+                                                                        <Border x:Name="InnerGlowWaitRow3" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                            <Border.Effect>
+                                                                                <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                            </Border.Effect>
+                                                                        </Border>
+                                                                        <Border x:Name="AccentBarWaitRow3" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                        <Grid VerticalAlignment="Center" Margin="16,0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="260" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock x:Name="TxtWaitSong3" Text="修煉愛情" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                            <TextBlock x:Name="TxtWaitSinger3" Grid.Column="1" Text="林俊傑" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                        </Grid>
                                                                     </Grid>
                                                                 </Border>
                                                                 <!-- Row 4 -->
-                                                                <Border Background="#1B1B1B" Padding="12,0" />
+                                                                <Border x:Name="BorderWaitRow4" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                                    <Grid>
+                                                                        <Border x:Name="InnerGlowWaitRow4" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                            <Border.Effect>
+                                                                                <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                            </Border.Effect>
+                                                                        </Border>
+                                                                        <Border x:Name="AccentBarWaitRow4" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                        <Grid VerticalAlignment="Center" Margin="16,0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="260" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock x:Name="TxtWaitSong4" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                            <TextBlock x:Name="TxtWaitSinger4" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                        </Grid>
+                                                                    </Grid>
+                                                                </Border>
                                                                 <!-- Row 5 -->
-                                                                <Border Background="#141414" Padding="12,0" />
+                                                                <Border x:Name="BorderWaitRow5" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                                    <Grid>
+                                                                        <Border x:Name="InnerGlowWaitRow5" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                            <Border.Effect>
+                                                                                <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                            </Border.Effect>
+                                                                        </Border>
+                                                                        <Border x:Name="AccentBarWaitRow5" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                        <Grid VerticalAlignment="Center" Margin="16,0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="260" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock x:Name="TxtWaitSong5" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                            <TextBlock x:Name="TxtWaitSinger5" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                        </Grid>
+                                                                    </Grid>
+                                                                </Border>
                                                                 <!-- Row 6 -->
-                                                                <Border Background="#1B1B1B" Padding="12,0" />
+                                                                <Border x:Name="BorderWaitRow6" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                                    <Grid>
+                                                                        <Border x:Name="InnerGlowWaitRow6" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                            <Border.Effect>
+                                                                                <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                            </Border.Effect>
+                                                                        </Border>
+                                                                        <Border x:Name="AccentBarWaitRow6" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                        <Grid VerticalAlignment="Center" Margin="16,0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="260" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock x:Name="TxtWaitSong6" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                            <TextBlock x:Name="TxtWaitSinger6" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                        </Grid>
+                                                                    </Grid>
+                                                                </Border>
                                                                 <!-- Row 7 -->
-                                                                <Border Background="#141414" Padding="12,0" />
+                                                                <Border x:Name="BorderWaitRow7" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                                    <Grid>
+                                                                        <Border x:Name="InnerGlowWaitRow7" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                            <Border.Effect>
+                                                                                <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                            </Border.Effect>
+                                                                        </Border>
+                                                                        <Border x:Name="AccentBarWaitRow7" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                        <Grid VerticalAlignment="Center" Margin="16,0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="260" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock x:Name="TxtWaitSong7" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                            <TextBlock x:Name="TxtWaitSinger7" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                        </Grid>
+                                                                    </Grid>
+                                                                </Border>
                                                                 <!-- Row 8 -->
-                                                                <Border Background="#1B1B1B" Padding="12,0" />
-                                                                <!-- Row 9 -->
-                                                                <Border Background="#141414" Padding="12,0" />
+                                                                <Border x:Name="BorderWaitRow8" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                                    <Grid>
+                                                                        <Border x:Name="InnerGlowWaitRow8" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                            <Border.Effect>
+                                                                                <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                            </Border.Effect>
+                                                                        </Border>
+                                                                        <Border x:Name="AccentBarWaitRow8" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                        <Grid VerticalAlignment="Center" Margin="16,0">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="260" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock x:Name="TxtWaitSong8" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                            <TextBlock x:Name="TxtWaitSinger8" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                        </Grid>
+                                                                    </Grid>
+                                                                </Border>
                                                             </UniformGrid>
                                                         </Grid>
                                                     </Border>
@@ -731,7 +886,7 @@
                                                     </Grid.RowDefinitions>
 
                                                     <!-- DataGrid Column Header (Electric Blue, with subtle dividers) -->
-                                                    <Border Grid.Row="0" x:Name="BorderGridHeader" Background="{DynamicResource DataGridHeaderBgBrush}" Padding="0,2" ToolTip="由 [DataGridColumnHeaderBackgroundColor] 表格標題背景色控制">
+                                                    <Border Grid.Row="0" x:Name="BorderGridHeader" Background="{DynamicResource DataGridHeaderBgBrush}" Padding="0,2" Margin="8,2,8,2" CornerRadius="8" ToolTip="由 [DataGridColumnHeaderBackgroundColor] 表格標題背景色控制">
                                                         <Grid VerticalAlignment="Center">
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="*" />
@@ -746,165 +901,274 @@
                                                         </Grid>
                                                     </Border>
 
-                                                    <!-- 13 Song Rows (Alternating dark rows, white text, exact screenshot data) -->
-                                                    <UniformGrid Grid.Row="1" Rows="13" Columns="1">
+                                                    <!-- 12 Song Rows (Alternating dark rows, white text, exact screenshot data, -1 for card style height) -->
+                                                    <UniformGrid Grid.Row="1" Rows="12" Columns="1">
                                                         <!-- Row 1 -->
-                                                        <Grid Background="#121212">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow1" Text="突然好想你" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <Border x:Name="BorderSingerRow1" Grid.Column="1" Background="{DynamicResource PrimaryLightBrush}" CornerRadius="4" Padding="10,2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0" ToolTip="由 [PrimaryLightColor] 主要淺色顏色控制 (歌手懸停/標籤高亮)">
-                                                                <TextBlock x:Name="TxtSingerRow1" Text="五月天" Foreground="#000000" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                            </Border>
-                                                            <TextBlock x:Name="TxtLangRow1" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow1" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow1" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow1" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow1" Text="突然好想你" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <Border x:Name="BorderSingerRow1" Grid.Column="1" Background="{DynamicResource PrimaryLightBrush}" CornerRadius="4" Padding="10,2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0" ToolTip="由 [PrimaryLightColor] 主要淺色顏色控制 (歌手懸停/標籤高亮)">
+                                                                        <TextBlock x:Name="TxtSingerRow1" Text="五月天" Foreground="#000000" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                    </Border>
+                                                                    <TextBlock x:Name="TxtLangRow1" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 2 -->
-                                                        <Grid Background="#181818">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow2" Text="如果可以" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow2" Grid.Column="1" Text="韋禮安" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow2" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow2" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow2" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow2" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow2" Text="如果可以" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow2" Grid.Column="1" Text="韋禮安" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow2" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 3 -->
-                                                        <Grid Background="#121212">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow3" Text="浪子回頭" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow3" Grid.Column="1" Text="茄子蛋" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow3" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow3" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow3" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow3" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow3" Text="浪子回頭" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow3" Grid.Column="1" Text="茄子蛋" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow3" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 4 -->
-                                                        <Grid Background="#181818">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow4" Text="刻在我心底的名字" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow4" Grid.Column="1" Text="盧廣仲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow4" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow4" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow4" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow4" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow4" Text="刻在我心底的名字" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow4" Grid.Column="1" Text="盧廣仲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow4" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 5 -->
-                                                        <Grid Background="#121212">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow5" Text="家後" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow5" Grid.Column="1" Text="江蕙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow5" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow5" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow5" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow5" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow5" Text="家後" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow5" Grid.Column="1" Text="江蕙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow5" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 6 -->
-                                                        <Grid Background="#181818">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow6" Text="連名帶姓" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow6" Grid.Column="1" Text="張惠妹" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow6" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow6" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow6" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow6" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow6" Text="連名帶姓" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow6" Grid.Column="1" Text="張惠妹" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow6" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 7 -->
-                                                        <Grid Background="#121212">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow7" Text="海闊天空" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow7" Grid.Column="1" Text="Beyond" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow7" Grid.Column="2" Text="粵語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow7" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow7" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow7" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow7" Text="海闊天空" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow7" Grid.Column="1" Text="Beyond" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow7" Grid.Column="2" Text="粵語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 8 -->
-                                                        <Grid Background="#181818">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow8" Text="魚仔" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow8" Grid.Column="1" Text="盧廣仲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow8" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow8" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow8" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow8" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow8" Text="魚仔" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow8" Grid.Column="1" Text="盧廣仲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow8" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 9 -->
-                                                        <Grid Background="#121212">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow9" Text="演員" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow9" Grid.Column="1" Text="薛之謙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow9" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow9" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow9" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow9" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow9" Text="演員" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow9" Grid.Column="1" Text="薛之謙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow9" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 10 -->
-                                                        <Grid Background="#181818">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow10" Text="愛如潮水" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow10" Grid.Column="1" Text="張信哲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow10" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow10" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow10" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow10" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow10" Text="愛如潮水" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow10" Grid.Column="1" Text="張信哲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow10" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 11 -->
-                                                        <Grid Background="#121212">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow11" Text="落雨聲" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow11" Grid.Column="1" Text="江蕙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow11" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow11" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow11" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow11" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow11" Text="落雨聲" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow11" Grid.Column="1" Text="江蕙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow11" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
                                                         <!-- Row 12 -->
-                                                        <Grid Background="#181818">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow12" Text="想見你想見你想見你" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow12" Grid.Column="1" Text="八三夭" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow12" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
+                                                        <Border x:Name="BorderSongRow12" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                            <Grid>
+                                                                <Border x:Name="InnerGlowSongRow12" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
+                                                                    <Border.Effect>
+                                                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                                                    </Border.Effect>
+                                                                </Border>
+                                                                <Border x:Name="AccentBarSongRow12" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="380" />
+                                                                        <ColumnDefinition Width="140" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <TextBlock x:Name="TxtSongRow12" Text="想見你想見你想見你" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow12" Grid.Column="1" Text="八三夭" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow12" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Border>
 
-                                                        <!-- Row 13 -->
-                                                        <Grid Background="#121212">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="380" />
-                                                                <ColumnDefinition Width="140" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock x:Name="TxtSongRow13" Text="洋蔥" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtSingerRow13" Grid.Column="1" Text="楊宗緯" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                            <TextBlock x:Name="TxtLangRow13" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
-                                                        </Grid>
                                                     </UniformGrid>
                                                 </Grid>
                                             </Border>
@@ -918,7 +1182,7 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <!-- Global Page Info -->
-                                                <TextBlock x:Name="TxtGlobalPageInfo" Grid.Column="0" Text="第 1/124 頁 (新進 - 國語-單曲 - 1603 首歌曲)" VerticalAlignment="Center" Foreground="{DynamicResource StaticTextFgBrush}" Margin="6,0,10,0" ToolTip="由 [StaticTextForegroundColor] 靜態文字前景色控制" />
+                                                <TextBlock x:Name="TxtGlobalPageInfo" Grid.Column="0" Text="第 1/134 頁 (新進 - 國語-單曲 - 1603 首歌曲)" VerticalAlignment="Center" Foreground="{DynamicResource StaticTextFgBrush}" Margin="6,0,10,0" ToolTip="由 [StaticTextForegroundColor] 靜態文字前景色控制" />
 
                                                 <!-- Digital Clock (🕒 00:02) -->
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,30,0">
@@ -1268,6 +1532,21 @@
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,4,0,0">
                             <StackPanel Margin="0,0,8,0">
 
+                                <!-- TOP OPTION: 歌曲清單列外觀風格 (Song List Row Style) -->
+                                <Border Background="#1A2035" BorderBrush="#3D5AFE" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                                    <StackPanel>
+                                        <TextBlock Text="📋 歌曲列表外觀風格 (Song List Row Style)" FontWeight="Bold" Foreground="#82B1FF" Margin="0,0,0,6" />
+                                        <ComboBox x:Name="CboSongListRowStyle" Margin="0,0,0,4" SelectionChanged="CboSongListRowStyle_SelectionChanged"
+                                                  Height="34" FontSize="13.5">
+                                            <ComboBoxItem Content="✨ 風格 1：現代懸浮微圓角卡片 (推薦)" Tag="1" IsSelected="True" />
+                                            <ComboBoxItem Content="💊 風格 2：膠囊外框輪廓風格" Tag="2" />
+                                            <ComboBoxItem Content="🔖 風格 3：左側主色指示條卡片" Tag="3" />
+                                            <ComboBoxItem Content="🌟 風格 4：靜態微光光暈風格" Tag="4" />
+                                        </ComboBox>
+                                        <TextBlock Text="💡 選擇後即時套用至左側模擬畫面，儲存後直接生效於主程式。" Foreground="#9FA8DA" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+
                                 <!-- THEME PRESETS SELECTOR -->
                                 <Border Background="#1C2438" BorderBrush="#3D5AFE" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
                                     <StackPanel>
@@ -1458,6 +1737,7 @@
                                     <TextBox x:Name="TxtDataGridHeaderBg" Text="#FF4A4A4A" TextChanged="ParamChanged" />
                                     <Border x:Name="RectDataGridHeaderBg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectDataGridHeaderBg_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
+
                             </StackPanel>
                         </ScrollViewer>
                     </Grid>

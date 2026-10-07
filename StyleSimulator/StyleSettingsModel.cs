@@ -295,6 +295,12 @@ namespace StyleSimulator
             get => _textSettings.AccentColor;
             set { _textSettings.AccentColor = value; OnPropertyChanged(); }
         }
+
+        public int SongListRowStyle
+        {
+            get => _textSettings.SongListRowStyle;
+            set { _textSettings.SongListRowStyle = value; OnPropertyChanged(); }
+        }
         #endregion
 
         #region Load and Save Methods
@@ -361,9 +367,16 @@ namespace StyleSimulator
         {
             try
             {
+                int currentSongListRowStyle = _textSettings.SongListRowStyle;
                 var loaded = JsonSerializer.Deserialize<TextSettings>(json, _jsonOptions);
                 if (loaded != null)
                 {
+                    // 若 JSON 中未明確指定 SongListRowStyle（例如色彩主題範本），保留當前設定
+                    if (!json.Contains("SongListRowStyle", StringComparison.OrdinalIgnoreCase))
+                    {
+                        loaded.SongListRowStyle = currentSongListRowStyle;
+                    }
+
                     _textSettings = loaded;
                     OnPropertyChanged(null);
                     return true;
@@ -441,6 +454,7 @@ namespace StyleSimulator
             AnnouncementForegroundColor = defaults.AnnouncementForegroundColor;
             StaticTextForegroundColor = defaults.StaticTextForegroundColor;
             WebHostInfoForegroundColor = defaults.WebHostInfoForegroundColor;
+            SongListRowStyle = defaults.SongListRowStyle;
         }
 
         public bool SaveSettingsJson(string? path = null)

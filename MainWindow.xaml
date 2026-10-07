@@ -50,6 +50,60 @@
 
         <!-- Primary theme brush (overridden by TextSettings at startup) -->
         <SolidColorBrush x:Key="PrimaryBrush" Color="#FFB300"/>
+        <SolidColorBrush x:Key="PrimaryLightBrush" Color="#FFE082"/>
+
+        <!-- Option 4 Inset Glow Rim Brushes (由框向內散發微光約 4~5px，核心維持深黑底色) -->
+        <SolidColorBrush x:Key="BrushInnerGlowRim1" Color="#73FFB300"/>
+        <SolidColorBrush x:Key="BrushInnerGlowRim2" Color="#32FFB300"/>
+        <SolidColorBrush x:Key="BrushInnerGlowRim3" Color="#14FFB300"/>
+        <SolidColorBrush x:Key="BrushInnerGlowHoverRim1" Color="#5AFFE082"/>
+        <SolidColorBrush x:Key="BrushInnerGlowHoverRim2" Color="#28FFE082"/>
+        <SolidColorBrush x:Key="BrushInnerGlowHoverRim3" Color="#10FFE082"/>
+        <Color x:Key="ColorRowGlowActive">#FFB300</Color>
+        <Color x:Key="ColorRowGlowHover">#FFE082</Color>
+
+        <!-- Cyber Button & Selection Gradient Brushes (overridden by TextSettings at startup) -->
+        <LinearGradientBrush x:Key="BrushCyberButtonGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#77FFB300" Offset="0.0"/>
+            <GradientStop Color="#33FFB300" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#E6FFB300" Offset="0.0"/>
+            <GradientStop Color="#D08A6403" Offset="1.0"/>
+        </LinearGradientBrush>
+
+        <!-- 風格 3 (AccentStrip) 預設漸層筆刷 (啟動時由 TextSettingsHandler 根據主題色動態覆寫) -->
+        <LinearGradientBrush x:Key="BrushAccentStripActive" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F59E0B" Offset="0.0"/>
+            <GradientStop Color="#FFF9C4" Offset="0.4"/>
+            <GradientStop Color="#FFCA28" Offset="0.6"/>
+            <GradientStop Color="#D97706" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushAccentStripHover" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#FFE082" Offset="0.0"/>
+            <GradientStop Color="#FFFFFF" Offset="0.45"/>
+            <GradientStop Color="#FFD54F" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushAccentStripInactive" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#546E7A" Offset="0.0"/>
+            <GradientStop Color="#CFD8DC" Offset="0.45"/>
+            <GradientStop Color="#90A4AE" Offset="0.6"/>
+            <GradientStop Color="#37474F" Offset="1.0"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="BrushAccentStripGlow" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#50FFA000" Offset="0.0"/>
+            <GradientStop Color="#18FFA000" Offset="0.5"/>
+            <GradientStop Color="#00FFA000" Offset="1.0"/>
+        </LinearGradientBrush>
+
+        <!-- 選中文字立體金屬漸層筆刷 (預設香檳白金至琥珀金，啟動時由 TextSettingsHandler 根據主題色動態覆寫) -->
+        <LinearGradientBrush x:Key="BrushTextSelectedGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#FFFFFFF0" Offset="0.0"/>
+            <GradientStop Color="#FFFDE7" Offset="0.25"/>
+            <GradientStop Color="#FFE082" Offset="0.55"/>
+            <GradientStop Color="#FFB300" Offset="0.85"/>
+            <GradientStop Color="#FF8F00" Offset="1.0"/>
+        </LinearGradientBrush>
 
         <!-- Singer Grid Button Colors (will be overridden by TextSettings at startup) -->
         <SolidColorBrush x:Key="SingerButtonBackground" Color="#FFB300"/>
@@ -142,40 +196,243 @@
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                </Trigger>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
+                </Trigger>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- Floating DataGrid Row Style (滑鼠懸浮發光與選中效果) -->
-        <Style x:Key="FloatingDataGridRowStyle" TargetType="DataGridRow">
+        <!-- 全域 DataGridCell 樣式：確保所有 DataGrid（包含待播清單）在選取時單元格完全透明，不被 MaterialDesign 的灰色遮罩阻擋 -->
+        <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource FloatingDataGridCellStyle}"/>
+
+        <!-- ==================== 歌曲列表列外觀風格 (Song List Row Styles) ==================== -->
+        <!-- 風格 1：現代懸浮微圓角卡片 (Modern Floating Card) -->
+        <Style x:Key="SongListRowStyle_FloatingCard" TargetType="DataGridRow">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="BorderBrush" Value="#12FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="8,1.5,8,1.5"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Style.Triggers>
-                <!-- Mouse Hover: 懸浮高亮發光效果 -->
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#2800F0FF"/>
-                </Trigger>
-                <!-- Selected State: Cyber 漸層發光效果 -->
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource BrushCyberActiveGradient}"/>
-                    <Setter Property="BorderBrush" Value="#6600F0FF"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Border x:Name="RowBorder"
+                                Background="#181B24"
+                                BorderBrush="#20FFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                ClipToBounds="True"
+                                SnapsToDevicePixels="True">
+                            <DataGridCellsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                    VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="#000000"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource BrushCyberButtonGradient}"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
+        <!-- 風格 2：膠囊外框輪廓風格 (Outlined Pill / Capsule) -->
+        <Style x:Key="SongListRowStyle_Capsule" TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="8,1.5,8,1.5"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Border x:Name="RowBorder"
+                                Background="#121520"
+                                BorderBrush="{DynamicResource BrushCapsuleRowBorder}"
+                                BorderThickness="1"
+                                CornerRadius="16"
+                                ClipToBounds="True"
+                                SnapsToDevicePixels="True">
+                            <DataGridCellsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                    VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource BrushCapsuleHoverBg}"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource BrushCapsuleHoverBorder}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource BrushCapsuleActiveBg}"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource BrushCapsuleActiveBorder}"/>
+                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource BrushCapsuleActiveHoverBg}"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource BrushCapsuleActiveBorder}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 風格 3：左側主色指示條卡片 (Left Accent Strip Card) -->
+        <Style x:Key="SongListRowStyle_AccentStrip" TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="8,1.5,8,1.5"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Border x:Name="RowBorder"
+                                Background="#181B24"
+                                BorderBrush="#20FFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <!-- 水平微光擴散 (選取或懸停時亮起) -->
+                                <Border x:Name="AccentGlow"
+                                        HorizontalAlignment="Left"
+                                        Width="32"
+                                        CornerRadius="7,0,0,7"
+                                        Background="{DynamicResource BrushAccentStripGlow}"
+                                        Visibility="Collapsed"/>
+                                <!-- 左側主色指示條 (平滑貼合外框圓角，立體金屬漸層質感) -->
+                                <Border x:Name="AccentBar"
+                                        HorizontalAlignment="Left"
+                                        Width="16"
+                                        CornerRadius="7,0,0,7"
+                                        Background="{DynamicResource BrushAccentStripInactive}"/>
+                                <!-- 歌曲內容區，左邊距微調避開指示條 -->
+                                <DataGridCellsPresenter Margin="6,0,0,0"
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                        VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="#000000"/>
+                                <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource BrushAccentStripHover}"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="AccentGlow" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBorder" Property="Background" Value="#000000"/>
+                                <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource BrushAccentStripActive}"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1"/>
+                                <Setter TargetName="AccentGlow" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="RowBorder" Property="Background" Value="#000000"/>
+                                <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource BrushAccentStripHover}"/>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="AccentGlow" Property="Visibility" Value="Visible"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 風格 4：靜態微光光暈風格 (由框朝內散發柔和高斯光暈，卡片主體維持深黑基底，高度完全一致) -->
+        <Style x:Key="SongListRowStyle_Glow" TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="8,1.5,8,1.5"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Border x:Name="RowBorder"
+                                Background="#181B24"
+                                BorderBrush="#20FFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                ClipToBounds="True"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <!-- 由外框向內散發的柔和高斯內光暈 (BlurEffect，絕不覆蓋卡片中心) -->
+                                <Border x:Name="InnerGlowRim"
+                                        Margin="1"
+                                        CornerRadius="7"
+                                        BorderThickness="4"
+                                        BorderBrush="Transparent"
+                                        Background="Transparent"
+                                        IsHitTestVisible="False">
+                                    <Border.Effect>
+                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                                    </Border.Effect>
+                                </Border>
+
+                                <DataGridCellsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                        VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1.5"/>
+                                <Setter TargetName="InnerGlowRim" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1.5"/>
+                                <Setter TargetName="InnerGlowRim" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1.5"/>
+                                <Setter TargetName="InnerGlowRim" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 預設動態列樣式 (預設繼承風格 1 現代微圓角卡片) -->
+        <Style x:Key="FloatingDataGridRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource SongListRowStyle_FloatingCard}"/>
+
+        <!-- 預設網格線動態變數 (卡片模式為 None) -->
+        <DataGridGridLinesVisibility x:Key="DataGridLinesVisibility">None</DataGridGridLinesVisibility>
 
         <!-- Floating DataGrid Style (全域懸浮卡片外觀與圓角投影) -->
         <Style x:Key="FloatingDataGridStyle" TargetType="{x:Type DataGrid}">
             <Setter Property="Background" Value="{DynamicResource BrushBgCard}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource BrushBorderDefault}"/>
             <Setter Property="BorderThickness" Value="{DynamicResource BorderThicknessGrid}"/>
-            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="GridLinesVisibility" Value="{DynamicResource DataGridLinesVisibility}"/>
             <Setter Property="HorizontalGridLinesBrush" Value="#12FFFFFF"/>
             <Setter Property="VerticalGridLinesBrush" Value="{x:Null}"/>
             <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="#06FFFFFF"/>
-            <Setter Property="RowStyle" Value="{StaticResource FloatingDataGridRowStyle}"/>
+            <Setter Property="AlternatingRowBackground" Value="Transparent"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="RowStyle" Value="{DynamicResource FloatingDataGridRowStyle}"/>
             <Setter Property="CellStyle" Value="{StaticResource FloatingDataGridCellStyle}"/>
             <Setter Property="ColumnHeaderStyle" Value="{StaticResource GlobalDataGridColumnHeaderStyle}"/>
             <Setter Property="Template">
@@ -204,13 +461,13 @@
                                                     <RowDefinition Height="*"/>
                                                     <RowDefinition Height="Auto"/>
                                                 </Grid.RowDefinitions>
-                                                <!-- 表格上方圓角外框 (CornerRadius="11,11,0,0") 與底部分隔線 -->
+                                                <!-- 表格上方圓角外框與底部分隔線 (8px 左右 Margin 與卡片外緣精確對齊) -->
                                                 <Border Grid.Column="1" 
                                                         Grid.Row="0" 
-                                                        CornerRadius="11,11,0,0" 
+                                                        CornerRadius="8" 
+                                                        Margin="8,2,8,2"
                                                         Background="{DynamicResource DataGridColumnHeaderBackground}"
-                                                        BorderThickness="0,0,0,1"
-                                                        BorderBrush="#22FFFFFF"
+                                                        BorderThickness="0"
                                                         ClipToBounds="True">
                                                     <DataGridColumnHeadersPresenter x:Name="PART_ColumnHeadersPresenter" 
                                                                                     Visibility="{Binding HeadersVisibility, ConverterParameter={x:Static DataGridHeadersVisibility.Column}, Converter={x:Static DataGrid.HeadersVisibilityConverter}, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"/>
@@ -218,6 +475,7 @@
                                                 <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" 
                                                                         Grid.Column="1" 
                                                                         Grid.Row="1" 
+                                                                        Margin="0,0,0,4"
                                                                         CanContentScroll="{TemplateBinding CanContentScroll}"/>
                                                 <ScrollBar x:Name="PART_VerticalScrollBar" 
                                                            Grid.Column="2" 
@@ -687,15 +945,18 @@
                                               RowHeight="40"
                                               HeadersVisibility="Column"
                                               ColumnHeaderHeight="45"
-                                              Height="371"
+                                              Height="370"
                                               VerticalAlignment="Top"
                                               BorderThickness="{DynamicResource BorderThicknessGrid}"
                                               Padding="0"
                                               Margin="0"
-                                                      AutoGenerateColumns="False" 
-                                                      CanUserAddRows="False" 
-                                                      CanUserDeleteRows="False"
-                                                      IsReadOnly="True"
+                                              SelectionUnit="FullRow"
+                                              SelectionMode="Single"
+                                              CellStyle="{StaticResource FloatingDataGridCellStyle}"
+                                              AutoGenerateColumns="False" 
+                                              CanUserAddRows="False" 
+                                              CanUserDeleteRows="False"
+                                              IsReadOnly="True"
                                                       CanUserSortColumns="False"
                                                       CanUserReorderColumns="False"
                                                       CanUserResizeColumns="False"
@@ -749,10 +1010,25 @@
                                                                     </Border>
                                                                     <!-- Song name -->
                                                                     <TextBlock Text="{Binding WaitingListSongName}" 
-                                                                             TextAlignment="Left"
-                                                                             VerticalAlignment="Center"
-                                                                             TextTrimming="CharacterEllipsis"
-                                                                             Foreground="{DynamicResource MaterialDesignBody}"/>
+                                                                               TextAlignment="Left"
+                                                                               VerticalAlignment="Center"
+                                                                               TextTrimming="CharacterEllipsis">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                                    </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </DataGridTemplateColumn.CellTemplate>
@@ -761,7 +1037,23 @@
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0">
-                                                                    <TextBlock Text="{Binding WaitingListSingerName}" VerticalAlignment="Center" Foreground="{DynamicResource BrushTextDim}"/>
+                                                                    <TextBlock Text="{Binding WaitingListSingerName}" VerticalAlignment="Center">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                                    </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
                                                                 </Viewbox>
                                                             </DataTemplate>
                                                         </DataGridTemplateColumn.CellTemplate>
@@ -1087,7 +1379,7 @@
                                           FontSize="{DynamicResource SongListFontSize}"
                                           RowHeight="65"
                                           ColumnHeaderHeight="52"
-                                          Height="580"
+                                          Height="558"
                                           VerticalAlignment="Top"
                                           HeadersVisibility="Column"
                                           BorderThickness="0"
@@ -1095,6 +1387,8 @@
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           IsReadOnly="True"
                                           SelectionUnit="FullRow"
+                                          SelectionMode="Single"
+                                          CellStyle="{StaticResource FloatingDataGridCellStyle}"
                                           CanUserSortColumns="False"
                                           CanUserReorderColumns="False"
                                           CanUserResizeColumns="False"
@@ -1132,6 +1426,14 @@
                                                             </MultiDataTrigger.Conditions>
                                                             <Setter Property="Foreground" Value="LightSkyBlue"/>
                                                         </MultiDataTrigger>
+                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
@@ -1162,7 +1464,23 @@
                                                             </Style>
                                                         </Border.Style>
                                                         <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left">
-                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center" Foreground="{DynamicResource BrushTextDim}"/>
+                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                            </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
                                                         </Viewbox>
                                                     </Border>
                                                 </DataTemplate>
@@ -1178,6 +1496,16 @@
                                                     <Setter Property="Padding" Value="0"/>
                                                     <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                                     <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
@@ -1298,7 +1626,7 @@
                                           FontSize="{DynamicResource SongListFontSize}"
                                           RowHeight="65"
                                           ColumnHeaderHeight="52"
-                                          Height="910"
+                                          Height="908"
                                           VerticalAlignment="Top"
                                           Margin="0,12,0,0"
                                           HeadersVisibility="Column"
@@ -1307,6 +1635,8 @@
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           IsReadOnly="True"
                                           SelectionUnit="FullRow"
+                                          SelectionMode="Single"
+                                          CellStyle="{StaticResource FloatingDataGridCellStyle}"
                                           CanUserSortColumns="False"
                                           CanUserReorderColumns="False"
                                           CanUserResizeColumns="False"
@@ -1338,6 +1668,14 @@
                                                         <DataTrigger Binding="{Binding Language}" Value="國語">
                                                             <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
                                                         </DataTrigger>
+                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
@@ -1348,7 +1686,23 @@
                                                     <Border Background="Transparent" Padding="0" Cursor="Hand"
                                                             MouseEnter="SingerCell_MouseEnter" MouseLeave="SingerCell_MouseLeave">
                                                         <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left">
-                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center" Foreground="{DynamicResource BrushTextDim}"/>
+                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                            </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
                                                         </Viewbox>
                                                     </Border>
                                                 </DataTemplate>
@@ -1363,6 +1717,16 @@
                                                     <Setter Property="Padding" Value="0"/>
                                                     <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                                     <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
@@ -1374,7 +1738,7 @@
                                           FontSize="{DynamicResource SongListFontSize}"
                                           RowHeight="65"
                                           ColumnHeaderHeight="52"
-                                          Height="846"
+                                          Height="832"
                                           VerticalAlignment="Top"
                                           Margin="0,6,0,0"
                                           HeadersVisibility="Column"
@@ -1383,6 +1747,8 @@
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           IsReadOnly="True"
                                           SelectionUnit="FullRow"
+                                          SelectionMode="Single"
+                                          CellStyle="{StaticResource FloatingDataGridCellStyle}"
                                           CanUserSortColumns="False"
                                           CanUserReorderColumns="False"
                                           CanUserResizeColumns="False"
@@ -1414,6 +1780,14 @@
                                                         <DataTrigger Binding="{Binding Language}" Value="國語">
                                                             <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
                                                         </DataTrigger>
+                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
@@ -1424,7 +1798,23 @@
                                                     <Border Background="Transparent" Padding="0" Cursor="Hand"
                                                             MouseEnter="SingerCell_MouseEnter" MouseLeave="SingerCell_MouseLeave">
                                                         <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left">
-                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center" Foreground="{DynamicResource BrushTextDim}"/>
+                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                            </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
                                                         </Viewbox>
                                                     </Border>
                                                 </DataTemplate>
@@ -1439,6 +1829,16 @@
                                                     <Setter Property="Padding" Value="0"/>
                                                     <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                                     <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>

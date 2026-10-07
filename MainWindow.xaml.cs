@@ -52,8 +52,8 @@ namespace UltimateKtv
         // Store the full song data dictionary for the currently playing song
         // This is needed for properties like ReplayGain
         private Dictionary<string, object?>? _playingSongData = null;
-        private const int SongPageSize = 13; // Adjust based on DataGrid display capacity
-        private const int LanguageSongPageSize = 12; // 語系結果列表 12 筆
+        private const int SongPageSize = 12; // Adjust based on DataGrid display capacity (-1 for card style height)
+        private const int LanguageSongPageSize = 11; // 語系結果列表 11 筆 (-1 for card style height)
         private int CurrentSongPageSize => _isLanguageMode ? LanguageSongPageSize : SongPageSize;
 
         // Fields for theme switcher functionality
@@ -71,7 +71,7 @@ namespace UltimateKtv
         private WaitingListItem? _waitingListContextItem;
 
         // Waiting list pagination
-        private const int WaitingListPageSize = 8; // Maximum 8 rows per page
+        private const int WaitingListPageSize = 7; // Maximum 7 rows per page (-1 for card style height)
 
         // Pre-loading cache for network access optimization
         private string? _preLoadedSongPath = null;
@@ -338,44 +338,30 @@ namespace UltimateKtv
             this.MouseMove += MainWindow_MouseMove;
             this.PreviewMouseMove += MainWindow_MouseMove;
 
-            AppLogger.Log("MainWindow constructor finished.");
-
-
-            // Start HTTP server for remote control
-            _httpServer = UltimateKtv.HttpServer.StartHttpServer(this, DebugLog);
-            _lastKnownIp = UltimateKtv.HttpServer.GetLocalIPAddress();
-            /*
-                        // Add 120 random songs to the waiting list for testing
-                        if (SongDatas.SongData != null && SongDatas.SongData.Any())
+            // Start HTTP server for remote control asynchronously in background to avoid blocking UI startup
+            _ = System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    var server = UltimateKtv.HttpServer.StartHttpServer(this, DebugLog);
+                    string localIp = UltimateKtv.HttpServer.GetLocalIPAddress();
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        _httpServer = server;
+                        _lastKnownIp = localIp;
+                        if (IsSingleMonitorMode && _httpServer != null)
                         {
-                            var random = new Random();
-                            var randomSongs = SongDatas.SongData
-                                .OrderBy(s => random.Next())
-                                .Take(15)
-                                .ToList();
-
-                            foreach (var song in randomSongs)
-                            {
-                                if (song == null) continue;
-
-                                var songItem = new SongDisplayItem
-                                {
-                                    SongName = song.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? "" : "",
-                                    SingerName = song.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? "" : "",
-                                    FilePath = song.TryGetValue("FilePath", out var pathObj) ? pathObj?.ToString() ?? "" : "",
-                                    Song_CreatDate = song.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime dt ? dt : (DateTime?)null,
-                                    Volume = song.TryGetValue("Song_Volume", out var volObj) && int.TryParse(volObj?.ToString(), out int vol) ? vol : 90,
-                                    AudioTrack = song.TryGetValue("Song_Track", out var trackObj) && int.TryParse(trackObj?.ToString(), out int track) ? track : 0
-                                };
-
-                                // Only add if the song has a name and a valid file path
-                                if (!string.IsNullOrEmpty(songItem.SongName) && !string.IsNullOrEmpty(songItem.FilePath))
-                                {
-                                    AddSongToWaitingList(songItem);
-                                }
-                            }
+                            DisplayWebHostInfoMarquee();
                         }
-            */
+                    });
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Failed to start HTTP server in background", ex);
+                }
+            });
+
+            AppLogger.Log("MainWindow constructor finished.");
         }
 
         /// <summary>
@@ -499,6 +485,26 @@ namespace UltimateKtv
             }
             catch { /* ignore logging errors */ }
         }
+
+        // Helper: find visual child of type T with optional element name
+        private static T? FindVisualChild<T>(DependencyObject? parent, string? name = null) where T : FrameworkElement
+        {
+            if (parent == null) return null;
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed && (name == null || typed.Name == name))
+                {
+                    return typed;
+                }
+                var result = FindVisualChild<T>(child, name);
+                if (result != null) return result;
+            }
+            return null;
+        }
+
+
 
         // Helper: find the first visual parent of type T for a given DependencyObject
         private static T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
@@ -1090,6 +1096,13 @@ namespace UltimateKtv
             var row = FindVisualParent<DataGridRow>(cell);
             if (row?.Item is not SongDisplayItem selectedSong) return;
 
+            // Highlight the selected row visually
+            row.IsSelected = true;
+            if (sender is DataGrid dg)
+            {
+                dg.SelectedItem = selectedSong;
+            }
+
             // Check if we are in "Singer Search Mode" and clicking on the Quick Search Grid
             if (sender == QuickSongListGrid && _isSingerSearchMode)
             {
@@ -1141,9 +1154,9 @@ namespace UltimateKtv
 
             // Get the column header to identify which column was clicked
             // QuickSongListGrid sets the header via Style so Header might be null, use DisplayIndex 1 as fallback
-            string? columnHeader = cell.Column.Header?.ToString();
+            string? columnHeader = cell?.Column?.Header?.ToString();
 
-            bool isSingerColumn = (columnHeader == "歌手" || cell.Column.DisplayIndex == 1);
+            bool isSingerColumn = (columnHeader == "歌手" || cell?.Column?.DisplayIndex == 1);
             if (sender == QuickSongListGrid && _searchMode == SearchMode.Youtube)
             {
                 isSingerColumn = false; // YouTube search uses this column for duration

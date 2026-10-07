@@ -35,10 +35,10 @@ namespace UltimateKtv
         private SearchMode _searchMode = SearchMode.Song;
         private bool _isSingerSearchMode => _searchMode == SearchMode.Singer;
         
-        // Centralized page size for Quick Search (Keyboard uses 12 rows to utilize available vertical space)
+        // Centralized page size for Quick Search (Keyboard uses 11 rows to utilize available vertical space, -1 for card style height)
         private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube) 
-            ? (_currentQuickMethod == QuickMethod.YoutubeHistory ? 15 : 16) 
-            : (_currentQuickMethod == QuickMethod.Keyboard ? 12 : 8);
+            ? (_currentQuickMethod == QuickMethod.YoutubeHistory ? 14 : 16) 
+            : (_currentQuickMethod == QuickMethod.Keyboard ? 11 : 7);
 
         // For async quick search to prevent UI lag
         private CancellationTokenSource? _quickSearchCts;
@@ -461,7 +461,7 @@ namespace UltimateKtv
                     }
 
                     if (SearchInputGrid != null) SearchInputGrid.Visibility = (_currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
-                    if (QuickSongListGrid != null) QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 846 : 580;
+                    if (QuickSongListGrid != null) QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 842 : 550;
                     // Other visibilities will be handled by UpdateSearchWords -> RefreshQuickResultsPage
                 }
 
@@ -531,7 +531,7 @@ namespace UltimateKtv
 
                 // Restore visibility after updates
                 if (SearchInputGrid != null) SearchInputGrid.Visibility = (method == QuickMethod.Keyboard || _searchMode == SearchMode.Youtube) ? Visibility.Collapsed : Visibility.Visible;
-                if (QuickSongListGrid != null) QuickSongListGrid.Height = (method == QuickMethod.Keyboard) ? 846 : 580;
+                if (QuickSongListGrid != null) QuickSongListGrid.Height = (method == QuickMethod.Keyboard) ? 842 : 550;
             }
 
             // Update the display with the preserved state for the selected method.
@@ -1013,7 +1013,7 @@ namespace UltimateKtv
 
                 if (QuickSongListGrid != null)
                 {
-                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 846 : 580;
+                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 842 : 550;
                     QuickSongListGrid.ItemsSource = !useYoutubeGrid ? pageItems : null;
                     if (!useYoutubeGrid)
                     {

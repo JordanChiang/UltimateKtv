@@ -29,7 +29,7 @@ namespace UltimateKtv
                     SearchInputGrid.Visibility = (_searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
                 
                 if (QuickSongListGrid != null)
-                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 846 : 580;
+                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 842 : 550;
                 
                 if (SearchSymbolPanel != null) SearchSymbolPanel.Visibility = Visibility.Visible;
                 

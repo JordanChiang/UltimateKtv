@@ -236,8 +236,10 @@ namespace UltimateKtv
                     var item = row.Item as WaitingListItem;
                     if (item != null && !string.IsNullOrEmpty(item.WaitingListSongName))
                     {
-                        // Store the item for menu actions (avoid relying on SelectedItem)
+                        // Store the item for menu actions and highlight the selected row
                         _waitingListContextItem = item;
+                        if (row != null) row.IsSelected = true;
+                        if (WaitingListGrid != null) WaitingListGrid.SelectedItem = item;
                         UpdateContextMenuWithUserInfo(item);
                         var cm = WaitingListGrid?.ContextMenu;
                         if (cm != null)
@@ -265,6 +267,8 @@ namespace UltimateKtv
                     if (item != null && !string.IsNullOrEmpty(item.WaitingListSongName))
                     {
                         _waitingListContextItem = item;
+                        if (row != null) row.IsSelected = true;
+                        if (WaitingListGrid != null) WaitingListGrid.SelectedItem = item;
                         UpdateContextMenuWithUserInfo(item);
                         var cm = WaitingListGrid?.ContextMenu;
                         if (cm != null)

@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -249,11 +250,11 @@ namespace StyleSimulator
         {
             if (CboConfigFileType.SelectedIndex == 0)
             {
-                TxtActiveFilePath.Text = StyleSettingsModel.SettingsPath;
+                TxtActiveFilePath.Text = StyleSettingsModel.TextSettingsPath;
             }
             else
             {
-                TxtActiveFilePath.Text = StyleSettingsModel.TextSettingsPath;
+                TxtActiveFilePath.Text = StyleSettingsModel.SettingsPath;
             }
         }
 
@@ -268,17 +269,7 @@ namespace StyleSimulator
 
         private void SwitchActiveView(int index)
         {
-            if (index == 0) // settings.json
-            {
-                MarqueeTestBar.Visibility = Visibility.Visible;
-                PlayerScreenView.Visibility = Visibility.Visible;
-                UiInfoBar.Visibility = Visibility.Collapsed;
-                KtvUiView.Visibility = Visibility.Collapsed;
-
-                SettingsJsonGrid.Visibility = Visibility.Visible;
-                TextSettingsGrid.Visibility = Visibility.Collapsed;
-            }
-            else // textsettings.json
+            if (index == 0) // textsettings.json (UI介面)
             {
                 MarqueeTestBar.Visibility = Visibility.Collapsed;
                 PlayerScreenView.Visibility = Visibility.Collapsed;
@@ -287,6 +278,16 @@ namespace StyleSimulator
 
                 SettingsJsonGrid.Visibility = Visibility.Collapsed;
                 TextSettingsGrid.Visibility = Visibility.Visible;
+            }
+            else // settings.json (跑馬燈/提示)
+            {
+                MarqueeTestBar.Visibility = Visibility.Visible;
+                PlayerScreenView.Visibility = Visibility.Visible;
+                UiInfoBar.Visibility = Visibility.Collapsed;
+                KtvUiView.Visibility = Visibility.Collapsed;
+
+                SettingsJsonGrid.Visibility = Visibility.Visible;
+                TextSettingsGrid.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -384,6 +385,19 @@ namespace StyleSimulator
             {
                 TxtAccentColor.IsEnabled = !isAutoAccent;
                 TxtAccentColor.Text = isAutoAccent ? _model.PrimaryColor : _model.AccentColor;
+            }
+
+            if (CboSongListRowStyle != null)
+            {
+                int rStyle = _model.SongListRowStyle;
+                int targetIndex = rStyle switch
+                {
+                    2 => 1,
+                    3 => 2,
+                    4 => 3,
+                    _ => 0
+                };
+                CboSongListRowStyle.SelectedIndex = targetIndex;
             }
 
             // settings.json - 點歌網址 (內部 IP, port)
@@ -544,6 +558,12 @@ namespace StyleSimulator
                 _model.AccentColor = (ChkAutoAccentColor?.IsChecked == true) ? "" : TxtAccentColor.Text.Trim();
             }
 
+            if (CboSongListRowStyle?.SelectedItem is ComboBoxItem item &&
+                int.TryParse(item.Tag?.ToString(), out int selectedRowStyle))
+            {
+                _model.SongListRowStyle = selectedRowStyle;
+            }
+
             if (!string.IsNullOrWhiteSpace(TxtMockLanIp.Text))
             {
                 var parts = TxtMockLanIp.Text.Trim().Split(':');
@@ -677,8 +697,8 @@ namespace StyleSimulator
                 EndPoint = new Point(0, 1),
                 GradientStops = new GradientStopCollection
                 {
-                    new GradientStop(Color.FromArgb(65, accentColor.R, accentColor.G, accentColor.B), 0.0),
-                    new GradientStop(Color.FromArgb(20, (byte)(accentColor.R * 0.35), (byte)(accentColor.G * 0.35), (byte)(accentColor.B * 0.35)), 1.0)
+                    new GradientStop(Color.FromArgb(120, accentColor.R, accentColor.G, accentColor.B), 0.0),
+                    new GradientStop(Color.FromArgb(50, (byte)(accentColor.R * 0.45), (byte)(accentColor.G * 0.45), (byte)(accentColor.B * 0.45)), 1.0)
                 }
             };
 
@@ -708,9 +728,104 @@ namespace StyleSimulator
             this.Resources["WebHostInfoFgBrush"] = webHostInfoFgBrush;
             this.Resources["ColorAccentCyan"] = accentColor;
             this.Resources["BrushAccentCyan"] = accentBrush;
-            this.Resources["BrushAccentCyanDim"] = accentDimBrush;
             this.Resources["BrushCyberActiveGradient"] = cyberActiveGradient;
             this.Resources["BrushCyberButtonGradient"] = cyberButtonGradient;
+
+            // Option 2 & 3 Dynamic Theme-Calculated Brushes
+            Color primaryLightCol = (primaryLightBrush is SolidColorBrush slb4) ? slb4.Color : Color.FromRgb(255, 224, 130);
+            var accentStripActiveBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(primaryColor, 0.0),
+                    new GradientStop(Color.FromArgb(255,
+                        (byte)Math.Min(255, primaryLightCol.R + 25),
+                        (byte)Math.Min(255, primaryLightCol.G + 25),
+                        (byte)Math.Min(255, primaryLightCol.B + 25)), 0.4),
+                    new GradientStop(primaryLightCol, 0.6),
+                    new GradientStop(Color.FromArgb(255,
+                        (byte)(primaryColor.R * 0.75),
+                        (byte)(primaryColor.G * 0.75),
+                        (byte)(primaryColor.B * 0.75)), 1.0)
+                }
+            };
+            accentStripActiveBrush.Freeze();
+
+            var accentStripHoverBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(primaryLightCol, 0.0),
+                    new GradientStop(Colors.White, 0.45),
+                    new GradientStop(primaryLightCol, 1.0)
+                }
+            };
+            accentStripHoverBrush.Freeze();
+
+            var accentStripInactiveBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(180, 84, 110, 122), 0.0),
+                    new GradientStop(Color.FromArgb(220, 207, 216, 220), 0.45),
+                    new GradientStop(Color.FromArgb(190, 144, 164, 174), 0.6),
+                    new GradientStop(Color.FromArgb(180, 55, 71, 79), 1.0)
+                }
+            };
+            accentStripInactiveBrush.Freeze();
+
+            var accentStripGlowBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(1, 0),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(80, primaryColor.R, primaryColor.G, primaryColor.B), 0.0),
+                    new GradientStop(Color.FromArgb(24, primaryColor.R, primaryColor.G, primaryColor.B), 0.5),
+                    new GradientStop(Color.FromArgb(0, primaryColor.R, primaryColor.G, primaryColor.B), 1.0)
+                }
+            };
+            accentStripGlowBrush.Freeze();
+
+            var textSelectedGradientBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(255, 255, 255, 240), 0.0),
+                    new GradientStop(Color.FromArgb(255, 255, 253, 231), 0.25),
+                    new GradientStop((primaryLightBrush is SolidColorBrush slbText) ? slbText.Color : Color.FromRgb(255, 224, 130), 0.55),
+                    new GradientStop(primaryColor, 0.85),
+                    new GradientStop(Color.FromArgb(255,
+                        (byte)(primaryColor.R * 0.7),
+                        (byte)(primaryColor.G * 0.7),
+                        (byte)(primaryColor.B * 0.7)), 1.0)
+                }
+            };
+            textSelectedGradientBrush.Freeze();
+
+            this.Resources["BrushCapsuleRowBorder"] = new SolidColorBrush(Color.FromArgb(56, primaryColor.R, primaryColor.G, primaryColor.B));
+            this.Resources["BrushCapsuleHoverBg"] = new SolidColorBrush(Color.FromArgb(56, primaryColor.R, primaryColor.G, primaryColor.B));
+            this.Resources["BrushCapsuleHoverBorder"] = new SolidColorBrush(Color.FromArgb(204, primaryColor.R, primaryColor.G, primaryColor.B));
+            this.Resources["BrushCapsuleActiveBg"] = new SolidColorBrush(Color.FromArgb(76, primaryColor.R, primaryColor.G, primaryColor.B));
+            this.Resources["BrushCapsuleActiveBorder"] = primaryBrush;
+            this.Resources["BrushCapsuleActiveHoverBg"] = new SolidColorBrush(Color.FromArgb(85, primaryColor.R, primaryColor.G, primaryColor.B));
+            this.Resources["BrushAccentStripActive"] = accentStripActiveBrush;
+            this.Resources["BrushAccentStripHover"] = accentStripHoverBrush;
+            this.Resources["BrushAccentStripInactive"] = accentStripInactiveBrush;
+            this.Resources["BrushAccentStripGlow"] = accentStripGlowBrush;
+            this.Resources["BrushTextSelectedGradient"] = textSelectedGradientBrush;
+
+            // Option 4 Inward Glow Dynamic Brushes
+            this.Resources["BrushInnerGlowDefault"] = new SolidColorBrush(Color.FromRgb(24, 27, 36));
+
             this.Resources["UiFontFamily"] = uiFont;
             var appRes = Application.Current?.Resources;
             if (appRes != null)
@@ -718,21 +833,21 @@ namespace StyleSimulator
                 appRes["UiFontFamily"] = uiFont;
             }
 
-            // 13 Song List rows (matching updated screenshot)
+            // 12 Song List rows (matching updated screenshot, -1 for card style height)
             TextBlock?[] songRowNames = {
                 TxtSongRow1, TxtSongRow2, TxtSongRow3, TxtSongRow4, TxtSongRow5,
                 TxtSongRow6, TxtSongRow7, TxtSongRow8, TxtSongRow9, TxtSongRow10,
-                TxtSongRow11, TxtSongRow12, TxtSongRow13
+                TxtSongRow11, TxtSongRow12
             };
             TextBlock?[] songRowSingers = {
                 TxtSingerRow1, TxtSingerRow2, TxtSingerRow3, TxtSingerRow4, TxtSingerRow5,
                 TxtSingerRow6, TxtSingerRow7, TxtSingerRow8, TxtSingerRow9, TxtSingerRow10,
-                TxtSingerRow11, TxtSingerRow12, TxtSingerRow13
+                TxtSingerRow11, TxtSingerRow12
             };
             TextBlock?[] songRowLangs = {
                 TxtLangRow1, TxtLangRow2, TxtLangRow3, TxtLangRow4, TxtLangRow5,
                 TxtLangRow6, TxtLangRow7, TxtLangRow8, TxtLangRow9, TxtLangRow10,
-                TxtLangRow11, TxtLangRow12, TxtLangRow13
+                TxtLangRow11, TxtLangRow12
             };
 
             for (int i = 0; i < songRowNames.Length; i++)
@@ -946,6 +1061,9 @@ namespace StyleSimulator
             if (TxtPreviewWebHostInfo != null) { TxtPreviewWebHostInfo.FontFamily = uiFont; TxtPreviewWebHostInfo.Foreground = webHostInfoFgBrush; TxtPreviewWebHostInfo.FontSize = SldWebHostInfoFontSize.Value; }
             if (TxtPreviewStaticText != null) { TxtPreviewStaticText.FontFamily = uiFont; TxtPreviewStaticText.Foreground = staticTextFgBrush; }
 
+            // Live preview for Song List Row Styles (Options 1, 2, 3, 0)
+            ApplySongListRowStylePreview(primaryColor, primaryBrush, primaryLightBrush, cyberActiveGradient, cyberButtonGradient);
+
             // Update live marquee running properties
             if (_marqueeText != null)
             {
@@ -975,6 +1093,393 @@ namespace StyleSimulator
                 _broadcastText.FontSize = SldBroadcastFontSize.Value;
                 _broadcastText.Fill = ParseBrush(TxtBroadcastFillColor.Text, Brushes.Cyan);
                 _broadcastText.StrokeThickness = Math.Max(2, SldBroadcastFontSize.Value / 8.0);
+            }
+        }
+
+        private void CboSongListRowStyle_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isInitializing) return;
+            ParamChanged(sender, e);
+        }
+
+        private int _selectedSongRowIndex = 1;
+        private int _hoveredSongRowIndex = -1;
+        private bool _songRowInteractionsInitialized = false;
+
+        private int _selectedWaitRowIndex = 1;
+        private int _hoveredWaitRowIndex = -1;
+        private bool _waitRowInteractionsInitialized = false;
+
+        private void InitSongRowInteractions()
+        {
+            if (_songRowInteractionsInitialized) return;
+            _songRowInteractionsInitialized = true;
+
+            Border?[] rowBorders = {
+                BorderSongRow1, BorderSongRow2, BorderSongRow3, BorderSongRow4, BorderSongRow5,
+                BorderSongRow6, BorderSongRow7, BorderSongRow8, BorderSongRow9, BorderSongRow10,
+                BorderSongRow11, BorderSongRow12
+            };
+
+            for (int i = 0; i < rowBorders.Length; i++)
+            {
+                var border = rowBorders[i];
+                if (border == null) continue;
+                int rowIndex = i;
+
+                border.Cursor = Cursors.Hand;
+                border.MouseEnter += (s, e) =>
+                {
+                    _hoveredSongRowIndex = rowIndex;
+                    UpdateLivePreviews();
+                };
+                border.MouseLeave += (s, e) =>
+                {
+                    if (_hoveredSongRowIndex == rowIndex)
+                    {
+                        _hoveredSongRowIndex = -1;
+                        UpdateLivePreviews();
+                    }
+                };
+                border.MouseLeftButtonDown += (s, e) =>
+                {
+                    _selectedSongRowIndex = rowIndex;
+                    UpdateLivePreviews();
+                };
+            }
+        }
+
+        private void InitWaitRowInteractions()
+        {
+            if (_waitRowInteractionsInitialized) return;
+            _waitRowInteractionsInitialized = true;
+
+            Border?[] waitBorders = {
+                BorderWaitRow1, BorderWaitRow2, BorderWaitRow3, BorderWaitRow4,
+                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7, BorderWaitRow8
+            };
+
+            for (int i = 0; i < waitBorders.Length; i++)
+            {
+                var border = waitBorders[i];
+                if (border == null) continue;
+                int rowIndex = i;
+
+                border.Cursor = Cursors.Hand;
+                border.MouseEnter += (s, e) =>
+                {
+                    _hoveredWaitRowIndex = rowIndex;
+                    UpdateLivePreviews();
+                };
+                border.MouseLeave += (s, e) =>
+                {
+                    if (_hoveredWaitRowIndex == rowIndex)
+                    {
+                        _hoveredWaitRowIndex = -1;
+                        UpdateLivePreviews();
+                    }
+                };
+                border.MouseLeftButtonDown += (s, e) =>
+                {
+                    _selectedWaitRowIndex = rowIndex;
+                    UpdateLivePreviews();
+                };
+            }
+        }
+
+        private void ApplySongListRowStylePreview(Color primaryColor, Brush primaryBrush, Brush primaryLightBrush, Brush cyberActiveGradient, Brush cyberButtonGradient)
+        {
+            InitSongRowInteractions();
+            InitWaitRowInteractions();
+
+            int styleOpt = 1;
+            if (CboSongListRowStyle?.SelectedItem is ComboBoxItem item &&
+                int.TryParse(item.Tag?.ToString(), out int parsed))
+            {
+                styleOpt = parsed;
+            }
+
+            // 配合主要主題色自動計算的顏色與筆刷 (風格 2 膠囊輪廓 / 風格 3 主色指示條)
+            var capsuleBorderBrush = new SolidColorBrush(Color.FromArgb(56, primaryColor.R, primaryColor.G, primaryColor.B));
+            var capsuleHoverBgBrush = new SolidColorBrush(Color.FromArgb(56, primaryColor.R, primaryColor.G, primaryColor.B));
+            var capsuleHoverBorderBrush = new SolidColorBrush(Color.FromArgb(204, primaryColor.R, primaryColor.G, primaryColor.B));
+            var capsuleActiveBgBrush = new SolidColorBrush(Color.FromArgb(76, primaryColor.R, primaryColor.G, primaryColor.B));
+            var capsuleActiveHoverBgBrush = new SolidColorBrush(Color.FromArgb(85, primaryColor.R, primaryColor.G, primaryColor.B));
+            Color primaryLightCol = (primaryLightBrush is SolidColorBrush slb4) ? slb4.Color : Color.FromRgb(255, 224, 130);
+            var accentStripActiveBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(primaryColor, 0.0),
+                    new GradientStop(Color.FromArgb(255,
+                        (byte)Math.Min(255, primaryLightCol.R + 25),
+                        (byte)Math.Min(255, primaryLightCol.G + 25),
+                        (byte)Math.Min(255, primaryLightCol.B + 25)), 0.4),
+                    new GradientStop(primaryLightCol, 0.6),
+                    new GradientStop(Color.FromArgb(255,
+                        (byte)(primaryColor.R * 0.75),
+                        (byte)(primaryColor.G * 0.75),
+                        (byte)(primaryColor.B * 0.75)), 1.0)
+                }
+            };
+            accentStripActiveBrush.Freeze();
+
+            var accentStripHoverBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(primaryLightCol, 0.0),
+                    new GradientStop(Colors.White, 0.45),
+                    new GradientStop(primaryLightCol, 1.0)
+                }
+            };
+            accentStripHoverBrush.Freeze();
+
+            var accentStripInactiveBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(180, 84, 110, 122), 0.0),
+                    new GradientStop(Color.FromArgb(220, 207, 216, 220), 0.45),
+                    new GradientStop(Color.FromArgb(190, 144, 164, 174), 0.6),
+                    new GradientStop(Color.FromArgb(180, 55, 71, 79), 1.0)
+                }
+            };
+            accentStripInactiveBrush.Freeze();
+
+            // 風格 4：朝內微光 (Inward Glow) 專用漸層筆刷 (無外擴光暈、高度與風格 1~3 完全一致，平滑無橫紋)
+            var innerGlowHoverBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(96, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B), 0.0),
+                    new GradientStop(Color.FromArgb(24, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B), 1.0)
+                }
+            };
+            var innerGlowActiveBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(160, primaryColor.R, primaryColor.G, primaryColor.B), 0.0),
+                    new GradientStop(Color.FromArgb(48, primaryColor.R, primaryColor.G, primaryColor.B), 1.0)
+                }
+            };
+            var innerGlowActiveHoverBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(192, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B), 0.0),
+                    new GradientStop(Color.FromArgb(64, primaryLightCol.R, primaryLightCol.G, primaryLightCol.B), 1.0)
+                }
+            };
+
+            Border?[] rowBorders = {
+                BorderSongRow1, BorderSongRow2, BorderSongRow3, BorderSongRow4, BorderSongRow5,
+                BorderSongRow6, BorderSongRow7, BorderSongRow8, BorderSongRow9, BorderSongRow10,
+                BorderSongRow11, BorderSongRow12
+            };
+
+            Border?[] accentBars = {
+                AccentBarSongRow1, AccentBarSongRow2, AccentBarSongRow3, AccentBarSongRow4, AccentBarSongRow5,
+                AccentBarSongRow6, AccentBarSongRow7, AccentBarSongRow8, AccentBarSongRow9, AccentBarSongRow10,
+                AccentBarSongRow11, AccentBarSongRow12
+            };
+
+            Border?[] rowGlows = {
+                InnerGlowSongRow1, InnerGlowSongRow2, InnerGlowSongRow3, InnerGlowSongRow4, InnerGlowSongRow5,
+                InnerGlowSongRow6, InnerGlowSongRow7, InnerGlowSongRow8, InnerGlowSongRow9, InnerGlowSongRow10,
+                InnerGlowSongRow11, InnerGlowSongRow12
+            };
+
+            Border?[] waitRowBorders = {
+                BorderWaitRow1, BorderWaitRow2, BorderWaitRow3, BorderWaitRow4,
+                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7, BorderWaitRow8
+            };
+
+            Border?[] waitAccentBars = {
+                AccentBarWaitRow1, AccentBarWaitRow2, AccentBarWaitRow3, AccentBarWaitRow4,
+                AccentBarWaitRow5, AccentBarWaitRow6, AccentBarWaitRow7, AccentBarWaitRow8
+            };
+
+            Border?[] waitGlows = {
+                InnerGlowWaitRow1, InnerGlowWaitRow2, InnerGlowWaitRow3, InnerGlowWaitRow4,
+                InnerGlowWaitRow5, InnerGlowWaitRow6, InnerGlowWaitRow7, InnerGlowWaitRow8
+            };
+
+            void ApplyCardStyles(Border?[] borders, Border?[] accents, Border?[] glows, int selectedIdx, int hoveredIdx)
+            {
+                for (int i = 0; i < borders.Length; i++)
+                {
+                    var border = borders[i];
+                    var accent = (i < accents.Length) ? accents[i] : null;
+                    var glow = (i < glows.Length) ? glows[i] : null;
+                    if (border == null) continue;
+
+                    bool isSelectedRow = (i == selectedIdx);
+                    bool isHoveredRow = (i == hoveredIdx);
+                    bool isHighlighted = isSelectedRow || isHoveredRow;
+                    bool isEven = (i % 2 == 0);
+
+                    // 預設關閉內光暈邊緣層
+                    if (glow != null) glow.BorderBrush = Brushes.Transparent;
+
+                    switch (styleOpt)
+                    {
+                        case 2: // 風格 2：膠囊外框輪廓風格 (Capsule) - 依主要主題色自動計算半透明背景與輪廓
+                            border.ClipToBounds = true;
+                            border.Effect = null;
+                            border.CornerRadius = new CornerRadius(16);
+                            border.Margin = new Thickness(8, 1.5, 8, 1.5);
+                            border.BorderThickness = new Thickness(1);
+                            border.BorderBrush = isHighlighted 
+                                ? (isHoveredRow ? capsuleHoverBorderBrush : primaryBrush) 
+                                : capsuleBorderBrush;
+                            border.Background = isHighlighted 
+                                ? (isSelectedRow && isHoveredRow 
+                                    ? capsuleActiveHoverBgBrush 
+                                    : (isHoveredRow ? capsuleHoverBgBrush : capsuleActiveBgBrush))
+                                : new SolidColorBrush(Color.FromRgb(16, 19, 27));
+                            if (accent != null) accent.Visibility = Visibility.Collapsed;
+                            break;
+
+                        case 3: // 風格 3：左側主色指示條卡片 (Accent Strip) - 立體金屬漸層質感，平滑貼合圓角外框
+                            border.ClipToBounds = true;
+                            border.Effect = null;
+                            border.CornerRadius = new CornerRadius(8);
+                            border.Margin = new Thickness(8, 1.5, 8, 1.5);
+                            border.BorderThickness = new Thickness(1);
+                            border.BorderBrush = isHighlighted ? (isHoveredRow ? primaryLightBrush : primaryBrush) : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
+                            border.Background = isHighlighted 
+                                ? Brushes.Black 
+                                : (isEven ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) : new SolidColorBrush(Color.FromRgb(20, 23, 32)));
+                            if (accent != null)
+                            {
+                                accent.Visibility = Visibility.Visible;
+                                accent.Width = 16;
+                                accent.CornerRadius = new CornerRadius(7, 0, 0, 7);
+                                accent.Background = isHighlighted 
+                                    ? (isHoveredRow ? accentStripHoverBrush : accentStripActiveBrush) 
+                                    : accentStripInactiveBrush;
+                            }
+                            break;
+
+                        case 4: // 風格 4：靜態微光光暈風格 (由框向內散發柔和高斯光暈，卡片主體維持深黑基底，高度完全一致)
+                            border.ClipToBounds = true;
+                            border.Effect = null;
+                            border.CornerRadius = new CornerRadius(8);
+                            border.Margin = new Thickness(8, 1.5, 8, 1.5);
+                            border.BorderThickness = isHighlighted ? new Thickness(1.5) : new Thickness(1);
+                            border.BorderBrush = isHighlighted 
+                                ? (isHoveredRow ? primaryLightBrush : primaryBrush) 
+                                : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
+                            border.Background = isEven 
+                                ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) 
+                                : new SolidColorBrush(Color.FromRgb(20, 23, 32));
+                            if (accent != null) accent.Visibility = Visibility.Collapsed;
+
+                            // 透過 BlurEffect 渲染真實高斯光暈
+                            if (isHighlighted && glow != null)
+                            {
+                                glow.BorderBrush = isHoveredRow ? primaryLightBrush : primaryBrush;
+                            }
+                            break;
+
+                        default: // 風格 1：現代懸浮微圓角卡片 (Modern Floating Card)
+                            border.ClipToBounds = true;
+                            border.Effect = null;
+                            border.CornerRadius = new CornerRadius(8);
+                            border.Margin = new Thickness(8, 1.5, 8, 1.5);
+                            border.BorderThickness = new Thickness(1);
+                            border.BorderBrush = isHighlighted ? (isHoveredRow ? primaryLightBrush : primaryBrush) : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
+                            border.Background = isHighlighted ? cyberButtonGradient : (isEven ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) : new SolidColorBrush(Color.FromRgb(20, 23, 32)));
+                            if (accent != null) accent.Visibility = Visibility.Collapsed;
+                            break;
+                    }
+                }
+            }
+
+            // 同步套用主要點歌清單與待播清單的各列
+            ApplyCardStyles(rowBorders, accentBars, rowGlows, _selectedSongRowIndex, _hoveredSongRowIndex);
+            ApplyCardStyles(waitRowBorders, waitAccentBars, waitGlows, _selectedWaitRowIndex, _hoveredWaitRowIndex);
+
+            // 套用被選取列文字的立體金屬漸層色彩
+            var selTextGradient = (Brush)this.Resources["BrushTextSelectedGradient"];
+            if (selTextGradient != null)
+            {
+                TextBlock?[] sNames = { TxtSongRow1, TxtSongRow2, TxtSongRow3, TxtSongRow4, TxtSongRow5, TxtSongRow6, TxtSongRow7, TxtSongRow8, TxtSongRow9, TxtSongRow10, TxtSongRow11, TxtSongRow12 };
+                TextBlock?[] sSingers = { TxtSingerRow1, TxtSingerRow2, TxtSingerRow3, TxtSingerRow4, TxtSingerRow5, TxtSingerRow6, TxtSingerRow7, TxtSingerRow8, TxtSingerRow9, TxtSingerRow10, TxtSingerRow11, TxtSingerRow12 };
+                TextBlock?[] sLangs = { TxtLangRow1, TxtLangRow2, TxtLangRow3, TxtLangRow4, TxtLangRow5, TxtLangRow6, TxtLangRow7, TxtLangRow8, TxtLangRow9, TxtLangRow10, TxtLangRow11, TxtLangRow12 };
+                
+                for (int i = 0; i < sNames.Length; i++)
+                {
+                    if (i == _selectedSongRowIndex || i == _hoveredSongRowIndex)
+                    {
+                        if (sNames[i] != null) { sNames[i]!.Foreground = selTextGradient; sNames[i]!.FontWeight = FontWeights.SemiBold; }
+                        if (sSingers[i] != null && i != 0) { sSingers[i]!.Foreground = selTextGradient; sSingers[i]!.FontWeight = FontWeights.SemiBold; }
+                        if (sLangs[i] != null) { sLangs[i]!.Foreground = selTextGradient; sLangs[i]!.FontWeight = FontWeights.SemiBold; }
+                    }
+                }
+
+                TextBlock?[] wSongs = { TxtWaitSong1, TxtWaitSong2, TxtWaitSong3 };
+                TextBlock?[] wSingers = { TxtWaitSinger1, TxtWaitSinger2, TxtWaitSinger3 };
+                for (int i = 0; i < wSongs.Length; i++)
+                {
+                    if (i == _selectedWaitRowIndex || i == _hoveredWaitRowIndex)
+                    {
+                        if (wSongs[i] != null) { wSongs[i]!.Foreground = selTextGradient; wSongs[i]!.FontWeight = FontWeights.SemiBold; }
+                        if (wSingers[i] != null) { wSingers[i]!.Foreground = selTextGradient; wSingers[i]!.FontWeight = FontWeights.SemiBold; }
+                    }
+                }
+            }
+
+            // 表頭與清單外框圓角配合 (寬度左右 8px Margin 與卡片對齊)
+            if (BorderGridHeader != null)
+            {
+                BorderGridHeader.Margin = new Thickness(8, 2, 8, 2);
+                BorderGridHeader.CornerRadius = styleOpt switch
+                {
+                    2 => new CornerRadius(16),
+                    _ => new CornerRadius(8)
+                };
+            }
+            if (BorderWaitHeader != null)
+            {
+                BorderWaitHeader.Margin = new Thickness(8, 2, 8, 2);
+                BorderWaitHeader.CornerRadius = styleOpt switch
+                {
+                    2 => new CornerRadius(16),
+                    _ => new CornerRadius(8)
+                };
+            }
+            if (BorderSongList != null)
+            {
+                BorderSongList.CornerRadius = styleOpt switch
+                {
+                    0 => new CornerRadius(4),
+                    2 => new CornerRadius(14),
+                    _ => new CornerRadius(8)
+                };
+            }
+            if (BorderWaitList != null)
+            {
+                BorderWaitList.CornerRadius = styleOpt switch
+                {
+                    0 => new CornerRadius(4),
+                    2 => new CornerRadius(14),
+                    _ => new CornerRadius(8)
+                };
             }
         }
 
@@ -1190,7 +1695,7 @@ namespace StyleSimulator
             if (newIndex != _currentTemplateIndex)
             {
                 _currentTemplateIndex = newIndex;
-                if (CboConfigFileType != null && CboConfigFileType.SelectedIndex == 0 &&
+                if (CboConfigFileType != null && CboConfigFileType.SelectedIndex == 1 &&
                     CardPlayback != null && CardPlayback.Visibility == Visibility.Visible &&
                     !_isSongAddedActive)
                 {
@@ -1217,7 +1722,7 @@ namespace StyleSimulator
             UpdateSettingsFromUI();
             UpdateLivePreviews();
 
-            if (CboConfigFileType != null && CboConfigFileType.SelectedIndex == 0 &&
+            if (CboConfigFileType != null && CboConfigFileType.SelectedIndex == 1 &&
                 CardPlayback != null && CardPlayback.Visibility == Visibility.Visible &&
                 !_isSongAddedActive)
             {
@@ -1618,7 +2123,7 @@ namespace StyleSimulator
         private void BtnPlaySong1_Click(object sender, RoutedEventArgs e)
         {
             _currentTemplateIndex = 0;
-            CboConfigFileType.SelectedIndex = 0;
+            CboConfigFileType.SelectedIndex = 1;
             SelectMarqueeCategory(0);
             TxtTemplate1.Focus();
             StartMarquee(GetFormattedSong1());
@@ -1627,7 +2132,7 @@ namespace StyleSimulator
         private void BtnPlaySong2_Click(object sender, RoutedEventArgs e)
         {
             _currentTemplateIndex = 1;
-            CboConfigFileType.SelectedIndex = 0;
+            CboConfigFileType.SelectedIndex = 1;
             SelectMarqueeCategory(0);
             TxtTemplate2.Focus();
             StartMarquee(GetFormattedSong2());
@@ -1636,7 +2141,7 @@ namespace StyleSimulator
         private void BtnPlaySong3_Click(object sender, RoutedEventArgs e)
         {
             _currentTemplateIndex = 2;
-            CboConfigFileType.SelectedIndex = 0;
+            CboConfigFileType.SelectedIndex = 1;
             SelectMarqueeCategory(0);
             TxtTemplate3.Focus();
             StartMarquee(GetFormattedSong3());
@@ -1645,7 +2150,7 @@ namespace StyleSimulator
         private void BtnPlayStartup_Click(object sender, RoutedEventArgs e)
         {
             _currentTemplateIndex = 3;
-            CboConfigFileType.SelectedIndex = 0;
+            CboConfigFileType.SelectedIndex = 1;
             SelectMarqueeCategory(0);
             TxtTemplateStartup.Focus();
             StartMarquee(GetFormattedStartup());
@@ -1653,7 +2158,7 @@ namespace StyleSimulator
 
         private void BtnSongAdded_Click(object sender, RoutedEventArgs e)
         {
-            CboConfigFileType.SelectedIndex = 0;
+            CboConfigFileType.SelectedIndex = 1;
             SelectMarqueeCategory(1);
             TxtSongAddedTemplate.Focus();
 
@@ -1668,7 +2173,7 @@ namespace StyleSimulator
 
         private void BtnBroadcast_Click(object sender, RoutedEventArgs e)
         {
-            CboConfigFileType.SelectedIndex = 0;
+            CboConfigFileType.SelectedIndex = 1;
             SelectMarqueeCategory(2);
 
             var text = "🔊 85";
@@ -1682,7 +2187,7 @@ namespace StyleSimulator
 
         private void BtnQueueTest_Click(object sender, RoutedEventArgs e)
         {
-            CboConfigFileType.SelectedIndex = 0;
+            CboConfigFileType.SelectedIndex = 1;
             SelectMarqueeCategory(1);
 
             // 1. Trigger Song Added at the top line
@@ -1751,6 +2256,8 @@ namespace StyleSimulator
                 tag = "textsettings_default_amber.json";
             }
 
+            int preservedRowStyle = _model.SongListRowStyle;
+
             // 1. 優先從組件內建資源讀取 (Embedded Resource)
             string resourceName = $"StyleSimulator.SampleSettings.{tag}";
             var assembly = typeof(MainWindow).Assembly;
@@ -1763,6 +2270,7 @@ namespace StyleSimulator
                         string json = reader.ReadToEnd();
                         if (_model.ApplyTextSettingsFromJson(json))
                         {
+                            _model.SongListRowStyle = preservedRowStyle;
                             ApplySettingsToUI();
                             UpdateLivePreviews();
                             return;
@@ -1779,6 +2287,7 @@ namespace StyleSimulator
                 if (File.Exists(targetPath))
                 {
                     _model.ApplyTextSettingsPreset(targetPath);
+                    _model.SongListRowStyle = preservedRowStyle;
                     ApplySettingsToUI();
                     UpdateLivePreviews();
                     return;
@@ -1788,6 +2297,7 @@ namespace StyleSimulator
             if (tag == "textsettings_default_amber.json")
             {
                 _model.ResetTextSettingsToDefaults();
+                _model.SongListRowStyle = preservedRowStyle;
                 ApplySettingsToUI();
                 UpdateLivePreviews();
                 return;
@@ -1801,7 +2311,7 @@ namespace StyleSimulator
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
         {
-            bool isSettings = CboConfigFileType.SelectedIndex == 0;
+            bool isSettings = CboConfigFileType.SelectedIndex == 1;
             string expectedFileName = isSettings ? "settings.json" : "textsettings.json";
             string otherFileName = isSettings ? "textsettings.json" : "settings.json";
 
@@ -1870,11 +2380,11 @@ namespace StyleSimulator
         {
             if (CboConfigFileType.SelectedIndex == 0)
             {
-                _model.LoadSettingsJson(StyleSettingsModel.SettingsPath);
+                _model.LoadTextSettingsJson(StyleSettingsModel.TextSettingsPath);
             }
             else
             {
-                _model.LoadTextSettingsJson(StyleSettingsModel.TextSettingsPath);
+                _model.LoadSettingsJson(StyleSettingsModel.SettingsPath);
             }
             UpdateFilePathDisplay();
             ApplySettingsToUI();
@@ -1885,7 +2395,7 @@ namespace StyleSimulator
         private void BtnSaveCurrent_Click(object sender, RoutedEventArgs e)
         {
             UpdateSettingsFromUI();
-            bool isSettings = CboConfigFileType.SelectedIndex == 0;
+            bool isSettings = CboConfigFileType.SelectedIndex == 1;
             bool ok = isSettings ? _model.SaveSettingsJson() : _model.SaveTextSettingsJson();
             string path = isSettings ? StyleSettingsModel.SettingsPath : StyleSettingsModel.TextSettingsPath;
 
