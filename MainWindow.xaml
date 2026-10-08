@@ -414,8 +414,8 @@
             </Setter>
         </Style>
 
-        <!-- 預設動態列樣式 (預設繼承風格 1 現代微圓角卡片) -->
-        <Style x:Key="FloatingDataGridRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource SongListRowStyle_FloatingCard}"/>
+        <!-- 預設動態列樣式 (預設繼承風格 1 靜態微光光暈風格) -->
+        <Style x:Key="FloatingDataGridRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource SongListRowStyle_Glow}"/>
 
         <!-- 預設網格線動態變數 (卡片模式為 None) -->
         <DataGridGridLinesVisibility x:Key="DataGridLinesVisibility">None</DataGridGridLinesVisibility>
@@ -929,12 +929,12 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Center Content: Waiting List and Media Player -->
-                            <!-- Center Content: Waiting List and Media Player -->
+                            <!-- Center Content: Waiting List, Now Playing, and Media Player -->
                             <Grid Margin="0,0,0,10">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" /> <!-- Fit WaitingListGrid (375px) tightly -->
-                                    <RowDefinition Height="Auto" /> <!-- Row for the new buttons -->
+                                    <RowDefinition Height="Auto" /> <!-- Fit WaitingListGrid tightly -->
+                                    <RowDefinition Height="Auto" /> <!-- Waiting List Pagination -->
+                                    <RowDefinition Height="Auto" /> <!-- Currently Playing Panel -->
                                     <RowDefinition Height="*" />    <!-- Media player fills remaining space -->
                                 </Grid.RowDefinitions>
 
@@ -945,7 +945,7 @@
                                               RowHeight="40"
                                               HeadersVisibility="Column"
                                               ColumnHeaderHeight="45"
-                                              Height="370"
+                                              Height="368"
                                               VerticalAlignment="Top"
                                               BorderThickness="{DynamicResource BorderThicknessGrid}"
                                               Padding="0"
@@ -1063,30 +1063,92 @@
                                 </Border>
 
                                 <!-- Buttons for Waiting List Pagination -->
-                                <Grid Grid.Row="1" Margin="0,14,0,0">
+                                <Grid Grid.Row="1" Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                <TextBlock Name="WaitListPageInfo" Margin="10,0,0,0" Grid.Column="0" Text="第 1/10 頁&#x0A;(0 首歌曲)" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="{DynamicResource WaitingListFontSize}" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}" />
+                                    <TextBlock Name="WaitListPageInfo" Margin="10,0,0,0" Grid.Column="0" Text="第 1/10 頁&#x0A;(0 首歌曲)" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="{DynamicResource WaitingListFontSize}" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}" />
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
                                         <Button Name="WaitListPageUp" Content="上一頁" Style="{StaticResource FunctionButtonStyle}" Margin="0" Width="100" FontSize="26"/>
                                         <Button Name="WaitListPageDown" Content="下一頁" Style="{StaticResource FunctionButtonStyle}" Margin="10,0,0,0" Width="100" FontSize="26"/>
                                     </StackPanel>
                                 </Grid>
 
+                                <!-- Currently Playing Panel -->
+                                <Border x:Name="NowPlayingBorder" 
+                                        Grid.Row="2" 
+                                        Margin="0,18,0,0" 
+                                        Height="50"
+                                        Background="{DynamicResource BrushBgCard}" 
+                                        BorderBrush="{DynamicResource BrushBorderDefault}" 
+                                        BorderThickness="1" 
+                                        CornerRadius="8" 
+                                        Padding="10,0"
+                                        SnapsToDevicePixels="True"
+                                        UseLayoutRounding="True">
+                                    <Grid VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Badge / Status Graphic Indicator (Icon only) -->
+                                        <Border Grid.Column="0" 
+                                                x:Name="NowPlayingBadgeBorder"
+                                                Width="42"
+                                                Height="36"
+                                                Background="{DynamicResource BrushBgSecondary}" 
+                                                BorderBrush="{DynamicResource BrushBorderDefault}"
+                                                BorderThickness="1"
+                                                CornerRadius="7" 
+                                                Margin="0,0,10,0"
+                                                VerticalAlignment="Center"
+                                                ToolTip="待機中">
+                                            <materialDesign:PackIcon x:Name="NowPlayingIcon" Kind="MusicNote" Width="22" Height="22" 
+                                                                     Foreground="{DynamicResource BrushTextDim}" 
+                                                                     HorizontalAlignment="Center"
+                                                                     VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <!-- Currently Playing Song and Singer Display -->
+                                        <Viewbox Grid.Column="1" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <StackPanel x:Name="NowPlayingInfoPanel" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="NowPlayingSongText" 
+                                                           Text="無播放歌曲" 
+                                                           FontSize="36" 
+                                                           FontWeight="Normal" 
+                                                           Foreground="{DynamicResource BrushTextMuted}" 
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="NowPlayingSeparator" 
+                                                           Text=" / " 
+                                                           FontSize="36" 
+                                                           Foreground="{DynamicResource BrushTextMuted}" 
+                                                           VerticalAlignment="Center" 
+                                                           Visibility="Collapsed"/>
+                                                <TextBlock x:Name="NowPlayingSingerText" 
+                                                           Text="" 
+                                                           FontSize="36" 
+                                                           FontWeight="SemiBold" 
+                                                           Foreground="{DynamicResource PrimaryLightBrush}" 
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Viewbox>
+                                    </Grid>
+                                </Border>
+
                                 <!-- Media Player Panel -->
-                                <Border Grid.Row="2" Margin="0,10,0,0" BorderThickness="0" Background="Black">
+                                <Border Grid.Row="3" Margin="0,8,0,0" BorderThickness="0" Background="Black">
                                     <Grid>
                                         <Grid.RowDefinitions>
-                                            <RowDefinition Height="*" />    <!-- Video player area -->
-                                            <RowDefinition Height="Auto" /> <!-- Sliders area -->
+                                            <RowDefinition Height="228" />    <!-- Video player area: exact 16:9 ratio (406x228) -->
+                                            <RowDefinition Height="Auto" />   <!-- Sliders area -->
                                         </Grid.RowDefinitions>
                                         
                                         <!-- Video Player Container -->
-                                        <Grid x:Name="MediaPlayerContainer" Grid.Row="0" ClipToBounds="False" Background="Transparent" MouseLeftButtonDown="MediaPlayerContainer_MouseLeftButtonDown" />
+                                        <Grid x:Name="MediaPlayerContainer" Grid.Row="0" Height="228" ClipToBounds="False" Background="Transparent" MouseLeftButtonDown="MediaPlayerContainer_MouseLeftButtonDown" />
                                         <!-- Marquee Container for overlay text -->
-                                        <Grid x:Name="MarqueeContainer" Grid.Row="0" Panel.ZIndex="100" ClipToBounds="False" IsHitTestVisible="False" />
+                                        <Grid x:Name="MarqueeContainer" Grid.Row="0" Height="228" Panel.ZIndex="100" ClipToBounds="False" IsHitTestVisible="False" />
                                         
                                         <!-- Control Sliders Panel -->
                                         <Grid Grid.Row="1" Background="#CC000000" Margin="5,0,5,5">

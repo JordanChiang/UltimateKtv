@@ -183,6 +183,10 @@ namespace UltimateKtv
                 DebugLog($"Error showing add to favorite dialog: {ex.Message}");
                 AppLogger.LogError("Failed to show add to favorite dialog", ex);
             }
+            finally
+            {
+                ClearSongGridsSelection();
+            }
         }
 
         /// <summary>

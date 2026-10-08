@@ -881,6 +881,10 @@ namespace StyleSimulator
             if (BorderWaitHeader != null) BorderWaitHeader.Background = gridHeaderBgBrush;
             if (TxtWaitHeaderCol1 != null) { TxtWaitHeaderCol1.FontFamily = uiFont; TxtWaitHeaderCol1.FontSize = SldWaitingListFontSize.Value; TxtWaitHeaderCol1.Foreground = gridHeaderFgBrush; }
             if (TxtWaitHeaderCol2 != null) { TxtWaitHeaderCol2.FontFamily = uiFont; TxtWaitHeaderCol2.FontSize = SldWaitingListFontSize.Value; TxtWaitHeaderCol2.Foreground = gridHeaderFgBrush; }
+            if (NowPlayingSingerText != null) NowPlayingSingerText.Foreground = primaryLightBrush;
+            if (NowPlayingSongText != null) NowPlayingSongText.Foreground = staticTextFgBrush;
+            if (NowPlayingSeparator != null) NowPlayingSeparator.Foreground = staticTextFgBrush;
+            if (NowPlayingBadgeBorder != null) NowPlayingBadgeBorder.BorderBrush = primaryBrush;
 
             // 8 Top Function Buttons (FuncBtn5 "新進" is active with CyberActiveGradient, all other buttons apply cyberButtonGradient)
             Button?[] funcBtns = { FuncBtn1, FuncBtn2, FuncBtn3, FuncBtn4, FuncBtn5, FuncBtn6, FuncBtn7, FuncBtn8 };
@@ -1156,7 +1160,7 @@ namespace StyleSimulator
 
             Border?[] waitBorders = {
                 BorderWaitRow1, BorderWaitRow2, BorderWaitRow3, BorderWaitRow4,
-                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7, BorderWaitRow8
+                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7
             };
 
             for (int i = 0; i < waitBorders.Length; i++)
@@ -1305,17 +1309,17 @@ namespace StyleSimulator
 
             Border?[] waitRowBorders = {
                 BorderWaitRow1, BorderWaitRow2, BorderWaitRow3, BorderWaitRow4,
-                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7, BorderWaitRow8
+                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7
             };
 
             Border?[] waitAccentBars = {
                 AccentBarWaitRow1, AccentBarWaitRow2, AccentBarWaitRow3, AccentBarWaitRow4,
-                AccentBarWaitRow5, AccentBarWaitRow6, AccentBarWaitRow7, AccentBarWaitRow8
+                AccentBarWaitRow5, AccentBarWaitRow6, AccentBarWaitRow7
             };
 
             Border?[] waitGlows = {
                 InnerGlowWaitRow1, InnerGlowWaitRow2, InnerGlowWaitRow3, InnerGlowWaitRow4,
-                InnerGlowWaitRow5, InnerGlowWaitRow6, InnerGlowWaitRow7, InnerGlowWaitRow8
+                InnerGlowWaitRow5, InnerGlowWaitRow6, InnerGlowWaitRow7
             };
 
             void ApplyCardStyles(Border?[] borders, Border?[] accents, Border?[] glows, int selectedIdx, int hoveredIdx)
@@ -1375,7 +1379,18 @@ namespace StyleSimulator
                             }
                             break;
 
-                        case 4: // 風格 4：靜態微光光暈風格 (由框向內散發柔和高斯光暈，卡片主體維持深黑基底，高度完全一致)
+                        case 4: // 風格 4：現代懸浮微圓角卡片 (Modern Floating Card)
+                            border.ClipToBounds = true;
+                            border.Effect = null;
+                            border.CornerRadius = new CornerRadius(8);
+                            border.Margin = new Thickness(8, 1.5, 8, 1.5);
+                            border.BorderThickness = new Thickness(1);
+                            border.BorderBrush = isHighlighted ? (isHoveredRow ? primaryLightBrush : primaryBrush) : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
+                            border.Background = isHighlighted ? cyberButtonGradient : (isEven ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) : new SolidColorBrush(Color.FromRgb(20, 23, 32)));
+                            if (accent != null) accent.Visibility = Visibility.Collapsed;
+                            break;
+
+                        default: // 風格 1：靜態微光光暈風格 (預設，由框向內散發柔和高斯光暈，卡片主體維持深黑基底，高度完全一致)
                             border.ClipToBounds = true;
                             border.Effect = null;
                             border.CornerRadius = new CornerRadius(8);
@@ -1394,17 +1409,6 @@ namespace StyleSimulator
                             {
                                 glow.BorderBrush = isHoveredRow ? primaryLightBrush : primaryBrush;
                             }
-                            break;
-
-                        default: // 風格 1：現代懸浮微圓角卡片 (Modern Floating Card)
-                            border.ClipToBounds = true;
-                            border.Effect = null;
-                            border.CornerRadius = new CornerRadius(8);
-                            border.Margin = new Thickness(8, 1.5, 8, 1.5);
-                            border.BorderThickness = new Thickness(1);
-                            border.BorderBrush = isHighlighted ? (isHoveredRow ? primaryLightBrush : primaryBrush) : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
-                            border.Background = isHighlighted ? cyberButtonGradient : (isEven ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) : new SolidColorBrush(Color.FromRgb(20, 23, 32)));
-                            if (accent != null) accent.Visibility = Visibility.Collapsed;
                             break;
                     }
                 }

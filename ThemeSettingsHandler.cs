@@ -650,14 +650,14 @@ namespace UltimateKtv
                     appResources["ColorRowGlowHover"] = primaryLightCol;
                 }
 
-                // Song list row style selection (1=FloatingCard, 2=Capsule, 3=AccentStrip, 4=Glow)
+                // Song list row style selection (1=Glow, 2=Capsule, 3=AccentStrip, 4=FloatingCard)
                 int rowStyleOpt = Settings.SongListRowStyle;
                 string rowStyleKey = rowStyleOpt switch
                 {
                     2 => "SongListRowStyle_Capsule",
                     3 => "SongListRowStyle_AccentStrip",
-                    4 => "SongListRowStyle_Glow",
-                    _ => "SongListRowStyle_FloatingCard"
+                    4 => "SongListRowStyle_FloatingCard",
+                    _ => "SongListRowStyle_Glow"
                 };
 
                 var targetWindow = (window as MainWindow) ?? (System.Windows.Application.Current?.MainWindow as MainWindow);

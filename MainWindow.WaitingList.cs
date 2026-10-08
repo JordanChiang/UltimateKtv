@@ -11,6 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using CrazyKTV_MediaKit.DirectShow.MediaPlayers;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
@@ -95,6 +96,198 @@ namespace UltimateKtv
             _waitingList.Clear(); // Clear the ObservableCollection
             _currentWaitingListPage = 1;
             UpdateWaitingListDisplay();
+            UpdateCurrentPlayingDisplay();
+        }
+
+        /// <summary>
+        /// Updates the currently playing song/singer display bar above the media player panel.
+        /// </summary>
+        public void UpdateCurrentPlayingDisplay(string songName = "", string singerName = "")
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => UpdateCurrentPlayingDisplay(songName, singerName));
+                return;
+            }
+
+            if (NowPlayingBorder == null || NowPlayingBadgeBorder == null || NowPlayingSongText == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrEmpty(songName))
+            {
+                songName = _currentPlayingSongName;
+                singerName = _currentPlayingSingerName;
+
+                if (string.IsNullOrEmpty(songName) && _playingSongData != null)
+                {
+                    songName = _playingSongData.TryGetValue("Song_SongName", out var n) ? n?.ToString() ?? "" : "";
+                }
+                if (string.IsNullOrEmpty(singerName) && _playingSongData != null)
+                {
+                    singerName = _playingSongData.TryGetValue("Song_Singer", out var s) ? s?.ToString() ?? "" : "";
+                }
+            }
+
+            bool isPlaying = !string.IsNullOrEmpty(songName);
+
+            if (isPlaying)
+            {
+                bool isPaused = false;
+                if (IsSongPlaybackActive)
+                {
+                    if (mediaUriElement != null && mediaUriElement.IsPlaying)
+                    {
+                        if (PauseBtn != null && PauseBtn.Content?.ToString() == "繼續")
+                        {
+                            PauseBtn.Content = "暫停";
+                        }
+                        isPaused = false;
+                    }
+                    else if (PauseBtn?.Content?.ToString() == "繼續")
+                    {
+                        isPaused = true;
+                    }
+                }
+
+                if (isPaused)
+                {
+                    NowPlayingIcon.Kind = PackIconKind.PauseCircle;
+                    NowPlayingIcon.Foreground = System.Windows.Media.Brushes.Orange;
+                    NowPlayingBadgeBorder.SetResourceReference(Border.BackgroundProperty, "BrushBgSecondary");
+                    NowPlayingBadgeBorder.BorderBrush = System.Windows.Media.Brushes.Orange;
+                    NowPlayingBadgeBorder.ToolTip = "暫停中";
+                    PauseNowPlayingBreathing();
+                }
+                else if (_isRandomSongPlaying)
+                {
+                    NowPlayingIcon.Kind = PackIconKind.ShuffleVariant;
+                    NowPlayingIcon.SetResourceReference(PackIcon.ForegroundProperty, "PrimaryLightBrush");
+                    NowPlayingBadgeBorder.SetResourceReference(Border.BackgroundProperty, "BrushCyberButtonGradient");
+                    NowPlayingBadgeBorder.SetResourceReference(Border.BorderBrushProperty, "PrimaryBrush");
+                    NowPlayingBadgeBorder.ToolTip = "隨機播放";
+                    StartNowPlayingBreathing();
+                }
+                else
+                {
+                    NowPlayingIcon.Kind = PackIconKind.PlayCircle;
+                    NowPlayingIcon.SetResourceReference(PackIcon.ForegroundProperty, "PrimaryLightBrush");
+                    NowPlayingBadgeBorder.SetResourceReference(Border.BackgroundProperty, "BrushCyberButtonGradient");
+                    NowPlayingBadgeBorder.SetResourceReference(Border.BorderBrushProperty, "PrimaryBrush");
+                    NowPlayingBadgeBorder.ToolTip = "正在播放";
+                    StartNowPlayingBreathing();
+                }
+
+                NowPlayingSongText.Text = songName;
+                NowPlayingSongText.FontWeight = FontWeights.Bold;
+                NowPlayingSongText.SetResourceReference(TextBlock.ForegroundProperty, "BrushTextMain");
+
+                if (!string.IsNullOrEmpty(singerName))
+                {
+                    NowPlayingSeparator.Visibility = Visibility.Visible;
+                    NowPlayingSingerText.Text = singerName;
+                    NowPlayingSingerText.FontWeight = FontWeights.SemiBold;
+                    NowPlayingSingerText.SetResourceReference(TextBlock.ForegroundProperty, "PrimaryLightBrush");
+                    NowPlayingBorder.ToolTip = $"{songName} / {singerName}";
+                }
+                else
+                {
+                    NowPlayingSeparator.Visibility = Visibility.Collapsed;
+                    NowPlayingSingerText.Text = string.Empty;
+                    NowPlayingBorder.ToolTip = songName;
+                }
+            }
+            else
+            {
+                NowPlayingIcon.Kind = PackIconKind.MusicNote;
+                NowPlayingBadgeBorder.SetResourceReference(Border.BackgroundProperty, "BrushBgSecondary");
+                NowPlayingBadgeBorder.SetResourceReference(Border.BorderBrushProperty, "BrushBorderDefault");
+                NowPlayingIcon.SetResourceReference(PackIcon.ForegroundProperty, "BrushTextDim");
+                NowPlayingBadgeBorder.ToolTip = "待機中";
+
+                NowPlayingSongText.Text = "無播放歌曲";
+                NowPlayingSongText.FontWeight = FontWeights.Normal;
+                NowPlayingSongText.SetResourceReference(TextBlock.ForegroundProperty, "BrushTextMuted");
+
+                NowPlayingSeparator.Visibility = Visibility.Collapsed;
+                NowPlayingSingerText.Text = string.Empty;
+                NowPlayingBorder.ToolTip = null;
+                StopNowPlayingBreathing();
+            }
+        }
+
+        private Storyboard? _nowPlayingBreathingStoryboard;
+
+        /// <summary>
+        /// Initializes the smooth breathing animation on NowPlayingInfoPanel.
+        /// </summary>
+        private void InitializeNowPlayingBreathingAnimation()
+        {
+            if (NowPlayingInfoPanel == null) return;
+
+            var anim = new DoubleAnimation
+            {
+                From = 1.3,
+                To = 0.18,
+                Duration = new Duration(TimeSpan.FromSeconds(1.5)),
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+            };
+            Storyboard.SetTarget(anim, NowPlayingInfoPanel);
+            Storyboard.SetTargetProperty(anim, new PropertyPath(UIElement.OpacityProperty));
+
+            _nowPlayingBreathingStoryboard = new Storyboard();
+            _nowPlayingBreathingStoryboard.Children.Add(anim);
+        }
+
+        /// <summary>
+        /// Starts breathing animation for the currently playing song info.
+        /// </summary>
+        private void StartNowPlayingBreathing()
+        {
+            if (NowPlayingInfoPanel == null) return;
+
+            if (_nowPlayingBreathingStoryboard == null)
+            {
+                InitializeNowPlayingBreathingAnimation();
+            }
+
+            try
+            {
+                _nowPlayingBreathingStoryboard?.Begin(this, isControllable: true);
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Stops breathing animation and restores full opacity.
+        /// </summary>
+        private void StopNowPlayingBreathing()
+        {
+            try
+            {
+                _nowPlayingBreathingStoryboard?.Stop(this);
+            }
+            catch { }
+
+            if (NowPlayingInfoPanel != null)
+            {
+                NowPlayingInfoPanel.Opacity = 1.0;
+            }
+        }
+
+        /// <summary>
+        /// Pauses breathing animation when playback is paused.
+        /// </summary>
+        private void PauseNowPlayingBreathing()
+        {
+            try
+            {
+                _nowPlayingBreathingStoryboard?.Pause(this);
+            }
+            catch { }
         }
 
         /// <summary>
@@ -118,7 +311,7 @@ namespace UltimateKtv
                 .Take(WaitingListPageSize)
                 .ToList();
 
-            // Fill remaining slots with empty items to always show 9 rows
+            // Fill remaining slots with empty items to always show 6 rows
             var displayList = new List<WaitingListItem>(songsForPage);
             while (displayList.Count < WaitingListPageSize)
             {
@@ -423,6 +616,7 @@ namespace UltimateKtv
                     _currentPlayingSongId = string.Empty;
                     _currentSongOrderedBy = string.Empty;
                     _playingSongData = null;
+                    UpdateCurrentPlayingDisplay();
                     
                     // Stop playback first
                     SafeStop(mediaUriElement, nameof(mediaUriElement));
@@ -472,6 +666,8 @@ namespace UltimateKtv
                 _currentPlayingSingerName = firstSong.WaitingListSingerName ?? string.Empty;
                 _currentPlayingSongId = firstSong.SongId ?? string.Empty;
                 IsPlayingYoutube = firstSong.IsYoutube;
+                PauseBtn.Content = "暫停";
+                UpdateCurrentPlayingDisplay();
 
 
                 PlayingFilePath = firstSong.FilePath;
@@ -657,6 +853,7 @@ namespace UltimateKtv
                 _currentPlayingSongId = string.Empty;
                 _currentSongOrderedBy = string.Empty;
                 _playingSongData = null;
+                UpdateCurrentPlayingDisplay();
                 _isTransitioningSong = false; // Release lock on any unexpected error.
                 ProcessPendingSongs(); // Retry pending adds even on error
                 SetPlayerControlsEnabled(true); // Also re-enable controls on error
@@ -799,6 +996,7 @@ namespace UltimateKtv
                 _currentPlayingSongId = string.Empty;
                 _currentSongOrderedBy = string.Empty;
                 _playingSongData = null;
+                UpdateCurrentPlayingDisplay();
                 
                 // Stop the player. This will trigger MediaEnded/MediaClosed, 
                 // but since _isPlayingFromWaitingList is now false, PlayNextSongFromWaitingList 

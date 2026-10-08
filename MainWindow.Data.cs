@@ -135,6 +135,7 @@ namespace UltimateKtv
         /// <param name="page">The page number to display</param>
         private void LoadSongPage(int page)
         {
+            ClearSongGridsSelection();
             // Use LINQ to get the correct subset of songs for the page
             var songsForPage = _allSongs.Skip((page - 1) * CurrentSongPageSize).Take(CurrentSongPageSize).ToList();
 

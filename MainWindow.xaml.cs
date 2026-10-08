@@ -71,7 +71,7 @@ namespace UltimateKtv
         private WaitingListItem? _waitingListContextItem;
 
         // Waiting list pagination
-        private const int WaitingListPageSize = 7; // Maximum 7 rows per page (-1 for card style height)
+        private const int WaitingListPageSize = 7; // Maximum 7 rows per page
 
         // Pre-loading cache for network access optimization
         private string? _preLoadedSongPath = null;
@@ -337,6 +337,8 @@ namespace UltimateKtv
             InitializeCursorIdleTimer();
             this.MouseMove += MainWindow_MouseMove;
             this.PreviewMouseMove += MainWindow_MouseMove;
+            this.PreviewMouseDown += MainWindow_PreviewMouseDown;
+            this.PreviewMouseUp += MainWindow_PreviewMouseUp;
 
             // Start HTTP server for remote control asynchronously in background to avoid blocking UI startup
             _ = System.Threading.Tasks.Task.Run(() =>
@@ -517,6 +519,103 @@ namespace UltimateKtv
                 child = parent;
             }
             return null;
+        }
+
+        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject? depObj) where T : DependencyObject
+        {
+            if (depObj == null) yield break;
+            int count = VisualTreeHelper.GetChildrenCount(depObj);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(depObj, i);
+                if (child is T t)
+                {
+                    yield return t;
+                }
+                foreach (var childOfChild in FindVisualChildren<T>(child))
+                {
+                    yield return childOfChild;
+                }
+            }
+        }
+
+        private DataGridRow? _currentlySelectedSongRow = null;
+        private DataGrid? _currentlySelectedSongGrid = null;
+
+        /// <summary>
+        /// Clears all selection state across all song grids
+        /// so that previously clicked rows properly restore their default background.
+        /// </summary>
+        public void ClearSongGridsSelection()
+        {
+            if (_currentlySelectedSongRow != null)
+            {
+                _currentlySelectedSongRow.IsSelected = false;
+                _currentlySelectedSongRow = null;
+            }
+            if (_currentlySelectedSongGrid != null)
+            {
+                _currentlySelectedSongGrid.UnselectAll();
+                _currentlySelectedSongGrid.SelectedIndex = -1;
+                _currentlySelectedSongGrid.SelectedItem = null;
+                _currentlySelectedSongGrid = null;
+            }
+
+            ClearDataGridSelection(SongListGrid);
+            ClearDataGridSelection(QuickSongListGrid);
+            ClearDataGridSelection(LanguageSongListGrid);
+        }
+
+        private static void ClearDataGridSelection(DataGrid? dg)
+        {
+            if (dg == null) return;
+            try
+            {
+                dg.UnselectAll();
+                dg.SelectedIndex = -1;
+                dg.SelectedItem = null;
+
+                // Explicitly deselect all generated row containers
+                for (int i = 0; i < dg.Items.Count; i++)
+                {
+                    if (dg.ItemContainerGenerator.ContainerFromIndex(i) is DataGridRow r)
+                    {
+                        r.IsSelected = false;
+                    }
+                }
+
+                // Also traverse visual tree to catch any other visual row instances
+                foreach (var r in FindVisualChildren<DataGridRow>(dg))
+                {
+                    r.IsSelected = false;
+                }
+            }
+            catch { }
+        }
+
+        private void MainWindow_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource is DependencyObject dep)
+            {
+                var grid = FindVisualParent<DataGrid>(dep);
+                var row = FindVisualParent<DataGridRow>(dep);
+
+                // If clicking outside song grids, or inside a song grid but not on a row (e.g. headers or empty space)
+                if (grid != SongListGrid && grid != QuickSongListGrid && grid != LanguageSongListGrid)
+                {
+                    ClearSongGridsSelection();
+                }
+                else if (row == null)
+                {
+                    ClearSongGridsSelection();
+                }
+            }
+        }
+
+        private void MainWindow_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            // When mouse is released anywhere, ensure song selection is cleared so row background restores
+            ClearSongGridsSelection();
         }
 
         /// <summary>
@@ -1096,8 +1195,13 @@ namespace UltimateKtv
             var row = FindVisualParent<DataGridRow>(cell);
             if (row?.Item is not SongDisplayItem selectedSong) return;
 
+            // Clear any previously selected row across song grids so only the clicked row is active
+            ClearSongGridsSelection();
+
             // Highlight the selected row visually
             row.IsSelected = true;
+            _currentlySelectedSongRow = row;
+            _currentlySelectedSongGrid = sender as DataGrid;
             if (sender is DataGrid dg)
             {
                 dg.SelectedItem = selectedSong;
@@ -1126,7 +1230,8 @@ namespace UltimateKtv
                     if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Visible;
                     if (SongListGrid != null) SongListGrid.Visibility = Visibility.Visible;
                     SetupFilterButtons(MainFilterMode.Singer);
-                    
+
+                    ClearSongGridsSelection();
                     e.Handled = true;
                     return;
                 }
@@ -1147,6 +1252,7 @@ namespace UltimateKtv
                     {
                         ShowAddToFavoriteDialog(_longPressSongItem);
                         _longPressSongItem = null;
+                        ClearSongGridsSelection();
                     }
                 };
             }
@@ -1190,6 +1296,7 @@ namespace UltimateKtv
                 if (SongListGrid != null) SongListGrid.Visibility = Visibility.Visible;
 
                 SetupFilterButtons(MainFilterMode.Singer);
+                ClearSongGridsSelection();
             }
             else
             {
@@ -1225,6 +1332,9 @@ namespace UltimateKtv
                     _longPressSongItem = null;
                 }
             }
+
+            // Always restore row background / clear selection after click completes
+            ClearSongGridsSelection();
         }
 
         /// <summary>

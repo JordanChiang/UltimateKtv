@@ -73,6 +73,7 @@ namespace UltimateKtv
             _currentPlayingSongId = string.Empty;
             _currentSongOrderedBy = string.Empty;
             _playingSongData = null;
+            UpdateCurrentPlayingDisplay();
             
             // Clear Lyrics
             _currentLyrics = null;
@@ -293,20 +294,10 @@ namespace UltimateKtv
                 }
 
                 var songCount = _playingSongData.TryGetValue("Song_PlayCount", out var pcObj);
-                // Display marquee on main window (only in multi-monitor mode, to avoid conflicting with VideoDisplayWindow in single monitor mode)
-                var marqueeSettings = SettingsManager.Instance.CurrentSettings;
-                if (!IsSingleMonitorMode)
-                {
-                    MarqueeAPI.ShowCustomStaticText(
-                        $"{singerName} {songName}",
-                        ThemeSettingsHandler.ParseBrush(marqueeSettings.MarqueeTextFillColor, System.Windows.Media.Brushes.White),
-                        new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(marqueeSettings.MarqueeBroadcastFontFamily) ? marqueeSettings.MarqueeBroadcastFontFamily : "微軟正黑體"),
-                        marqueeSettings.MarqueeBroadcastFontSize,
-                        MarqueePosition.Top,
-                        0,
-                        MarqueeDisplayDevice.ConsoleScreen
-                    );
-                }
+                // Stop any leftover marquee/static text on console screen since NowPlayingBorder displays current song info
+                MarqueeAPI.Stop(MarqueeDisplayDevice.ConsoleScreen);
+                PauseBtn.Content = "暫停";
+                UpdateCurrentPlayingDisplay();
                 // Display marquee on player display device
                 if (_videoDisplayWindow != null)
                 {
@@ -676,6 +667,7 @@ namespace UltimateKtv
                     AppLogger.LogError("Error stopping recording in SkipSong_Click", ex);
                 }
 
+                PauseBtn.Content = "暫停";
                 mediaUriElement.Stop();
                 mediaUriElement.Source = null; // Clear source to release resources immediately
                 _isRandomSongPlaying = false;
@@ -715,6 +707,7 @@ namespace UltimateKtv
                     catch (Exception ex) { AppLogger.LogError("Error pausing recording in Pause_Click", ex); }
 
                     PauseBtn.Content = "繼續";
+                    UpdateCurrentPlayingDisplay();
                     Debug.WriteLine("Media paused");
                 }
                 else
@@ -727,6 +720,7 @@ namespace UltimateKtv
                     catch (Exception ex) { AppLogger.LogError("Error resuming recording in Pause_Click", ex); }
 
                     PauseBtn.Content = "暫停";
+                    UpdateCurrentPlayingDisplay();
                 }
             }
             catch (Exception ex)
