@@ -38,7 +38,7 @@
 
   <ItemGroup>
     <Compile Include="..\AppSettings.cs" Link="Shared\AppSettings.cs" />
-    <Compile Include="..\TextSettings.cs" Link="Shared\TextSettings.cs" />
+    <Compile Include="..\ThemeSettings.cs" Link="Shared\ThemeSettings.cs" />
   </ItemGroup>
 
   <ItemGroup>

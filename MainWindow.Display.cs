@@ -371,9 +371,9 @@ namespace UltimateKtv
                 // Show the marquee indefinitely until a song is ordered (timeoutSeconds: 0)
                 MarqueeManager.Instance.ShowStaticText(
                     marqueeText,
-                    TextSettingsHandler.WebHostInfoForeground,
-                    TextSettingsHandler.FontFamily,
-                    fontSize: TextSettingsHandler.Settings.WebHostInfoFontSize,
+                    ThemeSettingsHandler.WebHostInfoForeground,
+                    ThemeSettingsHandler.FontFamily,
+                    fontSize: ThemeSettingsHandler.Settings.WebHostInfoFontSize,
                     position: UltimateKtv.Enums.MarqueePosition.Top,
                     timeoutSeconds: 0,
                     displayDevice: displayDevice

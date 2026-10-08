@@ -22,7 +22,25 @@ namespace StyleSimulator
 
         #region File Paths
         public static string SettingsPath { get; set; } = FindConfigFile("settings.json");
-        public static string TextSettingsPath { get; set; } = FindConfigFile("textsettings.json");
+        public static string ThemeSettingsPath { get; set; } = FindThemeConfigFile();
+
+        // 向下相容屬性別名
+        public static string TextSettingsPath
+        {
+            get => ThemeSettingsPath;
+            set => ThemeSettingsPath = value;
+        }
+
+        public static string FindThemeConfigFile()
+        {
+            string path = FindConfigFile("themesettings.json");
+            if (File.Exists(path)) return path;
+
+            string legacyPath = FindConfigFile("textsettings.json");
+            if (File.Exists(legacyPath)) return legacyPath;
+
+            return path;
+        }
 
         public static string FindConfigFile(string fileName)
         {
@@ -53,9 +71,9 @@ namespace StyleSimulator
         }
         #endregion
 
-        // Underlying full AppSettings and TextSettings instances
+        // Underlying full AppSettings and ThemeSettings instances
         private AppSettings _appSettings = new AppSettings();
-        private TextSettings _textSettings = new TextSettings();
+        private ThemeSettings _themeSettings = new ThemeSettings();
 
         #region Settings.json Properties (Playback Marquee & Notifications)
         public string MarqueeTextString1
@@ -209,97 +227,97 @@ namespace StyleSimulator
         }
         #endregion
 
-        #region TextSettings.json Properties (UI Fonts & Colors)
+        #region ThemeSettings.json Properties (UI Fonts & Colors)
         public string UiFontFamily
         {
-            get => _textSettings.FontFamily;
-            set { _textSettings.FontFamily = value; OnPropertyChanged(); }
+            get => _themeSettings.FontFamily;
+            set { _themeSettings.FontFamily = value; OnPropertyChanged(); }
         }
 
         public double SongListFontSize
         {
-            get => _textSettings.SongListFontSize;
-            set { _textSettings.SongListFontSize = value; OnPropertyChanged(); }
+            get => _themeSettings.SongListFontSize;
+            set { _themeSettings.SongListFontSize = value; OnPropertyChanged(); }
         }
 
         public double WaitingListFontSize
         {
-            get => _textSettings.WaitingListFontSize;
-            set { _textSettings.WaitingListFontSize = value; OnPropertyChanged(); }
+            get => _themeSettings.WaitingListFontSize;
+            set { _themeSettings.WaitingListFontSize = value; OnPropertyChanged(); }
         }
 
         public double FuncBtnFontSize
         {
-            get => _textSettings.FuncBtnFontSize;
-            set { _textSettings.FuncBtnFontSize = value; OnPropertyChanged(); }
+            get => _themeSettings.FuncBtnFontSize;
+            set { _themeSettings.FuncBtnFontSize = value; OnPropertyChanged(); }
         }
 
         public double BottomButtonFontSize
         {
-            get => _textSettings.BottomButtonFontSize;
-            set { _textSettings.BottomButtonFontSize = value; OnPropertyChanged(); }
+            get => _themeSettings.BottomButtonFontSize;
+            set { _themeSettings.BottomButtonFontSize = value; OnPropertyChanged(); }
         }
 
         public double WebHostInfoFontSize
         {
-            get => _textSettings.WebHostInfoFontSize;
-            set { _textSettings.WebHostInfoFontSize = value; OnPropertyChanged(); }
+            get => _themeSettings.WebHostInfoFontSize;
+            set { _themeSettings.WebHostInfoFontSize = value; OnPropertyChanged(); }
         }
 
         public string PrimaryColor
         {
-            get => _textSettings.PrimaryColor;
-            set { _textSettings.PrimaryColor = value; OnPropertyChanged(); }
+            get => _themeSettings.PrimaryColor;
+            set { _themeSettings.PrimaryColor = value; OnPropertyChanged(); }
         }
 
 
         public string DataGridHeaderBgColor
         {
-            get => _textSettings.DataGridColumnHeaderBackgroundColor;
-            set { _textSettings.DataGridColumnHeaderBackgroundColor = value; OnPropertyChanged(); }
+            get => _themeSettings.DataGridColumnHeaderBackgroundColor;
+            set { _themeSettings.DataGridColumnHeaderBackgroundColor = value; OnPropertyChanged(); }
         }
 
         public string DataGridColumnHeaderForegroundColor
         {
-            get => _textSettings.DataGridColumnHeaderForegroundColor;
-            set { _textSettings.DataGridColumnHeaderForegroundColor = value; OnPropertyChanged(); }
+            get => _themeSettings.DataGridColumnHeaderForegroundColor;
+            set { _themeSettings.DataGridColumnHeaderForegroundColor = value; OnPropertyChanged(); }
         }
 
         public string AnnouncementForegroundColor
         {
-            get => _textSettings.AnnouncementForegroundColor;
-            set { _textSettings.AnnouncementForegroundColor = value; OnPropertyChanged(); }
+            get => _themeSettings.AnnouncementForegroundColor;
+            set { _themeSettings.AnnouncementForegroundColor = value; OnPropertyChanged(); }
         }
 
         public string StaticTextForegroundColor
         {
-            get => _textSettings.StaticTextForegroundColor;
-            set { _textSettings.StaticTextForegroundColor = value; OnPropertyChanged(); }
+            get => _themeSettings.StaticTextForegroundColor;
+            set { _themeSettings.StaticTextForegroundColor = value; OnPropertyChanged(); }
         }
 
         public string WebHostInfoForegroundColor
         {
-            get => _textSettings.WebHostInfoForegroundColor;
-            set { _textSettings.WebHostInfoForegroundColor = value; OnPropertyChanged(); }
+            get => _themeSettings.WebHostInfoForegroundColor;
+            set { _themeSettings.WebHostInfoForegroundColor = value; OnPropertyChanged(); }
         }
 
 
         public string PrimaryLightColor
         {
-            get => _textSettings.PrimaryLightColor;
-            set { _textSettings.PrimaryLightColor = value; OnPropertyChanged(); }
+            get => _themeSettings.PrimaryLightColor;
+            set { _themeSettings.PrimaryLightColor = value; OnPropertyChanged(); }
         }
 
         public string AccentColor
         {
-            get => _textSettings.AccentColor;
-            set { _textSettings.AccentColor = value; OnPropertyChanged(); }
+            get => _themeSettings.AccentColor;
+            set { _themeSettings.AccentColor = value; OnPropertyChanged(); }
         }
 
         public int SongListRowStyle
         {
-            get => _textSettings.SongListRowStyle;
-            set { _textSettings.SongListRowStyle = value; OnPropertyChanged(); }
+            get => _themeSettings.SongListRowStyle;
+            set { _themeSettings.SongListRowStyle = value; OnPropertyChanged(); }
         }
         #endregion
 
@@ -313,11 +331,11 @@ namespace StyleSimulator
 
         public static StyleSettingsModel Load() => LoadAll();
 
-        public static StyleSettingsModel LoadAll(string? settingsFile = null, string? textSettingsFile = null)
+        public static StyleSettingsModel LoadAll(string? settingsFile = null, string? themeSettingsFile = null)
         {
             var model = new StyleSettingsModel();
             model.LoadSettingsJson(settingsFile ?? SettingsPath);
-            model.LoadTextSettingsJson(textSettingsFile ?? TextSettingsPath);
+            model.LoadThemeSettingsJson(themeSettingsFile ?? ThemeSettingsPath);
             return model;
         }
 
@@ -342,33 +360,35 @@ namespace StyleSimulator
             }
         }
 
-        public void LoadTextSettingsJson(string filePath)
+        public void LoadThemeSettingsJson(string filePath)
         {
-            TextSettingsPath = filePath;
+            ThemeSettingsPath = filePath;
             if (!File.Exists(filePath)) return;
 
             try
             {
                 string json = File.ReadAllText(filePath);
-                var loaded = JsonSerializer.Deserialize<TextSettings>(json, _jsonOptions);
+                var loaded = JsonSerializer.Deserialize<ThemeSettings>(json, _jsonOptions);
                 if (loaded != null)
                 {
-                    _textSettings = loaded;
+                    _themeSettings = loaded;
                     OnPropertyChanged(null);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to load textsettings.json: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to load themesettings.json: {ex.Message}");
             }
         }
 
-        public bool ApplyTextSettingsFromJson(string json)
+        public void LoadTextSettingsJson(string filePath) => LoadThemeSettingsJson(filePath);
+
+        public bool ApplyThemeSettingsFromJson(string json)
         {
             try
             {
-                int currentSongListRowStyle = _textSettings.SongListRowStyle;
-                var loaded = JsonSerializer.Deserialize<TextSettings>(json, _jsonOptions);
+                int currentSongListRowStyle = _themeSettings.SongListRowStyle;
+                var loaded = JsonSerializer.Deserialize<ThemeSettings>(json, _jsonOptions);
                 if (loaded != null)
                 {
                     // 若 JSON 中未明確指定 SongListRowStyle（例如色彩主題範本），保留當前設定
@@ -377,32 +397,36 @@ namespace StyleSimulator
                         loaded.SongListRowStyle = currentSongListRowStyle;
                     }
 
-                    _textSettings = loaded;
+                    _themeSettings = loaded;
                     OnPropertyChanged(null);
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to parse text settings json: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to parse theme settings json: {ex.Message}");
             }
             return false;
         }
 
-        public void ApplyTextSettingsPreset(string filePath)
+        public bool ApplyTextSettingsFromJson(string json) => ApplyThemeSettingsFromJson(json);
+
+        public void ApplyThemeSettingsPreset(string filePath)
         {
             if (!File.Exists(filePath)) return;
 
             try
             {
                 string json = File.ReadAllText(filePath);
-                ApplyTextSettingsFromJson(json);
+                ApplyThemeSettingsFromJson(json);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to load text settings preset: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to load theme settings preset: {ex.Message}");
             }
         }
+
+        public void ApplyTextSettingsPreset(string filePath) => ApplyThemeSettingsPreset(filePath);
 
         public void ResetSettingsToDefaults()
         {
@@ -437,9 +461,9 @@ namespace StyleSimulator
             PublicServerPort = defaults.PublicServerPort;
         }
 
-        public void ResetTextSettingsToDefaults()
+        public void ResetThemeSettingsToDefaults()
         {
-            var defaults = new TextSettings();
+            var defaults = new ThemeSettings();
             UiFontFamily = defaults.FontFamily;
             SongListFontSize = defaults.SongListFontSize;
             WaitingListFontSize = defaults.WaitingListFontSize;
@@ -456,6 +480,8 @@ namespace StyleSimulator
             WebHostInfoForegroundColor = defaults.WebHostInfoForegroundColor;
             SongListRowStyle = defaults.SongListRowStyle;
         }
+
+        public void ResetTextSettingsToDefaults() => ResetThemeSettingsToDefaults();
 
         public bool SaveSettingsJson(string? path = null)
         {
@@ -489,19 +515,19 @@ namespace StyleSimulator
             }
         }
 
-        public bool SaveTextSettingsJson(string? path = null)
+        public bool SaveThemeSettingsJson(string? path = null)
         {
             try
             {
-                string targetPath = path ?? TextSettingsPath;
+                string targetPath = path ?? ThemeSettingsPath;
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true,
                     Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
                 };
-                string json = JsonSerializer.Serialize(_textSettings, options);
+                string json = JsonSerializer.Serialize(_themeSettings, options);
 
-                foreach (var prop in typeof(TextSettings).GetProperties())
+                foreach (var prop in typeof(ThemeSettings).GetProperties())
                 {
                     var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
                     if (descAttr != null && !string.IsNullOrWhiteSpace(descAttr.Description))
@@ -520,6 +546,8 @@ namespace StyleSimulator
                 return false;
             }
         }
+
+        public bool SaveTextSettingsJson(string? path = null) => SaveThemeSettingsJson(path);
         #endregion
     }
 }

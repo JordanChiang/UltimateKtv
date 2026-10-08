@@ -888,7 +888,7 @@ namespace UltimateKtv
                 Command = DialogHost.CloseDialogCommand,
                 CommandParameter = true
             };
-            TextSettingsHandler.ApplyOutlinedButtonStyle(okButton, 20);
+            ThemeSettingsHandler.ApplyOutlinedButtonStyle(okButton, 20);
             dialogContent.Children.Add(okButton);
 
             // Show dialog

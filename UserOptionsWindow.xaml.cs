@@ -26,7 +26,7 @@ namespace UltimateKtv
             _parentWindow = parentWindow;
             
             // Apply theme colors to this window
-            TextSettingsHandler.ApplyToResources(this);
+            ThemeSettingsHandler.ApplyToResources(this);
 
             // Adjust window size while maintaining aspect ratio (1024:900)
             double designHeight = 900.0;

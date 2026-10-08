@@ -4,10 +4,10 @@ using System.Text.Json.Serialization;
 namespace UltimateKtv
 {
     /// <summary>
-    /// Defines the structure for text customization settings, to be serialized to/from JSON.
-    /// Allows customization of text type, colors, and brush settings for marquee and display elements.
+    /// Defines the structure for UI theme and visual customization settings, to be serialized to/from JSON.
+    /// Allows customization of UI theme colors, brushes, font sizes, colors, and song list row display styles.
     /// </summary>
-    public class TextSettings
+    public class ThemeSettings
     {
         #region Font Settings
 

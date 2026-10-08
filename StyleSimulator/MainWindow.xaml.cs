@@ -250,7 +250,7 @@ namespace StyleSimulator
         {
             if (CboConfigFileType.SelectedIndex == 0)
             {
-                TxtActiveFilePath.Text = StyleSettingsModel.TextSettingsPath;
+                TxtActiveFilePath.Text = StyleSettingsModel.ThemeSettingsPath;
             }
             else
             {
@@ -269,7 +269,7 @@ namespace StyleSimulator
 
         private void SwitchActiveView(int index)
         {
-            if (index == 0) // textsettings.json (UI介面)
+            if (index == 0) // themesettings.json (UI介面)
             {
                 MarqueeTestBar.Visibility = Visibility.Collapsed;
                 PlayerScreenView.Visibility = Visibility.Collapsed;
@@ -277,7 +277,7 @@ namespace StyleSimulator
                 KtvUiView.Visibility = Visibility.Visible;
 
                 SettingsJsonGrid.Visibility = Visibility.Collapsed;
-                TextSettingsGrid.Visibility = Visibility.Visible;
+                ThemeSettingsGrid.Visibility = Visibility.Visible;
             }
             else // settings.json (跑馬燈/提示)
             {
@@ -287,7 +287,7 @@ namespace StyleSimulator
                 KtvUiView.Visibility = Visibility.Collapsed;
 
                 SettingsJsonGrid.Visibility = Visibility.Visible;
-                TextSettingsGrid.Visibility = Visibility.Collapsed;
+                ThemeSettingsGrid.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -362,7 +362,7 @@ namespace StyleSimulator
             TxtBroadcastFillColor.Text = _model.MarqueeBroadcastFillColor;
             SldBroadcastDuration.Value = Math.Max(0, Math.Min(60, _model.MarqueeBroadcastTimeDuration));
 
-            // textsettings.json - UI Fonts & Colors
+            // themesettings.json - UI Fonts & Colors
             SelectComboBoxFont(CboUiFontFamily, _model.UiFontFamily);
             SldSongListFontSize.Value = Math.Max(16, Math.Min(72, _model.SongListFontSize));
             SldWaitingListFontSize.Value = Math.Max(12, Math.Min(60, _model.WaitingListFontSize));
@@ -537,7 +537,7 @@ namespace StyleSimulator
             _model.MarqueeBroadcastFillColor = TxtBroadcastFillColor.Text.Trim();
             _model.MarqueeBroadcastTimeDuration = (int)Math.Round(SldBroadcastDuration.Value);
 
-            // Textsettings.json
+            // themesettings.json
             if (CboUiFontFamily.SelectedItem is FontDisplayItem uiff) _model.UiFontFamily = uiff.DisplayName;
             _model.SongListFontSize = (int)Math.Round(SldSongListFontSize.Value);
             _model.WaitingListFontSize = (int)Math.Round(SldWaitingListFontSize.Value);
@@ -2219,11 +2219,11 @@ namespace StyleSimulator
             }
         }
 
-        private void BtnResetTextSettingsDefaults_Click(object sender, RoutedEventArgs e)
+        private void BtnResetThemeSettingsDefaults_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("確定要將 textsettings.json (點歌介面字級與主題色彩) 所有設定回復為原廠預設值嗎？", "確認回復預設值", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (MessageBox.Show("確定要將 themesettings.json (點歌介面字級與主題色彩) 所有設定回復為原廠預設值嗎？", "確認回復預設值", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
-                _model.ResetTextSettingsToDefaults();
+                _model.ResetThemeSettingsToDefaults();
                 ApplySettingsToUI();
                 UpdateLivePreviews();
                 if (CboThemePresets != null) CboThemePresets.SelectedIndex = 0;
@@ -2253,7 +2253,7 @@ namespace StyleSimulator
 
             if (tag == "DEFAULT")
             {
-                tag = "textsettings_default_amber.json";
+                tag = "theme_default_amber.json";
             }
 
             int preservedRowStyle = _model.SongListRowStyle;
@@ -2268,7 +2268,7 @@ namespace StyleSimulator
                     using (var reader = new StreamReader(stream, Encoding.UTF8))
                     {
                         string json = reader.ReadToEnd();
-                        if (_model.ApplyTextSettingsFromJson(json))
+                        if (_model.ApplyThemeSettingsFromJson(json))
                         {
                             _model.SongListRowStyle = preservedRowStyle;
                             ApplySettingsToUI();
@@ -2286,7 +2286,7 @@ namespace StyleSimulator
                 string targetPath = Path.Combine(sampleDir, tag);
                 if (File.Exists(targetPath))
                 {
-                    _model.ApplyTextSettingsPreset(targetPath);
+                    _model.ApplyThemeSettingsPreset(targetPath);
                     _model.SongListRowStyle = preservedRowStyle;
                     ApplySettingsToUI();
                     UpdateLivePreviews();
@@ -2294,9 +2294,9 @@ namespace StyleSimulator
                 }
             }
 
-            if (tag == "textsettings_default_amber.json")
+            if (tag == "theme_default_amber.json" || tag == "textsettings_default_amber.json")
             {
-                _model.ResetTextSettingsToDefaults();
+                _model.ResetThemeSettingsToDefaults();
                 _model.SongListRowStyle = preservedRowStyle;
                 ApplySettingsToUI();
                 UpdateLivePreviews();
@@ -2311,76 +2311,151 @@ namespace StyleSimulator
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
         {
-            bool isSettings = CboConfigFileType.SelectedIndex == 1;
-            string expectedFileName = isSettings ? "settings.json" : "textsettings.json";
-            string otherFileName = isSettings ? "textsettings.json" : "settings.json";
-
-            // 使用 Windows API 內建對話框機制：
-            // 不指定 InitialDirectory，並指派 ClientGuid，Windows 會自動記住上次使用者瀏覽開啟的資料夾
-            var dlg = new OpenFileDialog
+            var folderDlg = new Microsoft.Win32.OpenFolderDialog
             {
-                Filter = isSettings
-                    ? "設定檔 (settings.json)|settings.json"
-                    : "UI設定檔 (textsettings.json)|textsettings.json",
-                Title = isSettings ? "選擇 settings.json (跑馬燈/提示)" : "選擇 textsettings.json (UI介面)",
-                FileName = expectedFileName,
-                ClientGuid = StyleSimulatorFileDialogGuid,
-                RestoreDirectory = false
+                Title = "選擇 UltimateKtv 程式目錄",
+                Multiselect = false
             };
 
-            if (dlg.ShowDialog() == true)
+            // 若目前已有路徑，預先定位至該目錄
+            string? currentDir = Path.GetDirectoryName(StyleSettingsModel.SettingsPath);
+            if (string.IsNullOrEmpty(currentDir) || !Directory.Exists(currentDir))
             {
-                string selectedFileName = Path.GetFileName(dlg.FileName);
-                if (!string.Equals(selectedFileName, expectedFileName, StringComparison.OrdinalIgnoreCase))
-                {
-                    MessageBox.Show($"目前模式為【{(isSettings ? "跑馬燈/提示" : "UI介面")}】，僅能載入「{expectedFileName}」！\n\n您選取的檔案為: {selectedFileName}\n為避免設定內容不相容或儲存時覆寫損壞，載入已取消。",
-                                    "檔案名稱不符合", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                currentDir = Path.GetDirectoryName(StyleSettingsModel.ThemeSettingsPath);
+            }
+            if (!string.IsNullOrEmpty(currentDir) && Directory.Exists(currentDir))
+            {
+                folderDlg.InitialDirectory = currentDir;
+            }
 
-                // 若同一目錄下也存在另一份設定檔，且目前另一檔案仍指向模擬器自身預設目錄，自動一併對齊載入
-                string? selectedDir = Path.GetDirectoryName(dlg.FileName);
-                if (!string.IsNullOrEmpty(selectedDir))
+            if (folderDlg.ShowDialog() != true) return;
+
+            string targetDir = folderDlg.FolderName;
+            if (string.IsNullOrWhiteSpace(targetDir) || !Directory.Exists(targetDir)) return;
+
+            // 1. 判斷 UltimateKtv.exe or UltimateKtv_x86.exe
+            string exe64 = Path.Combine(targetDir, "UltimateKtv.exe");
+            string exe86 = Path.Combine(targetDir, "UltimateKtv_x86.exe");
+            bool hasExe64 = File.Exists(exe64);
+            bool hasExe86 = File.Exists(exe86);
+
+            if (!hasExe64 && !hasExe86)
+            {
+                var confirmResult = MessageBox.Show(
+                    $"選取的目錄中未找到 UltimateKtv.exe 或 UltimateKtv_x86.exe：\n{targetDir}\n\n此資料夾可能不是 UltimateKtv 的程式目錄。\n是否仍要將此目錄視為目標目錄並繼續？",
+                    "程式執行檔確認",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (confirmResult != MessageBoxResult.Yes) return;
+            }
+
+            string detectedExeName = hasExe64 ? "UltimateKtv.exe (x64)" : hasExe86 ? "UltimateKtv_x86.exe (x86)" : "未檢測到主程式";
+
+            // 2. 自動尋找 settings.json 與 themesettings.json
+            string settingsPath = Path.Combine(targetDir, "settings.json");
+            string themeSettingsPath = Path.Combine(targetDir, "themesettings.json");
+            string legacyThemePath = Path.Combine(targetDir, "textsettings.json");
+
+            bool settingsExists = File.Exists(settingsPath);
+            bool themeSettingsExists = File.Exists(themeSettingsPath);
+
+            // 若 themesettings.json 不存在但存在舊版 textsettings.json，自動平滑遷移
+            if (!themeSettingsExists && File.Exists(legacyThemePath))
+            {
+                try
                 {
-                    string otherFilePath = Path.Combine(selectedDir, otherFileName);
-                    if (File.Exists(otherFilePath))
+                    File.Copy(legacyThemePath, themeSettingsPath, true);
+                    themeSettingsExists = true;
+                }
+                catch
+                {
+                    themeSettingsPath = legacyThemePath;
+                    themeSettingsExists = true;
+                }
+            }
+
+            // 若找不到 settings.json，提示是否要新建
+            if (!settingsExists)
+            {
+                var askNewSettings = MessageBox.Show(
+                    $"在此目錄中找不到跑馬燈與播放設定檔：\n{settingsPath}\n\n是否要在此目錄新建預設的 settings.json？",
+                    "找不到 settings.json",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (askNewSettings == MessageBoxResult.Yes)
+                {
+                    _model.ResetSettingsToDefaults();
+                    if (_model.SaveSettingsJson(settingsPath))
                     {
-                        string otherCurrentPath = isSettings ? StyleSettingsModel.TextSettingsPath : StyleSettingsModel.SettingsPath;
-                        string myBaseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
-                        if (otherCurrentPath.StartsWith(myBaseDir, StringComparison.OrdinalIgnoreCase))
-                        {
-                            if (isSettings)
-                            {
-                                _model.LoadTextSettingsJson(otherFilePath);
-                            }
-                            else
-                            {
-                                _model.LoadSettingsJson(otherFilePath);
-                            }
-                        }
+                        settingsExists = true;
+                    }
+                    else
+                    {
+                        MessageBox.Show($"無法建立設定檔：\n{settingsPath}", "建立失敗", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
-
-                if (isSettings)
-                {
-                    _model.LoadSettingsJson(dlg.FileName);
-                }
-                else
-                {
-                    _model.LoadTextSettingsJson(dlg.FileName);
-                }
-                UpdateFilePathDisplay();
-                ApplySettingsToUI();
-                UpdateLivePreviews();
-                MessageBox.Show($"成功載入設定檔:\n{dlg.FileName}", "載入成功", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+
+            // 若找不到 themesettings.json，提示是否要新建
+            if (!themeSettingsExists)
+            {
+                var askNewTheme = MessageBox.Show(
+                    $"在此目錄中找不到 UI 主題與字級設定檔：\n{themeSettingsPath}\n\n是否要在此目錄新建預設的 themesettings.json？",
+                    "找不到 themesettings.json",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (askNewTheme == MessageBoxResult.Yes)
+                {
+                    _model.ResetThemeSettingsToDefaults();
+                    if (_model.SaveThemeSettingsJson(themeSettingsPath))
+                    {
+                        themeSettingsExists = true;
+                    }
+                    else
+                    {
+                        MessageBox.Show($"無法建立設定檔：\n{themeSettingsPath}", "建立失敗", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
+
+            // 更新路徑與載入
+            StyleSettingsModel.SettingsPath = settingsPath;
+            StyleSettingsModel.ThemeSettingsPath = themeSettingsPath;
+
+            if (settingsExists)
+            {
+                _model.LoadSettingsJson(settingsPath);
+            }
+            if (themeSettingsExists)
+            {
+                _model.LoadThemeSettingsJson(themeSettingsPath);
+            }
+
+            UpdateFilePathDisplay();
+            ApplySettingsToUI();
+            UpdateLivePreviews();
+
+            // 提示載入狀態總結
+            MessageBox.Show(
+                $"已成功定位 UltimateKtv 目錄！\n\n" +
+                $"目標目錄: {targetDir}\n" +
+                $"主程式版本: {detectedExeName}\n\n" +
+                $"設定檔狀態:\n" +
+                $"• settings.json: {(settingsExists ? "已載入" : "未建立")}\n" +
+                $"• themesettings.json: {(themeSettingsExists ? "已載入" : "未建立")}",
+                "目錄載入成功",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
 
         private void BtnReload_Click(object sender, RoutedEventArgs e)
         {
             if (CboConfigFileType.SelectedIndex == 0)
             {
-                _model.LoadTextSettingsJson(StyleSettingsModel.TextSettingsPath);
+                _model.LoadThemeSettingsJson(StyleSettingsModel.ThemeSettingsPath);
             }
             else
             {
@@ -2396,8 +2471,8 @@ namespace StyleSimulator
         {
             UpdateSettingsFromUI();
             bool isSettings = CboConfigFileType.SelectedIndex == 1;
-            bool ok = isSettings ? _model.SaveSettingsJson() : _model.SaveTextSettingsJson();
-            string path = isSettings ? StyleSettingsModel.SettingsPath : StyleSettingsModel.TextSettingsPath;
+            bool ok = isSettings ? _model.SaveSettingsJson() : _model.SaveThemeSettingsJson();
+            string path = isSettings ? StyleSettingsModel.SettingsPath : StyleSettingsModel.ThemeSettingsPath;
 
             if (ok)
             {
@@ -2413,15 +2488,15 @@ namespace StyleSimulator
         {
             UpdateSettingsFromUI();
             bool ok1 = _model.SaveSettingsJson();
-            bool ok2 = _model.SaveTextSettingsJson();
+            bool ok2 = _model.SaveThemeSettingsJson();
 
             if (ok1 && ok2)
             {
-                MessageBox.Show($"雙設定檔已成功儲存！\n1) {StyleSettingsModel.SettingsPath}\n2) {StyleSettingsModel.TextSettingsPath}", "全部儲存成功", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"雙設定檔已成功儲存！\n1) {StyleSettingsModel.SettingsPath}\n2) {StyleSettingsModel.ThemeSettingsPath}", "全部儲存成功", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
-                MessageBox.Show($"儲存時發生錯誤 (settings: {ok1}, textsettings: {ok2})", "儲存提示", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show($"儲存時發生錯誤 (settings: {ok1}, themesettings: {ok2})", "儲存提示", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
         #endregion

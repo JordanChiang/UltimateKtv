@@ -200,7 +200,7 @@ namespace UltimateKtv
             // Load settings from JSON file first
             AppLogger.Log("Loading settings...");
             SettingsManager.Instance.LoadSettings();
-            TextSettingsHandler.LoadSettings();
+            ThemeSettingsHandler.LoadSettings();
             ApplySettings();
             AppLogger.Log("Settings loaded and applied.");
 
@@ -293,10 +293,10 @@ namespace UltimateKtv
 
             // Capture base font sizes directly from settings to ensure accurate values 
             // before applying responsive scaling on resize.
-            _baseFuncBtnFontSize = TextSettingsHandler.Settings.FuncBtnFontSize;
-            _baseBottomButtonFontSize = TextSettingsHandler.Settings.BottomButtonFontSize;
-            _baseWaitingListFontSize = TextSettingsHandler.Settings.WaitingListFontSize;
-            _baseSongListFontSize = TextSettingsHandler.Settings.SongListFontSize;
+            _baseFuncBtnFontSize = ThemeSettingsHandler.Settings.FuncBtnFontSize;
+            _baseBottomButtonFontSize = ThemeSettingsHandler.Settings.BottomButtonFontSize;
+            _baseWaitingListFontSize = ThemeSettingsHandler.Settings.WaitingListFontSize;
+            _baseSongListFontSize = ThemeSettingsHandler.Settings.SongListFontSize;
             _baseVisualSingerNameFontSize = SettingsManager.Instance.CurrentSettings.VisualSingerNameFontSize;
 
             // Apply initial responsive font sizing and keep it updated on resize
@@ -585,7 +585,7 @@ namespace UltimateKtv
                 HorizontalAlignment = HorizontalAlignment.Right,
                 MinWidth = 80
             };
-            TextSettingsHandler.ApplyOutlinedButtonStyle(okButton, 16);
+            ThemeSettingsHandler.ApplyOutlinedButtonStyle(okButton, 16);
 
             okButton.Click += (s, args) => DialogHost.CloseDialogCommand.Execute(null, null);
             dialogContent.Children.Add(okButton);
@@ -701,8 +701,8 @@ namespace UltimateKtv
             PowerManagementHelper.PreventSleep();
             
             
-            // Apply text settings to XAML resources (colors, brushes, etc.)
-            TextSettingsHandler.ApplyToResources(this);
+            // Apply theme settings to XAML resources (colors, brushes, etc.)
+            ThemeSettingsHandler.ApplyToResources(this);
             ApplyResponsiveFontSizing();
             
             // Get monitor info first to validate settings before initializing display
@@ -1233,10 +1233,10 @@ namespace UltimateKtv
         /// </summary>
         private void CacheActiveButtonBrushes()
         {
-            // Use TextSettingsHandler brushes directly for consistent theming
-            _activeButtonBackground = TextSettingsHandler.PrimaryBrush;
+            // Use ThemeSettingsHandler brushes directly for consistent theming
+            _activeButtonBackground = ThemeSettingsHandler.PrimaryBrush;
             _activeButtonForeground = Brushes.White;
-            _fixedButtonBackground = TextSettingsHandler.PrimaryBrush;
+            _fixedButtonBackground = ThemeSettingsHandler.PrimaryBrush;
         }
 
         /// <summary>

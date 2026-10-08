@@ -9,24 +9,26 @@ using MaterialDesignThemes.Wpf;
 namespace UltimateKtv
 {
     /// <summary>
-    /// Handles reading and processing static text settings from JSON file.
+    /// Handles reading and processing UI theme and visual settings from JSON file.
     /// Settings are loaded once at startup and cached for application use.
     /// </summary>
-    public static class TextSettingsHandler
+    public static class ThemeSettingsHandler
     {
         private static readonly string _settingsFilePath;
-        private static TextSettings _settings = null!;
+        private static readonly string _legacySettingsFilePath;
+        private static ThemeSettings _settings = null!;
         private static bool _isLoaded = false;
 
-        static TextSettingsHandler()
+        static ThemeSettingsHandler()
         {
-            _settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "textsettings.json");
+            _settingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "themesettings.json");
+            _legacySettingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "textsettings.json");
         }
 
         /// <summary>
-        /// Gets the current text settings. Loads from file if not already loaded.
+        /// Gets the current theme settings. Loads from file if not already loaded.
         /// </summary>
-        public static TextSettings Settings
+        public static ThemeSettings Settings
         {
             get
             {
@@ -39,11 +41,25 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Loads text settings from the JSON file. Creates default file if not exists.
+        /// Loads theme settings from the JSON file. Creates default file if not exists.
         /// </summary>
         public static void LoadSettings()
         {
-            AppLogger.Log($"Loading text settings from: {_settingsFilePath}");
+            AppLogger.Log($"Loading theme settings from: {_settingsFilePath}");
+
+            // 向下相容機制：若 themesettings.json 不存在，但存在舊版 textsettings.json，自動平滑遷移
+            if (!File.Exists(_settingsFilePath) && File.Exists(_legacySettingsFilePath))
+            {
+                try
+                {
+                    AppLogger.Log($"Migrating legacy {_legacySettingsFilePath} to {_settingsFilePath}...");
+                    File.Copy(_legacySettingsFilePath, _settingsFilePath, true);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Failed to migrate legacy textsettings.json to themesettings.json.", ex);
+                }
+            }
 
             if (File.Exists(_settingsFilePath))
             {
@@ -55,21 +71,21 @@ namespace UltimateKtv
                         ReadCommentHandling = JsonCommentHandling.Skip,
                         AllowTrailingCommas = true
                     };
-                    _settings = JsonSerializer.Deserialize<TextSettings>(json, options) ?? new TextSettings();
+                    _settings = JsonSerializer.Deserialize<ThemeSettings>(json, options) ?? new ThemeSettings();
                     SaveSettings(); // Update the physical file to inject comments and missing schema keys
-                    AppLogger.Log("Text settings loaded successfully.");
+                    AppLogger.Log("Theme settings loaded successfully.");
                 }
                 catch (Exception ex)
                 {
-                    AppLogger.LogError("Failed to load textsettings.json. Using defaults.", ex);
-                    _settings = new TextSettings();
+                    AppLogger.LogError("Failed to load themesettings.json. Using defaults.", ex);
+                    _settings = new ThemeSettings();
                     SaveSettings();
                 }
             }
             else
             {
-                AppLogger.Log("textsettings.json not found. Creating with default values.");
-                _settings = new TextSettings();
+                AppLogger.Log("themesettings.json not found. Creating with default values.");
+                _settings = new ThemeSettings();
                 SaveSettings();
             }
 
@@ -91,7 +107,7 @@ namespace UltimateKtv
                 string json = JsonSerializer.Serialize(_settings, options);
 
                 // Inject property descriptions as JSON comments using Reflection
-                foreach (var prop in typeof(TextSettings).GetProperties())
+                foreach (var prop in typeof(ThemeSettings).GetProperties())
                 {
                     var descAttr = (System.ComponentModel.DescriptionAttribute?)Attribute.GetCustomAttribute(prop, typeof(System.ComponentModel.DescriptionAttribute));
                     if (descAttr != null && !string.IsNullOrWhiteSpace(descAttr.Description))
@@ -103,11 +119,11 @@ namespace UltimateKtv
                 }
 
                 File.WriteAllText(_settingsFilePath, json);
-                AppLogger.Log("Text settings file saved and updated.");
+                AppLogger.Log("Theme settings file saved and updated.");
             }
             catch (Exception ex)
             {
-                AppLogger.LogError("Failed to save textsettings.json.", ex);
+                AppLogger.LogError("Failed to save themesettings.json.", ex);
             }
         }
 
@@ -374,7 +390,7 @@ namespace UltimateKtv
         {
             try
             {
-                AppLogger.Log("Applying TextSettings to XAML resources...");
+                AppLogger.Log("Applying ThemeSettings to XAML resources...");
 
                 // Dynamic Cyber Accent Brushes & Colors
                 var accentColor = ResolvedAccentColor;
@@ -677,11 +693,11 @@ namespace UltimateKtv
                 // Apply Material Design theme using PaletteHelper
                 ApplyMaterialDesignTheme();
 
-                AppLogger.Log("TextSettings applied to XAML resources successfully.");
+                AppLogger.Log("ThemeSettings applied to XAML resources successfully.");
             }
             catch (Exception ex)
             {
-                AppLogger.LogError("Failed to apply TextSettings to XAML resources.", ex);
+                AppLogger.LogError("Failed to apply ThemeSettings to XAML resources.", ex);
             }
         }
 

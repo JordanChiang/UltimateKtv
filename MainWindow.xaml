@@ -48,7 +48,7 @@
         </LinearGradientBrush>
         <SolidColorBrush x:Key="DataGridColumnHeaderForeground" Color="#FFFFFFFF"/>
 
-        <!-- Primary theme brush (overridden by TextSettings at startup) -->
+        <!-- Primary theme brush (overridden by ThemeSettings at startup) -->
         <SolidColorBrush x:Key="PrimaryBrush" Color="#FFB300"/>
         <SolidColorBrush x:Key="PrimaryLightBrush" Color="#FFE082"/>
 
@@ -62,7 +62,7 @@
         <Color x:Key="ColorRowGlowActive">#FFB300</Color>
         <Color x:Key="ColorRowGlowHover">#FFE082</Color>
 
-        <!-- Cyber Button & Selection Gradient Brushes (overridden by TextSettings at startup) -->
+        <!-- Cyber Button & Selection Gradient Brushes (overridden by ThemeSettings at startup) -->
         <LinearGradientBrush x:Key="BrushCyberButtonGradient" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#77FFB300" Offset="0.0"/>
             <GradientStop Color="#33FFB300" Offset="1.0"/>
@@ -72,7 +72,7 @@
             <GradientStop Color="#D08A6403" Offset="1.0"/>
         </LinearGradientBrush>
 
-        <!-- 風格 3 (AccentStrip) 預設漸層筆刷 (啟動時由 TextSettingsHandler 根據主題色動態覆寫) -->
+        <!-- 風格 3 (AccentStrip) 預設漸層筆刷 (啟動時由 ThemeSettingsHandler 根據主題色動態覆寫) -->
         <LinearGradientBrush x:Key="BrushAccentStripActive" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#F59E0B" Offset="0.0"/>
             <GradientStop Color="#FFF9C4" Offset="0.4"/>
@@ -96,7 +96,7 @@
             <GradientStop Color="#00FFA000" Offset="1.0"/>
         </LinearGradientBrush>
 
-        <!-- 選中文字立體金屬漸層筆刷 (預設香檳白金至琥珀金，啟動時由 TextSettingsHandler 根據主題色動態覆寫) -->
+        <!-- 選中文字立體金屬漸層筆刷 (預設香檳白金至琥珀金，啟動時由 ThemeSettingsHandler 根據主題色動態覆寫) -->
         <LinearGradientBrush x:Key="BrushTextSelectedGradient" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#FFFFFFF0" Offset="0.0"/>
             <GradientStop Color="#FFFDE7" Offset="0.25"/>
@@ -105,7 +105,7 @@
             <GradientStop Color="#FF8F00" Offset="1.0"/>
         </LinearGradientBrush>
 
-        <!-- Singer Grid Button Colors (will be overridden by TextSettings at startup) -->
+        <!-- Singer Grid Button Colors (will be overridden by ThemeSettings at startup) -->
         <SolidColorBrush x:Key="SingerButtonBackground" Color="#FFB300"/>
 
         <!-- Converter for binding a boolean value to the Stretch property -->

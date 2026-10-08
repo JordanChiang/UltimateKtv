@@ -336,7 +336,7 @@ namespace UltimateKtv
             // Always display on PlayerScreen so users can see random play status/errors on the TV/Player screen
             MarqueeAPI.ShowCustomStaticText(
                 message,
-                TextSettingsHandler.StaticTextForeground,
+                ThemeSettingsHandler.StaticTextForeground,
                 new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(settings.MarqueeBroadcastFontFamily) ? settings.MarqueeBroadcastFontFamily : "微軟正黑體"),
                 settings.MarqueeBroadcastFontSize,
                 MarqueePosition.Top,
@@ -349,7 +349,7 @@ namespace UltimateKtv
             {
                 MarqueeAPI.ShowCustomStaticText(
                     message,
-                    TextSettingsHandler.StaticTextForeground,
+                    ThemeSettingsHandler.StaticTextForeground,
                     new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(settings.MarqueeBroadcastFontFamily) ? settings.MarqueeBroadcastFontFamily : "微軟正黑體"),
                     settings.MarqueeBroadcastFontSize,
                     MarqueePosition.Top,

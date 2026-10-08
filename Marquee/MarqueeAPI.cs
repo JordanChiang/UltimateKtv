@@ -72,7 +72,7 @@ namespace UltimateKtv
             int displayDevice = GetDisplayDeviceIndex(device);
             MarqueeManager.Instance.ShowMarquee(
                 text, 
-                TextSettingsHandler.AnnouncementForeground,
+                ThemeSettingsHandler.AnnouncementForeground,
                 ParseFontFamily(settings.MarqueeTextFontFamily), 
                 settings.MarqueeTextFontSize, 
                 settings.MarqueeTextPlayCount, 
@@ -430,7 +430,7 @@ namespace UltimateKtv
             int displayDevice = GetDisplayDeviceIndex(device);
             MarqueeManager.Instance.ShowMarquee(
                 message,
-                TextSettingsHandler.StaticTextForeground,
+                ThemeSettingsHandler.StaticTextForeground,
                 ParseFontFamily(settings.MarqueeTextFontFamily),
                 settings.MarqueeTextFontSize,
                 settings.MarqueeTextPlayCount,
@@ -520,7 +520,7 @@ namespace UltimateKtv
             int displayDevice = GetDisplayDeviceIndex(device);
             MarqueeManager.Instance.ShowStaticText(
                 text,
-                TextSettingsHandler.StaticTextForeground,
+                ThemeSettingsHandler.StaticTextForeground,
                 ParseFontFamily(settings.MarqueeBroadcastFontFamily),
                 settings.MarqueeBroadcastFontSize,
                 MarqueePosition.Top,

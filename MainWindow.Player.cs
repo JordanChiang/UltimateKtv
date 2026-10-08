@@ -299,7 +299,7 @@ namespace UltimateKtv
                 {
                     MarqueeAPI.ShowCustomStaticText(
                         $"{singerName} {songName}",
-                        TextSettingsHandler.ParseBrush(marqueeSettings.MarqueeTextFillColor, System.Windows.Media.Brushes.White),
+                        ThemeSettingsHandler.ParseBrush(marqueeSettings.MarqueeTextFillColor, System.Windows.Media.Brushes.White),
                         new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(marqueeSettings.MarqueeBroadcastFontFamily) ? marqueeSettings.MarqueeBroadcastFontFamily : "微軟正黑體"),
                         marqueeSettings.MarqueeBroadcastFontSize,
                         MarqueePosition.Top,
@@ -808,7 +808,7 @@ namespace UltimateKtv
             if (_isLoopPlay)
             {
                 RepeatBtn.Content = "循環";
-                RepeatBtn.Background = _fixedButtonBackground ?? TextSettingsHandler.PrimaryBrush;
+                RepeatBtn.Background = _fixedButtonBackground ?? ThemeSettingsHandler.PrimaryBrush;
                 RepeatBtn.Foreground = _activeButtonForeground ?? new SolidColorBrush(Colors.White);
                 _repeatBtnFlashStoryboard?.Begin(RepeatBtn, true);
                 MarqueeAPI.ShowStaticAnnouncement("已開啟單曲循環播放", 5);
@@ -1367,7 +1367,7 @@ namespace UltimateKtv
                 var dialogBorder = new Border
                 {
                     Background = new SolidColorBrush(Color.FromRgb(0x12, 0x18, 0x26)),
-                    BorderBrush = TextSettingsHandler.PrimaryBrush,
+                    BorderBrush = ThemeSettingsHandler.PrimaryBrush,
                     BorderThickness = new Thickness(1.5),
                     CornerRadius = new CornerRadius(8),
                     Height = 60,
@@ -1396,7 +1396,7 @@ namespace UltimateKtv
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(setAsMusicButton, 16);
+                ThemeSettingsHandler.ApplyOutlinedButtonStyle(setAsMusicButton, 16);
 
                 var setFixeTrackButton = new Button
                 {
@@ -1404,7 +1404,7 @@ namespace UltimateKtv
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(setFixeTrackButton, 16);
+                ThemeSettingsHandler.ApplyOutlinedButtonStyle(setFixeTrackButton, 16);
 
                 var cancelButton = new Button
                 {
@@ -1412,7 +1412,7 @@ namespace UltimateKtv
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 16);
+                ThemeSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 16);
 
                 buttonPanel.Children.Add(setAsMusicButton);
                 buttonPanel.Children.Add(cancelButton);
@@ -1651,7 +1651,7 @@ namespace UltimateKtv
                 var dialogBorder = new Border
                 {
                     Background = new SolidColorBrush(Color.FromRgb(0x12, 0x18, 0x26)),
-                    BorderBrush = TextSettingsHandler.PrimaryBrush,
+                    BorderBrush = ThemeSettingsHandler.PrimaryBrush,
                     BorderThickness = new Thickness(1.5),
                     CornerRadius = new CornerRadius(8),
                     Height = 60,
@@ -1680,7 +1680,7 @@ namespace UltimateKtv
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(loopPlayButton, 16);
+                ThemeSettingsHandler.ApplyOutlinedButtonStyle(loopPlayButton, 16);
 
                 var cancelButton = new Button
                 {
@@ -1688,7 +1688,7 @@ namespace UltimateKtv
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 16);
+                ThemeSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 16);
 
                 buttonPanel.Children.Add(loopPlayButton);
                 buttonPanel.Children.Add(cancelButton);

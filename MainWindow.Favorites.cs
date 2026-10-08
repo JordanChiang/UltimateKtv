@@ -147,7 +147,7 @@ namespace UltimateKtv
                     Width = 100,
                     Height = 40                    
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 18);
+                ThemeSettingsHandler.ApplyOutlinedButtonStyle(cancelButton, 18);
 
                 var confirmButton = new Button
                 {
@@ -156,7 +156,7 @@ namespace UltimateKtv
                     Height = 40,
                     Margin = new Thickness(0, 0, 10, 0)
                 };
-                TextSettingsHandler.ApplyOutlinedButtonStyle(confirmButton, 18);
+                ThemeSettingsHandler.ApplyOutlinedButtonStyle(confirmButton, 18);
 
                 cancelButton.Click += (s, args) => DialogHost.CloseDialogCommand.Execute(null, null);
                 

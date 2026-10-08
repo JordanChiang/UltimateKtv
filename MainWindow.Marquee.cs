@@ -32,7 +32,7 @@ namespace UltimateKtv
         public void ShowMarquee(string text, int displayDevice = 0)
         {
             var settings = SettingsManager.Instance.CurrentSettings;
-            var fillBrush = TextSettingsHandler.ParseBrush(settings.MarqueeTextFillColor, System.Windows.Media.Brushes.White);
+            var fillBrush = ThemeSettingsHandler.ParseBrush(settings.MarqueeTextFillColor, System.Windows.Media.Brushes.White);
             var fontFamily = new System.Windows.Media.FontFamily(
                 !string.IsNullOrWhiteSpace(settings.MarqueeTextFontFamily) ? settings.MarqueeTextFontFamily : "微軟正黑體");
             ShowMarquee(text, fillBrush, fontFamily, 

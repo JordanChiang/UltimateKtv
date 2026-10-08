@@ -455,7 +455,7 @@
                         </ComboBox>
                     </StackPanel>
                     <TextBox x:Name="TxtActiveFilePath" MinWidth="130" MaxWidth="280" IsReadOnly="True" Margin="0,2,6,2" VerticalAlignment="Center" ToolTip="目前載入的設定檔路徑" />
-                    <Button Content="📁 瀏覽..." Style="{StaticResource SecondaryButton}" Click="BtnBrowse_Click" Margin="0,2,6,2" />
+                    <Button Content="📁 瀏覽目錄..." Style="{StaticResource SecondaryButton}" Click="BtnBrowse_Click" Margin="0,2,6,2" ToolTip="選擇 UltimateKtv 程式目錄（自動偵測主程式與雙設定檔）" />
                     <Button Content="🔄 重新載入" Style="{StaticResource SecondaryButton}" Click="BtnReload_Click" Margin="0,2,6,2" />
                     <Button Content="💾 儲存目前檔" Style="{StaticResource SuccessButton}" Click="BtnSaveCurrent_Click" Margin="0,2,6,2" />
                     <Button Content="💾 儲存全部 (雙檔)" Style="{StaticResource ActionButton}" Click="BtnSaveAll_Click" Margin="0,2,0,2" />
@@ -499,7 +499,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- UI Info Bar (Visible when textsettings.json is active) -->
+                <!-- UI Info Bar (Visible when themesettings.json is active) -->
                 <Border x:Name="UiInfoBar" Grid.Row="0" Background="#1D1D27" CornerRadius="6" Padding="8" Margin="0,0,0,8" Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="🎨 點歌機操作介面 (UI 樣式與排版模擬)" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" />
@@ -537,7 +537,7 @@
                         </Viewbox>
                     </Border>
 
-                    <!-- VIEW 2: 點歌機操作介面 (KTV UI View for textsettings.json - 1920x1080 Viewbox) -->
+                    <!-- VIEW 2: 點歌機操作介面 (KTV UI View for themesettings.json - 1920x1080 Viewbox) -->
                     <Border x:Name="KtvUiView" Background="#0A0A0E" BorderBrush="#333344" BorderThickness="2" CornerRadius="8" ClipToBounds="True" Padding="6" Visibility="Collapsed">
                         <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Border x:Name="BorderKtvFrame" Width="1920" Height="1080" Background="#1E1E1E" SnapsToDevicePixels="True" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="2" CornerRadius="4" ToolTip="由 [PrimaryColor] 主要主題色控制">
@@ -1514,8 +1514,8 @@
                         </ScrollViewer>
                     </Grid>
 
-                    <!-- PANEL 2: textsettings.json UI 專屬設定面板 -->
-                    <Grid x:Name="TextSettingsGrid" Visibility="Collapsed">
+                    <!-- PANEL 2: themesettings.json UI 專屬設定面板 -->
+                    <Grid x:Name="ThemeSettingsGrid" Visibility="Collapsed">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
@@ -1524,8 +1524,8 @@
                         <!-- Header with Reset Button -->
                         <Border Grid.Row="0" Background="#242432" CornerRadius="4" Padding="10,6" Margin="0,0,0,8">
                             <Grid>
-                                <TextBlock Text="🎨 textsettings.json 點歌機介面字級與配色" FontWeight="Bold" Foreground="#82B1FF" />
-                                <Button Content="🔄 回復預設值" HorizontalAlignment="Right" Style="{StaticResource ResetButton}" Click="BtnResetTextSettingsDefaults_Click" ToolTip="將點歌機介面所有字體與色彩重設為原廠預設值" />
+                                <TextBlock Text="🎨 themesettings.json 點歌機介面字級與主題色彩" FontWeight="Bold" Foreground="#82B1FF" />
+                                <Button Content="🔄 回復預設值" HorizontalAlignment="Right" Style="{StaticResource ResetButton}" Click="BtnResetThemeSettingsDefaults_Click" ToolTip="將點歌機介面所有字體與色彩重設為原廠預設值" />
                             </Grid>
                         </Border>
 
@@ -1556,13 +1556,13 @@
                                         </Grid>
                                         <ComboBox x:Name="CboThemePresets" SelectionChanged="CboThemePresets_SelectionChanged">
                                             <ComboBoxItem Content="-- 自訂或目前配置 (Custom) --" Tag="" IsSelected="True" />
-                                            <ComboBoxItem Content="⚡ 電光藍 (Electric Blue) [截圖範例]" Tag="textsettings_electric_blue.json" />
-                                            <ComboBoxItem Content="🌲 森林綠 (Forest Green)" Tag="textsettings_forest_green.json" />
-                                            <ComboBoxItem Content="💖 熱力粉 (Hot Pink)" Tag="textsettings_hot_pink.json" />
-                                            <ComboBoxItem Content="🌊 海洋青 (Ocean Cyan)" Tag="textsettings_ocean_cyan.json" />
-                                            <ComboBoxItem Content="🌅 日落橘 (Sunset Orange)" Tag="textsettings_sunset_orange.json" />
-                                            <ComboBoxItem Content="🔮 炫麗紫 (Vivid Purple)" Tag="textsettings_vivid_purple.json" />
-                                            <ComboBoxItem Content="🌟 原廠預設金琥珀 (Default Amber)" Tag="textsettings_default_amber.json" />
+                                            <ComboBoxItem Content="⚡ 電光藍 (Electric Blue) [截圖範例]" Tag="theme_electric_blue.json" />
+                                            <ComboBoxItem Content="🌲 森林綠 (Forest Green)" Tag="theme_forest_green.json" />
+                                            <ComboBoxItem Content="💖 熱力粉 (Hot Pink)" Tag="theme_hot_pink.json" />
+                                            <ComboBoxItem Content="🌊 海洋青 (Ocean Cyan)" Tag="theme_ocean_cyan.json" />
+                                            <ComboBoxItem Content="🌅 日落橘 (Sunset Orange)" Tag="theme_sunset_orange.json" />
+                                            <ComboBoxItem Content="🔮 炫麗紫 (Vivid Purple)" Tag="theme_vivid_purple.json" />
+                                            <ComboBoxItem Content="🌟 原廠預設金琥珀 (Default Amber)" Tag="theme_default_amber.json" />
                                         </ComboBox>
                                         <TextBlock Text="💡 選擇主題將即時更新下方各項參數並在右側 1:1 模擬畫面精確展現" FontSize="11" Foreground="#9E9E9E" Margin="2,4,0,0" />
                                     </StackPanel>
