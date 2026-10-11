@@ -232,13 +232,20 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="RowBorder" Property="Background" Value="#000000"/>
+                                <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource BrushCyberButtonGradient}"/>
                                 <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource BrushCyberButtonGradient}"/>
                                 <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
                             </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                            </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
