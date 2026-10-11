@@ -238,7 +238,6 @@
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource BrushCyberButtonGradient}"/>
                                 <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1.5"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -362,54 +361,64 @@
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="DataGridRow">
-                        <Border x:Name="RowBorder"
-                                Background="#181B24"
-                                BorderBrush="#20FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                ClipToBounds="True"
-                                SnapsToDevicePixels="True">
-                            <Grid>
-                                <!-- 由外框向內散發的柔和高斯內光暈 (BlurEffect，絕不覆蓋卡片中心) -->
-                                <Border x:Name="InnerGlowRim"
-                                        Margin="1"
-                                        CornerRadius="7"
-                                        BorderThickness="4"
-                                        BorderBrush="Transparent"
-                                        Background="Transparent"
-                                        IsHitTestVisible="False">
-                                    <Border.Effect>
-                                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
-                                    </Border.Effect>
-                                </Border>
-
-                                <DataGridCellsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
-                                                        VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
-                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1.5"/>
-                                <Setter TargetName="InnerGlowRim" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1.5"/>
-                                <Setter TargetName="InnerGlowRim" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                            </Trigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsSelected" Value="True"/>
-                                    <Condition Property="IsMouseOver" Value="True"/>
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
-                                <Setter TargetName="RowBorder" Property="BorderThickness" Value="1.5"/>
-                                <Setter TargetName="InnerGlowRim" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
-                            </MultiTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
+<ControlTemplate TargetType="DataGridRow">
+    <!-- 效能重點:RowBorder 厚度固定為 1,Trigger 絕不改厚度(避免 hover 時重排版);
+         BlurEffect 只在 hover/選取的那一列才掛上,不常駐在每一列。
+         光暈與亮邊平時 Collapsed (原本是透明但每列仍要畫兩層圓角邊框);
+         光暈外層 GlowHost 加 BitmapCache:WPF 不會快取 Effect,換頁時該列文字一變就要重算模糊,
+         播放影片時會拖慢 render thread 讓跑馬燈掉格。快取後模糊只在 hover/選取改變時算一次。 -->
+    <!-- 版面與原本完全相同:原本內容放在 RowBorder (BorderThickness=1) 裡,現在改成同層並加 Margin="1"。
+         原本 RowBorder 的 ClipToBounds 只用來把光暈模糊限制在列的範圍內 (文字與外框本來就不會超出),
+         但它讓「每一列」在每次重繪都要做裁切。
+         改成只裁切光暈那一層 (GlowClip,與 RowBorder 同大小),平時收起來,一般列完全不需要裁切。 -->
+    <Grid>
+        <Border x:Name="RowBorder" Background="#181B24" BorderBrush="#20FFFFFF"
+                BorderThickness="1" CornerRadius="8" SnapsToDevicePixels="True"/>
+        <Grid x:Name="GlowClip" ClipToBounds="True" Visibility="Collapsed" IsHitTestVisible="False">
+            <Grid x:Name="GlowHost" Margin="1">
+                <Grid.CacheMode>
+                    <BitmapCache EnableClearType="False" SnapsToDevicePixels="False"/>
+                </Grid.CacheMode>
+                <Border x:Name="InnerGlowRim" Margin="1" CornerRadius="7" BorderThickness="4"
+                        BorderBrush="Transparent">
+                    <Border.Effect>
+                        <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
+                    </Border.Effect>
+                </Border>
+            </Grid>
+        </Grid>
+        <!-- 疊層亮邊:取代原本 hover/選取時 RowBorder 厚度 1→1.5 的變化 (1 + 0.5 = 1.5,外觀相同),
+             改厚度會觸發整列重新排版,疊一層 0.5 的亮邊則不需要 -->
+        <Border x:Name="AccentRim" Margin="1" CornerRadius="7" BorderThickness="0.5" Visibility="Collapsed"
+                BorderBrush="Transparent" IsHitTestVisible="False"/>
+        <DataGridCellsPresenter Margin="1" VerticalAlignment="Center"/>
+    </Grid>
+    <ControlTemplate.Triggers>
+        <Trigger Property="IsMouseOver" Value="True">
+            <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+            <Setter TargetName="AccentRim" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+            <Setter TargetName="AccentRim" Property="Visibility" Value="Visible"/>
+            <Setter TargetName="InnerGlowRim" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+            <Setter TargetName="GlowClip" Property="Visibility" Value="Visible"/>
+        </Trigger>
+        <Trigger Property="IsSelected" Value="True">
+            <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter TargetName="AccentRim" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter TargetName="AccentRim" Property="Visibility" Value="Visible"/>
+            <Setter TargetName="InnerGlowRim" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+            <Setter TargetName="GlowClip" Property="Visibility" Value="Visible"/>
+        </Trigger>
+        <MultiTrigger>
+            <MultiTrigger.Conditions>
+                <Condition Property="IsSelected" Value="True"/>
+                <Condition Property="IsMouseOver" Value="True"/>
+            </MultiTrigger.Conditions>
+            <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+            <Setter TargetName="AccentRim" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+            <Setter TargetName="InnerGlowRim" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+        </MultiTrigger>
+    </ControlTemplate.Triggers>
+</ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
@@ -438,14 +447,26 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type DataGrid}">
+                        <Grid>
+                        <!-- 靜態陰影墊底層。
+                             注意：WPF 不會自動快取 Effect 的結果；只要列內容變動 (換頁) 的重繪區域與它重疊，
+                             整塊約 1500x900 的 DropShadowEffect 就會在 render thread 重新計算一次。
+                             外層加上 BitmapCache 後，陰影只算一次並快取成貼圖，之後只做貼圖合成。 -->
+                        <Grid IsHitTestVisible="False">
+                            <Grid.CacheMode>
+                                <BitmapCache EnableClearType="False" SnapsToDevicePixels="False"/>
+                            </Grid.CacheMode>
+                            <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.4" Color="#000000"/>
+                                </Border.Effect>
+                            </Border>
+                        </Grid>
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="12"
                                 SnapsToDevicePixels="True">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.4" Color="#000000"/>
-                            </Border.Effect>
                             <Border CornerRadius="11" ClipToBounds="True">
                                 <ScrollViewer x:Name="DG_ScrollViewer" Focusable="False">
                                     <ScrollViewer.Template>
@@ -500,6 +521,7 @@
                                 </ScrollViewer>
                             </Border>
                         </Border>
+                        </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -817,21 +839,17 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" BorderThickness="0" CornerRadius="4" Background="{TemplateBinding Background}" ClipToBounds="True">
+                        <!-- 不使用 ClipToBounds:照片為 Uniform 等比縮放、名字條也在格子內,沒有東西會超出邊界,
+                             裁切對畫面沒有作用,卻讓 18 格每次重繪都要額外做裁切 -->
+                        <Border x:Name="border" BorderThickness="0" CornerRadius="4" Background="{TemplateBinding Background}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <Image Grid.Row="0" Grid.RowSpan="2" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <Image.Source>
-                                        <Binding Path="PhotoPath" TargetNullValue="{x:Null}">
-                                            <Binding.FallbackValue>
-                                                <BitmapImage UriSource="/Images/FavoriteUser/favoriteuser_default.png"/>
-                                            </Binding.FallbackValue>
-                                        </Binding>
-                                    </Image.Source>
-                                </Image>
+                                <!-- Photo 是背景解碼好的縮圖 (SingerThumbnailCache)，不在 UI 執行緒解碼原圖 -->
+                                <Image Grid.Row="0" Grid.RowSpan="2" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                       Source="{Binding Photo}"/>
                                 <Border Grid.Row="1" Background="#CC000000">
                                     <TextBlock Text="{Binding Name}" Foreground="White" TextAlignment="Center" Padding="2" FontSize="{TemplateBinding FontSize}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
                                 </Border>

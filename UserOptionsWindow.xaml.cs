@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MaterialDesignThemes.Wpf;
@@ -71,49 +75,187 @@ namespace UltimateKtv
             this.MaxHeight = maxAllowedHeight;
             this.MaxWidth = maxAllowedWidth;
                         
+            // 只放入「預設」與「目前設定值」兩個項目；完整的裝置列表在視窗顯示後於背景列舉
+            // (DirectShow / WaveIn 裝置列舉很慢，放在建構子會讓 UI 執行緒卡住、跑馬燈停頓)
             InitializeAudioRenderer();
             InitializeAudioInputDevice();
             InitializeSettings();
             _isInitializing = false;
+
+            ContentRendered += async (_, __) => await LoadAudioDeviceListsAsync();
         }
+
+        #region Window reuse (Hide instead of Close)
+
+        // 設定視窗第一次開啟時，套用範本與版面配置要花 ~400ms (UI 執行緒卡住、跑馬燈停頓)。
+        // 關閉時改為隱藏，主視窗保留這個實例，之後再開啟只需重新載入設定值。
+        private bool _allowClose;
+
+        /// <summary>
+        /// 重新開啟前呼叫：從目前設定重新載入所有控制項 (與新建視窗時相同)，捲回頂端並重新列舉音訊裝置。
+        /// </summary>
+        public void PrepareForReopen()
+        {
+            _isInitializing = true;
+            try
+            {
+                InitializeAudioRenderer();
+                InitializeAudioInputDevice();
+                InitializeSettings();
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+
+            OptionsScrollViewer.ScrollToTop();
+            _ = LoadAudioDeviceListsAsync();
+        }
+
+        /// <summary>真正關閉視窗 (主視窗關閉時呼叫，否則隱藏的視窗會讓程式無法結束)。</summary>
+        public void ForceClose()
+        {
+            _allowClose = true;
+            Close();
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            if (!_allowClose)
+            {
+                // 外部呼叫 Close() (例如單螢幕模式關閉所有子視窗) 也改為隱藏。
+                // Closing 事件中不能直接改變顯示狀態，所以延後執行。
+                e.Cancel = true;
+                Dispatcher.BeginInvoke(new Action(Hide));
+            }
+            base.OnClosing(e);
+        }
+
+        #endregion
+
+        private const string DefaultAudioRendererName = "Default DirectSound Device";
+        private const string DefaultAudioInputName = "Default WaveIn Device";
+
+        // QR code 只顯示在 200x200 的區塊，每個模組 8px 就足夠清晰 (原本 20px 會產生 ~800px 的點陣圖)
+        private const int QrPixelsPerModule = 8;
+
+        private int _httpQrVersion;
+        private int _publicQrVersion;
 
         private void InitializeAudioRenderer()
         {
+            // Placeholder list: default + currently saved device, so the saved value is selected
+            // immediately and is not lost if the user presses Apply before enumeration finishes.
             AudioRendererComboBox.Items.Clear();
-            AudioRendererComboBox.Items.Add("Default DirectSound Device");
-            
-            try
+            AudioRendererComboBox.Items.Add(DefaultAudioRendererName);
+
+            string saved = SettingsManager.Instance.CurrentSettings.AudioRendererDevice;
+            if (!string.IsNullOrEmpty(saved) && saved != DefaultAudioRendererName)
             {
-                var devices = DsDevice.GetDevicesOfCat(FilterCategory.AudioRendererCategory);
-                foreach (var device in devices)
-                {
-                    AudioRendererComboBox.Items.Add(device.Name);
-                }
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError("Failed to list audio renderer devices", ex);
+                AudioRendererComboBox.Items.Add(saved);
             }
         }
 
         private void InitializeAudioInputDevice()
         {
             AudioInputDeviceComboBox.Items.Clear();
-            AudioInputDeviceComboBox.Items.Add("Default WaveIn Device");
+            AudioInputDeviceComboBox.Items.Add(DefaultAudioInputName);
 
+            string saved = SettingsManager.Instance.CurrentSettings.RecordingDevice;
+            if (!string.IsNullOrEmpty(saved) && saved != DefaultAudioInputName)
+            {
+                AudioInputDeviceComboBox.Items.Add(saved);
+            }
+        }
+
+        private static List<string> EnumerateAudioRenderers()
+        {
+            var names = new List<string>();
+            try
+            {
+                var devices = DsDevice.GetDevicesOfCat(FilterCategory.AudioRendererCategory);
+                foreach (var device in devices)
+                {
+                    if (!string.IsNullOrEmpty(device.Name)) names.Add(device.Name);
+                    device.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("Failed to list audio renderer devices", ex);
+            }
+            return names;
+        }
+
+        private static List<string> EnumerateAudioInputs()
+        {
+            var names = new List<string>();
             try
             {
                 int deviceCount = WaveInEvent.DeviceCount;
                 for (int i = 0; i < deviceCount; i++)
                 {
                     var caps = WaveInEvent.GetCapabilities(i);
-                    AudioInputDeviceComboBox.Items.Add(caps.ProductName);
+                    names.Add(caps.ProductName);
                 }
             }
             catch (Exception ex)
             {
                 AppLogger.LogError("Failed to list audio input devices", ex);
             }
+            return names;
+        }
+
+        /// <summary>
+        /// 在背景列舉音訊裝置，完成後再填入下拉選單 (保留目前選取的項目)。
+        /// </summary>
+        private async Task LoadAudioDeviceListsAsync()
+        {
+            List<string> renderers;
+            List<string> inputs;
+            try
+            {
+                var result = await Task.Run(() => (EnumerateAudioRenderers(), EnumerateAudioInputs()));
+                renderers = result.Item1;
+                inputs = result.Item2;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("LoadAudioDeviceListsAsync failed", ex);
+                return;
+            }
+
+            if (!IsLoaded) return; // window already closed
+
+            bool wasInitializing = _isInitializing;
+            _isInitializing = true; // suppress SelectionChanged logging while repopulating
+            try
+            {
+                RepopulateDeviceComboBox(AudioRendererComboBox, DefaultAudioRendererName, renderers);
+                RepopulateDeviceComboBox(AudioInputDeviceComboBox, DefaultAudioInputName, inputs);
+            }
+            finally
+            {
+                _isInitializing = wasInitializing;
+            }
+        }
+
+        private static void RepopulateDeviceComboBox(ComboBox comboBox, string defaultName, List<string> deviceNames)
+        {
+            var current = comboBox.SelectedItem as string;
+
+            comboBox.Items.Clear();
+            comboBox.Items.Add(defaultName);
+            foreach (var name in deviceNames)
+            {
+                if (!comboBox.Items.Contains(name)) comboBox.Items.Add(name);
+            }
+
+            // Same behaviour as before: if the saved device no longer exists, fall back to the default
+            if (current != null && comboBox.Items.Contains(current))
+                comboBox.SelectedItem = current;
+            else
+                comboBox.SelectedIndex = 0;
         }
 
         private void InitializeSettings()
@@ -275,7 +417,7 @@ namespace UltimateKtv
 
         private void LeaveButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Hide();
         }
 
 
@@ -458,23 +600,41 @@ namespace UltimateKtv
             }
 
             MessageBox.Show("設定已套用", "完成", MessageBoxButton.OK, MessageBoxImage.Information);
-            this.Close();
+            Hide();
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Hide();
         }
 
-        private void UpdateHttpStatusText()
+        private async void UpdateHttpStatusText()
         {
+            int version = ++_httpQrVersion;
             var settings = SettingsManager.Instance.CurrentSettings;
             if (HttpServerToggle.IsChecked == true)
             {
-                string serverUrl = HttpServer.Instance?.ServerUrl ?? $"http://{HttpServer.GetLocalIPAddress()}:{settings.HttpServerPort}";
-                HttpStatusText.Text = $"伺服器已啟用，可由此網址連線: {serverUrl}";
-                GenerateAndDisplayQrCode(serverUrl);
-                QrCodeImage.Visibility = Visibility.Visible;
+                int port = settings.HttpServerPort;
+                HttpStatusText.Text = "伺服器已啟用，正在取得連線網址...";
+                try
+                {
+                    // ServerUrl / GetLocalIPAddress 會列舉網路介面，QR code 產生也耗時 → 全部移到背景
+                    var (serverUrl, qrImage) = await Task.Run(() =>
+                    {
+                        string url = HttpServer.Instance?.ServerUrl ?? $"http://{HttpServer.GetLocalIPAddress()}:{port}";
+                        return (url, CreateQrImage(url));
+                    });
+
+                    if (version != _httpQrVersion) return; // toggled again meanwhile
+
+                    HttpStatusText.Text = $"伺服器已啟用，可由此網址連線: {serverUrl}";
+                    QrCodeImage.Source = qrImage;
+                    QrCodeImage.Visibility = qrImage != null ? Visibility.Visible : Visibility.Collapsed;
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("UpdateHttpStatusText failed", ex);
+                }
             }
             else
             {
@@ -500,22 +660,25 @@ namespace UltimateKtv
             HttpServerLabel.Opacity = isEnabled ? 1.0 : 0.5;
         }
 
-        private void GenerateAndDisplayQrCode(string url)
+        /// <summary>
+        /// 產生 QR code 圖片 (可在背景執行緒呼叫；回傳的圖片已 Freeze)。
+        /// </summary>
+        private static BitmapImage? CreateQrImage(string url)
         {
             try
             {
                 using (var qrGenerator = new QRCodeGenerator())
                 using (var qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q))
                 using (var qrCode = new QRCode(qrCodeData))
-                using (var qrCodeImage = qrCode.GetGraphic(20))
+                using (var qrCodeImage = qrCode.GetGraphic(QrPixelsPerModule))
                 {
-                    QrCodeImage.Source = BitmapToImageSource(qrCodeImage);
+                    return BitmapToImageSource(qrCodeImage);
                 }
             }
             catch (Exception ex)
             {
                 AppLogger.LogError("Failed to generate QR code", ex);
-                QrCodeImage.Source = null; // Clear image on error
+                return null;
             }
         }
 
@@ -810,28 +973,46 @@ namespace UltimateKtv
             // Auto-generate QR code when port is valid
             if (PublicQrCodeImage == null || PublicIpStatusText == null) return;
 
+            // 初始化時由 InitializeSettings → GeneratePublicQrCodeForPort 處理，避免重複產生兩次
+            if (_isInitializing) return;
+
             if (int.TryParse(PublicServerPortTextBox.Text, out int port) && port > 0 && port <= 65535)
             {
-                try
-                {
-                    PublicIpStatusText.Text = "正在取得公網IP...";
-                    string publicIp = await HttpServer.GetPublicIPAddressAsync();
-                    string publicUrl = $"http://{publicIp}:{port}";
-                    PublicIpStatusText.Text = $"公網連線網址: {publicUrl}";
-                    GenerateAndDisplayPublicQrCode(publicUrl);
-                    PublicQrCodeImage.Visibility = Visibility.Visible;
-                }
-                catch (Exception ex)
-                {
-                    AppLogger.LogError("Failed to generate public QR code", ex);
-                    PublicIpStatusText.Text = "無法取得公網IP，請檢查網路連線";
-                    PublicQrCodeImage.Source = null;
-                    PublicQrCodeImage.Visibility = Visibility.Collapsed;
-                }
+                await ShowPublicQrAsync(port);
             }
             else
             {
+                ++_publicQrVersion;
                 PublicIpStatusText.Text = "";
+                PublicQrCodeImage.Source = null;
+                PublicQrCodeImage.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// 取得公網 IP 並產生 QR code；網路請求與圖片產生都在背景執行。
+        /// </summary>
+        private async Task ShowPublicQrAsync(int port)
+        {
+            int version = ++_publicQrVersion;
+            try
+            {
+                PublicIpStatusText.Text = "正在取得公網IP...";
+                string publicIp = await Task.Run(() => HttpServer.GetPublicIPAddressAsync());
+                string publicUrl = $"http://{publicIp}:{port}";
+                var qrImage = await Task.Run(() => CreateQrImage(publicUrl));
+
+                if (version != _publicQrVersion) return; // port changed meanwhile
+
+                PublicIpStatusText.Text = $"公網連線網址: {publicUrl}";
+                PublicQrCodeImage.Source = qrImage;
+                PublicQrCodeImage.Visibility = qrImage != null ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                if (version != _publicQrVersion) return;
+                AppLogger.LogError("Failed to generate public QR code", ex);
+                PublicIpStatusText.Text = "無法取得公網IP，請檢查網路連線";
                 PublicQrCodeImage.Source = null;
                 PublicQrCodeImage.Visibility = Visibility.Collapsed;
             }
@@ -840,41 +1021,7 @@ namespace UltimateKtv
         private async void GeneratePublicQrCodeForPort(int port)
         {
             if (port <= 0 || port > 65535) return;
-
-            try
-            {
-                PublicIpStatusText.Text = "正在取得公網IP...";
-                string publicIp = await HttpServer.GetPublicIPAddressAsync();
-                string publicUrl = $"http://{publicIp}:{port}";
-                PublicIpStatusText.Text = $"公網連線網址: {publicUrl}";
-                GenerateAndDisplayPublicQrCode(publicUrl);
-                PublicQrCodeImage.Visibility = Visibility.Visible;
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError("Failed to generate public QR code on init", ex);
-                PublicIpStatusText.Text = "無法取得公網IP，請檢查網路連線";
-                PublicQrCodeImage.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        private void GenerateAndDisplayPublicQrCode(string url)
-        {
-            try
-            {
-                using (var qrGenerator = new QRCodeGenerator())
-                using (var qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q))
-                using (var qrCode = new QRCode(qrCodeData))
-                using (var qrCodeImage = qrCode.GetGraphic(20))
-                {
-                    PublicQrCodeImage.Source = BitmapToImageSource(qrCodeImage);
-                }
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError("Failed to generate public QR code", ex);
-                PublicQrCodeImage.Source = null;
-            }
+            await ShowPublicQrAsync(port);
         }
 
         private void PreLoadingToggle_Checked(object sender, RoutedEventArgs e)

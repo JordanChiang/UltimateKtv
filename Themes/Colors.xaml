@@ -63,7 +63,7 @@
     <CornerRadius x:Key="RadiusLarge">14</CornerRadius>
 
     <!-- 外框粗細統一規格 -->
-    <Thickness x:Key="BorderThicknessButton">1.5</Thickness>
+    <Thickness x:Key="BorderThicknessButton">2</Thickness>
     <Thickness x:Key="BorderThicknessGrid">0</Thickness>
 
     <!-- UI 字型設定 (全域預設字型) -->

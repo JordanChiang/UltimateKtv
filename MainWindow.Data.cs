@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -23,20 +25,21 @@ namespace UltimateKtv
 
             if (IsVisualSingerStyleEffective)
             {
-                var singersForPage = singerNamesForPage.Select(name => {
-                    string photo = SingerPhotoManager.GetPhoto(name);
-                    bool hasSpecificPhoto = (photo != null && !photo.Contains("favoriteuser_default.png"));
-                    return new SingerDisplayItem
-                    {
-                        Name = name,
-                        PhotoPath = photo,
-                        HasPhoto = hasSpecificPhoto
-                    };
-                }).ToList();
-                
-                VisualSingerGrid.ItemsSource = singersForPage;
+                FillVisualSingerSlots(singerNamesForPage);
+
+                if (!ReferenceEquals(VisualSingerGrid.ItemsSource, _visualSingerSlots))
+                {
+                    VisualSingerGrid.ItemsSource = _visualSingerSlots;
+                }
                 VisualSingerGrid.Visibility = Visibility.Visible;
                 SingerGrid.Visibility = Visibility.Collapsed;
+
+                // 背景預載「翻頁方向」的下一頁縮圖，翻頁時可以直接從快取顯示。
+                // 只預載一個方向：每多解碼一張圖，WPF 就多累積一份記憶體壓力，
+                // 累積到門檻會強制完整 GC (暫停 UI 執行緒，跑馬燈掉格)。
+                int direction = page < _lastSingerPage ? -1 : 1;
+                _lastSingerPage = page;
+                PrefetchSingerPagePhotos(page + direction);
             }
             else
             {
@@ -52,6 +55,151 @@ namespace UltimateKtv
             PageUp.IsEnabled = (page > 1);
             PageDown.IsEnabled = (page < _totalPages);
         }
+
+        #region Visual singer grid (async photo loading)
+
+        // 固定的一組格子：翻頁時只更新內容，不重建 ItemsControl 的容器與樣板
+        private readonly ObservableCollection<SingerDisplayItem> _visualSingerSlots = new ObservableCollection<SingerDisplayItem>();
+
+        // 每次載入頁面時遞增，用來丟棄已過期的背景載入結果
+        private int _singerPageVersion;
+
+        private void FillVisualSingerSlots(List<string> names)
+        {
+            int version = ++_singerPageVersion;
+            int slotCount = Math.Max(PageSize, names.Count);
+
+            while (_visualSingerSlots.Count < slotCount) _visualSingerSlots.Add(new SingerDisplayItem());
+            while (_visualSingerSlots.Count > slotCount) _visualSingerSlots.RemoveAt(_visualSingerSlots.Count - 1);
+
+            for (int i = 0; i < _visualSingerSlots.Count; i++)
+            {
+                var slot = _visualSingerSlots[i];
+                string name = i < names.Count ? names[i] : string.Empty;
+
+                if (string.IsNullOrEmpty(name))
+                {
+                    // 空白格子 (樣板中的 DataTrigger 會把 Name 為空的按鈕隱藏)
+                    slot.Name = string.Empty;
+                    slot.PhotoPath = null;
+                    slot.HasPhoto = false;
+                    slot.Photo = null;
+                    continue;
+                }
+
+                // 只做字典查詢，不做檔案 I/O
+                string? localPath = SingerPhotoManager.GetPhotoLocalPath(name);
+
+                slot.Name = name;
+                slot.PhotoPath = localPath;
+                slot.HasPhoto = localPath != null;
+
+                if (localPath == null)
+                {
+                    slot.Photo = SingerThumbnailCache.DefaultImage;
+                }
+                else if (SingerThumbnailCache.TryGet(localPath, out var cached))
+                {
+                    slot.Photo = cached;
+                }
+                else
+                {
+                    slot.Photo = null; // 先顯示空白底色 + 名字，解碼完成後再補上
+                    _ = LoadSlotPhotoAsync(slot, localPath, version);
+                }
+            }
+        }
+
+        private async Task LoadSlotPhotoAsync(SingerDisplayItem slot, string localPath, int version)
+        {
+            try
+            {
+                var image = await SingerThumbnailCache.GetAsync(localPath);
+
+                // 已經翻到別頁 / 這個格子已換成別的歌手，就不要套用
+                if (version != _singerPageVersion || !string.Equals(slot.PhotoPath, localPath, StringComparison.OrdinalIgnoreCase))
+                    return;
+
+                slot.Photo = image ?? SingerThumbnailCache.DefaultImage;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError($"LoadSlotPhotoAsync failed: {localPath}", ex);
+            }
+        }
+
+        private int _lastSingerPage;
+
+        private void PrefetchSingerPagePhotos(int page)
+        {
+            if (page < 1 || page > _totalPages) return;
+
+            var paths = _allSingers.Skip((page - 1) * PageSize).Take(PageSize)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Select(n => SingerPhotoManager.GetPhotoLocalPath(n))
+                .Where(p => p != null)
+                .Select(p => p!)
+                .ToList();
+
+            SingerThumbnailCache.Prefetch(paths);
+        }
+
+        #endregion
+
+        #region In-place paging for DataGrids (fixed row slots)
+
+        // 每個分頁列表持有一組固定的「列 (slot)」物件作為 ItemsSource。
+        // 換頁時只把新資料複製到這些 slot 的屬性 (INotifyPropertyChanged)，
+        // DataGrid 不會收到任何集合變更，因此不會重建 DataGridRow / Cell / 樣板，
+        // 只會更新文字。這和歌星照片格的做法相同。
+        //
+        // 注意：從列表取出項目要往後傳遞時 (加入待播、加入最愛、長按) 請使用 Clone()，
+        // 因為 slot 的內容在換頁時會被改掉。
+        private readonly ObservableCollection<SongDisplayItem> _songListPageItems = new ObservableCollection<SongDisplayItem>();
+        private readonly ObservableCollection<SongDisplayItem> _languageSongListPageItems = new ObservableCollection<SongDisplayItem>();
+        private readonly ObservableCollection<SongDisplayItem> _quickSongListPageItems = new ObservableCollection<SongDisplayItem>();
+        private readonly ObservableCollection<WaitingListItem> _waitingListPageItems = new ObservableCollection<WaitingListItem>();
+
+        private static void ShowPageItems(DataGrid grid, ObservableCollection<SongDisplayItem> slots, IList<SongDisplayItem> items)
+        {
+            ShowPageItemsCore(grid, slots, items, (slot, src) => slot.CopyFrom(src));
+        }
+
+        private static void ShowPageItems(DataGrid grid, ObservableCollection<WaitingListItem> slots, IList<WaitingListItem> items)
+        {
+            ShowPageItemsCore(grid, slots, items, (slot, src) => slot.CopyFrom(src));
+        }
+
+        private static void ShowPageItemsCore<T>(DataGrid grid, ObservableCollection<T> slots, IList<T> items, Action<T, T> copy)
+            where T : class, new()
+        {
+            // 只有最後一頁筆數不同時才會增減列
+            while (slots.Count > items.Count)
+            {
+                slots.RemoveAt(slots.Count - 1);
+            }
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (i < slots.Count)
+                {
+                    copy(slots[i], items[i]);
+                }
+                else
+                {
+                    var slot = new T();
+                    copy(slot, items[i]);
+                    slots.Add(slot);
+                }
+            }
+
+            if (!ReferenceEquals(grid.ItemsSource, slots))
+            {
+                grid.ItemsSource = slots;
+            }
+        }
+
+        #endregion
 
         private void PageUp_Click(object sender, RoutedEventArgs e)
         {
@@ -139,14 +287,14 @@ namespace UltimateKtv
             // Use LINQ to get the correct subset of songs for the page
             var songsForPage = _allSongs.Skip((page - 1) * CurrentSongPageSize).Take(CurrentSongPageSize).ToList();
 
-            // Set the ItemsSource of the correct DataGrid
+            // Set the items of the correct DataGrid (in place, so existing rows are reused)
             if (_isLanguageMode)
             {
-                LanguageSongListGrid.ItemsSource = songsForPage;
+                ShowPageItems(LanguageSongListGrid, _languageSongListPageItems, songsForPage);
             }
             else
             {
-                SongListGrid.ItemsSource = songsForPage;
+                ShowPageItems(SongListGrid, _songListPageItems, songsForPage);
             }
 
             // Update the page information TextBlock

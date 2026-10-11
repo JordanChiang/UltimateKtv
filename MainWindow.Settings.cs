@@ -96,26 +96,49 @@ namespace UltimateKtv
         {
             AppLogger.Log("User action: Open settings window");
 
-            // Check if IP changed before opening settings
-            string currentIp = UltimateKtv.HttpServer.GetLocalIPAddress();
-            if (currentIp != _lastKnownIp)
-            {
-                AppLogger.Log($"[Network] Local IP address changed from {_lastKnownIp} to {currentIp}");
-                _lastKnownIp = currentIp;
-                if (_isWebHostMarqueeDisplayed)
-                {
-                    DisplayWebHostInfoMarquee();
-                }
-            }
+            // Check if IP changed (in background — enumerating network adapters on the UI
+            // thread can take tens to hundreds of ms and stalls the marquee animation).
+            _ = CheckLocalIpChangedAsync();
 
             // Show settings as a modal dialog window
-            var settingsWindow = new UserOptionsWindow(this)
+            // 設定視窗只建立一次，關閉時隱藏；再次開啟時重新載入設定值即可 (省去 ~400ms 的範本/版面配置)
+            if (_settingsWindow == null)
             {
-                Owner = this
-            };
-            
+                _settingsWindow = new UserOptionsWindow(this)
+                {
+                    Owner = this
+                };
+            }
+            else
+            {
+                _settingsWindow.PrepareForReopen();
+            }
+
             // ShowDialog() blocks interaction with parent window automatically
-            settingsWindow.ShowDialog();
+            _settingsWindow.ShowDialog();
+        }
+
+        private UserOptionsWindow? _settingsWindow;
+
+        private async System.Threading.Tasks.Task CheckLocalIpChangedAsync()
+        {
+            try
+            {
+                string currentIp = await System.Threading.Tasks.Task.Run(() => UltimateKtv.HttpServer.GetLocalIPAddress());
+                if (currentIp != _lastKnownIp)
+                {
+                    AppLogger.Log($"[Network] Local IP address changed from {_lastKnownIp} to {currentIp}");
+                    _lastKnownIp = currentIp;
+                    if (_isWebHostMarqueeDisplayed)
+                    {
+                        DisplayWebHostInfoMarquee();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("CheckLocalIpChangedAsync failed", ex);
+            }
         }
 
         public void ShowPreview()

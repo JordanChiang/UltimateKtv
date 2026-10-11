@@ -392,6 +392,12 @@ namespace UltimateKtv
             {
                 AppLogger.Log("Applying ThemeSettings to XAML resources...");
 
+                // 只有主視窗需要套用「全域」部分 (Application 資源、MaterialDesign 主題、DataGrid 列樣式)。
+                // 其他視窗 (例如設定視窗) 只設定自己的視窗資源即可；全域資源在啟動時已套用過。
+                // 若每次開設定都重新替換全域資源，所有視窗 (含電視畫面) 的 DynamicResource 與 DataGrid 列都會重新套用樣式，
+                // UI 執行緒會卡住數百毫秒，跑馬燈因此停頓。
+                bool isMainWindow = window is MainWindow;
+
                 // Dynamic Cyber Accent Brushes & Colors
                 var accentColor = ResolvedAccentColor;
                 var accentBrush = AccentBrush;
@@ -599,7 +605,7 @@ namespace UltimateKtv
 
                 // Application-level resources (Material Design brushes and font size fallbacks are defined at App level)
                 // These must be set at Application.Resources to override DynamicResource lookups
-                var appResources = System.Windows.Application.Current?.Resources;
+                var appResources = isMainWindow ? System.Windows.Application.Current?.Resources : null;
                 if (appResources != null)
                 {
                     appResources["UiFontFamily"] = uiFont;
@@ -660,7 +666,7 @@ namespace UltimateKtv
                     _ => "SongListRowStyle_Glow"
                 };
 
-                var targetWindow = (window as MainWindow) ?? (System.Windows.Application.Current?.MainWindow as MainWindow);
+                var targetWindow = window as MainWindow; // 不再回頭改主視窗 (原本會在開設定時重設所有 DataGrid 列樣式)
                 if (targetWindow != null)
                 {
                     AppLogger.Log($"[RowStyleLog] Target MainWindow found. Window.Resources contains '{rowStyleKey}': {targetWindow.Resources.Contains(rowStyleKey)}");
@@ -690,8 +696,11 @@ namespace UltimateKtv
                     : System.Windows.Controls.DataGridGridLinesVisibility.None;
                 window.Resources["DataGridLinesVisibility"] = gridLines;
 
-                // Apply Material Design theme using PaletteHelper
-                ApplyMaterialDesignTheme();
+                // Apply Material Design theme using PaletteHelper (global — main window only)
+                if (isMainWindow)
+                {
+                    ApplyMaterialDesignTheme();
+                }
 
                 AppLogger.Log("ThemeSettings applied to XAML resources successfully.");
             }

@@ -28,7 +28,7 @@ namespace UltimateKtv
                         return;
                     }
                     grid.SelectedItem = songItem;
-                    ShowAddToFavoriteDialog(songItem);
+                    ShowAddToFavoriteDialog(songItem.Clone());
                     e.Handled = true;
                 }
             }
@@ -47,7 +47,7 @@ namespace UltimateKtv
                     return;
                 }
                 AppLogger.Log($"User action: Add to favorite clicked for song '{songItem.SongName}'");
-                ShowAddToFavoriteDialog(songItem);
+                ShowAddToFavoriteDialog(songItem.Clone());
             }
         }
 

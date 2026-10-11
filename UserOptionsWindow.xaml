@@ -73,7 +73,7 @@
             </Grid>
 
             <!-- Scrollable Options - same content as window version -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer x:Name="OptionsScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="5">
                     <!-- Row 1: Public IP + Remote Server -->
                     <Grid Margin="0,2">

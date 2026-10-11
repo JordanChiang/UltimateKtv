@@ -1014,7 +1014,15 @@ namespace UltimateKtv
                 if (QuickSongListGrid != null)
                 {
                     QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 842 : 550;
-                    QuickSongListGrid.ItemsSource = !useYoutubeGrid ? pageItems : null;
+                    if (!useYoutubeGrid)
+                    {
+                        // 就地換頁：沿用既有的 DataGridRow，避免每次換頁重建所有列
+                        ShowPageItems(QuickSongListGrid, _quickSongListPageItems, pageItems);
+                    }
+                    else
+                    {
+                        QuickSongListGrid.ItemsSource = null;
+                    }
                     if (!useYoutubeGrid)
                     {
                         QuickSongListGrid.Visibility = pageItems.Any() ? Visibility.Visible : Visibility.Collapsed;

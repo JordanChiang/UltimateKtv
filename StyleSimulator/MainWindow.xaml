@@ -633,7 +633,7 @@
                                                 </Grid.RowDefinitions>
 
                                                 <!-- Waiting List -->
-                                                <Border Grid.Row="0" x:Name="BorderWaitList" Height="368" Background="#121212" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1.5" CornerRadius="4" ClipToBounds="True" ToolTip="由 [PrimaryColor] 主要主題色控制">
+                                                <Border Grid.Row="0" x:Name="BorderWaitList" Height="368" Background="#121212" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="2" CornerRadius="4" ClipToBounds="True" ToolTip="由 [PrimaryColor] 主要主題色控制">
                                                     <Grid>
                                                         <Grid.RowDefinitions>
                                                             <RowDefinition Height="Auto" MinHeight="45" />   <!-- Header -->

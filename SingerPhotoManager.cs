@@ -303,19 +303,18 @@ namespace UltimateKtv
                     basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, basePath);
                 }
 
-                if (!Directory.Exists(basePath))
-                {
-                    // AppLogger.Log($"GetPhotoLocalPath: Directory not found: {basePath}");
-                    return null;
-                }
-
                 string normalizedPath = NormalizePath(basePath);
 
-                // Ensure cache is ready
+                // Ensure cache is ready.
+                // Directory.Exists 只在快取尚未建立時才檢查，避免每位歌手 (每頁 18 次) 都做一次磁碟 I/O。
                 lock (_cacheLock)
                 {
                     if (!_foldersCache.ContainsKey(normalizedPath))
                     {
+                        if (!Directory.Exists(basePath))
+                        {
+                            return null;
+                        }
                         InitializeCache(basePath);
                     }
                 }

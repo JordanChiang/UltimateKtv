@@ -548,6 +548,15 @@ namespace UltimateKtv
         /// </summary>
         public void ClearSongGridsSelection()
         {
+            // 效能:沒有任何選取時直接返回,避免每次滑鼠按下/放開都走訪三個 DataGrid 的視覺樹
+            if (_currentlySelectedSongRow == null && _currentlySelectedSongGrid == null
+                && (SongListGrid == null || (SongListGrid.SelectedItem == null && SongListGrid.SelectedIndex < 0))
+                && (QuickSongListGrid == null || (QuickSongListGrid.SelectedItem == null && QuickSongListGrid.SelectedIndex < 0))
+                && (LanguageSongListGrid == null || (LanguageSongListGrid.SelectedItem == null && LanguageSongListGrid.SelectedIndex < 0)))
+            {
+                return;
+            }
+
             if (_currentlySelectedSongRow != null)
             {
                 _currentlySelectedSongRow.IsSelected = false;
@@ -941,6 +950,10 @@ namespace UltimateKtv
             if (_videoDisplayWindow != null)
             { _videoDisplayWindow.ForceClose(); }
 
+            // The settings window is kept hidden for reuse; close it for real so the app can exit
+            _settingsWindow?.ForceClose();
+            _settingsWindow = null;
+
             mediaUriElement?.Close();
         }
 
@@ -1238,7 +1251,8 @@ namespace UltimateKtv
             }
 
             // Start long press timer for adding to favorites
-            _longPressSongItem = selectedSong;
+            // Clone: 列表使用固定列，換頁時列的內容會被改掉
+            _longPressSongItem = selectedSong.Clone();
             if (_longPressTimer == null)
             {
                 _longPressTimer = new DispatcherTimer
@@ -1357,12 +1371,12 @@ namespace UltimateKtv
             if (_searchMode == SearchMode.Youtube) return;
             if (sender is Border border)
             {
-                border.Background = TryFindResource("PrimaryHueLightBrush") as Brush ?? new SolidColorBrush(Colors.Gold);
+                border.Background = TryFindResource("PrimaryHueLightBrush") as Brush ?? Brushes.Gold;
                 // Find the TextBlock child and change its foreground
                 var viewbox = border.Child as Viewbox;
                 if (viewbox?.Child is TextBlock textBlock)
                 {
-                    textBlock.Foreground = new SolidColorBrush(Colors.Black);
+                    textBlock.Foreground = Brushes.Black;
                 }
             }
         }

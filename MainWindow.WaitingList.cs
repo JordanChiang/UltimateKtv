@@ -318,9 +318,9 @@ namespace UltimateKtv
                 displayList.Add(new WaitingListItem());
             }
 
-            // Update the grid
-            WaitingListGrid.ItemsSource = null;
-            WaitingListGrid.ItemsSource = displayList;
+            // Update the grid in place: 沿用既有的列，只更新內容 (不重建 DataGridRow)。
+            // 取出列的項目往後使用時要 Clone()，因為列的內容會在下次更新時被改掉。
+            ShowPageItems(WaitingListGrid, _waitingListPageItems, displayList);
 
             // Update pagination info (2 lines)
             WaitListPageInfo.Text = $"第 {_currentWaitingListPage}/{_totalWaitingListPages} 頁\n({nonEmptySongs.Count} 首歌曲)";
@@ -430,7 +430,7 @@ namespace UltimateKtv
                     if (item != null && !string.IsNullOrEmpty(item.WaitingListSongName))
                     {
                         // Store the item for menu actions and highlight the selected row
-                        _waitingListContextItem = item;
+                        _waitingListContextItem = item.Clone(); // 固定列在換頁/更新時會被改掉，先複製
                         if (row != null) row.IsSelected = true;
                         if (WaitingListGrid != null) WaitingListGrid.SelectedItem = item;
                         UpdateContextMenuWithUserInfo(item);
@@ -459,7 +459,7 @@ namespace UltimateKtv
                     var item = row.Item as WaitingListItem;
                     if (item != null && !string.IsNullOrEmpty(item.WaitingListSongName))
                     {
-                        _waitingListContextItem = item;
+                        _waitingListContextItem = item.Clone(); // 固定列在換頁/更新時會被改掉，先複製
                         if (row != null) row.IsSelected = true;
                         if (WaitingListGrid != null) WaitingListGrid.SelectedItem = item;
                         UpdateContextMenuWithUserInfo(item);
