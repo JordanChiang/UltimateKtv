@@ -86,6 +86,7 @@ namespace UltimateKtv
 
             base.OnStartup(e);
             AppLogger.Log("Application starting up.");
+            ResourceMonitor.Start();
 
             // Perform essential file checks before proceeding
             if (!CheckRequiredFiles())
@@ -146,6 +147,7 @@ namespace UltimateKtv
                 _instanceMutex = null;
             }
             
+            ResourceMonitor.Stop();
             AppLogger.Log("Application shutting down.");
         }
 

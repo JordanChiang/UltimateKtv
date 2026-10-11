@@ -98,6 +98,7 @@ namespace UltimateKtv
         private void mediaUriElement_MediaOpened(object sender, RoutedEventArgs e)
         {
             AppLogger.Log($"mediaUriElement_MediaOpened");
+            ThreadPool.QueueUserWorkItem(_ => ResourceMonitor.LogSnapshot("Song started"));
             DebugLog($"mediaUriElement_MediaOpened");
             // This event fires after the media source has been successfully opened and is ready.
             _mediaLoadCts?.Cancel(); // Cancel any pending media load timeout
