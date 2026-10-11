@@ -125,9 +125,16 @@ namespace UltimateKtv
         private void FuncBtnByInput_Click(object sender, RoutedEventArgs e)
         {
             AppLogger.Log("User action: Navigate to Quick Input view");
+            // Restore the search mode from the radio selection (other views reset _searchMode to Song)
+            var mode = (YoutubeRadio?.IsChecked == true) ? SearchMode.Youtube
+                     : (SingerRadio?.IsChecked == true) ? SearchMode.Singer
+                     : SearchMode.Song;
+            _searchMode = mode;
+
             // Enter quick input search mode
             ShowQuickInputPanels(true);
             ShowSingerPanels(false);
+            _searchMode = mode; // ShowSingerPanels resets it
 
             // On first entry, initialize to the default state.
             // On subsequent entries, the previous state is already preserved.
