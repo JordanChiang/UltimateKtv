@@ -108,6 +108,12 @@ namespace UltimateKtv
         // HTTP server for remote control
         private UltimateKtv.HttpServer? _httpServer = null;
         private string _lastKnownIp = string.Empty;
+        // Guards the hand-off of _httpServer between the background startup task and MainWindow_Closing
+        private readonly object _httpServerLock = new object();
+        private bool _isClosing = false;
+        // Startup marquee shows {4}=LAN IP:Port, so it waits until the HTTP server has picked its actual port (UI thread only)
+        private bool _httpServerStartupDone = false;
+        private bool _pendingStartupMarquee = false;
 
         // Flag to track if web host info marquee is displayed (for single-monitor mode)
         private bool _isWebHostMarqueeDisplayed = false;
@@ -346,20 +352,37 @@ namespace UltimateKtv
                 try
                 {
                     var server = UltimateKtv.HttpServer.StartHttpServer(this, DebugLog);
+
+                    // If the window started closing while the server was starting, stop it right away
+                    // (MainWindow_Closing already ran and could not see it)
+                    bool closing;
+                    lock (_httpServerLock)
+                    {
+                        closing = _isClosing;
+                        if (!closing) _httpServer = server;
+                    }
+                    if (closing)
+                    {
+                        server?.Stop();
+                        AppLogger.Log("HTTP server stopped (window closed during startup).");
+                        return;
+                    }
+
                     string localIp = UltimateKtv.HttpServer.GetLocalIPAddress();
                     Dispatcher.InvokeAsync(() =>
                     {
-                        _httpServer = server;
                         _lastKnownIp = localIp;
                         if (IsSingleMonitorMode && _httpServer != null)
                         {
                             DisplayWebHostInfoMarquee();
                         }
+                        OnHttpServerStartupDone();
                     });
                 }
                 catch (Exception ex)
                 {
                     AppLogger.LogError("Failed to start HTTP server in background", ex);
+                    Dispatcher.InvokeAsync(OnHttpServerStartupDone);
                 }
             });
 
@@ -881,8 +904,12 @@ namespace UltimateKtv
                     DisplayWebHostInfoMarquee();
                 }
 
-                // Display startup welcome marquee on player screen if configured
-                MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+                // Display startup welcome marquee on player screen if configured.
+                // If the HTTP server is still starting (port may change), defer until it is done.
+                if (_httpServerStartupDone)
+                    MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+                else
+                    _pendingStartupMarquee = true;
             }
 
             // Trigger random play timer on startup if playlist is empty and random play is enabled
@@ -900,6 +927,19 @@ namespace UltimateKtv
             });
 
             AppLogger.Log("MainWindow_Loaded event finished.");
+        }
+
+        /// <summary>
+        /// Called on the UI thread once the background HTTP server startup has finished (success or not).
+        /// </summary>
+        private void OnHttpServerStartupDone()
+        {
+            _httpServerStartupDone = true;
+            if (_pendingStartupMarquee)
+            {
+                _pendingStartupMarquee = false;
+                MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+            }
         }
 
         public void ShowFromVideoWindow()
@@ -934,12 +974,17 @@ namespace UltimateKtv
         /// </summary>
         private void MainWindow_Closing(object? sender, CancelEventArgs e)
         {
-            // Stop HTTP server
-            if (_httpServer != null)
+            // Stop HTTP server (if it is still starting, the background task will stop it once it sees _isClosing)
+            UltimateKtv.HttpServer? server;
+            lock (_httpServerLock)
             {
-                _httpServer.Stop();
-                _httpServer.Dispose();
+                _isClosing = true;
+                server = _httpServer;
                 _httpServer = null;
+            }
+            if (server != null)
+            {
+                server.Dispose();  // Dispose() calls Stop()
                 AppLogger.Log("HTTP server stopped.");
             }
 

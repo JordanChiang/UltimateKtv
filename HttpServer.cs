@@ -51,8 +51,17 @@ public class HttpServer : IDisposable
 	{
 		_ipAddress = ipAddress;
 		_port = port;
-		Instance = this;
 	}
+
+	/// <summary>
+	/// The port actually bound by the running server (may differ from settings if the configured port was in use)
+	/// </summary>
+	public int Port => _port;
+
+	/// <summary>
+	/// The port to show to users: the running server's port, or the configured port if no server is running
+	/// </summary>
+	public static int CurrentPort => Instance?.Port ?? SettingsManager.Instance.CurrentSettings.HttpServerPort;
 
 	/// <summary>
 	/// Broadcasts an event to all connected SSE clients
@@ -104,7 +113,18 @@ public class HttpServer : IDisposable
 			})
 			.Build();
 
-		_webHost.Start();
+		try
+		{
+			_webHost.Start();
+			Instance = this;  // Only publish once the port is actually bound
+		}
+		catch
+		{
+			// Release the partially-built host so a retry can bind cleanly
+			_webHost.Dispose();
+			_webHost = null;
+			throw;
+		}
 	}
 
 	public void Stop()
@@ -490,26 +510,25 @@ public class HttpServer : IDisposable
 			string ipAddress = settings.HttpServerIp ?? "0.0.0.0";
 			int port = settings.HttpServerPort;
 
-			// Find available port if the configured one is in use
-			if (!IsPortAvailable(port))
+			// Try the configured port first, retrying briefly in case a previous instance
+			// is still shutting down. Only fall back to another port if it stays occupied.
+			var httpServer = TryStartOnPort(mainWindow, ipAddress, port, PortBindRetryCount, debugLog);
+			if (httpServer == null)
 			{
 				AppLogger.Log($"Port {port} is in use, finding alternative...");
-				port = HttpServerHelper.GetAvailablePort(8080, 8099, System.Net.IPAddress.Parse("0.0.0.0"), false);
-				if (port == 0)
+				for (int candidate = 8080; candidate <= 8099 && httpServer == null; candidate++)
+				{
+					if (candidate == port || !IsPortAvailable(candidate)) continue;
+					httpServer = TryStartOnPort(mainWindow, ipAddress, candidate, 1, debugLog);
+					if (httpServer != null) port = candidate;
+				}
+				if (httpServer == null)
 				{
 					AppLogger.LogError("No available ports found for HTTP server.");
 					return null;
 				}
 				AppLogger.Log($"Using alternative port: {port}");
 			}
-
-			debugLog($"Creating HTTP server on {ipAddress}:{port}");
-			var httpServer = new HttpServer(ipAddress, port);
-			httpServer.MainDataContext = mainWindow;
-			httpServer.MainSongData = SongDatas.PlayListData;
-			
-			debugLog("Starting HTTP server...");
-			httpServer.Start();
 			debugLog("HTTP server started successfully");
 
 			string localIp = GetLocalIPAddress();
@@ -535,14 +554,59 @@ public class HttpServer : IDisposable
 		}
 	}
 
+	private const int PortBindRetryCount = 6;
+	private const int PortBindRetryDelayMs = 500;
+
 	/// <summary>
-	/// Checks if a port is available
+	/// Attempts to start the server on the given port, retrying while the address is in use.
+	/// Returns null if the port could not be bound after all attempts.
+	/// </summary>
+	private static HttpServer? TryStartOnPort(MainWindow mainWindow, string ipAddress, int port, int attempts, Action<string> debugLog)
+	{
+		for (int attempt = 1; attempt <= attempts; attempt++)
+		{
+			debugLog($"Starting HTTP server on {ipAddress}:{port} (attempt {attempt}/{attempts})...");
+			var httpServer = new HttpServer(ipAddress, port);
+			httpServer.MainDataContext = mainWindow;
+			httpServer.MainSongData = SongDatas.PlayListData;
+			try
+			{
+				httpServer.Start();
+				return httpServer;
+			}
+			catch (Exception ex) when (IsAddressInUse(ex))
+			{
+				debugLog($"Port {port} is in use: {ex.Message}");
+				if (attempt < attempts)
+					Thread.Sleep(PortBindRetryDelayMs);
+			}
+		}
+		return null;
+	}
+
+	/// <summary>
+	/// Kestrel wraps bind failures (IOException / AddressInUseException); look for the socket error underneath.
+	/// </summary>
+	private static bool IsAddressInUse(Exception ex)
+	{
+		for (Exception? e = ex; e != null; e = e.InnerException)
+		{
+			if (e is System.Net.Sockets.SocketException se && se.SocketErrorCode == System.Net.Sockets.SocketError.AddressAlreadyInUse)
+				return true;
+			if (e.GetType().Name == "AddressInUseException")
+				return true;
+		}
+		return false;
+	}
+
+	/// <summary>
+	/// Checks if a port is available (TIME_WAIT connections are ignored since they don't block a new listener)
 	/// </summary>
 	private static bool IsPortAvailable(int port)
 	{
 		try
 		{
-			var usedPort = HttpServerHelper.GetAvailablePort(port, port, System.Net.IPAddress.Parse("0.0.0.0"), false);
+			var usedPort = HttpServerHelper.GetAvailablePort(port, port, System.Net.IPAddress.Parse("0.0.0.0"), true);
 			return usedPort == port;
 		}
 		catch

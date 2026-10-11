@@ -142,7 +142,7 @@ namespace UltimateKtv
             string formattedText;
             bool hasNextSong = !string.IsNullOrWhiteSpace(nextSong);
 
-            string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{settings.HttpServerPort}";
+            string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{HttpServer.CurrentPort}";
             string wanIpPort = $"{HttpServer.GetPublicIPAddress()}:{settings.PublicServerPort}";
             string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != "隨機播放" && orderedBy != "網路點歌") ? orderedBy : "";
             string displayNextOrderedBy = (!string.IsNullOrWhiteSpace(nextOrderedBy) && nextOrderedBy != "本機" && nextOrderedBy != "隨機播放" && nextOrderedBy != "網路點歌") ? nextOrderedBy : "";
@@ -194,7 +194,7 @@ namespace UltimateKtv
                 return;
 
             int displayDevice = GetDisplayDeviceIndex(device);
-            string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{settings.HttpServerPort}";
+            string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{HttpServer.CurrentPort}";
             string wanIpPort = $"{HttpServer.GetPublicIPAddress()}:{settings.PublicServerPort}";
 
             string formattedText;
@@ -355,7 +355,7 @@ namespace UltimateKtv
                 return;
 
             int displayDevice = GetDisplayDeviceIndex(device);
-            string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{settings.HttpServerPort}";
+            string lanIpPort = $"{HttpServer.GetLocalIPAddress()}:{HttpServer.CurrentPort}";
             string wanIpPort = $"{HttpServer.GetPublicIPAddress()}:{settings.PublicServerPort}";
 
             string template = string.IsNullOrEmpty(settings.MarqueeSongAddedString)
