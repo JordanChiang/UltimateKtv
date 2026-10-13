@@ -55,7 +55,7 @@ namespace UltimateKtv
             // Quick check if file already exists in cache directory before queueing
             string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
             if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
-            string videoId = string.IsNullOrEmpty(song.YoutubeId) ? song.SongId : song.YoutubeId;
+            string videoId = YtDlpHelper.ResolveVideoId(song.YoutubeId, song.SongId, song.FilePath);
             string filePath = song.FilePath;
             if (string.IsNullOrEmpty(filePath) || filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
@@ -116,7 +116,7 @@ namespace UltimateKtv
                     }
                     if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
 
-                    string videoId = string.IsNullOrEmpty(song.YoutubeId) ? song.SongId : song.YoutubeId;
+                    string videoId = YtDlpHelper.ResolveVideoId(song.YoutubeId, song.SongId, song.FilePath);
                     string filePath = song.FilePath;
                     
                     if (string.IsNullOrEmpty(filePath) || filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
@@ -225,7 +225,16 @@ namespace UltimateKtv
                     
                     // Update song path, record to database, and add to waiting list
                     song.FilePath = filePath;
-                    SongDatas.RecordYoutubeSong(song);
+                    string recordId = SongDatas.RecordYoutubeSong(song);
+
+                    // Store the duration right away so the history list shows it without waiting for playback
+                    int lengthSeconds = await YtDlpHelper.GetMediaDurationSecondsAsync(filePath);
+                    if (lengthSeconds > 0 && !string.IsNullOrEmpty(recordId))
+                    {
+                        SongDatas.UpdateYoutubeSongLength(recordId, lengthSeconds);
+                        RefreshYoutubeSongLengthInLists(song.SongId, lengthSeconds);
+                    }
+
                     AddSongToWaitingList(song);
 
                     if (_currentQuickMethod == QuickMethod.YoutubeHistory)
@@ -268,6 +277,24 @@ namespace UltimateKtv
             }
 
             CleanupDownloadUI();
+        }
+
+        /// <summary>
+        /// Updates the "歌曲時間" cell (SingerName) of a YouTube history song in the cached results and the visible page.
+        /// songId may be the history Id (e.g. "Y0017") or the video ID.
+        /// </summary>
+        private void RefreshYoutubeSongLengthInLists(string songId, int lengthSeconds)
+        {
+            if (string.IsNullOrEmpty(songId) || lengthSeconds <= 0) return;
+            string lengthText = TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss");
+
+            bool Matches(SongDisplayItem s) => s.IsYoutube && (s.SongId == songId || s.YoutubeId == songId);
+
+            if (_quickMethodResultsCache.TryGetValue(QuickMethod.YoutubeHistory, out var cached) && cached != null)
+            {
+                foreach (var item in cached.Where(Matches)) item.SingerName = lengthText;
+            }
+            foreach (var item in _quickSongListPageItems.Where(Matches)) item.SingerName = lengthText;
         }
 
         private void CleanupDownloadUI()
@@ -328,18 +355,20 @@ namespace UltimateKtv
                  }
                 else
                 {
+                    string previewVideoId = YtDlpHelper.ResolveVideoId(song.YoutubeId, song.SongId, song.FilePath);
+
                     // Primary engine: yt-dlp
                     if (!token.IsCancellationRequested)
                     {
-                        streamUrl = await YtDlpHelper.GetPreviewStreamUrlAsync(song.SongId, token) ?? string.Empty;
+                        streamUrl = await YtDlpHelper.GetPreviewStreamUrlAsync(previewVideoId, token) ?? string.Empty;
                     }
 
                     // Fallback engine: YoutubeExplode
-                    if (string.IsNullOrEmpty(streamUrl) && !token.IsCancellationRequested)
+                    if (string.IsNullOrEmpty(streamUrl) && !token.IsCancellationRequested && YtDlpHelper.IsValidVideoId(previewVideoId))
                     {
                         try
                         {
-                            var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(song.SongId);
+                            var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(previewVideoId);
                             var streamInfo = streamManifest.GetMuxedStreams()
                                 .OrderBy(s => s.VideoResolution.Height)
                                 .FirstOrDefault();

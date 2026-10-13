@@ -1257,7 +1257,7 @@ public class HttpServerHelper
 	                SongId = video.Id.Value,
 	                SongName = video.Title,
 	                SingerName = video.Author.ChannelTitle,
-	                Language = video.Duration?.ToString(@"mm\:ss") ?? "",
+	                Language = "", // YouTube songs have no language; duration is stored as Length after download
 	                FilePath = video.Url,
 	                IsYoutube = true,
 	                Volume = 30,
@@ -1277,7 +1277,7 @@ public class HttpServerHelper
                             // Check if file already exists in cache directory
                             string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
                             if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
-                            string vId = string.IsNullOrEmpty(songItem.YoutubeId) ? songItem.SongId : songItem.YoutubeId;
+                            string vId = YtDlpHelper.ResolveVideoId(songItem.YoutubeId, songItem.SongId);
                             string safeName = string.Join("_", songItem.SongName.Split(Path.GetInvalidFileNameChars()));
                             string filePath = Path.Combine(cacheDir, $"{safeName}_{vId}.mp4");
 

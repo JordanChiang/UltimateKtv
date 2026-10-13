@@ -38,8 +38,9 @@ namespace UltimateKtv
         // Centralized page size for Quick Search (Keyboard uses 11 rows to utilize available vertical space, -1 for card style height)
         // 歌星搜尋以每排 4 位的按鈕格顯示 (QuickSingerGrid)，一頁 = 排數 x 4
         private const int QuickSingerColumns = 4;
-        private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube)
-            ? (_currentQuickMethod == QuickMethod.YoutubeHistory ? 14 : 16)
+        // Youtube 搜尋結果用 4x4 縮圖格 (16)；Youtube 點播記錄用 QuickSongListGrid，列數與一般歌曲列表相同
+        private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube && _currentQuickMethod != QuickMethod.YoutubeHistory)
+            ? 16
             : (_currentQuickMethod == QuickMethod.Keyboard ? 11 : 8) * (_isSingerSearchMode ? QuickSingerColumns : 1);
 
         // For async quick search to prevent UI lag
@@ -240,7 +241,7 @@ namespace UltimateKtv
                     {
                         SongName = nameOnly,
                         FilePath = file,
-                        SongId = "", // Url field stays blank
+                        SongId = YtDlpHelper.ExtractVideoIdFromFileName(file), // blank if the name has no "_{videoId}" suffix
                         Language = "",
                         Volume = 30
                     };
@@ -1058,6 +1059,12 @@ namespace UltimateKtv
                     {
                         // 歌星搜尋時列出的是歌手，不顯示插播/最愛
                         QuickActionsColumn.Visibility = _isSingerSearchMode ? Visibility.Collapsed : Visibility.Visible;
+                        // Youtube 列表不需要語言欄，寬度讓給歌名
+                        bool isYoutubeList = _searchMode == SearchMode.Youtube;
+                        QuickLanguageColumn.Visibility = isYoutubeList ? Visibility.Collapsed : Visibility.Visible;
+                        double songNameWidth = ((DataGridLength)FindResource("SongNameColumnWidth")).Value;
+                        if (isYoutubeList) songNameWidth += ((DataGridLength)FindResource("SongLanguageColumnWidth")).Value;
+                        QuickSongNameColumn.Width = new DataGridLength(songNameWidth);
                         // 就地換頁：沿用既有的 DataGridRow，避免每次換頁重建所有列
                         ShowPageItems(QuickSongListGrid, _quickSongListPageItems, pageItems);
                     }

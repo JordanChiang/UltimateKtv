@@ -1685,7 +1685,7 @@
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}">
+                                        <DataGridTextColumn x:Name="QuickSongNameColumn" Header="歌名" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="TextAlignment" Value="Left"/>
@@ -1764,7 +1764,7 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="{StaticResource SongLanguageColumnWidth}"
+                                        <DataGridTextColumn x:Name="QuickLanguageColumn" Header="語言" Binding="{Binding Language}" Width="{StaticResource SongLanguageColumnWidth}"
                                                             ElementStyle="{StaticResource SongListDimCellTextStyle}"/>
                                         <!-- 歌星搜尋模式 (列出的是歌手) 時由程式隱藏 -->
                                         <DataGridTemplateColumn x:Name="QuickActionsColumn" Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>

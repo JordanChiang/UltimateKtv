@@ -362,9 +362,9 @@ namespace UltimateKtv
                         Task.Run(() =>
                         {
                             // 1. Sequentially update length to avoid OleDb parallel access violations
-                            if (lengthSeconds > 0)
+                            if (lengthSeconds > 0 && SongDatas.UpdateYoutubeSongLength(songId, lengthSeconds))
                             {
-                                SongDatas.UpdateYoutubeSongLength(songId, lengthSeconds);
+                                Dispatcher.BeginInvoke(() => RefreshYoutubeSongLengthInLists(songId, lengthSeconds));
                             }
 
                             // 2. Update PlayCount

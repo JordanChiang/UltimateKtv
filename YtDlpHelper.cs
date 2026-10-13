@@ -13,6 +13,39 @@ namespace UltimateKtv
     {
         private static readonly Regex ProgressRegex = new(@"\[download\]\s+(\d+(?:\.\d+)?)%", RegexOptions.Compiled);
         private static readonly SemaphoreSlim DownloadLock = new(1, 1);
+        private static readonly Regex VideoIdRegex = new(@"^[A-Za-z0-9_-]{11}$", RegexOptions.Compiled);
+        private static readonly Regex FileNameVideoIdRegex = new(@"_([A-Za-z0-9_-]{11})$", RegexOptions.Compiled);
+        private const string LatestReleaseUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest";
+        private const string LatestDownloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
+
+        // yt-dlp errors that will never succeed by updating yt-dlp and retrying
+        private static readonly string[] PermanentErrorMarkers =
+        {
+            "Incomplete YouTube ID", "looks truncated", "is not a valid URL",
+            "Video unavailable", "Private video", "has been removed", "account associated with this video has been terminated"
+        };
+
+        public static bool IsValidVideoId(string? id) => !string.IsNullOrEmpty(id) && VideoIdRegex.IsMatch(id);
+
+        /// <summary>
+        /// Downloaded files are named "{title}_{videoId}.mp4"; recover the 11-char video ID from such a file name.
+        /// </summary>
+        public static string ExtractVideoIdFromFileName(string? fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return "";
+            var m = FileNameVideoIdRegex.Match(Path.GetFileNameWithoutExtension(fileName));
+            return m.Success ? m.Groups[1].Value : "";
+        }
+
+        /// <summary>
+        /// Returns the real YouTube video ID for a song, never the internal history Id (e.g. "Y0017").
+        /// </summary>
+        public static string ResolveVideoId(string? youtubeId, string? songId, string? filePath = null)
+        {
+            if (IsValidVideoId(youtubeId)) return youtubeId!;
+            if (IsValidVideoId(songId)) return songId!;
+            return ExtractVideoIdFromFileName(filePath);
+        }
 
         public static string GetFFmpegDir()
         {
@@ -66,9 +99,13 @@ namespace UltimateKtv
         }
 
         private static DateTime _lastUpdateCheck = DateTime.MinValue;
+        private static DateTime _lastConfirmedUpToDate = DateTime.MinValue;
         private static Task<bool>? _ongoingUpdateTask;
         private static readonly object _updateLockObj = new();
 
+        /// <summary>
+        /// Updates yt-dlp only when a newer version exists. Returns true only if a new binary was installed.
+        /// </summary>
         public static Task<bool> UpdateYtDlpAsync(bool force = false)
         {
             lock (_updateLockObj)
@@ -80,6 +117,13 @@ namespace UltimateKtv
 
                 if (!force && DateTime.Now - _lastUpdateCheck < TimeSpan.FromMinutes(5))
                 {
+                    return Task.FromResult(false);
+                }
+
+                // Even a forced update is skipped if we recently confirmed the latest version is installed
+                if (DateTime.Now - _lastConfirmedUpToDate < TimeSpan.FromMinutes(30) && File.Exists(GetYtDlpPath()))
+                {
+                    AppLogger.LogInfo("[YouTube] yt-dlp was confirmed up to date recently, skipping update check.");
                     return Task.FromResult(false);
                 }
 
@@ -123,7 +167,16 @@ namespace UltimateKtv
 
                 if (process.ExitCode == 0)
                 {
-                    AppLogger.LogInfo($"[YouTube] yt-dlp update process completed successfully: {stdOut.Trim()}");
+                    if (stdOut.Contains("is up to date", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Same version: nothing downloaded, nothing to sync
+                        _lastConfirmedUpToDate = DateTime.Now;
+                        AppLogger.LogInfo($"[YouTube] yt-dlp is already the latest version, no download needed: {stdOut.Trim()}");
+                        return false;
+                    }
+
+                    AppLogger.LogInfo($"[YouTube] yt-dlp updated to a new version: {stdOut.Trim()}");
+                    _lastConfirmedUpToDate = DateTime.Now;
                     SyncToProjectRootIfApplicable(ytDlpPath);
                     return true;
                 }
@@ -131,12 +184,21 @@ namespace UltimateKtv
                 {
                     AppLogger.LogError($"[YouTube] yt-dlp -U failed with exit code {process.ExitCode}: {stdErr.Trim()}");
 
-                    // Fallback: If self-update failed, download latest release directly from GitHub
-                    AppLogger.LogInfo("[YouTube] Attempting direct download of latest yt-dlp from GitHub releases...");
-                    string downloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
                     using var client = new HttpClient();
                     client.Timeout = TimeSpan.FromSeconds(60);
-                    byte[] data = await client.GetByteArrayAsync(downloadUrl);
+
+                    // Fallback: compare local version with the latest GitHub release before downloading
+                    string localVersion = await GetLocalVersionAsync(ytDlpPath);
+                    string latestVersion = await GetLatestReleaseVersionAsync(client);
+                    if (!string.IsNullOrEmpty(localVersion) && localVersion == latestVersion)
+                    {
+                        _lastConfirmedUpToDate = DateTime.Now;
+                        AppLogger.LogInfo($"[YouTube] Local yt-dlp ({localVersion}) matches latest release, skipping download.");
+                        return false;
+                    }
+
+                    AppLogger.LogInfo($"[YouTube] Downloading latest yt-dlp from GitHub releases (local={localVersion}, latest={latestVersion})...");
+                    byte[] data = await client.GetByteArrayAsync(LatestDownloadUrl);
                     if (data.Length > 0)
                     {
                         string tempPath = ytDlpPath + ".new";
@@ -148,6 +210,7 @@ namespace UltimateKtv
                             try { File.Move(ytDlpPath, oldPath); } catch { }
                         }
                         File.Move(tempPath, ytDlpPath, true);
+                        _lastConfirmedUpToDate = DateTime.Now;
                         AppLogger.LogInfo("[YouTube] Direct download of yt-dlp succeeded.");
                         SyncToProjectRootIfApplicable(ytDlpPath);
                         return true;
@@ -159,6 +222,90 @@ namespace UltimateKtv
                 AppLogger.LogError($"[YouTube] yt-dlp auto-update error: {ex.Message}", ex);
             }
             return false;
+        }
+
+        private static readonly Regex DurationRegex = new(@"Duration:\s*(\d+):(\d{2}):(\d{2}(?:\.\d+)?)", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Reads a media file's duration (seconds) via "ffmpeg -i"; returns 0 if unknown.
+        /// </summary>
+        public static async Task<int> GetMediaDurationSecondsAsync(string filePath)
+        {
+            try
+            {
+                string ffmpegPath = Path.Combine(GetFFmpegDir(), "ffmpeg.exe");
+                if (!File.Exists(ffmpegPath) || !File.Exists(filePath)) return 0;
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = ffmpegPath,
+                    Arguments = $"-hide_banner -i \"{filePath}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var process = new Process { StartInfo = psi };
+                process.Start();
+                var stdOutTask = process.StandardOutput.ReadToEndAsync();
+                string stdErr = await process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync();
+                await stdOutTask;
+
+                // ffmpeg exits with 1 (no output file) but still prints the input info
+                var m = DurationRegex.Match(stdErr);
+                if (!m.Success) return 0;
+                double seconds = int.Parse(m.Groups[1].Value) * 3600 + int.Parse(m.Groups[2].Value) * 60
+                               + double.Parse(m.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture);
+                return (int)seconds; // truncate, same as the player's MediaDuration-based length
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogWarn($"[YouTube] Failed to read media duration for '{filePath}': {ex.Message}");
+                return 0;
+            }
+        }
+
+        private static async Task<string> GetLocalVersionAsync(string ytDlpPath)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = ytDlpPath,
+                    Arguments = "--version",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var process = new Process { StartInfo = psi };
+                process.Start();
+                string output = await process.StandardOutput.ReadToEndAsync();
+                await process.WaitForExitAsync();
+                return output.Trim();
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        private static async Task<string> GetLatestReleaseVersionAsync(HttpClient client)
+        {
+            try
+            {
+                // releases/latest redirects to .../releases/tag/{version}
+                using var response = await client.GetAsync(LatestReleaseUrl, HttpCompletionOption.ResponseHeadersRead);
+                string? finalUrl = response.RequestMessage?.RequestUri?.AbsoluteUri;
+                if (string.IsNullOrEmpty(finalUrl)) return "";
+                int idx = finalUrl.LastIndexOf("/tag/", StringComparison.OrdinalIgnoreCase);
+                return idx >= 0 ? finalUrl[(idx + 5)..].Trim('/') : "";
+            }
+            catch
+            {
+                return "";
+            }
         }
 
         private static void SyncToProjectRootIfApplicable(string updatedPath)
@@ -194,10 +341,10 @@ namespace UltimateKtv
                 string dir = Path.GetDirectoryName(path)!;
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-                string downloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
                 using var client = new HttpClient();
-                byte[] data = await client.GetByteArrayAsync(downloadUrl);
+                byte[] data = await client.GetByteArrayAsync(LatestDownloadUrl);
                 await File.WriteAllBytesAsync(path, data);
+                _lastConfirmedUpToDate = DateTime.Now;
             }
             finally
             {
@@ -207,6 +354,12 @@ namespace UltimateKtv
 
         public static async Task<string?> GetPreviewStreamUrlAsync(string videoId, CancellationToken cancellationToken = default)
         {
+            if (!IsValidVideoId(videoId))
+            {
+                AppLogger.LogWarn($"[YouTube Preview] '{videoId}' is not a valid YouTube video ID, skipping preview.");
+                return null;
+            }
+
             string ytDlpPath = GetYtDlpPath();
 
             for (int attempt = 1; attempt <= 2; attempt++)
@@ -274,6 +427,12 @@ namespace UltimateKtv
             CancellationToken cancellationToken = default,
             Action<string>? statusCallback = null)
         {
+            if (!IsValidVideoId(videoId))
+            {
+                AppLogger.LogError($"[YouTube Download] '{videoId}' is not a valid YouTube video ID, download aborted.");
+                throw new Exception($"沒有有效的 YouTube 影片 ID（{videoId}），無法重新下載。");
+            }
+
             string ffmpegDir = GetFFmpegDir();
             string outDir = Path.GetDirectoryName(outputFilePath)!;
             if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
@@ -496,8 +655,10 @@ namespace UltimateKtv
                     stderrText = stderrBuilder.ToString().Trim();
                 }
 
-                // If attempt 1 failed, trigger auto-update and retry the download
-                if (attempt == 1)
+                bool isPermanentError = Array.Exists(PermanentErrorMarkers, m => stderrText.Contains(m, StringComparison.OrdinalIgnoreCase));
+
+                // If attempt 1 failed, trigger auto-update and retry the download (pointless for permanent errors)
+                if (attempt == 1 && !isPermanentError)
                 {
                     AppLogger.LogWarn($"[YouTube Download] yt-dlp failed (ExitCode: {process.ExitCode}) for '{videoId}'. Error details: {stderrText}");
                     AppLogger.LogInfo($"[YouTube Download] Updating yt-dlp to latest version before retrying song '{videoId}'...");
@@ -521,8 +682,8 @@ namespace UltimateKtv
                     continue; // Proceed to attempt 2
                 }
 
-                // Attempt 2 also failed
-                AppLogger.LogError($"[YouTube Download] yt-dlp failed for video '{videoId}' after retry (ExitCode: {process.ExitCode}). Error: {stderrText}");
+                // Attempt 2 also failed, or the error is permanent
+                AppLogger.LogError($"[YouTube Download] yt-dlp failed for video '{videoId}' (attempt {attempt}, permanent={isPermanentError}, ExitCode: {process.ExitCode}). Error: {stderrText}");
                 throw new Exception($"yt-dlp 下載失敗 (ExitCode: {process.ExitCode}): {stderrText}");
             }
         }
