@@ -76,5 +76,33 @@ namespace UltimateKtv
 
         #endregion
 
+        #region Nav Menu Settings
+
+        /// <summary>左側主選單可排序的項目 (「設定」固定在最下方，不在此列)，同時也是預設順序。</summary>
+        public static readonly string[] NavMenuDefaultKeys = { "Rank", "New", "Singer", "Fav", "Num", "Language", "Input", "Youtube" };
+
+        [Description("左側主選單順序 (以逗號分隔，「設定」固定在最下方): Singer=歌星, Fav=最愛, Num=編號, Language=語系, New=新進, Rank=排行, Input=搜尋, Youtube=Youtube.")]
+        public string NavMenuOrder { get; set; } = string.Join(",", NavMenuDefaultKeys);
+
+        /// <summary>
+        /// 解析 NavMenuOrder：忽略未知與重複的項目，缺少的項目依預設順序補在最後。
+        /// </summary>
+        public static List<string> ParseNavMenuOrder(string? order)
+        {
+            var result = new List<string>();
+            foreach (var part in (order ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                string? key = Array.Find(NavMenuDefaultKeys, k => string.Equals(k, part, StringComparison.OrdinalIgnoreCase));
+                if (key != null && !result.Contains(key)) result.Add(key);
+            }
+            foreach (var key in NavMenuDefaultKeys)
+            {
+                if (!result.Contains(key)) result.Add(key);
+            }
+            return result;
+        }
+
+        #endregion
+
     }
 }

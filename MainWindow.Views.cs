@@ -126,6 +126,32 @@ namespace UltimateKtv
             }
         }
 
+        /// <summary>
+        /// 依 themesettings.json 的 NavMenuOrder 重新排列左側主選單 (「設定」固定在最下方，不參與排序)。
+        /// </summary>
+        private void ApplyNavMenuOrder()
+        {
+            var buttonsByKey = new Dictionary<string, Button>
+            {
+                ["Singer"] = FuncBtnBySinger,
+                ["Fav"] = FuncBtnByFav,
+                ["Num"] = FuncBtnByNum,
+                ["Language"] = FuncBtnLanguage,
+                ["New"] = FuncBtnByNew,
+                ["Rank"] = FuncBtnByRank,
+                ["Input"] = FuncBtnByInput,
+                ["Youtube"] = FuncBtnByYoutube
+            };
+
+            var order = ThemeSettings.ParseNavMenuOrder(ThemeSettingsHandler.Settings.NavMenuOrder);
+            NavMenuPanel.Children.Clear();
+            foreach (var key in order)
+            {
+                if (buttonsByKey.TryGetValue(key, out var btn)) NavMenuPanel.Children.Add(btn);
+            }
+            AppLogger.Log($"Nav menu order: {string.Join(",", order)}");
+        }
+
         private void SetActiveNavButton(Button btn)
         {
             if (ReferenceEquals(_activeNavButton, btn)) return;

@@ -207,6 +207,7 @@ namespace UltimateKtv
             AppLogger.Log("Loading settings...");
             SettingsManager.Instance.LoadSettings();
             ThemeSettingsHandler.LoadSettings();
+            ApplyNavMenuOrder();
             ApplySettings();
             AppLogger.Log("Settings loaded and applied.");
 
@@ -330,9 +331,7 @@ namespace UltimateKtv
             // SetQuickMethod(QuickMethod.Bopomofo, BopomofoListBtn);
             // UpdateSearchWords();
 
-            // Default view: Singer search mode
-            try { FuncBtnBySinger_Click(null!, null!); } catch { }
-            SetActiveNavButton(FuncBtnBySinger);
+            // Default view (主選單第一項) 在 MainWindow_Loaded 套用主題後才開啟，見 OpenDefaultNavView
 
             // Initialize digital clock timer
             InitializeDigitalClock();
@@ -388,6 +387,25 @@ namespace UltimateKtv
             });
 
             AppLogger.Log("MainWindow constructor finished.");
+        }
+
+        /// <summary>
+        /// 開啟主選單排第一個的項目 (觸發 Click 會一併經 NavRail_Click 標示選中)。
+        /// 需在 ThemeSettingsHandler.ApplyToResources 之後呼叫，否則頁面取到的是預設主題色。
+        /// </summary>
+        private void OpenDefaultNavView()
+        {
+            var firstNavButton = NavMenuPanel.Children.OfType<Button>().FirstOrDefault() ?? FuncBtnBySinger;
+            try
+            {
+                firstNavButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, firstNavButton));
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError($"Failed to open default view '{firstNavButton.Name}', falling back to Singer view.", ex);
+                try { FuncBtnBySinger_Click(null!, null!); } catch { }
+                SetActiveNavButton(FuncBtnBySinger);
+            }
         }
 
         /// <summary>
@@ -827,6 +845,9 @@ namespace UltimateKtv
             // Apply theme settings to XAML resources (colors, brushes, etc.)
             ThemeSettingsHandler.ApplyToResources(this);
             ApplyResponsiveFontSizing();
+
+            // 主題色套用後才開啟預設頁面：部分頁面 (如 Youtube 點播記錄按鈕) 會直接取用當下的筆刷值
+            OpenDefaultNavView();
             
             // Get monitor info first to validate settings before initializing display
             var monitors = VideoDisplayWindow.GetAvailableMonitorsInfo();

@@ -1014,7 +1014,8 @@
                                     <TextBlock Text="設定" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
-                            <StackPanel DockPanel.Dock="Top">
+                            <!-- 項目順序由 themesettings.json 的 NavMenuOrder 決定 (ApplyNavMenuOrder) -->
+                            <StackPanel x:Name="NavMenuPanel" DockPanel.Dock="Top">
                                 <Button Name="FuncBtnBySinger" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnBySinger_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="AccountMusic" Width="40" Height="40" HorizontalAlignment="Center"/>

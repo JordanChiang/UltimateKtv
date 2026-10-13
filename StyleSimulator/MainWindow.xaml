@@ -573,53 +573,72 @@
 
                                         <!-- ==================== NAV RAIL (功能鍵直排，FuncBtn5 新進為選中狀態) ==================== -->
                                         <DockPanel Grid.Column="0">
+                                            <!-- 蓋過視窗層級的 TextBlock 樣式 (#EAEAEA)，讓選單文字與圖示跟隨按鈕前景色 (同主程式)；文字字級由 UpdateLivePreviews 設定 -->
+                                            <DockPanel.Resources>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                                                </Style>
+                                            </DockPanel.Resources>
                                             <Button x:Name="FuncBtn8" Style="{StaticResource NavRailButtonStyle}" DockPanel.Dock="Bottom" Margin="0">
                                                 <StackPanel HorizontalAlignment="Center">
-                                                    <TextBlock Text="⚙" FontSize="34" HorizontalAlignment="Center" />
+                                                    <TextBlock Text="⚙" FontSize="34" LineStackingStrategy="BlockLineHeight" LineHeight="44" HorizontalAlignment="Center" />
                                                     <TextBlock Text="設定" HorizontalAlignment="Center" />
                                                 </StackPanel>
                                             </Button>
-                                            <StackPanel DockPanel.Dock="Top">
-                                                <Button x:Name="FuncBtn1" Style="{StaticResource NavRailButtonStyle}">
+                                            <!-- 主選單項目可拖曳調整順序 (Tag = themesettings.json NavMenuOrder 的項目代碼)，「設定」固定在最下方 -->
+                                            <StackPanel x:Name="NavMenuPanel" DockPanel.Dock="Top" Background="Transparent" ToolTip="按住拖曳可調整主選單順序"
+                                                        PreviewMouseLeftButtonDown="NavMenuPanel_PreviewMouseLeftButtonDown"
+                                                        PreviewMouseMove="NavMenuPanel_PreviewMouseMove"
+                                                        PreviewMouseLeftButtonUp="NavMenuPanel_PreviewMouseLeftButtonUp"
+                                                        LostMouseCapture="NavMenuPanel_LostMouseCapture">
+                                                <Button x:Name="FuncBtn1" Tag="Singer" Style="{StaticResource NavRailButtonStyle}">
                                                     <StackPanel HorizontalAlignment="Center">
-                                                        <TextBlock Text="👤" FontSize="34" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="👤" FontSize="34" LineStackingStrategy="BlockLineHeight" LineHeight="44" HorizontalAlignment="Center" />
                                                         <TextBlock Text="歌星" HorizontalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
-                                                <Button x:Name="FuncBtn2" Style="{StaticResource NavRailButtonStyle}">
+                                                <Button x:Name="FuncBtn2" Tag="Fav" Style="{StaticResource NavRailButtonStyle}">
                                                     <StackPanel HorizontalAlignment="Center">
-                                                        <TextBlock Text="♥" FontSize="34" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="♥" FontSize="34" LineStackingStrategy="BlockLineHeight" LineHeight="44" HorizontalAlignment="Center" />
                                                         <TextBlock Text="最愛" HorizontalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
-                                                <Button x:Name="FuncBtn3" Style="{StaticResource NavRailButtonStyle}">
+                                                <Button x:Name="FuncBtn3" Tag="Num" Style="{StaticResource NavRailButtonStyle}">
                                                     <StackPanel HorizontalAlignment="Center">
-                                                        <TextBlock Text="#" FontSize="34" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="#" FontSize="34" LineStackingStrategy="BlockLineHeight" LineHeight="44" HorizontalAlignment="Center" />
                                                         <TextBlock Text="編號" HorizontalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
-                                                <Button x:Name="FuncBtn4" Style="{StaticResource NavRailButtonStyle}">
+                                                <Button x:Name="FuncBtn4" Tag="Language" Style="{StaticResource NavRailButtonStyle}">
                                                     <StackPanel HorizontalAlignment="Center">
-                                                        <TextBlock Text="文" FontSize="34" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="文" FontSize="34" LineStackingStrategy="BlockLineHeight" LineHeight="44" HorizontalAlignment="Center" />
                                                         <TextBlock Text="語系" HorizontalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
-                                                <Button x:Name="FuncBtn5" Style="{StaticResource NavRailButtonStyle}">
+                                                <Button x:Name="FuncBtn5" Tag="New" Style="{StaticResource NavRailButtonStyle}">
                                                     <StackPanel HorizontalAlignment="Center">
-                                                        <TextBlock Text="🆕" FontSize="34" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="🆕" FontSize="34" LineStackingStrategy="BlockLineHeight" LineHeight="44" HorizontalAlignment="Center" />
                                                         <TextBlock Text="新進" HorizontalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
-                                                <Button x:Name="FuncBtn6" Style="{StaticResource NavRailButtonStyle}">
+                                                <Button x:Name="FuncBtn6" Tag="Rank" Style="{StaticResource NavRailButtonStyle}">
                                                     <StackPanel HorizontalAlignment="Center">
-                                                        <TextBlock Text="🏆" FontSize="34" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="🏆" FontSize="34" LineStackingStrategy="BlockLineHeight" LineHeight="44" HorizontalAlignment="Center" />
                                                         <TextBlock Text="排行" HorizontalAlignment="Center" />
                                                     </StackPanel>
                                                 </Button>
-                                                <Button x:Name="FuncBtn7" Style="{StaticResource NavRailButtonStyle}">
+                                                <Button x:Name="FuncBtn7" Tag="Input" Style="{StaticResource NavRailButtonStyle}">
                                                     <StackPanel HorizontalAlignment="Center">
-                                                        <TextBlock Text="🔍" FontSize="34" HorizontalAlignment="Center" />
+                                                        <TextBlock Text="🔍" FontSize="34" LineStackingStrategy="BlockLineHeight" LineHeight="44" HorizontalAlignment="Center" />
                                                         <TextBlock Text="搜尋" HorizontalAlignment="Center" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button x:Name="FuncBtn9" Tag="Youtube" Style="{StaticResource NavRailButtonStyle}">
+                                                    <StackPanel HorizontalAlignment="Center">
+                                                        <TextBlock Text="▶" FontSize="34" LineStackingStrategy="BlockLineHeight" LineHeight="44" HorizontalAlignment="Center" />
+                                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                                            <TextBlock Text="Youtube" />
+                                                        </Viewbox>
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
@@ -1716,6 +1735,18 @@
                                             <ComboBoxItem Content="✨ 風格 4：現代懸浮微圓角卡片" Tag="4" />
                                         </ComboBox>
                                         <TextBlock Text="💡 選擇後即時套用至左側模擬畫面，儲存後直接生效於主程式。" Foreground="#9FA8DA" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- 左側主選單順序 (NavMenuOrder) -->
+                                <Border Background="#1A2035" BorderBrush="#3D5AFE" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,6">
+                                            <TextBlock Text="☰ 左側主選單順序 (Nav Menu Order)" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" />
+                                            <Button Content="↺ 恢復預設順序" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Right" Click="BtnResetNavMenuOrder_Click" />
+                                        </Grid>
+                                        <TextBlock x:Name="TxtNavMenuOrder" Foreground="#E8EAF6" FontSize="13" TextWrapping="Wrap" Margin="2,0,0,4" />
+                                        <TextBlock Text="💡 在左側模擬畫面按住主選單按鈕上下拖曳即可調整順序 (「設定」固定在最下方)，儲存後重新啟動主程式生效。" Foreground="#9FA8DA" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
 

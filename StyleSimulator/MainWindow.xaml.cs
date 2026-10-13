@@ -400,6 +400,8 @@ namespace StyleSimulator
                 CboSongListRowStyle.SelectedIndex = targetIndex;
             }
 
+            ApplyNavMenuOrder();
+
             // settings.json - 點歌網址 (內部 IP, port)
             string localIp = !string.IsNullOrWhiteSpace(_model.HttpServerIp) && _model.HttpServerIp != "0.0.0.0"
                 ? _model.HttpServerIp
@@ -563,6 +565,8 @@ namespace StyleSimulator
             {
                 _model.SongListRowStyle = selectedRowStyle;
             }
+
+            _model.NavMenuOrder = GetNavMenuOrderFromPanel();
 
             if (!string.IsNullOrWhiteSpace(TxtMockLanIp.Text))
             {
@@ -908,14 +912,20 @@ namespace StyleSimulator
             if (NowPlayingSeparator != null) NowPlayingSeparator.Foreground = staticTextFgBrush;
             if (NowPlayingBadgeBorder != null) NowPlayingBadgeBorder.BorderBrush = primaryBrush;
 
-            // 8 Top Function Buttons (FuncBtn5 "新進" is active with CyberActiveGradient, all other buttons apply cyberButtonGradient)
-            Button?[] funcBtns = { FuncBtn1, FuncBtn2, FuncBtn3, FuncBtn4, FuncBtn5, FuncBtn6, FuncBtn7, FuncBtn8 };
+            // 9 Nav Rail Buttons (FuncBtn5 "新進" is active with CyberActiveGradient, all other buttons apply cyberButtonGradient)
+            Button?[] funcBtns = { FuncBtn1, FuncBtn2, FuncBtn3, FuncBtn4, FuncBtn5, FuncBtn6, FuncBtn7, FuncBtn8, FuncBtn9 };
             foreach (var b in funcBtns)
             {
                 if (b != null)
                 {
                     b.FontFamily = uiFont;
                     b.FontSize = SldFuncBtnFontSize.Value;
+                    // 選單文字 (圖示下方那行) 放大，僅模擬器；視窗層級的 TextBlock 樣式會蓋掉繼承的字級，所以直接設定
+                    if (b.Content is StackPanel navContent && navContent.Children.Count > 1)
+                    {
+                        var label = navContent.Children[1] is Viewbox vb ? vb.Child as TextBlock : navContent.Children[1] as TextBlock;
+                        if (label != null) label.FontSize = SldFuncBtnFontSize.Value * NavRailFontScale;
+                    }
                     if (b == FuncBtn5)
                     {
                         // Active Mode Button: uses CyberActiveGradient background & White text with accent border
@@ -1117,6 +1127,162 @@ namespace StyleSimulator
                 _broadcastText.StrokeThickness = Math.Max(2, SldBroadcastFontSize.Value / 8.0);
             }
         }
+
+        #region Nav Menu Order (主選單拖曳排序)
+
+        private static readonly Dictionary<string, string> NavMenuDisplayNames = new()
+        {
+            ["Singer"] = "歌星", ["Fav"] = "最愛", ["Num"] = "編號", ["Language"] = "語系",
+            ["New"] = "新進", ["Rank"] = "排行", ["Input"] = "搜尋", ["Youtube"] = "Youtube"
+        };
+
+        /// <summary>模擬器預覽中左側選單文字相對於 FuncBtnFontSize 的放大倍率 (主程式不受影響)。</summary>
+        private const double NavRailFontScale = 1.2;
+
+        private Button? _navDragButton;
+        private Point _navDragStart;
+        private bool _navDragging;
+        private double _navDragGrabOffsetY;
+
+        /// <summary>依 _model.NavMenuOrder 重新排列模擬畫面的主選單按鈕。</summary>
+        private void ApplyNavMenuOrder()
+        {
+            if (NavMenuPanel == null) return;
+            var buttons = NavMenuPanel.Children.OfType<Button>().ToList();
+            NavMenuPanel.Children.Clear();
+            foreach (var key in UltimateKtv.ThemeSettings.ParseNavMenuOrder(_model.NavMenuOrder))
+            {
+                var btn = buttons.FirstOrDefault(b => (b.Tag as string) == key);
+                if (btn != null) NavMenuPanel.Children.Add(btn);
+            }
+            UpdateNavMenuOrderLabel();
+        }
+
+        private string GetNavMenuOrderFromPanel()
+        {
+            if (NavMenuPanel == null) return _model.NavMenuOrder;
+            return string.Join(",", NavMenuPanel.Children.OfType<Button>().Select(b => b.Tag as string).Where(k => !string.IsNullOrEmpty(k)));
+        }
+
+        private void UpdateNavMenuOrderLabel()
+        {
+            if (TxtNavMenuOrder == null) return;
+            var names = UltimateKtv.ThemeSettings.ParseNavMenuOrder(_model.NavMenuOrder)
+                .Select(k => NavMenuDisplayNames.TryGetValue(k, out var n) ? n : k);
+            TxtNavMenuOrder.Text = string.Join(" → ", names) + " → 設定";
+        }
+
+        private void BtnResetNavMenuOrder_Click(object sender, RoutedEventArgs e)
+        {
+            _model.NavMenuOrder = string.Join(",", UltimateKtv.ThemeSettings.NavMenuDefaultKeys);
+            ApplyNavMenuOrder();
+        }
+
+        private void NavMenuPanel_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // 找出按下的主選單按鈕 (NavMenuPanel 的直接子項)
+            DependencyObject? d = e.OriginalSource as DependencyObject;
+            while (d != null && !(d is Button b && ReferenceEquals(VisualTreeHelper.GetParent(b), NavMenuPanel)))
+            {
+                d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
+            }
+            _navDragButton = d as Button;
+            _navDragStart = e.GetPosition(NavMenuPanel);
+            _navDragging = false;
+            if (_navDragButton != null) _navDragGrabOffsetY = e.GetPosition(_navDragButton).Y;
+        }
+
+        private void NavMenuPanel_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            var dragButton = _navDragButton;
+            if (dragButton == null) return;
+            if (e.LeftButton != MouseButtonState.Pressed)
+            {
+                EndNavMenuDrag();
+                return;
+            }
+
+            Point pos = e.GetPosition(NavMenuPanel);
+            if (!_navDragging)
+            {
+                if (Math.Abs(pos.Y - _navDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+                _navDragging = true;
+                // 拖曳中的按鈕浮在最上層、略為放大並半透明，跟著游標移動
+                Panel.SetZIndex(dragButton, 1);
+                dragButton.Opacity = 0.85;
+                dragButton.RenderTransformOrigin = new Point(0.5, 0.5);
+                dragButton.RenderTransform = new TransformGroup
+                {
+                    Children = { new ScaleTransform(1.06, 1.06), new TranslateTransform() }
+                };
+                NavMenuPanel.CaptureMouse();
+                if (_navDragButton == null) return; // 捕捉過程中拖曳已被取消
+            }
+
+            // 按鈕目前應顯示的位置 (保持按下時抓住的相對位置，限制在選單範圍內)
+            double height = dragButton.ActualHeight;
+            double visualTop = Math.Max(0, Math.Min(NavMenuPanel.ActualHeight - height, pos.Y - _navDragGrabOffsetY));
+
+            // 目標位置 = 中線在拖曳按鈕中線上方的其他按鈕數量
+            double centerY = visualTop + height / 2;
+            int targetIndex = 0;
+            foreach (var child in NavMenuPanel.Children.OfType<FrameworkElement>())
+            {
+                if (ReferenceEquals(child, dragButton)) continue;
+                double top = System.Windows.Controls.Primitives.LayoutInformation.GetLayoutSlot(child).Top;
+                if (top + child.ActualHeight / 2 < centerY) targetIndex++;
+            }
+
+            int currentIndex = NavMenuPanel.Children.IndexOf(dragButton);
+            if (currentIndex >= 0 && targetIndex != currentIndex)
+            {
+                NavMenuPanel.Children.RemoveAt(currentIndex);
+                NavMenuPanel.Children.Insert(targetIndex, dragButton);
+                NavMenuPanel.UpdateLayout();
+            }
+
+            // 以位移把按鈕從新的版面位置拉回游標下方
+            if (dragButton.RenderTransform is TransformGroup group && group.Children.Count == 2 && group.Children[1] is TranslateTransform translate)
+            {
+                translate.Y = visualTop - System.Windows.Controls.Primitives.LayoutInformation.GetLayoutSlot(dragButton).Top;
+            }
+            e.Handled = true;
+        }
+
+        private void NavMenuPanel_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_navDragging) e.Handled = true;
+            EndNavMenuDrag();
+        }
+
+        private void NavMenuPanel_LostMouseCapture(object sender, MouseEventArgs e)
+        {
+            // LostMouseCapture 會冒泡：開始拖曳時按鈕交出捕捉也會傳到這裡，只處理面板本身失去捕捉
+            if (_navDragging && ReferenceEquals(e.OriginalSource, NavMenuPanel)) EndNavMenuDrag();
+        }
+
+        private void EndNavMenuDrag()
+        {
+            var btn = _navDragButton;
+            bool wasDragging = _navDragging;
+            _navDragButton = null;
+            _navDragging = false;
+            if (btn != null)
+            {
+                btn.Opacity = 1.0;
+                btn.ClearValue(UIElement.RenderTransformProperty);
+                btn.ClearValue(Panel.ZIndexProperty);
+            }
+            if (NavMenuPanel.IsMouseCaptured) NavMenuPanel.ReleaseMouseCapture();
+
+            if (wasDragging)
+            {
+                _model.NavMenuOrder = GetNavMenuOrderFromPanel();
+                UpdateNavMenuOrderLabel();
+            }
+        }
+
+        #endregion
 
         private void CboSongListRowStyle_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

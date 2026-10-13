@@ -319,6 +319,12 @@ namespace StyleSimulator
             get => _themeSettings.SongListRowStyle;
             set { _themeSettings.SongListRowStyle = value; OnPropertyChanged(); }
         }
+
+        public string NavMenuOrder
+        {
+            get => _themeSettings.NavMenuOrder;
+            set { _themeSettings.NavMenuOrder = value; OnPropertyChanged(); }
+        }
         #endregion
 
         #region Load and Save Methods
@@ -388,6 +394,7 @@ namespace StyleSimulator
             try
             {
                 int currentSongListRowStyle = _themeSettings.SongListRowStyle;
+                string currentNavMenuOrder = _themeSettings.NavMenuOrder;
                 var loaded = JsonSerializer.Deserialize<ThemeSettings>(json, _jsonOptions);
                 if (loaded != null)
                 {
@@ -395,6 +402,11 @@ namespace StyleSimulator
                     if (!json.Contains("SongListRowStyle", StringComparison.OrdinalIgnoreCase))
                     {
                         loaded.SongListRowStyle = currentSongListRowStyle;
+                    }
+                    // 主選單順序同理：範本未指定時保留當前順序
+                    if (!json.Contains("NavMenuOrder", StringComparison.OrdinalIgnoreCase))
+                    {
+                        loaded.NavMenuOrder = currentNavMenuOrder;
                     }
 
                     _themeSettings = loaded;
@@ -479,6 +491,7 @@ namespace StyleSimulator
             StaticTextForegroundColor = defaults.StaticTextForegroundColor;
             WebHostInfoForegroundColor = defaults.WebHostInfoForegroundColor;
             SongListRowStyle = defaults.SongListRowStyle;
+            NavMenuOrder = defaults.NavMenuOrder;
         }
 
         public void ResetTextSettingsToDefaults() => ResetThemeSettingsToDefaults();
