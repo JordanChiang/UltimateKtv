@@ -940,7 +940,8 @@ namespace UltimateKtv
         /// <summary>
         /// Returns a sorted and optionally padded list of favorite users.
         /// </summary>
-        public static List<FavoriteUserInfo> GetSortedFavoriteUsers(bool includePadding = true)
+        /// <param name="columns">歌星格每排幾格 (照片樣式 6、文字樣式 4)，補空格讓每一類從新的一排開始</param>
+        public static List<FavoriteUserInfo> GetSortedFavoriteUsers(bool includePadding = true, int columns = 6)
         {
             if (FavoriteUserData == null) return new List<FavoriteUserInfo>();
 
@@ -982,8 +983,8 @@ namespace UltimateKtv
 
                 if (includePadding)
                 {
-                    // Padding to fill rows of 6
-                    int paddingNeeded = (6 - (sortedBucket.Count % 6)) % 6;
+                    // Padding to fill rows of `columns`
+                    int paddingNeeded = (columns - (sortedBucket.Count % columns)) % columns;
                     for (int i = 0; i < paddingNeeded; i++)
                     {
                         result.Add(new FavoriteUserInfo { User_Id = "", User_Name = "" });

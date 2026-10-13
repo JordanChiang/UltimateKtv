@@ -36,9 +36,11 @@ namespace UltimateKtv
         private bool _isSingerSearchMode => _searchMode == SearchMode.Singer;
         
         // Centralized page size for Quick Search (Keyboard uses 11 rows to utilize available vertical space, -1 for card style height)
-        private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube) 
-            ? (_currentQuickMethod == QuickMethod.YoutubeHistory ? 14 : 16) 
-            : (_currentQuickMethod == QuickMethod.Keyboard ? 11 : 7);
+        // 歌星搜尋以每排 4 位的按鈕格顯示 (QuickSingerGrid)，一頁 = 排數 x 4
+        private const int QuickSingerColumns = 4;
+        private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube)
+            ? (_currentQuickMethod == QuickMethod.YoutubeHistory ? 14 : 16)
+            : (_currentQuickMethod == QuickMethod.Keyboard ? 11 : 8) * (_isSingerSearchMode ? QuickSingerColumns : 1);
 
         // For async quick search to prevent UI lag
         private CancellationTokenSource? _quickSearchCts;
@@ -413,6 +415,7 @@ namespace UltimateKtv
                     if (YoutubeThumbnailGrid != null) YoutubeThumbnailGrid.Visibility = useYoutubeGrid ? Visibility.Visible : Visibility.Collapsed;
                     if (QuickResultsContainer != null) QuickResultsContainer.Visibility = Visibility.Visible;
                     if (QuickSongListGrid != null) QuickSongListGrid.Visibility = !useYoutubeGrid ? Visibility.Visible : Visibility.Collapsed;
+                    if (QuickSingerGrid != null) QuickSingerGrid.Visibility = Visibility.Collapsed;
                     if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Collapsed;
                 }
                 else 
@@ -461,7 +464,7 @@ namespace UltimateKtv
                     }
 
                     if (SearchInputGrid != null) SearchInputGrid.Visibility = (_currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
-                    if (QuickSongListGrid != null) QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 842 : 550;
+                    if (QuickSongListGrid != null) QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 810 : 594;
                     // Other visibilities will be handled by UpdateSearchWords -> RefreshQuickResultsPage
                 }
 
@@ -512,7 +515,7 @@ namespace UltimateKtv
                 // Visual selection: highlight clicked by changing colors, de-emphasize others
                 var activeBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberActiveGradient") ?? FindResource("SingerButtonBackground"));
                 var activeFg = System.Windows.Media.Brushes.White;
-                var inactiveBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberButtonGradient") ?? System.Windows.Media.Brushes.Transparent);
+                var inactiveBg = (System.Windows.Media.Brush)(TryFindResource("BrushButtonFlat") ?? System.Windows.Media.Brushes.Transparent);
                 var inactiveFg = (System.Windows.Media.Brush)FindResource("SingerButtonBackground");
                 var activeBorder = (System.Windows.Media.Brush)(TryFindResource("BrushAccentCyan") ?? TryFindResource("PrimaryHueMidBrush") ?? activeBg);
                 var inactiveBorder = (System.Windows.Media.Brush)FindResource("SingerButtonBackground");
@@ -531,7 +534,7 @@ namespace UltimateKtv
 
                 // Restore visibility after updates
                 if (SearchInputGrid != null) SearchInputGrid.Visibility = (method == QuickMethod.Keyboard || _searchMode == SearchMode.Youtube) ? Visibility.Collapsed : Visibility.Visible;
-                if (QuickSongListGrid != null) QuickSongListGrid.Height = (method == QuickMethod.Keyboard) ? 842 : 550;
+                if (QuickSongListGrid != null) QuickSongListGrid.Height = (method == QuickMethod.Keyboard) ? 810 : 594;
             }
 
             // Update the display with the preserved state for the selected method.
@@ -705,6 +708,7 @@ namespace UltimateKtv
                     else
                     {
                         if (QuickSongListGrid != null) QuickSongListGrid.Visibility = Visibility.Collapsed;
+                        if (QuickSingerGrid != null) QuickSingerGrid.Visibility = Visibility.Collapsed;
                         if (QuickSongCountText != null) QuickSongCountText.Visibility = Visibility.Collapsed;
                     }
                     return;
@@ -914,7 +918,8 @@ namespace UltimateKtv
                                 {
                                     SongName = s.TryGetValue("Singer_Name", out var n) ? n?.ToString() ?? string.Empty : string.Empty,
                                     SingerName = "歌手", // Indicator
-                                    Language = "", // Singer doesn't have language usually
+                                    // 歌星模式沒有語言，借用此欄存放 Singer_Type (歌星按鈕格依類型上色)
+                                    Language = s.TryGetValue("Singer_Type", out var t) ? t?.ToString() ?? "" : "",
                                     FilePath = "", // Not playable
                                     SongId = s.TryGetValue("Singer_Id", out var id) ? id?.ToString() ?? "" : "",
                                     // Other fields default
@@ -969,6 +974,41 @@ namespace UltimateKtv
             }
         }
 
+        /// <summary>
+        /// 歌星搜尋結果按鈕格：點擊歌手進入其歌曲列表
+        /// </summary>
+        private void QuickSingerButton_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is string singerName && !string.IsNullOrEmpty(singerName))
+            {
+                OpenSingerFromQuickSearch(singerName);
+            }
+        }
+
+        /// <summary>
+        /// 從歌星搜尋結果選取歌手：載入該歌手歌曲並切換到歌曲列表
+        /// </summary>
+        private void OpenSingerFromQuickSearch(string singerName)
+        {
+            Debug.WriteLine($"[SingerSearch] Selected singer: {singerName}");
+            _selectedSinger = singerName;
+            _isLanguageMode = false;
+            LoadSongsForSinger(singerName);
+
+            // Switch view
+            ShowQuickInputPanels(false);
+            if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
+            if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Collapsed;
+            if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Collapsed;
+            if (SingerGrid != null) SingerGrid.Visibility = Visibility.Collapsed;
+            if (VisualSingerGrid != null) VisualSingerGrid.Visibility = Visibility.Collapsed;
+            if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Visible;
+            if (SongListGrid != null) SongListGrid.Visibility = Visibility.Visible;
+            SetupFilterButtons(MainFilterMode.Singer);
+
+            ClearSongGridsSelection();
+        }
+
         // Refresh the current page view using the existing cache
         private void RefreshQuickResultsPage()
         {
@@ -1013,9 +1053,11 @@ namespace UltimateKtv
 
                 if (QuickSongListGrid != null)
                 {
-                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 842 : 550;
+                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 810 : 594;
                     if (!useYoutubeGrid)
                     {
+                        // 歌星搜尋時列出的是歌手，不顯示插播/最愛
+                        QuickActionsColumn.Visibility = _isSingerSearchMode ? Visibility.Collapsed : Visibility.Visible;
                         // 就地換頁：沿用既有的 DataGridRow，避免每次換頁重建所有列
                         ShowPageItems(QuickSongListGrid, _quickSongListPageItems, pageItems);
                     }
@@ -1023,7 +1065,7 @@ namespace UltimateKtv
                     {
                         QuickSongListGrid.ItemsSource = null;
                     }
-                    if (!useYoutubeGrid)
+                    if (!useYoutubeGrid && !_isSingerSearchMode)
                     {
                         QuickSongListGrid.Visibility = pageItems.Any() ? Visibility.Visible : Visibility.Collapsed;
                     }
@@ -1031,6 +1073,14 @@ namespace UltimateKtv
                     {
                         QuickSongListGrid.Visibility = Visibility.Collapsed;
                     }
+                }
+
+                // 歌星搜尋：改用每排 4 位的按鈕格 (SongName 欄位存放的是歌手名稱)
+                if (QuickSingerGrid != null)
+                {
+                    bool showSingerGrid = _isSingerSearchMode && pageItems.Any();
+                    QuickSingerGrid.ItemsSource = showSingerGrid ? pageItems.Select(s => QuickSingerItem.Create(s.SongName, s.Language)).ToList() : null;
+                    QuickSingerGrid.Visibility = showSingerGrid ? Visibility.Visible : Visibility.Collapsed;
                 }
 
                 // Ensure container is visible if YT results or standard results are shown
@@ -1043,7 +1093,7 @@ namespace UltimateKtv
                 {
                     if (total > 0)
                     {
-                        QuickSongCountText.Text = $"第 {currentPage} / {_quickTotalPages} 頁 · 共 {total} 首";
+                        QuickSongCountText.Text = $"第 {currentPage} / {_quickTotalPages} 頁 · 共 {total} {(_isSingerSearchMode ? "位" : "首")}";
                         QuickSongCountText.Visibility = Visibility.Visible;
                     }
                     else
@@ -1056,7 +1106,7 @@ namespace UltimateKtv
                 // Update bottom global pagination bar with search results status
                 if (PageInfoTextBlock != null)
                 {
-                    PageInfoTextBlock.Text = total > 0 ? $"第 {currentPage} / {_quickTotalPages} 頁 (共 {total} 首)" : "第 1 頁";
+                    PageInfoTextBlock.Text = total > 0 ? $"第 {currentPage} / {_quickTotalPages} 頁 (共 {total} {(_isSingerSearchMode ? "位" : "首")})" : "第 1 頁";
                 }
                 if (PageUp != null) PageUp.IsEnabled = currentPage > 1;
                 if (PageDown != null) PageDown.IsEnabled = currentPage < _quickTotalPages;

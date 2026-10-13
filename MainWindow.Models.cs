@@ -22,6 +22,23 @@ namespace UltimateKtv
         }
     }
 
+    /// <summary>歌星按鈕格 (QuickSingerGrid) 的項目；Category 決定文字顏色。</summary>
+    public sealed record QuickSingerItem(string Name, string Category)
+    {
+        /// <summary>Singer_Type：0/4 男、1/5 女、2/6 團體 (含外語)，其餘為其他。</summary>
+        public static QuickSingerItem Create(string name, string singerType)
+        {
+            string category = singerType switch
+            {
+                "0" or "4" => "Male",
+                "1" or "5" => "Female",
+                "2" or "6" => "Group",
+                _ => "Other"
+            };
+            return new QuickSingerItem(name, category);
+        }
+    }
+
     /// <summary>
     /// Data class for song display in the SongListGrid
     /// </summary>

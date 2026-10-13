@@ -27,7 +27,7 @@ namespace UltimateKtv
         // Master list of all singers. In a real app, this would come from a database.
         private List<string> _allSingers = new List<string>();
         private int _currentPage = 1;
-        private int PageSize { get; set; } = 60; // Default 10 rows * 6 columns, changes if visual
+        private int PageSize { get; set; } = 48; // Default 12 rows * 4 columns, changes if visual
         private bool IsVisualSingerStyleEffective { get; set; } = false;
         private int _totalPages;
 
@@ -52,7 +52,7 @@ namespace UltimateKtv
         // Store the full song data dictionary for the currently playing song
         // This is needed for properties like ReplayGain
         private Dictionary<string, object?>? _playingSongData = null;
-        private const int SongPageSize = 12; // Adjust based on DataGrid display capacity (-1 for card style height)
+        private const int SongPageSize = 13; // Adjust based on DataGrid display capacity (RowHeight 62，SongListGrid Height 937)
         private const int LanguageSongPageSize = 11; // 語系結果列表 11 筆 (-1 for card style height)
         private int CurrentSongPageSize => _isLanguageMode ? LanguageSongPageSize : SongPageSize;
 
@@ -71,7 +71,7 @@ namespace UltimateKtv
         private WaitingListItem? _waitingListContextItem;
 
         // Waiting list pagination
-        private const int WaitingListPageSize = 7; // Maximum 7 rows per page
+        private const int WaitingListPageSize = 8; // Maximum 8 rows per page (WaitingListGrid Height 466、RowHeight 46 對應 8 列 + 欄位標題)
 
         // Pre-loading cache for network access optimization
         private string? _preLoadedSongPath = null;
@@ -332,6 +332,7 @@ namespace UltimateKtv
 
             // Default view: Singer search mode
             try { FuncBtnBySinger_Click(null!, null!); } catch { }
+            SetActiveNavButton(FuncBtnBySinger);
 
             // Initialize digital clock timer
             InitializeDigitalClock();
@@ -761,10 +762,15 @@ namespace UltimateKtv
         /// <param name="filter">A predicate to apply to the singer data.</param>
         private void FilterAndDisplaySingers(string filterKey, Predicate<Dictionary<string, object?>> filter)
         {
-            bool isFavoriteMode = (SingerPhotoManager.CurrentSubFolder == "FavoriteUser");
-            
+            // 在最愛頁按歌手類型按鈕：直接切到歌星頁的該類型列表 (最愛清單是使用者名稱，不做交集篩選)
+            if (SingerPhotoManager.CurrentSubFolder == "FavoriteUser")
+            {
+                AppLogger.Log($"User action: Singer filter '{filterKey}' from Favorites view, switching to Singer view");
+                SetActiveNavButton(FuncBtnBySinger);
+            }
+
             // Ensure we are looking in the correct photo folder
-            if (!isFavoriteMode) SingerPhotoManager.CurrentSubFolder = "SingerAvatar";
+            SingerPhotoManager.CurrentSubFolder = "SingerAvatar";
 
             // Store current page state for the previous filter
             if (!string.IsNullOrEmpty(_currentFilterKey))
@@ -781,23 +787,9 @@ namespace UltimateKtv
             }
             else
             {
-                // If in favorite mode, only include singers who are in the favorite list
-                HashSet<string>? favoriteNames = null;
-                if (isFavoriteMode)
-                {
-                    favoriteNames = SongDatas.GetSortedFavoriteUsers(false)
-                        .Select(u => u.User_Name)
-                        .ToHashSet();
-                }
-
                 // Use the globally sorted data directly.
                 _allSingers = SongDatas.SingerData
-                    .Where(s => {
-                        if (s == null) return false;
-                        string name = s["Singer_Name"]?.ToString() ?? "";
-                        if (isFavoriteMode && favoriteNames != null && !favoriteNames.Contains(name)) return false;
-                        return filter(s);
-                    })
+                    .Where(s => s != null && filter(s))
                     .Select(s => s["Singer_Name"]?.ToString() ?? "")
                     .Where(s => !string.IsNullOrEmpty(s))
                     .Distinct()
@@ -1026,6 +1018,7 @@ namespace UltimateKtv
                 // 2. Quick Search Results
                 if ((FindVisualParent<DataGrid>(source) == QuickSongListGrid && QuickSongListGrid.Visibility == Visibility.Visible) ||
                     (FindVisualParent<ItemsControl>(source) == YoutubeThumbnailGrid && YoutubeThumbnailGrid.Visibility == Visibility.Visible) ||
+                    (FindVisualParent<ItemsControl>(source) == QuickSingerGrid && QuickSingerGrid.Visibility == Visibility.Visible) ||
                     FindVisualParent<Border>(source) == SearchSymbolPanel ||
                     FindVisualParent<Grid>(source) == QuickResultsContainer)
                 {
@@ -1245,6 +1238,9 @@ namespace UltimateKtv
             // Find the visual element that was clicked
             if (e.OriginalSource is not DependencyObject source) return;
 
+            // 列內的插播/最愛按鈕由按鈕自己處理，不觸發點歌或長按
+            if (source is ButtonBase || FindVisualParent<ButtonBase>(source) != null) return;
+
             // Traverse up the visual tree to find the clicked DataGridCell
             var cell = FindVisualParent<DataGridCell>(source);
             if (cell == null) return;
@@ -1273,23 +1269,7 @@ namespace UltimateKtv
                 string singerName = selectedSong.SongName;
                 if (!string.IsNullOrEmpty(singerName))
                 {
-                    Debug.WriteLine($"[SingerSearch] Selected singer: {singerName}");
-                    _selectedSinger = singerName;
-                    _isLanguageMode = false;
-                    LoadSongsForSinger(singerName);
-
-                    // Switch view
-                    ShowQuickInputPanels(false);
-                    if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
-                    if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Collapsed;
-                    if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Collapsed;
-                    if (SingerGrid != null) SingerGrid.Visibility = Visibility.Collapsed;
-                    if (VisualSingerGrid != null) VisualSingerGrid.Visibility = Visibility.Collapsed;
-                    if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Visible;
-                    if (SongListGrid != null) SongListGrid.Visibility = Visibility.Visible;
-                    SetupFilterButtons(MainFilterMode.Singer);
-
-                    ClearSongGridsSelection();
+                    OpenSingerFromQuickSearch(singerName);
                     e.Handled = true;
                     return;
                 }

@@ -64,7 +64,7 @@ namespace UltimateKtv
         }
 
         // Queue for songs added during a transition
-        private Queue<SongDisplayItem> _pendingSongs = new Queue<SongDisplayItem>();
+        private Queue<(SongDisplayItem Song, bool InsertFirst)> _pendingSongs = new Queue<(SongDisplayItem Song, bool InsertFirst)>();
 
         /// <summary>
         /// Processes any songs that were queued during a transition.
@@ -81,8 +81,8 @@ namespace UltimateKtv
                 
                 while (_pendingSongs.Count > 0 && current < maxLoop)
                 {
-                    var song = _pendingSongs.Dequeue();
-                    AddSongToWaitingList(song);
+                    var (song, insertFirst) = _pendingSongs.Dequeue();
+                    AddSongToWaitingList(song, insertFirst);
                     current++;
                 }
             }
@@ -323,7 +323,7 @@ namespace UltimateKtv
             ShowPageItems(WaitingListGrid, _waitingListPageItems, displayList);
 
             // Update pagination info (2 lines)
-            WaitListPageInfo.Text = $"第 {_currentWaitingListPage}/{_totalWaitingListPages} 頁\n({nonEmptySongs.Count} 首歌曲)";
+            WaitListPageInfo.Text = $"已點 {nonEmptySongs.Count} 首 · {_currentWaitingListPage}/{_totalWaitingListPages} 頁";
 
             // Enable/disable pagination buttons
             WaitListPageUp.IsEnabled = _currentWaitingListPage > 1;
@@ -896,10 +896,23 @@ namespace UltimateKtv
         }
 
         /// <summary>
+        /// 歌曲列表列內的「插播」按鈕：加入已點歌單並排到第一首
+        /// </summary>
+        private void SongInsertButton_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is not SongDisplayItem song || song.IsYoutube) return;
+            AppLogger.Log($"User action: Insert button clicked for song '{song.SongName}'");
+            // Clone: 列表使用固定列，換頁時列的內容會被改掉
+            AddSongToWaitingList(song.Clone(), insertFirst: true);
+            ClearSongGridsSelection();
+        }
+
+        /// <summary>
         /// Adds a song to the waiting list with duplicate checking
         /// </summary>
         /// <param name="song">The song to add</param>
-        private async void AddSongToWaitingList(SongDisplayItem song)
+        /// <param name="insertFirst">插播：放到已點歌單第一首</param>
+        private async void AddSongToWaitingList(SongDisplayItem song, bool insertFirst = false)
         {
             // Check if file path is valid
             bool isYoutube = song.IsYoutube;
@@ -937,18 +950,25 @@ namespace UltimateKtv
             {
                 DebugLog($"AddSongToWaitingList, _isTransitioningSong = true, queueing '{song.SongName}'");
                 AppLogger.Log($"AddSongToWaitingList, _isTransitioningSong = true, queueing '{song.SongName}'");
-                _pendingSongs.Enqueue(song);
+                _pendingSongs.Enqueue((song, insertFirst));
                 return;
             }
 
             // Check for duplicates (either file path matches, or both song name and singer match)
-            var isDuplicate = _waitingList.Any(item =>
+            var duplicateItem = _waitingList.FirstOrDefault(item =>
                 (!string.IsNullOrEmpty(item.FilePath) && item.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase)) ||
                 (!string.IsNullOrEmpty(item.WaitingListSongName) &&
                  item.WaitingListSongName.Equals(song.SongName, StringComparison.OrdinalIgnoreCase) &&
                  item.WaitingListSingerName.Equals(song.SingerName, StringComparison.OrdinalIgnoreCase)));
 
-            if (isDuplicate)
+            if (duplicateItem != null && insertFirst)
+            {
+                // 插播已在歌單中的歌：直接移到第一首
+                MoveSongToFirst(duplicateItem.Id, isRemoteCall: false);
+                return;
+            }
+
+            if (duplicateItem != null)
             {
                 Debug.WriteLine($"Song already exists in waiting list: {song.SongName} by {song.SingerName}");
                 ShowDuplicateSongMessage(song.SongName, song.SingerName);
@@ -975,10 +995,17 @@ namespace UltimateKtv
                 AppLogger.Log("Web host info marquee dismissed on first song order");
             }
 
-            // Add to the end of the list
-            _waitingList.Add(waitingItem);
+            // Add to the end of the list (插播則放到第一首)
+            if (insertFirst)
+            {
+                _waitingList.Insert(0, waitingItem);
+            }
+            else
+            {
+                _waitingList.Add(waitingItem);
+            }
 
-            AppLogger.Log($"User action: Added song '{song.SongName}' by '{song.SingerName}' to waiting list" + 
+            AppLogger.Log($"User action: {(insertFirst ? "Inserted" : "Added")} song '{song.SongName}' by '{song.SingerName}' to waiting list" +
                 (!string.IsNullOrEmpty(song.OrderedBy) ? $" (Ordered by: {song.OrderedBy})" : ""));
             
             // If a random song is currently playing, cut it off so the user's song can play immediately

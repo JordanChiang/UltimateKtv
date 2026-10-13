@@ -52,6 +52,18 @@ namespace UltimateKtv
         }
 
         /// <summary>
+        /// 歌曲列表列內的「♥」按鈕：加入最愛
+        /// </summary>
+        private void SongFavoriteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is not SongDisplayItem songItem || songItem.IsYoutube) return;
+            AppLogger.Log($"User action: Favorite button clicked for song '{songItem.SongName}'");
+            // Clone: 列表使用固定列，換頁時列的內容會被改掉
+            ShowAddToFavoriteDialog(songItem.Clone());
+            ClearSongGridsSelection();
+        }
+
+        /// <summary>
         /// Shows a dialog to select which user to add the song to their favorites
         /// </summary>
         private async void ShowAddToFavoriteDialog(SongDisplayItem songItem)

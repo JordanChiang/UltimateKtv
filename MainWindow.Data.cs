@@ -49,7 +49,10 @@ namespace UltimateKtv
             }
 
             // Update the page information TextBlock
-            PageInfoTextBlock.Text = $"第 {page}/{_totalPages} 頁 ({_allSingers.Count} 位歌手)";
+            // 最愛頁：清單是使用者/歌單，且含補位空格，只計實際項目
+            PageInfoTextBlock.Text = _currentFilterKey == "FavoriteUsers"
+                ? $"第 {page}/{_totalPages} 頁 (共 {_allSingers.Count(n => !string.IsNullOrEmpty(n))} 項)"
+                : $"第 {page}/{_totalPages} 頁 ({_allSingers.Count} 位歌手)";
 
             // Enable or disable the page buttons based on the current page
             PageUp.IsEnabled = (page > 1);
@@ -340,7 +343,8 @@ namespace UltimateKtv
         /// </summary>
         private void LoadFavoriteUsers()
         {
-            _allSingers = SongDatas.GetSortedFavoriteUsers(includePadding: true)
+            // 補空格對齊目前歌星格的欄數 (照片樣式 6 欄、文字樣式 4 欄)
+            _allSingers = SongDatas.GetSortedFavoriteUsers(includePadding: true, columns: IsVisualSingerStyleEffective ? 6 : 4)
                                   .Select(u => u.User_Name)
                                   .ToList();
             

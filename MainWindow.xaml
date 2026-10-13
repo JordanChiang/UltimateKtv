@@ -108,6 +108,11 @@
         <!-- Singer Grid Button Colors (will be overridden by ThemeSettings at startup) -->
         <SolidColorBrush x:Key="SingerButtonBackground" Color="#FFB300"/>
 
+        <!-- 歌星搜尋按鈕格：依歌手類型的文字顏色 (其他類型沿用 SingerButtonBackground) -->
+        <SolidColorBrush x:Key="BrushSingerMale" Color="#7EC8FF"/>
+        <SolidColorBrush x:Key="BrushSingerFemale" Color="#FF8FC8"/>
+        <SolidColorBrush x:Key="BrushSingerGroup" Color="#7EE0A8"/>
+
         <!-- Converter for binding a boolean value to the Stretch property -->
         <local:BoolToStretchConverter x:Key="BoolToStretchConverter" />
 
@@ -831,6 +836,121 @@
             <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
         </Style>
 
+        <!-- 左側直立導覽列按鈕 (圖示 + 文字，觸控尺寸) -->
+        <Style x:Key="NavRailButtonStyle" TargetType="Button" BasedOn="{StaticResource FunctionButtonStyle}">
+            <Setter Property="Height" Value="108" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <!-- ==================== 歌曲列表共用欄位 (SongListGrid / LanguageSongListGrid / QuickSongListGrid) ==================== -->
+        <!-- 歌名欄固定寬度：約 16~17 個字 (SongListFontSize 38)；歌手欄取剩餘寬度 -->
+        <DataGridLength x:Key="SongNameColumnWidth">660</DataGridLength>
+        <DataGridLength x:Key="SongLanguageColumnWidth">120</DataGridLength>
+        <DataGridLength x:Key="SongActionsColumnWidth">230</DataGridLength>
+
+        <!-- 歌名文字 (非國語顯示淺藍色) -->
+        <Style x:Key="SongListNameCellTextStyle" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Foreground" Value="LightSkyBlue"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Language}" Value="國語">
+                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 次要文字 (語言欄) -->
+        <Style x:Key="SongListDimCellTextStyle" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 歌手欄 (點擊進入該歌手歌曲列表) -->
+        <DataTemplate x:Key="SongListSingerCellTemplate">
+            <Border Background="Transparent" Padding="0" Cursor="Hand"
+                    MouseEnter="SingerCell_MouseEnter" MouseLeave="SingerCell_MouseLeave">
+                <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left">
+                    <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Viewbox>
+            </Border>
+        </DataTemplate>
+
+        <!-- 列內操作按鈕 (插播 / 最愛)，觸控尺寸 -->
+        <Style x:Key="SongRowActionButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
+            <Setter Property="materialDesign:RippleAssist.IsDisabled" Value="True" />
+            <Setter Property="FontSize" Value="28" />
+            <Setter Property="Height" Value="50" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
+        </Style>
+
+        <!-- 操作欄：整列點擊 = 點歌；按鈕只負責插播與加入最愛 (YouTube 歌曲不顯示) -->
+        <DataTemplate x:Key="SongListActionsCellTemplate">
+            <StackPanel Orientation="Horizontal">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsYoutube}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <Button Content="插播" Width="110" Margin="0,0,10,0"
+                        Style="{StaticResource SongRowActionButtonStyle}" Click="SongInsertButton_Click"/>
+                <Button Width="76" ToolTip="加入最愛"
+                        Style="{StaticResource SongRowActionButtonStyle}" Click="SongFavoriteButton_Click">
+                    <materialDesign:PackIcon Kind="HeartOutline" Width="32" Height="32"/>
+                </Button>
+            </StackPanel>
+        </DataTemplate>
+
         <!-- Style for Visual Singer Buttons -->
         <Style x:Key="VisualSingerButtonStyle" TargetType="Button">
             <Setter Property="FontSize" Value="20"/>
@@ -883,43 +1003,80 @@
         <Viewbox Stretch="Fill" StretchDirection="Both">
             <Grid Width="1920" Height="1080" Background="{DynamicResource BrushBgPrimary}">
                 <DockPanel Margin="0">
-                    <!-- Left Panel -->
-                    <Border DockPanel.Dock="Left" Width="406" Margin="0,0,10,0">
-                        <DockPanel Margin="0">
-                            <!-- Top Button Panel -->
-                            <Border DockPanel.Dock="Top" Margin="0,0,0,10">
-                                <StackPanel Margin="0">
-                                    <!-- First line of buttons -->
-                                    <UniformGrid Rows="1" Margin="0,0,0,8">
-                                        <Button Name="FuncBtnBySinger" Content="歌星" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnBySinger_Click"/>
-                                        <Button Name="FuncBtnByFav" Content="最愛" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByFav_Click"/>                                        
-                                        <Button Name="FuncBtnByNum" Content="編號" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByNum_Click"/>
-                                        <Button Name="FuncBtnLanguage" Content="語系" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByLanguage_Click"/>
-                                    </UniformGrid>
-                                    <!-- Second line of buttons -->
-                                    <UniformGrid Rows="1">
-                                        <Button Name="FuncBtnByNew" Content="新進" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByNew_Click"/>
-                                        <Button Name="FuncBtnByRank" Content="排行" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByRank_Click"/>
-                                        <Button Name="FuncBtnByInput" Content="搜尋" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnByInput_Click"/>
-                                        <Button Name="FuncBtnSetting" Content="設定" Style="{StaticResource FunctionButtonStyle}" Click="FuncBtnSetting_Click"/>
-                                    </UniformGrid>
+                    <!-- Left Nav Rail (功能鍵直排，選中的頁面由 SetActiveNavButton 標示) -->
+                    <Border DockPanel.Dock="Left" Width="120" Margin="0,0,10,0">
+                        <DockPanel x:Name="NavRailPanel" Margin="0" ButtonBase.Click="NavRail_Click">
+                            <Button Name="FuncBtnSetting" DockPanel.Dock="Bottom" Style="{StaticResource NavRailButtonStyle}" Margin="0" Click="FuncBtnSetting_Click">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Cog" Width="40" Height="40" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="設定" HorizontalAlignment="Center"/>
                                 </StackPanel>
-                            </Border>
+                            </Button>
+                            <StackPanel DockPanel.Dock="Top">
+                                <Button Name="FuncBtnBySinger" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnBySinger_Click">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="AccountMusic" Width="40" Height="40" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="歌星" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Name="FuncBtnByFav" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByFav_Click">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Heart" Width="40" Height="40" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="最愛" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Name="FuncBtnByNum" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNum_Click">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Pound" Width="40" Height="40" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="編號" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Name="FuncBtnLanguage" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByLanguage_Click">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Translate" Width="40" Height="40" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="語系" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Name="FuncBtnByNew" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNew_Click">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="NewBox" Width="40" Height="40" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="新進" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Name="FuncBtnByRank" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByRank_Click">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Trophy" Width="40" Height="40" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="排行" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Name="FuncBtnByInput" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByInput_Click">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Magnify" Width="40" Height="40" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="搜尋" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Right Player Panel (正在播放 / 影片 / 已點歌單 / 播放控制) -->
+                    <Border DockPanel.Dock="Right" Width="460" Margin="10,0,0,0">
+                        <DockPanel Margin="0">
 
                             <!-- Bottom Button Panel -->
                             <Border DockPanel.Dock="Bottom" Height="116">
                                 <Grid Margin="0,0,0,5">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="8"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    
-                                    <!-- SkipSong - Double height on the left -->
-                                    <Button Name="SkipSong" Content="切歌" Grid.Column="0" Style="{DynamicResource LargePlayerControlButtonStyle}" Click="SkipSong_Click"/>
-                                    
-                                    <!-- Right side buttons layout -->
-                                    <Grid Grid.Column="2">
+
+                                    <!-- SkipSong - Double height on the right (最右邊) -->
+                                    <Button Name="SkipSong" Content="切歌" Grid.Column="2" Style="{DynamicResource LargePlayerControlButtonStyle}" Click="SkipSong_Click"/>
+
+                                    <!-- Left side buttons layout (寬度隨面板延展) -->
+                                    <Grid Grid.Column="0">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="*"/>
                                             <RowDefinition Height="5"/>
@@ -932,20 +1089,20 @@
                                         </Grid.ColumnDefinitions>
                                         
                                         <!-- First row - pause and repeat buttons fill the row11 fill the row -->
-                                        <Button Name="PauseBtn" Content="暫停" Grid.Row="0" Grid.Column="0" Style="{DynamicResource PlayerControlButtonStyle}" Click="Pause_Click"/>
-                                        <Button Name="RepeatBtn" Content="重播" Grid.Row="0" Grid.Column="2" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
+                                        <Button Name="PauseBtn" Content="暫停" Grid.Row="0" Grid.Column="0" Width="Auto" Style="{DynamicResource PlayerControlButtonStyle}" Click="Pause_Click"/>
+                                        <Button Name="RepeatBtn" Content="重播" Grid.Row="0" Grid.Column="2" Width="Auto" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
                                                 Click="Repeat_Click"
                                                 PreviewMouseDown="RepeatBtn_PreviewMouseDown" 
                                                 PreviewMouseUp="RepeatBtn_PreviewMouseUp" 
                                                 MouseRightButtonUp="RepeatBtn_RightClick"/>
                                         
                                         <!-- Second row - buttons 12 and 13 fill the row -->
-                                        <Button Name="VocalBtn" Content="人聲" Grid.Row="2" Grid.Column="0" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
+                                        <Button Name="VocalBtn" Content="人聲" Grid.Row="2" Grid.Column="0" Width="Auto" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
                                                 Click="VocalBtn_Click" 
                                                 PreviewMouseDown="VocalBtn_PreviewMouseDown" 
                                                 PreviewMouseUp="VocalBtn_PreviewMouseUp" 
                                                 MouseRightButtonUp="VocalBtn_RightClick"/>
-                                        <Button Name="MusicBtn" Content="伴唱" Grid.Row="2" Grid.Column="2" Style="{DynamicResource PlayerControlButtonStyle}" 
+                                        <Button Name="MusicBtn" Content="伴唱" Grid.Row="2" Grid.Column="2" Width="Auto" Style="{DynamicResource PlayerControlButtonStyle}" 
                                                 Click="MusicBtn_Click"
                                                 PreviewMouseDown="MusicBtn_PreviewMouseDown" 
                                                 PreviewMouseUp="MusicBtn_PreviewMouseUp" 
@@ -954,23 +1111,24 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Center Content: Waiting List, Now Playing, and Media Player -->
+                            <!-- Center Content: Now Playing, Media Player, and Waiting List -->
                             <Grid Margin="0,0,0,10">
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" /> <!-- Currently Playing Panel -->
+                                    <RowDefinition Height="Auto" /> <!-- Media player -->
                                     <RowDefinition Height="Auto" /> <!-- Fit WaitingListGrid tightly -->
                                     <RowDefinition Height="Auto" /> <!-- Waiting List Pagination -->
-                                    <RowDefinition Height="Auto" /> <!-- Currently Playing Panel -->
-                                    <RowDefinition Height="*" />    <!-- Media player fills remaining space -->
+                                    <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
 
-                                <!-- Waiting List Panel -->
-                                <Border Grid.Row="0" BorderThickness="0" UseLayoutRounding="True" SnapsToDevicePixels="True">
+                                <!-- Waiting List Panel (8 列: WaitingListPageSize；列高 46，整體高度 466 不變) -->
+                                <Border Grid.Row="2" Margin="0,4,0,0" BorderThickness="0" UseLayoutRounding="True" SnapsToDevicePixels="True">
                                     <DataGrid Name="WaitingListGrid"
                                               FontSize="{DynamicResource WaitingListFontSize}"
-                                              RowHeight="40"
+                                              RowHeight="46"
                                               HeadersVisibility="Column"
                                               ColumnHeaderHeight="45"
-                                              Height="368"
+                                              Height="466"
                                               VerticalAlignment="Top"
                                               BorderThickness="{DynamicResource BorderThicknessGrid}"
                                               Padding="0"
@@ -1000,7 +1158,7 @@
                                                     </ContextMenu>
                                                 </DataGrid.ContextMenu>
                                                 <DataGrid.Columns>
-                                                    <DataGridTemplateColumn Header="歌名" Width="280" CanUserSort="False">
+                                                    <DataGridTemplateColumn Header="歌名" Width="300" CanUserSort="False">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel Orientation="Horizontal" Margin="0">
@@ -1088,12 +1246,14 @@
                                 </Border>
 
                                 <!-- Buttons for Waiting List Pagination -->
-                                <Grid Grid.Row="1" Margin="0,10,0,0">
+                                <Grid Grid.Row="3" Margin="0,6,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Name="WaitListPageInfo" Margin="10,0,0,0" Grid.Column="0" Text="第 1/10 頁&#x0A;(0 首歌曲)" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="{DynamicResource WaitingListFontSize}" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}" />
+                                    <Viewbox Grid.Column="0" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,8,0">
+                                        <TextBlock Name="WaitListPageInfo" Text="已點 0 首 · 1/1 頁" FontSize="{DynamicResource WaitingListFontSize}" Foreground="{DynamicResource MaterialDesignBody}" />
+                                    </Viewbox>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
                                         <Button Name="WaitListPageUp" Content="上一頁" Style="{StaticResource FunctionButtonStyle}" Margin="0" Width="100" FontSize="26"/>
                                         <Button Name="WaitListPageDown" Content="下一頁" Style="{StaticResource FunctionButtonStyle}" Margin="10,0,0,0" Width="100" FontSize="26"/>
@@ -1101,9 +1261,9 @@
                                 </Grid>
 
                                 <!-- Currently Playing Panel -->
-                                <Border x:Name="NowPlayingBorder" 
-                                        Grid.Row="2" 
-                                        Margin="0,18,0,0" 
+                                <Border x:Name="NowPlayingBorder"
+                                        Grid.Row="0"
+                                        Margin="0"
                                         Height="50"
                                         Background="{DynamicResource BrushBgCard}" 
                                         BorderBrush="{DynamicResource BrushBorderDefault}" 
@@ -1163,17 +1323,17 @@
                                 </Border>
 
                                 <!-- Media Player Panel -->
-                                <Border Grid.Row="3" Margin="0,8,0,0" BorderThickness="0" Background="Black">
+                                <Border Grid.Row="1" Margin="0,4,0,0" BorderThickness="0" Background="Black">
                                     <Grid>
                                         <Grid.RowDefinitions>
-                                            <RowDefinition Height="228" />    <!-- Video player area: exact 16:9 ratio (406x228) -->
+                                            <RowDefinition Height="259" />    <!-- Video player area: exact 16:9 ratio (460x259) -->
                                             <RowDefinition Height="Auto" />   <!-- Sliders area -->
                                         </Grid.RowDefinitions>
                                         
                                         <!-- Video Player Container -->
-                                        <Grid x:Name="MediaPlayerContainer" Grid.Row="0" Height="228" ClipToBounds="False" Background="Transparent" MouseLeftButtonDown="MediaPlayerContainer_MouseLeftButtonDown" />
+                                        <Grid x:Name="MediaPlayerContainer" Grid.Row="0" Height="259" ClipToBounds="False" Background="Transparent" MouseLeftButtonDown="MediaPlayerContainer_MouseLeftButtonDown" />
                                         <!-- Marquee Container for overlay text -->
-                                        <Grid x:Name="MarqueeContainer" Grid.Row="0" Height="228" Panel.ZIndex="100" ClipToBounds="False" IsHitTestVisible="False" />
+                                        <Grid x:Name="MarqueeContainer" Grid.Row="0" Height="259" Panel.ZIndex="100" ClipToBounds="False" IsHitTestVisible="False" />
                                         
                                         <!-- Control Sliders Panel -->
                                         <Grid Grid.Row="1" Background="#CC000000" Margin="5,0,5,5">
@@ -1269,7 +1429,7 @@
                         </DockPanel>
                     </Border>
 
-                    <!-- Right Panel -->
+                    <!-- Center Panel (歌曲列表 / 歌星 / 搜尋) -->
                     <Border>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -1345,7 +1505,12 @@
                                 <!-- 3-Way Mode Toggle -->
                                 <Border Grid.Column="0" Background="#121826" BorderBrush="{StaticResource BrushBorderDefault}" BorderThickness="1" CornerRadius="{StaticResource RadiusMedium}" Margin="0,0,8,0" Padding="2" UseLayoutRounding="True">
                                     <UniformGrid x:Name="SearchModeSegment" Columns="3">
-                                        <RadioButton x:Name="YoutubeRadio" Content="Youtube" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
+                                        <!-- 字數較長，放不下時自動縮小，避免被旁邊的格子蓋住 (仍跟著設定的字型大小) -->
+                                        <RadioButton x:Name="YoutubeRadio" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click">
+                                            <Viewbox StretchDirection="DownOnly">
+                                                <TextBlock Text="Youtube" FontWeight="SemiBold"/>
+                                            </Viewbox>
+                                        </RadioButton>
                                         <RadioButton x:Name="SongRadio" Content="歌曲" IsChecked="True" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
                                         <RadioButton x:Name="SingerRadio" Content="歌星" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
                                     </UniformGrid>
@@ -1446,6 +1611,32 @@
                                             <TextBlock x:Name="QuickSongCountText" Text="" Visibility="Collapsed" Foreground="{DynamicResource MaterialDesignBody}"
                                                        VerticalAlignment="Center" Margin="0,0,10,0"
                                                        FontSize="{DynamicResource BottomButtonFontSize}" />
+
+                                            <!-- 歌星按鈕格的顏色圖例 (跟著 QuickSingerGrid 顯示/隱藏) -->
+                                            <StackPanel x:Name="SingerColorLegend" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,10,0"
+                                                        Visibility="{Binding Visibility, ElementName=QuickSingerGrid}">
+                                                <StackPanel.Resources>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Width" Value="18"/>
+                                                        <Setter Property="Height" Value="18"/>
+                                                        <Setter Property="Margin" Value="0,0,6,0"/>
+                                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    </Style>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                        <Setter Property="FontSize" Value="26"/>
+                                                        <Setter Property="Margin" Value="0,0,18,0"/>
+                                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    </Style>
+                                                </StackPanel.Resources>
+                                                <Ellipse Fill="{StaticResource BrushSingerMale}"/>
+                                                <TextBlock Text="男" Foreground="{StaticResource BrushSingerMale}"/>
+                                                <Ellipse Fill="{StaticResource BrushSingerFemale}"/>
+                                                <TextBlock Text="女" Foreground="{StaticResource BrushSingerFemale}"/>
+                                                <Ellipse Fill="{StaticResource BrushSingerGroup}"/>
+                                                <TextBlock Text="團體" Foreground="{StaticResource BrushSingerGroup}"/>
+                                                <Ellipse Fill="{DynamicResource SingerButtonBackground}"/>
+                                                <TextBlock Text="其他" Foreground="{DynamicResource SingerButtonBackground}" Margin="0"/>
+                                            </StackPanel>
                                                        
                                             <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="#FFD700"
                                                        FontSize="22" FontWeight="Bold" Margin="0,0,10,0" Visibility="Collapsed"/>
@@ -1457,16 +1648,16 @@
                             </Border>
 
                             <!-- Quick results area: DataGrid + bottom count text (same row) -->
-                            <Grid Grid.Row="6" Visibility="Collapsed" x:Name="QuickResultsContainer" VerticalAlignment="Top" Margin="0,22,0,0">
+                            <Grid Grid.Row="6" Visibility="Collapsed" x:Name="QuickResultsContainer" VerticalAlignment="Top" Margin="0,12,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <DataGrid x:Name="QuickSongListGrid" Grid.Row="0" Margin="0"
                                           FontSize="{DynamicResource SongListFontSize}"
-                                          RowHeight="65"
+                                          RowHeight="62"
                                           ColumnHeaderHeight="52"
-                                          Height="558"
+                                          Height="594"
                                           VerticalAlignment="Top"
                                           HeadersVisibility="Column"
                                           BorderThickness="0"
@@ -1494,7 +1685,7 @@
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="*">
+                                        <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="TextAlignment" Value="Left"/>
@@ -1525,7 +1716,7 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTemplateColumn Width="380">
+                                        <DataGridTemplateColumn Width="*">
                                             <DataGridTemplateColumn.HeaderStyle>
                                                 <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                                     <Setter Property="Content" Value="歌手"/>
@@ -1573,31 +1764,51 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="130">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="TextAlignment" Value="Left"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
-                                                    <Setter Property="Margin" Value="0"/>
-                                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                                    <Setter Property="Padding" Value="0"/>
-                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="{StaticResource SongLanguageColumnWidth}"
+                                                            ElementStyle="{StaticResource SongListDimCellTextStyle}"/>
+                                        <!-- 歌星搜尋模式 (列出的是歌手) 時由程式隱藏 -->
+                                        <DataGridTemplateColumn x:Name="QuickActionsColumn" Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
+
+                                <!-- 歌星搜尋結果：每排 4 位的按鈕格 (QuickSearchPageSize = 排數 x 4)，點擊進入該歌手歌曲列表 -->
+                                <!-- Background=Transparent：讓按鈕之間的空隙也能接收滑鼠滾輪換頁 -->
+                                <ItemsControl x:Name="QuickSingerGrid" Grid.Row="0" Margin="0,2,0,0" VerticalAlignment="Top" Visibility="Collapsed" Background="Transparent">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="4"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <!-- Margin：上下 6 (排距 12)、左右 14 (按鈕較窄)；8 排 x 74 = 592，鍵盤 11 排 x 74 = 814 -->
+                                            <Button Style="{DynamicResource SingerGridButtonStyle}" FontSize="36" MinHeight="0" Height="62" Margin="14,6"
+                                                    Click="QuickSingerButton_Click" Tag="{Binding Name}">
+                                                <Viewbox StretchDirection="DownOnly">
+                                                    <!-- 文字顏色依歌手類型：男 藍、女 粉、團體 綠、其他 主題色 -->
+                                                    <TextBlock Text="{Binding Name}" Padding="5,0">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Category}" Value="Male">
+                                                                        <Setter Property="Foreground" Value="{StaticResource BrushSingerMale}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Category}" Value="Female">
+                                                                        <Setter Property="Foreground" Value="{StaticResource BrushSingerFemale}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Category}" Value="Group">
+                                                                        <Setter Property="Foreground" Value="{StaticResource BrushSingerGroup}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Viewbox>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
                                 <!-- 4x4 Grid for Youtube Thumbnails - Sharing Row 0 with QuickSongListGrid -->
                                 <ItemsControl x:Name="YoutubeThumbnailGrid" Grid.Row="0" Margin="0,8,0,2" Height="850"
@@ -1666,20 +1877,30 @@
                             <!-- Content Area - Singer Grid and Song List Grid occupy same space -->
                             <Grid x:Name="SingerSongContentGrid" Grid.Row="6" Margin="0" VerticalAlignment="Top">
                                 <!-- 10x6 Grid for Singer Names -->
-                                <ItemsControl Name="SingerGrid" Visibility="Visible" Height="{StaticResource SingerGridHeight}">
+                                <ItemsControl Name="SingerGrid" Visibility="Visible" Height="960" Background="Transparent">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <UniformGrid Rows="10" Columns="6"/>
+                                            <!-- 文字樣式：12 排 x 4 欄 (PageSize 48)，按鈕尺寸與歌星搜尋按鈕格相同；高度 960 → 每排 80 (按鈕 62，排距約 18)，內容區可用約 966 -->
+                                            <UniformGrid Rows="12" Columns="4"/>
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button Style="{DynamicResource SingerGridButtonStyle}"
+                                    <Button x:Name="SingerNameButton" Style="{DynamicResource SingerGridButtonStyle}" FontSize="36" MinHeight="0" Height="62" Margin="14,6"
                                             Click="SingerButton_Click" Tag="{Binding}">
                                                 <Viewbox StretchDirection="DownOnly">
                                                     <TextBlock Text="{Binding}" Padding="5,0" Foreground="{DynamicResource SingerButtonBackground}"/>
                                                 </Viewbox>
                                             </Button>
+                                            <!-- 補位用的空格 (最愛分類對齊、最後一頁) 不顯示按鈕外框 -->
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding}" Value="">
+                                                    <Setter TargetName="SingerNameButton" Property="Visibility" Value="Hidden"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                                    <Setter TargetName="SingerNameButton" Property="Visibility" Value="Hidden"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
@@ -1711,9 +1932,9 @@
                                 <!-- Song list for singer search Results - Same size as SingerGrid -->
                                 <DataGrid Name="SongListGrid" 
                                           FontSize="{DynamicResource SongListFontSize}"
-                                          RowHeight="65"
+                                          RowHeight="62"
                                           ColumnHeaderHeight="52"
-                                          Height="908"
+                                          Height="937"
                                           VerticalAlignment="Top"
                                           Margin="0,12,0,0"
                                           HeadersVisibility="Column"
@@ -1741,83 +1962,14 @@
                                             <MenuItem Header="加入最愛" Click="AddToFavorite_Click"/>
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="*">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="TextAlignment" Value="Left"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
-                                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                                    <Setter Property="Padding" Value="0"/>
-                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                                    <Setter Property="Foreground" Value="LightSkyBlue"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Language}" Value="國語">
-                                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-                                        <DataGridTemplateColumn Header="歌手" Width="380">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Border Background="Transparent" Padding="0" Cursor="Hand"
-                                                            MouseEnter="SingerCell_MouseEnter" MouseLeave="SingerCell_MouseLeave">
-                                                        <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left">
-                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center">
-                                                                <TextBlock.Style>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
-                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                                                            </DataTrigger>
-<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </TextBlock.Style>
-                                                            </TextBlock>
-                                                        </Viewbox>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="140">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="TextAlignment" Value="Left"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
-                                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                                    <Setter Property="Padding" Value="0"/>
-                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-                                    </DataGrid.Columns>
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}"
+                                                                ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
+                                            <DataGridTemplateColumn Header="歌手" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
+                                            <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="{StaticResource SongLanguageColumnWidth}"
+                                                                ElementStyle="{StaticResource SongListDimCellTextStyle}"/>
+                                            <DataGridTemplateColumn Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
+                                        </DataGrid.Columns>
                                 </DataGrid>
                                 
                                 <!-- Language search Results - Isolated from singer search Results -->
@@ -1853,83 +2005,12 @@
                                             <MenuItem Header="加入最愛" Click="AddToFavorite_Click"/>
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="*">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="TextAlignment" Value="Left"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
-                                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                                    <Setter Property="Padding" Value="0"/>
-                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                                    <Setter Property="Foreground" Value="LightSkyBlue"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Language}" Value="國語">
-                                                            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-                                        <DataGridTemplateColumn Header="歌手" Width="380">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Border Background="Transparent" Padding="0" Cursor="Hand"
-                                                            MouseEnter="SingerCell_MouseEnter" MouseLeave="SingerCell_MouseLeave">
-                                                        <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left">
-                                                            <TextBlock Text="{Binding SingerName}" VerticalAlignment="Center">
-                                                                <TextBlock.Style>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
-                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                                                            </DataTrigger>
-<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                                                <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </TextBlock.Style>
-                                                            </TextBlock>
-                                                        </Viewbox>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="140">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="TextAlignment" Value="Left"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
-                                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                                    <Setter Property="Padding" Value="0"/>
-                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-                                    </DataGrid.Columns>
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}"
+                                                                ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
+                                            <DataGridTemplateColumn Header="歌手" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
+                                            <DataGridTemplateColumn Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
+                                        </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
 
@@ -2071,7 +2152,10 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Name="PageInfoTextBlock" Grid.Column="0" Text="第 1/10 頁" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="{DynamicResource BottomButtonFontSize}" Foreground="{DynamicResource MaterialDesignBody}" Margin="10,0,0,0" />
+                                <!-- 列表變窄後頁碼說明可能放不下，太長時等比縮小 -->
+                                <Viewbox Grid.Column="0" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,10,0">
+                                    <TextBlock Name="PageInfoTextBlock" Text="第 1/10 頁" FontSize="{DynamicResource BottomButtonFontSize}" Foreground="{DynamicResource MaterialDesignBody}" />
+                                </Viewbox>
 
                                 <!-- Digital Clock -->
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,30,0">

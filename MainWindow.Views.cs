@@ -29,7 +29,7 @@ namespace UltimateKtv
                     SearchInputGrid.Visibility = (_searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
                 
                 if (QuickSongListGrid != null)
-                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 842 : 550;
+                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 810 : 594;
                 
                 if (SearchSymbolPanel != null) SearchSymbolPanel.Visibility = Visibility.Visible;
                 
@@ -54,6 +54,7 @@ namespace UltimateKtv
                 if (YoutubeThumbnailGrid != null) YoutubeThumbnailGrid.Visibility = Visibility.Collapsed;
                 if (QuickResultsContainer != null) QuickResultsContainer.Visibility = Visibility.Collapsed;
                 if (QuickSongListGrid != null) QuickSongListGrid.Visibility = Visibility.Collapsed;
+                if (QuickSingerGrid != null) QuickSingerGrid.Visibility = Visibility.Collapsed;
                 if (QuickSongCountText != null) QuickSongCountText.Visibility = Visibility.Collapsed;
                 
                 // Restore the main singer/song grid area visibility when leaving quick search
@@ -112,6 +113,35 @@ namespace UltimateKtv
 
         #region Main View Navigation Button Handlers
 
+        private Button? _activeNavButton;
+
+        /// <summary>
+        /// 左側導覽列：任一功能鍵被按下時標示目前所在頁面 (設定是開視窗，不算頁面)。
+        /// </summary>
+        private void NavRail_Click(object sender, RoutedEventArgs e)
+        {
+            if (e.OriginalSource is Button btn && btn != FuncBtnSetting)
+            {
+                SetActiveNavButton(btn);
+            }
+        }
+
+        private void SetActiveNavButton(Button btn)
+        {
+            if (ReferenceEquals(_activeNavButton, btn)) return;
+
+            if (_activeNavButton != null)
+            {
+                _activeNavButton.ClearValue(Control.BackgroundProperty);
+                _activeNavButton.ClearValue(Control.ForegroundProperty);
+            }
+
+            // 用資源參照，主題變更時跟著更新
+            btn.SetResourceReference(Control.BackgroundProperty, "BrushCyberActiveGradient");
+            btn.Foreground = System.Windows.Media.Brushes.White;
+            _activeNavButton = btn;
+        }
+
         private void FuncBtnBySinger_Click(object sender, RoutedEventArgs e)
         {
             AppLogger.Log("User action: Navigate to Singer view");
@@ -169,7 +199,7 @@ namespace UltimateKtv
             ShowQuickInputPanels(false);
             if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
             
-            // Enable top buttons like singer mode
+            // 上方保留歌手類型按鈕；在最愛頁按下會直接切到歌星頁的該類型列表 (見 FilterAndDisplaySingers)
             SetupFilterButtons(MainFilterMode.Singer);
 
             LoadFavoriteUsers();

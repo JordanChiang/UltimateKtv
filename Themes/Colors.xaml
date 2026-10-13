@@ -52,6 +52,8 @@
         <GradientStop Color="#4D00F0FF" Offset="0.0"/>
         <GradientStop Color="#1A004080" Offset="1.0"/>
     </LinearGradientBrush>
+    <!-- 按鈕一般 (未選取) 背景：純色深底，只有選取中的按鈕用漸層，畫面較不雜 -->
+    <SolidColorBrush x:Key="BrushButtonFlat" Color="#161A26"/>
     <LinearGradientBrush x:Key="BrushTableHeaderGradient" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Color="#D1121826" Offset="0.0"/>
         <GradientStop Color="#D91C263C" Offset="1.0"/>

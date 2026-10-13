@@ -54,8 +54,8 @@ namespace UltimateKtv
 
         #region UI Brush Settings
 
-        [Description("資料表格標題背景色: DataGrid column header background color. Default is '#FFA000'.")]
-        public string DataGridColumnHeaderBackgroundColor { get; set; } = "#FFA000";
+        [Description("資料表格標題背景色: DataGrid column header background color. Default is '#D28300' (與範本 theme_default_amber 一致).")]
+        public string DataGridColumnHeaderBackgroundColor { get; set; } = "#D28300";
 
         [Description("資料表格標題前景色: DataGrid column header foreground color. Default is '#FFFFFFFF'.")]
         public string DataGridColumnHeaderForegroundColor { get; set; } = "#FFFFFFFF";

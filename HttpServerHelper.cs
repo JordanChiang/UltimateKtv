@@ -625,7 +625,8 @@ public class HttpServerHelper
 						// Use reflection to call the private method
 						var method = mainWindow.GetType().GetMethod("AddSongToWaitingList",
 							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-						method?.Invoke(mainWindow, new object[] { songItem });
+						// 第二個參數 insertFirst (反射呼叫不會套用預設值，必須明確傳入)
+						method?.Invoke(mainWindow, new object[] { songItem, false });
 						System.Diagnostics.Debug.WriteLine($"[OrderSong] Song added to waiting list via UI thread: {songItem.SongName}");
 					}
 				}

@@ -242,7 +242,7 @@ namespace UltimateKtv
             IsVisualSingerStyleEffective = settings.VisualSingerStyle && hasPhotos;
 
             // PageSize depends on the effective style
-            PageSize = IsVisualSingerStyleEffective ? 18 : 60;
+            PageSize = IsVisualSingerStyleEffective ? 18 : 48; // 文字樣式 12 排 x 4 欄
 
             AppLogger.Log($"ApplySettings: VisualStyleSetting={settings.VisualSingerStyle}, HasPhotos={hasPhotos}, EffectiveVisual={IsVisualSingerStyleEffective}, EffectivePageSize={PageSize}");
             

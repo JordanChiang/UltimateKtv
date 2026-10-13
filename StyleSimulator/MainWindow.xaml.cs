@@ -718,6 +718,9 @@ namespace StyleSimulator
             cyberButtonGradient.Freeze();
             cyberActiveGradient.Freeze();
 
+            // 一般 (未選取) 按鈕背景：純色深底 (與主程式 Themes/Colors.xaml 的 BrushButtonFlat 一致)，只有選取中的按鈕用漸層
+            var buttonFlatBrush = (Brush)(TryFindResource("BrushButtonFlat") ?? new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x26)));
+
             // Update Window Resource Dictionary for DynamicResource bindings
             this.Resources["PrimaryBrush"] = primaryBrush;
             this.Resources["PrimaryLightBrush"] = primaryLightBrush;
@@ -833,21 +836,24 @@ namespace StyleSimulator
                 appRes["UiFontFamily"] = uiFont;
             }
 
-            // 12 Song List rows (matching updated screenshot, -1 for card style height)
+            // 歌手 / 語言欄一般文字顏色 (與主程式 BrushTextDim 一致)
+            var textDimBrush = (Brush)(TryFindResource("BrushTextDim") ?? new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8)));
+
+            // 13 Song List rows (與主程式 SongPageSize = 13 一致)
             TextBlock?[] songRowNames = {
                 TxtSongRow1, TxtSongRow2, TxtSongRow3, TxtSongRow4, TxtSongRow5,
                 TxtSongRow6, TxtSongRow7, TxtSongRow8, TxtSongRow9, TxtSongRow10,
-                TxtSongRow11, TxtSongRow12
+                TxtSongRow11, TxtSongRow12, TxtSongRow13
             };
             TextBlock?[] songRowSingers = {
                 TxtSingerRow1, TxtSingerRow2, TxtSingerRow3, TxtSingerRow4, TxtSingerRow5,
                 TxtSingerRow6, TxtSingerRow7, TxtSingerRow8, TxtSingerRow9, TxtSingerRow10,
-                TxtSingerRow11, TxtSingerRow12
+                TxtSingerRow11, TxtSingerRow12, TxtSingerRow13
             };
             TextBlock?[] songRowLangs = {
                 TxtLangRow1, TxtLangRow2, TxtLangRow3, TxtLangRow4, TxtLangRow5,
                 TxtLangRow6, TxtLangRow7, TxtLangRow8, TxtLangRow9, TxtLangRow10,
-                TxtLangRow11, TxtLangRow12
+                TxtLangRow11, TxtLangRow12, TxtLangRow13
             };
 
             for (int i = 0; i < songRowNames.Length; i++)
@@ -859,9 +865,24 @@ namespace StyleSimulator
                     // In UltimateKtv (MainWindow.xaml & MainWindow.Converters.cs), non-Mandarin songs use LightSkyBlue
                     bool isNonMandarin = songRowLangs[i] != null && !string.Equals(songRowLangs[i]!.Text?.Trim(), "國語", StringComparison.Ordinal);
                     songRowNames[i]!.Foreground = isNonMandarin ? Brushes.LightSkyBlue : Brushes.White;
+                    songRowNames[i]!.ClearValue(TextBlock.FontWeightProperty);
                 }
-                if (songRowSingers[i] != null) { songRowSingers[i]!.FontFamily = uiFont; songRowSingers[i]!.FontSize = SldSongListFontSize.Value; }
-                if (songRowLangs[i] != null) { songRowLangs[i]!.FontFamily = uiFont; songRowLangs[i]!.FontSize = SldSongListFontSize.Value; }
+                // 歌手 / 語言欄每次都重設為一般顏色 (主程式為 BrushTextDim)；
+                // 否則先前選取/滑過時套上的舊主題漸層會一直留著，要等滑過該列才會更新
+                // (第 1 列歌手是 PrimaryLightColor 標籤，維持黑字，由下方另外設定)
+                if (songRowSingers[i] != null)
+                {
+                    songRowSingers[i]!.FontFamily = uiFont;
+                    songRowSingers[i]!.FontSize = SldSongListFontSize.Value;
+                    if (i != 0) { songRowSingers[i]!.Foreground = textDimBrush; songRowSingers[i]!.ClearValue(TextBlock.FontWeightProperty); }
+                }
+                if (songRowLangs[i] != null)
+                {
+                    songRowLangs[i]!.FontFamily = uiFont;
+                    songRowLangs[i]!.FontSize = SldSongListFontSize.Value;
+                    songRowLangs[i]!.Foreground = textDimBrush;
+                    songRowLangs[i]!.ClearValue(TextBlock.FontWeightProperty);
+                }
             }
 
             // Waiting List rows & pagination
@@ -869,8 +890,9 @@ namespace StyleSimulator
             TextBlock?[] waitSingers = { TxtWaitSinger1, TxtWaitSinger2, TxtWaitSinger3 };
             for (int i = 0; i < waitSongs.Length; i++)
             {
-                if (waitSongs[i] != null) { waitSongs[i]!.FontFamily = uiFont; waitSongs[i]!.FontSize = SldWaitingListFontSize.Value; }
-                if (waitSingers[i] != null) { waitSingers[i]!.FontFamily = uiFont; waitSingers[i]!.FontSize = SldWaitingListFontSize.Value; }
+                // 同上：每次重設為一般顏色，避免殘留舊主題的選取漸層
+                if (waitSongs[i] != null) { waitSongs[i]!.FontFamily = uiFont; waitSongs[i]!.FontSize = SldWaitingListFontSize.Value; waitSongs[i]!.Foreground = Brushes.White; waitSongs[i]!.ClearValue(TextBlock.FontWeightProperty); }
+                if (waitSingers[i] != null) { waitSingers[i]!.FontFamily = uiFont; waitSingers[i]!.FontSize = SldWaitingListFontSize.Value; waitSingers[i]!.Foreground = textDimBrush; waitSingers[i]!.ClearValue(TextBlock.FontWeightProperty); }
             }
             if (TxtWaitPageInfo != null)
             {
@@ -906,7 +928,7 @@ namespace StyleSimulator
                     }
                     else
                     {
-                        b.Background = cyberButtonGradient;
+                        b.Background = buttonFlatBrush;
                         b.Foreground = primaryBrush;
                         b.BorderBrush = primaryBrush;
                         b.BorderThickness = new Thickness(1.5);
@@ -936,7 +958,7 @@ namespace StyleSimulator
                     }
                     else
                     {
-                        b.Background = cyberButtonGradient;
+                        b.Background = buttonFlatBrush;
                         b.Foreground = primaryBrush;
                         b.BorderBrush = primaryBrush;
                         b.BorderThickness = new Thickness(1.5);
@@ -966,7 +988,7 @@ namespace StyleSimulator
                     }
                     else
                     {
-                        b.Background = cyberButtonGradient;
+                        b.Background = buttonFlatBrush;
                         b.Foreground = primaryBrush;
                         b.BorderBrush = primaryBrush;
                         b.BorderThickness = new Thickness(1.5);
@@ -981,7 +1003,7 @@ namespace StyleSimulator
             {
                 BtnSkipSong.FontFamily = uiFont;
                 BtnSkipSong.FontSize = SldBottomButtonFontSize.Value;
-                BtnSkipSong.Background = cyberButtonGradient;
+                BtnSkipSong.Background = buttonFlatBrush;
                 BtnSkipSong.Foreground = primaryBrush;
                 BtnSkipSong.BorderBrush = primaryBrush;
                 BtnSkipSong.BorderThickness = new Thickness(1.5);
@@ -996,7 +1018,7 @@ namespace StyleSimulator
                 BtnWaitPageUp.FontSize = 26;
                 BtnWaitPageUp.BorderBrush = primaryBrush;
                 BtnWaitPageUp.Foreground = primaryBrush;
-                BtnWaitPageUp.Background = cyberButtonGradient;
+                BtnWaitPageUp.Background = buttonFlatBrush;
                 BtnWaitPageUp.BorderThickness = new Thickness(1.5);
             }
             if (BtnWaitPageDown != null)
@@ -1005,7 +1027,7 @@ namespace StyleSimulator
                 BtnWaitPageDown.FontSize = 26;
                 BtnWaitPageDown.BorderBrush = primaryBrush;
                 BtnWaitPageDown.Foreground = primaryBrush;
-                BtnWaitPageDown.Background = cyberButtonGradient;
+                BtnWaitPageDown.Background = buttonFlatBrush;
                 BtnWaitPageDown.BorderThickness = new Thickness(1.5);
             }
 
@@ -1015,7 +1037,7 @@ namespace StyleSimulator
                 BtnPageUp.Padding = new Thickness(0);
                 BtnPageUp.HorizontalContentAlignment = HorizontalAlignment.Center;
                 BtnPageUp.VerticalContentAlignment = VerticalAlignment.Center;
-                BtnPageUp.Background = cyberButtonGradient;
+                BtnPageUp.Background = buttonFlatBrush;
                 BtnPageUp.BorderBrush = primaryBrush;
                 BtnPageUp.Foreground = primaryBrush;
                 BtnPageUp.BorderThickness = new Thickness(1.5);
@@ -1025,7 +1047,7 @@ namespace StyleSimulator
                 BtnPageDown.Padding = new Thickness(0);
                 BtnPageDown.HorizontalContentAlignment = HorizontalAlignment.Center;
                 BtnPageDown.VerticalContentAlignment = VerticalAlignment.Center;
-                BtnPageDown.Background = cyberButtonGradient;
+                BtnPageDown.Background = buttonFlatBrush;
                 BtnPageDown.BorderBrush = primaryBrush;
                 BtnPageDown.Foreground = primaryBrush;
                 BtnPageDown.BorderThickness = new Thickness(1.5);
@@ -1048,7 +1070,6 @@ namespace StyleSimulator
 
             // Frames & Accents
             if (BorderKtvFrame != null) BorderKtvFrame.BorderBrush = primaryBrush;
-            if (BorderHeader != null) BorderHeader.BorderBrush = primaryBrush;
             if (BorderSongList != null) BorderSongList.BorderBrush = primaryBrush;
             if (BorderWaitList != null) BorderWaitList.BorderBrush = primaryBrush;
             if (BorderGridHeader != null) BorderGridHeader.Background = gridHeaderBgBrush;
@@ -1061,9 +1082,6 @@ namespace StyleSimulator
             if (TxtGridHeaderCol2 != null) { TxtGridHeaderCol2.FontFamily = uiFont; TxtGridHeaderCol2.FontSize = SldSongListFontSize.Value; TxtGridHeaderCol2.Foreground = gridHeaderFgBrush; }
             if (TxtGridHeaderCol3 != null) { TxtGridHeaderCol3.FontFamily = uiFont; TxtGridHeaderCol3.FontSize = SldSongListFontSize.Value; TxtGridHeaderCol3.Foreground = gridHeaderFgBrush; }
 
-            if (TxtPreviewAnnouncement != null) { TxtPreviewAnnouncement.FontFamily = uiFont; TxtPreviewAnnouncement.Foreground = announcementFgBrush; }
-            if (TxtPreviewWebHostInfo != null) { TxtPreviewWebHostInfo.FontFamily = uiFont; TxtPreviewWebHostInfo.Foreground = webHostInfoFgBrush; TxtPreviewWebHostInfo.FontSize = SldWebHostInfoFontSize.Value; }
-            if (TxtPreviewStaticText != null) { TxtPreviewStaticText.FontFamily = uiFont; TxtPreviewStaticText.Foreground = staticTextFgBrush; }
 
             // Live preview for Song List Row Styles (Options 1, 2, 3, 0)
             ApplySongListRowStylePreview(primaryColor, primaryBrush, primaryLightBrush, cyberActiveGradient, cyberButtonGradient);
@@ -1122,7 +1140,7 @@ namespace StyleSimulator
             Border?[] rowBorders = {
                 BorderSongRow1, BorderSongRow2, BorderSongRow3, BorderSongRow4, BorderSongRow5,
                 BorderSongRow6, BorderSongRow7, BorderSongRow8, BorderSongRow9, BorderSongRow10,
-                BorderSongRow11, BorderSongRow12
+                BorderSongRow11, BorderSongRow12, BorderSongRow13
             };
 
             for (int i = 0; i < rowBorders.Length; i++)
@@ -1160,7 +1178,7 @@ namespace StyleSimulator
 
             Border?[] waitBorders = {
                 BorderWaitRow1, BorderWaitRow2, BorderWaitRow3, BorderWaitRow4,
-                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7
+                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7, BorderWaitRow8
             };
 
             for (int i = 0; i < waitBorders.Length; i++)
@@ -1292,34 +1310,34 @@ namespace StyleSimulator
             Border?[] rowBorders = {
                 BorderSongRow1, BorderSongRow2, BorderSongRow3, BorderSongRow4, BorderSongRow5,
                 BorderSongRow6, BorderSongRow7, BorderSongRow8, BorderSongRow9, BorderSongRow10,
-                BorderSongRow11, BorderSongRow12
+                BorderSongRow11, BorderSongRow12, BorderSongRow13
             };
 
             Border?[] accentBars = {
                 AccentBarSongRow1, AccentBarSongRow2, AccentBarSongRow3, AccentBarSongRow4, AccentBarSongRow5,
                 AccentBarSongRow6, AccentBarSongRow7, AccentBarSongRow8, AccentBarSongRow9, AccentBarSongRow10,
-                AccentBarSongRow11, AccentBarSongRow12
+                AccentBarSongRow11, AccentBarSongRow12, AccentBarSongRow13
             };
 
             Border?[] rowGlows = {
                 InnerGlowSongRow1, InnerGlowSongRow2, InnerGlowSongRow3, InnerGlowSongRow4, InnerGlowSongRow5,
                 InnerGlowSongRow6, InnerGlowSongRow7, InnerGlowSongRow8, InnerGlowSongRow9, InnerGlowSongRow10,
-                InnerGlowSongRow11, InnerGlowSongRow12
+                InnerGlowSongRow11, InnerGlowSongRow12, InnerGlowSongRow13
             };
 
             Border?[] waitRowBorders = {
                 BorderWaitRow1, BorderWaitRow2, BorderWaitRow3, BorderWaitRow4,
-                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7
+                BorderWaitRow5, BorderWaitRow6, BorderWaitRow7, BorderWaitRow8
             };
 
             Border?[] waitAccentBars = {
                 AccentBarWaitRow1, AccentBarWaitRow2, AccentBarWaitRow3, AccentBarWaitRow4,
-                AccentBarWaitRow5, AccentBarWaitRow6, AccentBarWaitRow7
+                AccentBarWaitRow5, AccentBarWaitRow6, AccentBarWaitRow7, AccentBarWaitRow8
             };
 
             Border?[] waitGlows = {
                 InnerGlowWaitRow1, InnerGlowWaitRow2, InnerGlowWaitRow3, InnerGlowWaitRow4,
-                InnerGlowWaitRow5, InnerGlowWaitRow6, InnerGlowWaitRow7
+                InnerGlowWaitRow5, InnerGlowWaitRow6, InnerGlowWaitRow7, InnerGlowWaitRow8
             };
 
             void ApplyCardStyles(Border?[] borders, Border?[] accents, Border?[] glows, int selectedIdx, int hoveredIdx)
@@ -1422,9 +1440,9 @@ namespace StyleSimulator
             var selTextGradient = (Brush)this.Resources["BrushTextSelectedGradient"];
             if (selTextGradient != null)
             {
-                TextBlock?[] sNames = { TxtSongRow1, TxtSongRow2, TxtSongRow3, TxtSongRow4, TxtSongRow5, TxtSongRow6, TxtSongRow7, TxtSongRow8, TxtSongRow9, TxtSongRow10, TxtSongRow11, TxtSongRow12 };
-                TextBlock?[] sSingers = { TxtSingerRow1, TxtSingerRow2, TxtSingerRow3, TxtSingerRow4, TxtSingerRow5, TxtSingerRow6, TxtSingerRow7, TxtSingerRow8, TxtSingerRow9, TxtSingerRow10, TxtSingerRow11, TxtSingerRow12 };
-                TextBlock?[] sLangs = { TxtLangRow1, TxtLangRow2, TxtLangRow3, TxtLangRow4, TxtLangRow5, TxtLangRow6, TxtLangRow7, TxtLangRow8, TxtLangRow9, TxtLangRow10, TxtLangRow11, TxtLangRow12 };
+                TextBlock?[] sNames = { TxtSongRow1, TxtSongRow2, TxtSongRow3, TxtSongRow4, TxtSongRow5, TxtSongRow6, TxtSongRow7, TxtSongRow8, TxtSongRow9, TxtSongRow10, TxtSongRow11, TxtSongRow12, TxtSongRow13 };
+                TextBlock?[] sSingers = { TxtSingerRow1, TxtSingerRow2, TxtSingerRow3, TxtSingerRow4, TxtSingerRow5, TxtSingerRow6, TxtSingerRow7, TxtSingerRow8, TxtSingerRow9, TxtSingerRow10, TxtSingerRow11, TxtSingerRow12, TxtSingerRow13 };
+                TextBlock?[] sLangs = { TxtLangRow1, TxtLangRow2, TxtLangRow3, TxtLangRow4, TxtLangRow5, TxtLangRow6, TxtLangRow7, TxtLangRow8, TxtLangRow9, TxtLangRow10, TxtLangRow11, TxtLangRow12, TxtLangRow13 };
                 
                 for (int i = 0; i < sNames.Length; i++)
                 {
