@@ -1,4 +1,4 @@
-<Window x:Class="UltimateKtv.MainWindow"
+﻿<Window x:Class="UltimateKtv.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Name="MyMainWindow"
@@ -1297,28 +1297,39 @@
                                         </Border>
 
                                         <!-- Currently Playing Song and Singer Display -->
-                                        <Viewbox Grid.Column="1" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                            <StackPanel x:Name="NowPlayingInfoPanel" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <TextBlock x:Name="NowPlayingSongText" 
-                                                           Text="無播放歌曲" 
-                                                           FontSize="36" 
-                                                           FontWeight="Normal" 
-                                                           Foreground="{DynamicResource BrushTextMuted}" 
-                                                           VerticalAlignment="Center"/>
-                                                <TextBlock x:Name="NowPlayingSeparator" 
-                                                           Text=" / " 
-                                                           FontSize="36" 
-                                                           Foreground="{DynamicResource BrushTextMuted}" 
-                                                           VerticalAlignment="Center" 
-                                                           Visibility="Collapsed"/>
-                                                <TextBlock x:Name="NowPlayingSingerText" 
-                                                           Text="" 
-                                                           FontSize="36" 
-                                                           FontWeight="SemiBold" 
-                                                           Foreground="{DynamicResource PrimaryLightBrush}" 
-                                                           VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Viewbox>
+                                        <!-- 字級固定不縮小；放不下時歌名以 … 截斷，歌手保留在後面。
+                                             Left 對齊的 Grid 在空間足夠時貼合內容寬度，不足時 * 欄才被壓縮 -->
+                                        <Grid x:Name="NowPlayingInfoPanel" Grid.Column="1"
+                                              HorizontalAlignment="Left" VerticalAlignment="Center"
+                                              ClipToBounds="True">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="NowPlayingSongText"
+                                                       Grid.Column="0"
+                                                       Text="無播放歌曲"
+                                                       FontSize="30"
+                                                       FontWeight="Normal"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource BrushTextMuted}"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="NowPlayingSeparator"
+                                                       Grid.Column="1"
+                                                       Text=" / "
+                                                       FontSize="30"
+                                                       Foreground="{DynamicResource BrushTextMuted}"
+                                                       VerticalAlignment="Center"
+                                                       Visibility="Collapsed"/>
+                                            <TextBlock x:Name="NowPlayingSingerText"
+                                                       Grid.Column="2"
+                                                       Text=""
+                                                       FontSize="30"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource PrimaryLightBrush}"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
                                     </Grid>
                                 </Border>
 
