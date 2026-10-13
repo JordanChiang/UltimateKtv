@@ -38,10 +38,28 @@ namespace UltimateKtv
         // Centralized page size for Quick Search (Keyboard uses 11 rows to utilize available vertical space, -1 for card style height)
         // 歌星搜尋以每排 4 位的按鈕格顯示 (QuickSingerGrid)，一頁 = 排數 x 4
         private const int QuickSingerColumns = 4;
-        // Youtube 搜尋結果用 4x4 縮圖格 (16)；Youtube 點播記錄用 QuickSongListGrid，列數與一般歌曲列表相同
+        // Youtube 搜尋結果用 4x4 縮圖格 (16)；Youtube 點播記錄用 QuickSongListGrid，一頁 12 首
+        // 鍵盤與 Youtube 點播記錄沒有 40 字按鈕格，列表加高 (810) 並多顯示幾列
+        private bool IsTallQuickList => _currentQuickMethod == QuickMethod.Keyboard || _currentQuickMethod == QuickMethod.YoutubeHistory;
+
         private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube && _currentQuickMethod != QuickMethod.YoutubeHistory)
             ? 16
-            : (_currentQuickMethod == QuickMethod.Keyboard ? 11 : 8) * (_isSingerSearchMode ? QuickSingerColumns : 1);
+            : _currentQuickMethod == QuickMethod.YoutubeHistory ? 12
+            : (IsTallQuickList ? 11 : 8) * (_isSingerSearchMode ? QuickSingerColumns : 1);
+
+        /// <summary>
+        /// QuickSongListGrid 高度與位置：一般 8 列 (594)、鍵盤 11 列 (810)、
+        /// Youtube 點播記錄 12 列：列高改 60，每列實際約佔 65 (列邊距 3 + 外框 2)，表頭約 58，
+        /// 共約 838，高度 850；上方多留 6 往下移一點，總高 856 (內容區放得下 Margin 8 + 850 的縮圖格)。
+        /// </summary>
+        private void ApplyQuickSongListLayout()
+        {
+            if (QuickSongListGrid == null) return;
+            bool isYoutubeHistory = _currentQuickMethod == QuickMethod.YoutubeHistory;
+            QuickSongListGrid.RowHeight = isYoutubeHistory ? 60 : 62;
+            QuickSongListGrid.Height = isYoutubeHistory ? 850 : IsTallQuickList ? 810 : 594;
+            QuickSongListGrid.Margin = isYoutubeHistory ? new Thickness(0, 6, 0, 0) : new Thickness(0);
+        }
 
         // For async quick search to prevent UI lag
         private CancellationTokenSource? _quickSearchCts;
@@ -373,20 +391,13 @@ namespace UltimateKtv
         private QuickMethod _previousQuickMethod = QuickMethod.Bopomofo;
 
         // Toggle button handler
-        private async void SearchMode_Click(object sender, RoutedEventArgs e)
+        // yt-dlp 與未記錄檔案的檢查只在左側「Youtube」按鈕 (FuncBtnByYoutube_Click) 執行
+        private void SearchMode_Click(object sender, RoutedEventArgs e)
         {
             if (sender is RadioButton radio)
             {
                 if (radio == YoutubeRadio)
                 {
-                    _ = YtDlpHelper.EnsureYtDlpAsync();
-
-                    if (!_hasCheckedYoutubeHistoryFiles)
-                    {
-                        _hasCheckedYoutubeHistoryFiles = true;
-                        await CheckAndImportLocalYoutubeFiles();
-                    }
-
                     // Clear search keywords when entering YouTube mode IMMEDIATELY
                     if (SearchWords != null) SearchWords.Text = string.Empty;
                     _quickMethodSelectedWords[_currentQuickMethod].Clear();
@@ -403,6 +414,7 @@ namespace UltimateKtv
                     if (KeyboardListBtn != null) KeyboardListBtn.Visibility = Visibility.Collapsed;
                     if (YoutubeHistoryBtn != null) YoutubeHistoryBtn.Visibility = Visibility.Visible;
                     if (ClearYoutubeBtn != null) ClearYoutubeBtn.Visibility = Visibility.Visible;
+                    if (SearchModeSegmentBorder != null) SearchModeSegmentBorder.Visibility = Visibility.Collapsed;
 
                     _searchMode = SearchMode.Youtube;
                     SearchWords?.Focus();
@@ -441,6 +453,7 @@ namespace UltimateKtv
                     if (KeyboardListBtn != null) KeyboardListBtn.Visibility = Visibility.Visible;
                     if (YoutubeHistoryBtn != null) YoutubeHistoryBtn.Visibility = Visibility.Collapsed;
                     if (ClearYoutubeBtn != null) ClearYoutubeBtn.Visibility = Visibility.Collapsed;
+                    if (SearchModeSegmentBorder != null) SearchModeSegmentBorder.Visibility = Visibility.Visible;
 
                     // Clear search keywords when switching from YouTube mode to others as requested
                     if (oldMode == SearchMode.Youtube)
@@ -465,7 +478,7 @@ namespace UltimateKtv
                     }
 
                     if (SearchInputGrid != null) SearchInputGrid.Visibility = (_currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
-                    if (QuickSongListGrid != null) QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 810 : 594;
+                    if (QuickSongListGrid != null) ApplyQuickSongListLayout();
                     // Other visibilities will be handled by UpdateSearchWords -> RefreshQuickResultsPage
                 }
 
@@ -535,7 +548,7 @@ namespace UltimateKtv
 
                 // Restore visibility after updates
                 if (SearchInputGrid != null) SearchInputGrid.Visibility = (method == QuickMethod.Keyboard || _searchMode == SearchMode.Youtube) ? Visibility.Collapsed : Visibility.Visible;
-                if (QuickSongListGrid != null) QuickSongListGrid.Height = (method == QuickMethod.Keyboard) ? 810 : 594;
+                if (QuickSongListGrid != null) ApplyQuickSongListLayout();
             }
 
             // Update the display with the preserved state for the selected method.
@@ -1054,16 +1067,15 @@ namespace UltimateKtv
 
                 if (QuickSongListGrid != null)
                 {
-                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 810 : 594;
+                    ApplyQuickSongListLayout();
                     if (!useYoutubeGrid)
                     {
-                        // 歌星搜尋時列出的是歌手，不顯示插播/最愛
-                        QuickActionsColumn.Visibility = _isSingerSearchMode ? Visibility.Collapsed : Visibility.Visible;
-                        // Youtube 列表不需要語言欄，寬度讓給歌名
+                        // 歌星搜尋時列出的是歌手，不顯示插播/最愛；Youtube 歌曲本來就不顯示插播/最愛按鈕，整欄隱藏
                         bool isYoutubeList = _searchMode == SearchMode.Youtube;
+                        QuickActionsColumn.Visibility = (_isSingerSearchMode || isYoutubeList) ? Visibility.Collapsed : Visibility.Visible;
+                        // Youtube 列表不需要語言與操作欄，歌名欄固定 1100，歌曲時間欄取剩餘寬度 (約 200)
                         QuickLanguageColumn.Visibility = isYoutubeList ? Visibility.Collapsed : Visibility.Visible;
-                        double songNameWidth = ((DataGridLength)FindResource("SongNameColumnWidth")).Value;
-                        if (isYoutubeList) songNameWidth += ((DataGridLength)FindResource("SongLanguageColumnWidth")).Value;
+                        double songNameWidth = isYoutubeList ? 1100 : ((DataGridLength)FindResource("SongNameColumnWidth")).Value;
                         QuickSongNameColumn.Width = new DataGridLength(songNameWidth);
                         // 就地換頁：沿用既有的 DataGridRow，避免每次換頁重建所有列
                         ShowPageItems(QuickSongListGrid, _quickSongListPageItems, pageItems);

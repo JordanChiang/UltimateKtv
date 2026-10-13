@@ -29,7 +29,7 @@ namespace UltimateKtv
                     SearchInputGrid.Visibility = (_searchMode == SearchMode.Youtube || _currentQuickMethod == QuickMethod.Keyboard) ? Visibility.Collapsed : Visibility.Visible;
                 
                 if (QuickSongListGrid != null)
-                    QuickSongListGrid.Height = (_currentQuickMethod == QuickMethod.Keyboard) ? 810 : 594;
+                    ApplyQuickSongListLayout();
                 
                 if (SearchSymbolPanel != null) SearchSymbolPanel.Visibility = Visibility.Visible;
                 
@@ -152,13 +152,50 @@ namespace UltimateKtv
             // Trigger the first filter button by default
             if (_filterButtons.Any() && _filterButtons[0].IsVisible) MaleSingerFilter_Click(null!, null!);
         }
+        private async void FuncBtnByYoutube_Click(object sender, RoutedEventArgs e)
+        {
+            AppLogger.Log("User action: Navigate to Youtube view");
+            ShowQuickInputPanels(true);
+            ShowSingerPanels(false);
+
+            if (!_isQuickSearchInitialized)
+            {
+                SetQuickMethod(QuickMethod.Bopomofo, BopomofoListBtn!);
+            }
+
+            // Youtube 模式沿用搜尋頁的面板，由隱藏的 YoutubeRadio 代表目前狀態
+            if (YoutubeRadio != null)
+            {
+                YoutubeRadio.IsChecked = true;
+                SearchMode_Click(YoutubeRadio, e);
+            }
+
+            // 先切到 Youtube 畫面，再檢查 yt-dlp 與下載資料夾內未記錄的歌曲 (只檢查一次)
+            _ = YtDlpHelper.EnsureYtDlpAsync();
+            if (!_hasCheckedYoutubeHistoryFiles)
+            {
+                _hasCheckedYoutubeHistoryFiles = true;
+                await CheckAndImportLocalYoutubeFiles();
+            }
+        }
+
+        /// <summary>
+        /// 從 Youtube 頁切到其他搜尋頁 (搜尋/編號) 時，切回歌曲模式並還原注音/筆劃等按鈕與先前的查詢方式。
+        /// </summary>
+        private void ExitYoutubeSearchMode()
+        {
+            if (YoutubeRadio?.IsChecked != true || SongRadio == null) return;
+            SongRadio.IsChecked = true;
+            _searchMode = SearchMode.Youtube; // 讓 SearchMode_Click 走「離開 Youtube」的還原流程
+            SearchMode_Click(SongRadio, new RoutedEventArgs());
+        }
+
         private void FuncBtnByInput_Click(object sender, RoutedEventArgs e)
         {
             AppLogger.Log("User action: Navigate to Quick Input view");
+            ExitYoutubeSearchMode();
             // Restore the search mode from the radio selection (other views reset _searchMode to Song)
-            var mode = (YoutubeRadio?.IsChecked == true) ? SearchMode.Youtube
-                     : (SingerRadio?.IsChecked == true) ? SearchMode.Singer
-                     : SearchMode.Song;
+            var mode = (SingerRadio?.IsChecked == true) ? SearchMode.Singer : SearchMode.Song;
             _searchMode = mode;
 
             // Enter quick input search mode
@@ -178,6 +215,7 @@ namespace UltimateKtv
         }
         private void FuncBtnByNum_Click(object sender, RoutedEventArgs e)
         {
+            ExitYoutubeSearchMode();
             // Set mode and radio state BEFORE showing panels to ensure ShowQuickInputPanels logic is correct
             if (SongRadio != null) SongRadio.IsChecked = true;
             _searchMode = SearchMode.Song;

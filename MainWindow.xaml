@@ -1055,6 +1055,16 @@
                                         <TextBlock Text="搜尋" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
+                                <Button Name="FuncBtnByYoutube" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByYoutube_Click">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <!-- Youtube 圖示本身留白較多，放大一點才和其他圖示看起來一樣大 -->
+                                        <materialDesign:PackIcon Kind="Youtube" Width="54" Height="54" HorizontalAlignment="Center" Margin="0,-7,0,-7"/>
+                                        <!-- 字數較長，放不下時自動縮小 -->
+                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                            <TextBlock Text="Youtube"/>
+                                        </Viewbox>
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -1505,7 +1515,7 @@
                             <!-- Search method and style row (partially segmented) -->
                             <Grid x:Name="SearchStyleBtnPanel" Grid.Row="3" Margin="0,0,0,8" Visibility="Collapsed">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="2.2*"/> <!-- Youtube/Songs/Singers Toggle -->
+                                    <ColumnDefinition Width="1.6*"/> <!-- Songs/Singers Toggle -->
                                     <ColumnDefinition Width="*"/>   <!-- 注音 -->
                                     <ColumnDefinition Width="*"/>   <!-- 筆劃 -->
                                     <ColumnDefinition Width="*"/>   <!-- 英數 -->
@@ -1513,15 +1523,10 @@
                                     <ColumnDefinition Width="*"/>   <!-- 鍵盤 -->
                                 </Grid.ColumnDefinitions>
 
-                                <!-- 3-Way Mode Toggle -->
-                                <Border Grid.Column="0" Background="#121826" BorderBrush="{StaticResource BrushBorderDefault}" BorderThickness="1" CornerRadius="{StaticResource RadiusMedium}" Margin="0,0,8,0" Padding="2" UseLayoutRounding="True">
-                                    <UniformGrid x:Name="SearchModeSegment" Columns="3">
-                                        <!-- 字數較長，放不下時自動縮小，避免被旁邊的格子蓋住 (仍跟著設定的字型大小) -->
-                                        <RadioButton x:Name="YoutubeRadio" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click">
-                                            <Viewbox StretchDirection="DownOnly">
-                                                <TextBlock Text="Youtube" FontWeight="SemiBold"/>
-                                            </Viewbox>
-                                        </RadioButton>
+                                <!-- 歌曲/歌星切換 (Youtube 已移到左側主選單；YoutubeRadio 隱藏保留，作為 Youtube 模式的狀態供各 DataTrigger 使用) -->
+                                <Border x:Name="SearchModeSegmentBorder" Grid.Column="0" Background="#121826" BorderBrush="{StaticResource BrushBorderDefault}" BorderThickness="1" CornerRadius="{StaticResource RadiusMedium}" Margin="0,0,8,0" Padding="2" UseLayoutRounding="True">
+                                    <UniformGrid x:Name="SearchModeSegment" Columns="2">
+                                        <RadioButton x:Name="YoutubeRadio" Visibility="Collapsed"/>
                                         <RadioButton x:Name="SongRadio" Content="歌曲" IsChecked="True" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
                                         <RadioButton x:Name="SingerRadio" Content="歌星" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
                                     </UniformGrid>
@@ -1532,7 +1537,9 @@
                                 <Button x:Name="EngAndNumListBtn" Grid.Column="3" Content="英數" Style="{StaticResource FunctionButtonStyle}" Click="EngAndNumListBtn_Click" Margin="0,0,8,0"/>
                                 <Button x:Name="SongIdListBtn" Grid.Column="4" Content="編號" Style="{StaticResource FunctionButtonStyle}" Click="SongIdListBtn_Click" Margin="0,0,8,0"/>
                                 
-                                <Button x:Name="YoutubeHistoryBtn" Grid.Column="1" Grid.ColumnSpan="2" Content="Youtube點播記錄" Style="{StaticResource FunctionButtonStyle}" Click="YoutubeHistoryBtn_Click" Margin="0,0,8,0" Visibility="Collapsed"/>
+                                <!-- 寬度與「清除Youtube歌曲」相同 -->
+                                <Button x:Name="YoutubeHistoryBtn" Grid.Column="0" Grid.ColumnSpan="3" Content="Youtube點播記錄" Style="{StaticResource FunctionButtonStyle}" Click="YoutubeHistoryBtn_Click" Margin="0" Visibility="Collapsed"
+                                        HorizontalAlignment="Left" Width="{Binding ActualWidth, ElementName=ClearYoutubeBtn}"/>
                                 <Button x:Name="ClearYoutubeBtn" Grid.Column="4" Grid.ColumnSpan="2" Content="清除Youtube歌曲" Style="{StaticResource FunctionButtonStyle}" Click="ClearYoutubeBtn_Click" Margin="0" Visibility="Collapsed" Background="#D32F2F" Foreground="White" BorderBrush="#D32F2F" />
 
                                 <Button x:Name="KeyboardListBtn" Grid.Column="5" Content="鍵盤" Style="{StaticResource FunctionButtonStyle}" Click="KeyboardListBtn_Click" Margin="0"/>
