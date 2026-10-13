@@ -846,6 +846,8 @@
         <!-- ==================== 歌曲列表共用欄位 (SongListGrid / LanguageSongListGrid / QuickSongListGrid) ==================== -->
         <!-- 歌名欄固定寬度：約 16~17 個字 (SongListFontSize 38)；歌手欄取剩餘寬度 -->
         <DataGridLength x:Key="SongNameColumnWidth">660</DataGridLength>
+        <!-- 語系點歌列表沒有語言欄，歌名欄加寬 (歌手欄仍保留約 7 個字) -->
+        <DataGridLength x:Key="LanguageSongNameColumnWidth">780</DataGridLength>
         <DataGridLength x:Key="SongLanguageColumnWidth">120</DataGridLength>
         <DataGridLength x:Key="SongActionsColumnWidth">230</DataGridLength>
 
@@ -2024,7 +2026,7 @@
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}"
+                                            <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="{StaticResource LanguageSongNameColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
                                             <DataGridTemplateColumn Header="歌手" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
                                             <DataGridTemplateColumn Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
