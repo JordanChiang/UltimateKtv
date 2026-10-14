@@ -657,13 +657,25 @@ namespace UltimateKtv
                     appResources["ColorRowGlowHover"] = primaryLightCol;
                 }
 
-                // Song list row style selection (1=Glow, 2=Capsule, 3=AccentStrip, 4=FloatingCard)
+                // 風格 5~8 依主題色計算的筆刷
+                foreach (var kv in RowStyleBrushes.Create(primaryCol, primaryLightCol))
+                {
+                    window.Resources[kv.Key] = kv.Value;
+                    if (appResources != null) appResources[kv.Key] = kv.Value;
+                }
+
+                // Song list row style selection (1=Glow, 2=Capsule, 3=AccentStrip, 4=FloatingCard,
+                // 5=NeonUnderline, 6=Gloss, 7=DuoRim, 8=Bracket)
                 int rowStyleOpt = Settings.SongListRowStyle;
                 string rowStyleKey = rowStyleOpt switch
                 {
                     2 => "SongListRowStyle_Capsule",
                     3 => "SongListRowStyle_AccentStrip",
                     4 => "SongListRowStyle_FloatingCard",
+                    5 => "SongListRowStyle_NeonUnderline",
+                    6 => "SongListRowStyle_Gloss",
+                    7 => "SongListRowStyle_DuoRim",
+                    8 => "SongListRowStyle_Bracket",
                     _ => "SongListRowStyle_Glow"
                 };
 

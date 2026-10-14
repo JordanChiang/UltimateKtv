@@ -437,6 +437,218 @@
             </Setter>
         </Style>
 
+        <!-- 風格 5~8 的筆刷 (BrushNeon*/BrushGloss*/BrushDuo*/BrushBracket*) 由 RowStyleBrushes 依主題色產生。
+             與風格 4 相同原則:Trigger 只切換筆刷與 Visibility,不改 BorderThickness/Margin,避免 hover 時整列重新排版;
+             有模糊效果的圖層平時 Collapsed,並加 BitmapCache,只在 hover/選取改變時重算一次。 -->
+
+        <!-- 風格 5：霓虹底線 (無卡片的扁平清單，列與列之間只有細分隔線；選取時底部粗霓虹線 + 由下往上的主色反光) -->
+        <Style x:Key="SongListRowStyle_NeonUnderline" TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="8,1.5,8,1.5"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Grid Background="Transparent">
+                            <Border x:Name="RowBorder" Margin="10,0" BorderBrush="#26FFFFFF" BorderThickness="0,0,0,1" SnapsToDevicePixels="True"/>
+                            <Border x:Name="NeonTint" CornerRadius="8,8,0,0" Visibility="Collapsed"
+                                    Background="{DynamicResource BrushNeonTint}" IsHitTestVisible="False"/>
+                            <Grid x:Name="NeonLineHost" Height="16" VerticalAlignment="Bottom" Visibility="Collapsed" IsHitTestVisible="False">
+                                <Grid.CacheMode>
+                                    <BitmapCache EnableClearType="False" SnapsToDevicePixels="False"/>
+                                </Grid.CacheMode>
+                                <Border x:Name="NeonHalo" Height="5" Margin="4,0,4,0" VerticalAlignment="Bottom" CornerRadius="2.5"
+                                        Background="{DynamicResource BrushNeonUnderline}">
+                                    <Border.Effect>
+                                        <BlurEffect Radius="9" KernelType="Gaussian"/>
+                                    </Border.Effect>
+                                </Border>
+                                <Border x:Name="NeonLine" Height="4" Margin="4,0,4,0" VerticalAlignment="Bottom" CornerRadius="2"
+                                        Background="{DynamicResource BrushNeonUnderline}"/>
+                            </Grid>
+                            <DataGridCellsPresenter Margin="1" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="NeonTint" Property="Background" Value="{DynamicResource BrushNeonTintHover}"/>
+                                <Setter TargetName="NeonLine" Property="Background" Value="{DynamicResource BrushNeonUnderlineHover}"/>
+                                <Setter TargetName="NeonHalo" Property="Background" Value="{DynamicResource BrushNeonUnderlineHover}"/>
+                                <Setter TargetName="NeonTint" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="NeonLineHost" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="NeonTint" Property="Background" Value="{DynamicResource BrushNeonTint}"/>
+                                <Setter TargetName="NeonLine" Property="Background" Value="{DynamicResource BrushNeonUnderline}"/>
+                                <Setter TargetName="NeonHalo" Property="Background" Value="{DynamicResource BrushNeonUnderline}"/>
+                                <Setter TargetName="NeonTint" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="NeonLineHost" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="NeonLine" Property="Background" Value="{DynamicResource BrushNeonUnderlineHover}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 風格 6：糖果光澤 (大圓角，每列上半部玻璃光澤；選取時整列填滿主色) -->
+        <Style x:Key="SongListRowStyle_Gloss" TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="8,1.5,8,1.5"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Grid>
+                            <Border x:Name="RowBorder" Background="#1E2230" BorderBrush="#30FFFFFF"
+                                    BorderThickness="1" CornerRadius="12" SnapsToDevicePixels="True"/>
+                            <Border x:Name="GlossFill" Margin="1" CornerRadius="11" Visibility="Collapsed"
+                                    Background="{DynamicResource BrushGlossActive}" IsHitTestVisible="False"/>
+                            <!-- 上半部光澤 (於 0.5 處硬切，形成糖果/水晶按鈕的反光) -->
+                            <Border Margin="1" CornerRadius="11" IsHitTestVisible="False">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#40FFFFFF" Offset="0"/>
+                                        <GradientStop Color="#12FFFFFF" Offset="0.49"/>
+                                        <GradientStop Color="#00FFFFFF" Offset="0.5"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                            <DataGridCellsPresenter Margin="1" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="GlossFill" Property="Background" Value="{DynamicResource BrushGlossHover}"/>
+                                <Setter TargetName="GlossFill" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter TargetName="GlossFill" Property="Background" Value="{DynamicResource BrushGlossActive}"/>
+                                <Setter TargetName="GlossFill" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 風格 7：雙色漸層框 (選取時粗漸層外框由主色漸變到色相偏移的第二色，並帶雙色淡底) -->
+        <Style x:Key="SongListRowStyle_DuoRim" TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="8,1.5,8,1.5"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Grid>
+                            <Border x:Name="RowBorder" Background="#181B24" BorderBrush="#20FFFFFF"
+                                    BorderThickness="1" CornerRadius="8" SnapsToDevicePixels="True"/>
+                            <!-- 漸層外框疊在 RowBorder 上 (平時收起)，不改 RowBorder 厚度以免重新排版 -->
+                            <Border x:Name="DuoRim" CornerRadius="8" BorderThickness="2.5" Visibility="Collapsed"
+                                    BorderBrush="{DynamicResource BrushDuoRim}" Background="{DynamicResource BrushDuoTint}"
+                                    IsHitTestVisible="False"/>
+                            <DataGridCellsPresenter Margin="1" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="DuoRim" Property="BorderBrush" Value="{DynamicResource BrushDuoRimHover}"/>
+                                <Setter TargetName="DuoRim" Property="Background" Value="{DynamicResource BrushDuoTintHover}"/>
+                                <Setter TargetName="DuoRim" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="DuoRim" Property="BorderBrush" Value="{DynamicResource BrushDuoRim}"/>
+                                <Setter TargetName="DuoRim" Property="Background" Value="{DynamicResource BrushDuoTint}"/>
+                                <Setter TargetName="DuoRim" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="DuoRim" Property="BorderBrush" Value="{DynamicResource BrushDuoRimHover}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 風格 8：科技切角框 (方角卡片；選取時四角出現 L 型主色括號) -->
+        <Style x:Key="SongListRowStyle_Bracket" TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="8,1.5,8,1.5"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridRow">
+                        <Grid>
+                            <Border x:Name="RowBorder" Background="#161922" BorderBrush="#1CFFFFFF"
+                                    BorderThickness="1" CornerRadius="2" SnapsToDevicePixels="True"/>
+                            <Grid x:Name="BracketLayer" Visibility="Collapsed" IsHitTestVisible="False">
+                                <Border x:Name="BracketTint" Margin="1" Background="{DynamicResource BrushBracketTint}"/>
+                                <Border x:Name="BrTL" Width="28" Height="14" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                        BorderThickness="3,3,0,0" BorderBrush="{DynamicResource PrimaryBrush}"/>
+                                <Border x:Name="BrTR" Width="28" Height="14" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        BorderThickness="0,3,3,0" BorderBrush="{DynamicResource PrimaryBrush}"/>
+                                <Border x:Name="BrBL" Width="28" Height="14" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                        BorderThickness="3,0,0,3" BorderBrush="{DynamicResource PrimaryBrush}"/>
+                                <Border x:Name="BrBR" Width="28" Height="14" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                        BorderThickness="0,0,3,3" BorderBrush="{DynamicResource PrimaryBrush}"/>
+                            </Grid>
+                            <DataGridCellsPresenter Margin="1" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource BrushBracketBorderHover}"/>
+                                <Setter TargetName="BracketTint" Property="Background" Value="{DynamicResource BrushBracketTintHover}"/>
+                                <Setter TargetName="BrTL" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="BrTR" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="BrBL" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="BrBR" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="BracketLayer" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource BrushBracketBorder}"/>
+                                <Setter TargetName="BracketTint" Property="Background" Value="{DynamicResource BrushBracketTint}"/>
+                                <Setter TargetName="BrTL" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter TargetName="BrTR" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter TargetName="BrBL" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter TargetName="BrBR" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+                                <Setter TargetName="BracketLayer" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="BrTL" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="BrTR" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="BrBL" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                                <Setter TargetName="BrBR" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- 預設動態列樣式 (預設繼承風格 1 靜態微光光暈風格) -->
         <Style x:Key="FloatingDataGridRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource SongListRowStyle_Glow}"/>
 

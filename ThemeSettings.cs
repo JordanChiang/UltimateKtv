@@ -71,7 +71,7 @@ namespace UltimateKtv
         [Description("按鈕發光與選中強調色: Button glow and active highlight accent color. Default is empty (auto-derived from PrimaryColor).")]
         public string AccentColor { get; set; } = "";
 
-        [Description("歌曲清單列外觀風格: 1=風格 1 (靜態微光光暈風格), 2=風格 2 (膠囊外框輪廓風格), 3=風格 3 (左側主色指示條卡片), 4=風格 4 (現代懸浮微圓角卡片).")]
+        [Description("歌曲清單列外觀風格: 1=風格 1 (靜態微光光暈風格), 2=風格 2 (膠囊外框輪廓風格), 3=風格 3 (左側主色指示條卡片), 4=風格 4 (現代懸浮微圓角卡片), 5=風格 5 (霓虹底線), 6=風格 6 (糖果光澤), 7=風格 7 (雙色漸層框), 8=風格 8 (科技切角框).")]
         public int SongListRowStyle { get; set; } = 1;
 
         #endregion

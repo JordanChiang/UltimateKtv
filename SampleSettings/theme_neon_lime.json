@@ -1,0 +1,19 @@
+{
+    "AnnouncementForegroundColor": "#FFFFFF",
+    "BrightBorderColor": "#C5E06A",
+    "DataGridColumnHeaderBackgroundColor": "#5E8418",
+    "DataGridColumnHeaderForegroundColor": "#FFFFFF",
+    "FontFamily": "Microsoft JhengHei",
+    "PitchDialogButtonBorderColor": "#C2DB82",
+    "PitchDialogButtonForegroundColor": "#FFFFFF",
+    "PitchDialogForegroundColor": "#FFFFFF",
+    "PitchDisplayButtonBackgroundColor": "#C2DB82",
+    "PrimaryColor": "#9CC23A",
+    "PrimaryDarkColor": "#88AE2A",
+    "PrimaryForegroundColor": "#FFFFFF",
+    "PrimaryLightColor": "#DDEDB0",
+    "PrimaryMidColor": "#A8CB4E",
+    "StaticTextForegroundColor": "#DDEDB0",
+    "WebHostInfoFontSize": 22,
+    "WebHostInfoForegroundColor": "#FFFFFF"
+}

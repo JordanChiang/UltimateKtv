@@ -390,13 +390,7 @@ namespace StyleSimulator
             if (CboSongListRowStyle != null)
             {
                 int rStyle = _model.SongListRowStyle;
-                int targetIndex = rStyle switch
-                {
-                    2 => 1,
-                    3 => 2,
-                    4 => 3,
-                    _ => 0
-                };
+                int targetIndex = rStyle >= 1 && rStyle <= UltimateKtv.RowStyleBrushes.Count ? rStyle - 1 : 0;
                 CboSongListRowStyle.SelectedIndex = targetIndex;
             }
 
@@ -1473,6 +1467,55 @@ namespace StyleSimulator
                 }
             };
 
+            // 風格 5~8 與主程式共用同一組筆刷
+            var extraBrushes = UltimateKtv.RowStyleBrushes.Create(primaryColor, primaryLightCol);
+            var glossSheenBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(64, 255, 255, 255), 0.0),
+                    new GradientStop(Color.FromArgb(18, 255, 255, 255), 0.49),
+                    new GradientStop(Color.FromArgb(0, 255, 255, 255), 0.5)
+                }
+            };
+            glossSheenBrush.Freeze();
+
+            // 風格 8 四角括號 (掛在指示條元件的 Child 上)
+            UIElement BuildBrackets(Brush brush)
+            {
+                var g = new Grid { IsHitTestVisible = false };
+                foreach (var (h, v, t) in new[]
+                {
+                    (HorizontalAlignment.Left, VerticalAlignment.Top, new Thickness(3, 3, 0, 0)),
+                    (HorizontalAlignment.Right, VerticalAlignment.Top, new Thickness(0, 3, 3, 0)),
+                    (HorizontalAlignment.Left, VerticalAlignment.Bottom, new Thickness(3, 0, 0, 3)),
+                    (HorizontalAlignment.Right, VerticalAlignment.Bottom, new Thickness(0, 0, 3, 3)),
+                })
+                {
+                    g.Children.Add(new Border { Width = 28, Height = 14, HorizontalAlignment = h, VerticalAlignment = v, BorderThickness = t, BorderBrush = brush });
+                }
+                return g;
+            }
+
+            UIElement BuildNeonLine(Brush brush)
+            {
+                var g = new Grid { IsHitTestVisible = false };
+                g.Children.Add(new Border
+                {
+                    Height = 5, Margin = new Thickness(4, 0, 4, 0), VerticalAlignment = VerticalAlignment.Bottom,
+                    CornerRadius = new CornerRadius(2.5), Background = brush,
+                    Effect = new BlurEffect { Radius = 9, KernelType = KernelType.Gaussian }
+                });
+                g.Children.Add(new Border
+                {
+                    Height = 4, Margin = new Thickness(4, 0, 4, 0), VerticalAlignment = VerticalAlignment.Bottom,
+                    CornerRadius = new CornerRadius(2), Background = brush
+                });
+                return g;
+            }
+
             Border?[] rowBorders = {
                 BorderSongRow1, BorderSongRow2, BorderSongRow3, BorderSongRow4, BorderSongRow5,
                 BorderSongRow6, BorderSongRow7, BorderSongRow8, BorderSongRow9, BorderSongRow10,
@@ -1523,6 +1566,31 @@ namespace StyleSimulator
                     // 預設關閉內光暈邊緣層
                     if (glow != null) glow.BorderBrush = Brushes.Transparent;
 
+                    // 指示條元件在風格 5~8 被借用為底線/高光/內框，每次先還原為風格 3 的左側指示條外形
+                    if (accent != null)
+                    {
+                        accent.Width = 16;
+                        accent.Height = double.NaN;
+                        accent.HorizontalAlignment = HorizontalAlignment.Left;
+                        accent.VerticalAlignment = VerticalAlignment.Stretch;
+                        accent.Margin = new Thickness(0);
+                        accent.BorderThickness = new Thickness(0);
+                        accent.BorderBrush = null;
+                        accent.CornerRadius = new CornerRadius(7, 0, 0, 7);
+                        accent.ClipToBounds = false;
+                        accent.Child = null;
+                    }
+
+                    // 風格 5~8 共用的卡片基底
+                    if (styleOpt >= 5)
+                    {
+                        border.ClipToBounds = true;
+                        border.Effect = null;
+                        border.CornerRadius = new CornerRadius(8);
+                        border.Margin = new Thickness(8, 1.5, 8, 1.5);
+                        border.BorderThickness = new Thickness(1);
+                    }
+
                     switch (styleOpt)
                     {
                         case 2: // 風格 2：膠囊外框輪廓風格 (Capsule) - 依主要主題色自動計算半透明背景與輪廓
@@ -1572,6 +1640,73 @@ namespace StyleSimulator
                             border.BorderBrush = isHighlighted ? (isHoveredRow ? primaryLightBrush : primaryBrush) : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
                             border.Background = isHighlighted ? cyberButtonGradient : (isEven ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) : new SolidColorBrush(Color.FromRgb(20, 23, 32)));
                             if (accent != null) accent.Visibility = Visibility.Collapsed;
+                            break;
+
+                        case 5: // 風格 5：霓虹底線 (無卡片的扁平清單，只有細分隔線；選取時底部粗霓虹線 + 主色反光)
+                            border.CornerRadius = new CornerRadius(8, 8, 0, 0);
+                            border.BorderThickness = new Thickness(0, 0, 0, 1);
+                            border.BorderBrush = new SolidColorBrush(Color.FromArgb(38, 255, 255, 255));
+                            border.Background = isHighlighted
+                                ? (isHoveredRow && !isSelectedRow ? extraBrushes["BrushNeonTintHover"] : extraBrushes["BrushNeonTint"])
+                                : Brushes.Transparent;
+                            if (accent != null)
+                            {
+                                accent.Visibility = isHighlighted ? Visibility.Visible : Visibility.Collapsed;
+                                accent.Width = double.NaN;
+                                accent.Height = 16;
+                                accent.HorizontalAlignment = HorizontalAlignment.Stretch;
+                                accent.VerticalAlignment = VerticalAlignment.Bottom;
+                                accent.CornerRadius = new CornerRadius(0);
+                                accent.Background = Brushes.Transparent;
+                                if (isHighlighted)
+                                    accent.Child = BuildNeonLine(isHoveredRow ? extraBrushes["BrushNeonUnderlineHover"] : extraBrushes["BrushNeonUnderline"]);
+                            }
+                            break;
+
+                        case 6: // 風格 6：糖果光澤 (大圓角，每列上半部玻璃光澤；選取時整列填滿主色)
+                            border.CornerRadius = new CornerRadius(12);
+                            border.BorderBrush = isHighlighted
+                                ? (isHoveredRow ? primaryLightBrush : primaryBrush)
+                                : new SolidColorBrush(Color.FromArgb(48, 255, 255, 255));
+                            border.Background = isHighlighted
+                                ? (isHoveredRow && !isSelectedRow ? extraBrushes["BrushGlossHover"] : extraBrushes["BrushGlossActive"])
+                                : new SolidColorBrush(Color.FromRgb(30, 34, 48));
+                            if (accent != null)
+                            {
+                                accent.Visibility = Visibility.Visible;
+                                accent.Width = double.NaN;
+                                accent.HorizontalAlignment = HorizontalAlignment.Stretch;
+                                accent.CornerRadius = new CornerRadius(11);
+                                accent.Background = glossSheenBrush;
+                            }
+                            break;
+
+                        case 7: // 風格 7：雙色漸層框 (主色 → 色相偏移第二色的粗漸層外框 + 雙色淡底)
+                            border.BorderThickness = new Thickness(isHighlighted ? 2.5 : 1);
+                            border.BorderBrush = isHighlighted
+                                ? (isHoveredRow ? extraBrushes["BrushDuoRimHover"] : extraBrushes["BrushDuoRim"])
+                                : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
+                            border.Background = isHighlighted
+                                ? (isHoveredRow && !isSelectedRow ? extraBrushes["BrushDuoTintHover"] : extraBrushes["BrushDuoTint"])
+                                : (isEven ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) : new SolidColorBrush(Color.FromRgb(20, 23, 32)));
+                            if (accent != null) accent.Visibility = Visibility.Collapsed;
+                            break;
+
+                        case 8: // 風格 8：科技切角框 (方角卡片；選取時四角出現 L 型主色括號)
+                            border.CornerRadius = new CornerRadius(2);
+                            border.BorderBrush = isHighlighted
+                                ? (isHoveredRow && !isSelectedRow ? extraBrushes["BrushBracketBorderHover"] : extraBrushes["BrushBracketBorder"])
+                                : new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
+                            border.Background = new SolidColorBrush(Color.FromRgb(22, 25, 34));
+                            if (accent != null)
+                            {
+                                accent.Visibility = isHighlighted ? Visibility.Visible : Visibility.Collapsed;
+                                accent.Width = double.NaN;
+                                accent.HorizontalAlignment = HorizontalAlignment.Stretch;
+                                accent.CornerRadius = new CornerRadius(0);
+                                accent.Background = isHoveredRow && !isSelectedRow ? extraBrushes["BrushBracketTintHover"] : extraBrushes["BrushBracketTint"];
+                                if (isHighlighted) accent.Child = BuildBrackets(isHoveredRow ? primaryLightBrush : primaryBrush);
+                            }
                             break;
 
                         default: // 風格 1：靜態微光光暈風格 (預設，由框向內散發柔和高斯光暈，卡片主體維持深黑基底，高度完全一致)
@@ -1639,6 +1774,8 @@ namespace StyleSimulator
                 BorderGridHeader.CornerRadius = styleOpt switch
                 {
                     2 => new CornerRadius(16),
+                    6 => new CornerRadius(12),
+                    8 => new CornerRadius(2),
                     _ => new CornerRadius(8)
                 };
             }
@@ -1648,6 +1785,8 @@ namespace StyleSimulator
                 BorderWaitHeader.CornerRadius = styleOpt switch
                 {
                     2 => new CornerRadius(16),
+                    6 => new CornerRadius(12),
+                    8 => new CornerRadius(2),
                     _ => new CornerRadius(8)
                 };
             }

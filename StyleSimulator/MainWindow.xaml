@@ -1733,6 +1733,10 @@
                                             <ComboBoxItem Content="💊 風格 2：膠囊外框輪廓風格" Tag="2" />
                                             <ComboBoxItem Content="🔖 風格 3：左側主色指示條卡片" Tag="3" />
                                             <ComboBoxItem Content="✨ 風格 4：現代懸浮微圓角卡片" Tag="4" />
+                                            <ComboBoxItem Content="🌃 風格 5：霓虹底線 (扁平清單 + 發光底線)" Tag="5" />
+                                            <ComboBoxItem Content="🍬 風格 6：糖果光澤 (整列填滿主色)" Tag="6" />
+                                            <ComboBoxItem Content="🌈 風格 7：雙色漸層框 (主色漸變第二色)" Tag="7" />
+                                            <ComboBoxItem Content="🔲 風格 8：科技切角框 (四角括號)" Tag="8" />
                                         </ComboBox>
                                         <TextBlock Text="💡 選擇後即時套用至左側模擬畫面，儲存後直接生效於主程式。" Foreground="#9FA8DA" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
@@ -1765,6 +1769,10 @@
                                             <ComboBoxItem Content="🌊 海洋青 (Ocean Cyan)" Tag="theme_ocean_cyan.json" />
                                             <ComboBoxItem Content="🌅 日落橘 (Sunset Orange)" Tag="theme_sunset_orange.json" />
                                             <ComboBoxItem Content="🔮 炫麗紫 (Vivid Purple)" Tag="theme_vivid_purple.json" />
+                                            <ComboBoxItem Content="🍃 薄荷綠 (Mint Green)" Tag="theme_mint_green.json" />
+                                            <ComboBoxItem Content="💜 薰衣草 (Lavender)" Tag="theme_lavender.json" />
+                                            <ComboBoxItem Content="🍋 霓虹萊姆 (Neon Lime)" Tag="theme_neon_lime.json" />
+                                            <ComboBoxItem Content="🥂 香檳金 (Champagne Gold)" Tag="theme_champagne_gold.json" />
                                             <ComboBoxItem Content="🌟 原廠預設金琥珀 (Default Amber)" Tag="theme_default_amber.json" />
                                         </ComboBox>
                                         <TextBlock Text="💡 選擇主題將即時更新下方各項參數並在右側 1:1 模擬畫面精確展現" FontSize="11" Foreground="#9E9E9E" Margin="2,4,0,0" />
