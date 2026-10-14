@@ -186,14 +186,14 @@ namespace UltimateKtv.Services
                                 if (totalBytes.HasValue && totalBytes.Value > 0)
                                 {
                                     double percentage = (double)totalRead / totalBytes.Value * 100;
-                                    progressWindow?.ReportProgress(percentage, $"正在下載: {totalRead / 1024 / 1024} MB / {totalBytes.Value / 1024 / 1024} MB");
+                                    progressWindow?.ReportProgress(percentage, Loc.T("Update.Progress", totalRead / 1024 / 1024, totalBytes.Value / 1024 / 1024));
                                 }
                             }
                         } while (isMoreToRead);
                     }
                 }
 
-                progressWindow?.ReportProgress(100, "下載完成，正在解壓縮檔案...");
+                progressWindow?.ReportProgress(100, Loc.T("Update.Extracting"));
 
                 // Extract Zip
                 await Task.Run(() =>
@@ -201,7 +201,7 @@ namespace UltimateKtv.Services
                     ZipHelper.SafeExtractZip(zipFilePath, extractPath, msg => AppLogger.Log(msg));
                 });
 
-                progressWindow?.ReportProgress(100, "準備套用更新...");
+                progressWindow?.ReportProgress(100, Loc.T("Update.Applying"));
 
                 // Hide progress window right before triggering restart
                 await Application.Current.Dispatcher.InvokeAsync(() => progressWindow?.Close());
@@ -244,7 +244,7 @@ namespace UltimateKtv.Services
 
                 if (!File.Exists(updaterPath))
                 {
-                    throw new FileNotFoundException($"找不到更新程式：{updaterPath}");
+                    throw new FileNotFoundException(Loc.T("Update.UpdaterMissing", updaterPath));
                 }
 
                 // Arguments: --pid [pid] --source [source] --dest [dest] --exe [exe]
@@ -270,7 +270,7 @@ namespace UltimateKtv.Services
                 catch (Exception ex)
                 {
                     AppLogger.LogError("無法啟動更新管理員", ex);
-                    MessageBox.Show($"無法啟動更新管理員：{ex.Message}", "更新錯誤", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(Loc.T("Update.LaunchFailed", ex.Message), Loc.T("Update.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                     return; 
                 }
 
@@ -281,7 +281,7 @@ namespace UltimateKtv.Services
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     progressWindow?.Close();
-                    MessageBox.Show($"更新處理失敗：{ex.Message}", "更新錯誤", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(Loc.T("Update.Failed", ex.Message), Loc.T("Update.ErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                 });
             }
         }

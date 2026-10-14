@@ -11,7 +11,7 @@ namespace UltimateKtv
             InitializeComponent();
             CurrentVersionText.Text = currentVersion;
             NewVersionText.Text = newVersion;
-            ReleaseNotesText.Text = string.IsNullOrWhiteSpace(releaseNotes) ? "無詳細更新說明" : releaseNotes;
+            ReleaseNotesText.Text = string.IsNullOrWhiteSpace(releaseNotes) ? Loc.T("Update.NoNotes") : releaseNotes;
         }
 
         private void UpdateButton_Click(object sender, RoutedEventArgs e)

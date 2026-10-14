@@ -282,8 +282,8 @@ namespace UltimateKtv
                 Debug.WriteLine($"        IsPlayingYoutube: {IsPlayingYoutube}");
                 AppLogger.Log($"    vol={PlayingFileVolume}, track={player.AudioTrack}, channel={player.AudioChannel} ");
                 // Show marquee with song name and singer name before playing
-                var songName = _playingSongData.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? "未知歌曲" : "未知歌曲";
-                var singerName = _playingSongData.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? "未知歌手" : "未知歌手";
+                var songName = _playingSongData.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? Loc.T("Song.Unknown") : Loc.T("Song.Unknown");
+                var singerName = _playingSongData.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? Loc.T("Singer.Unknown") : Loc.T("Singer.Unknown");
                 
                 try
                 {
@@ -297,7 +297,7 @@ namespace UltimateKtv
                 var songCount = _playingSongData.TryGetValue("Song_PlayCount", out var pcObj);
                 // Stop any leftover marquee/static text on console screen since NowPlayingBorder displays current song info
                 MarqueeAPI.Stop(MarqueeDisplayDevice.ConsoleScreen);
-                PauseBtn.Content = "暫停";
+                SetPauseButtonResume(false);
                 UpdateCurrentPlayingDisplay();
                 // Display marquee on player display device
                 if (_videoDisplayWindow != null)
@@ -410,7 +410,7 @@ namespace UltimateKtv
                 _playCountIncrementedForCurrentSong = false;
                 DebugLog("Play count increment flag reset for new song.");
                 SetPlayerControlsEnabled(true);
-                PauseBtn.Content = "暫停"; // Ensure pause button text is correct for new song
+                SetPauseButtonResume(false); // Ensure pause button text is correct for new song
             }
         }
 
@@ -668,7 +668,7 @@ namespace UltimateKtv
                     AppLogger.LogError("Error stopping recording in SkipSong_Click", ex);
                 }
 
-                PauseBtn.Content = "暫停";
+                SetPauseButtonResume(false);
                 mediaUriElement.Stop();
                 mediaUriElement.Source = null; // Clear source to release resources immediately
                 _isRandomSongPlaying = false;
@@ -684,6 +684,17 @@ namespace UltimateKtv
                 DebugLog($"SkipSong_Click: Error skipping song: {ex.Message}\n{ex}");
                 AppLogger.LogError("SkipSong_Click: Error skipping song", ex);
             }
+        }
+
+        private bool _pauseBtnShowsResume;
+
+        /// <summary>
+        /// 暫停鈕文字 (暫停/繼續) 以資源參照設定，切換介面語言時跟著更新；狀態另存，不再比對按鈕文字。
+        /// </summary>
+        private void SetPauseButtonResume(bool resume)
+        {
+            _pauseBtnShowsResume = resume;
+            PauseBtn?.SetResourceReference(ContentControl.ContentProperty, Loc.ResourcePrefix + (resume ? "Player.Resume" : "Player.Pause"));
         }
 
         private void Pause_Click(object sender, RoutedEventArgs e)
@@ -707,7 +718,7 @@ namespace UltimateKtv
                     try { RecordingManager.Instance.PauseRecording(); }
                     catch (Exception ex) { AppLogger.LogError("Error pausing recording in Pause_Click", ex); }
 
-                    PauseBtn.Content = "繼續";
+                    SetPauseButtonResume(true);
                     UpdateCurrentPlayingDisplay();
                     Debug.WriteLine("Media paused");
                 }
@@ -720,7 +731,7 @@ namespace UltimateKtv
                     try { RecordingManager.Instance.ResumeRecording(); }
                     catch (Exception ex) { AppLogger.LogError("Error resuming recording in Pause_Click", ex); }
 
-                    PauseBtn.Content = "暫停";
+                    SetPauseButtonResume(false);
                     UpdateCurrentPlayingDisplay();
                 }
             }
@@ -802,22 +813,22 @@ namespace UltimateKtv
 
             if (_isLoopPlay)
             {
-                RepeatBtn.Content = "循環";
+                RepeatBtn.SetResourceReference(ContentControl.ContentProperty, Loc.ResourcePrefix + "Player.Loop");
                 RepeatBtn.Background = _fixedButtonBackground ?? ThemeSettingsHandler.PrimaryBrush;
                 RepeatBtn.Foreground = _activeButtonForeground ?? new SolidColorBrush(Colors.White);
                 _repeatBtnFlashStoryboard?.Begin(RepeatBtn, true);
-                MarqueeAPI.ShowStaticAnnouncement("已開啟單曲循環播放", 5);
+                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LoopOn"), 5);
                 AppLogger.Log("User action: Loop play enabled");
                 DebugLog("SetLoopPlay: Loop play enabled");
             }
             else
             {
-                RepeatBtn.Content = "重播";
+                RepeatBtn.SetResourceReference(ContentControl.ContentProperty, Loc.ResourcePrefix + "Player.Replay");
                 _repeatBtnFlashStoryboard?.Stop(RepeatBtn);
                 RepeatBtn.ClearValue(OpacityProperty);
                 RepeatBtn.ClearValue(Button.BackgroundProperty);
                 RepeatBtn.ClearValue(Button.ForegroundProperty);
-                MarqueeAPI.ShowStaticAnnouncement("已取消單曲循環播放", 5);
+                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LoopOff"), 5);
                 AppLogger.Log("User action: Loop play disabled");
                 DebugLog("SetLoopPlay: Loop play disabled");
             }
@@ -1084,7 +1095,7 @@ namespace UltimateKtv
                 _vocalBtnFlashStoryboard?.Stop(VocalBtn);
                 VocalBtn.ClearValue(OpacityProperty);
                 UpdateVocalMusicButtonStates();
-                MarqueeAPI.ShowStaticAnnouncement("已解除固定聲道", 2);
+                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackUnfixed"), 2);
                 return;
             }
 
@@ -1207,7 +1218,7 @@ namespace UltimateKtv
                     _vocalBtnFlashStoryboard?.Stop(VocalBtn);
                     VocalBtn.ClearValue(OpacityProperty);
                     UpdateVocalMusicButtonStates();
-                    MarqueeAPI.ShowStaticAnnouncement("已解除固定聲道", 2);
+                    MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackUnfixed"), 2);
                     // Do not proceed to change the track, just disable the mode.
                     return;
                 }
@@ -1387,7 +1398,7 @@ namespace UltimateKtv
 
                 var setAsMusicButton = new Button
                 {
-                    Content = "設定此聲道為伴唱",
+                    Content = Loc.T("Player.SetTrackAsMusic"),
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
@@ -1395,7 +1406,7 @@ namespace UltimateKtv
 
                 var setFixeTrackButton = new Button
                 {
-                    Content = "固定此聲道播放",
+                    Content = Loc.T("Player.FixTrack"),
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
@@ -1403,7 +1414,7 @@ namespace UltimateKtv
 
                 var cancelButton = new Button
                 {
-                    Content = "取消",
+                    Content = Loc.T("Common.Cancel"),
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
@@ -1460,14 +1471,14 @@ namespace UltimateKtv
                         {
                             PlayingFileMusicTrack = (PlayingFileMusicTrack == 1) ? 2 : 1;
                             if(PlayingFileMusicTrack==1)
-                                MarqueeAPI.ShowStaticAnnouncement($"已設定左聲道為伴唱", 5);
+                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LeftAsMusic"), 5);
                             else
-                                MarqueeAPI.ShowStaticAnnouncement($"已設定右聲道為伴唱", 5);
+                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.RightAsMusic"), 5);
                         }
                         else
                         {
                             PlayingFileMusicTrack = currentTrack;
-                            MarqueeAPI.ShowStaticAnnouncement($"已設定聲道 {currentTrack} 為伴唱", 5);
+                            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackAsMusic", currentTrack), 5);
                         }
                         // Call MusicBtn_Click to switch as music mode      
                         MusicBtn_Click(this, new RoutedEventArgs());
@@ -1516,15 +1527,15 @@ namespace UltimateKtv
                         if (mediaUriElement.AudioStreams == null || mediaUriElement.AudioStreams.Count <= 1)
                         {
                             if (_fixedAudioTrack == 1)
-                                MarqueeAPI.ShowStaticAnnouncement($"已固定左聲道播放", 5);
+                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LeftFixed"), 5);
                             else if (_fixedAudioTrack == 2)
-                                MarqueeAPI.ShowStaticAnnouncement($"已固定右聲道播放", 5);
+                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.RightFixed"), 5);
                             else
-                                MarqueeAPI.ShowStaticAnnouncement($"已固定聲道 {_fixedAudioTrack} 播放", 5);
+                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackFixed", _fixedAudioTrack), 5);
                         }
                         else
                         {
-                            MarqueeAPI.ShowStaticAnnouncement($"已固定聲道 {_fixedAudioTrack} 播放", 5);
+                            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackFixed", _fixedAudioTrack), 5);
                         }
 
                         // Update button visuals to reflect the new "fixed" state
@@ -1540,7 +1551,7 @@ namespace UltimateKtv
                 if (VocalBtn != null) VocalBtn.IsEnabled = true;
                 DebugLog($"Error in ShowSetAsMusicTrackDialog: {ex.Message}");
                 AppLogger.LogError("Error in ShowSetAsMusicTrackDialog", ex);
-                MarqueeAPI.ShowStaticAnnouncement("設定失敗", 2);
+                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.SetFailed"), 2);
             }
             return Task.CompletedTask;
         }
@@ -1671,7 +1682,7 @@ namespace UltimateKtv
 
                 var loopPlayButton = new Button
                 {
-                    Content = _isLoopPlay ? "取消循環" : "循環播放",
+                    Content = _isLoopPlay ? Loc.T("Player.CancelLoop") : Loc.T("Player.LoopPlay"),
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
@@ -1679,7 +1690,7 @@ namespace UltimateKtv
 
                 var cancelButton = new Button
                 {
-                    Content = "取消",
+                    Content = Loc.T("Common.Cancel"),
                     Height = 42,
                     Margin = new Thickness(0, 0, 8, 0)
                 };
@@ -1833,7 +1844,7 @@ namespace UltimateKtv
             _lockedVolume = (int)VolumeSlider.Value;
             AppLogger.Log($"User action: Volume lock activated at {_lockedVolume}");
             DebugLog($"Volume lock activated. Locked volume: {_lockedVolume}");
-            MarqueeAPI.ShowStaticAnnouncement($"音量已鎖定在 {_lockedVolume}", 2);
+            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.VolumeLocked", _lockedVolume), 2);
         }
 
         /// <summary>
@@ -1844,7 +1855,7 @@ namespace UltimateKtv
         {
             AppLogger.Log("User action: Volume lock deactivated");
             DebugLog("Volume lock deactivated.");
-            MarqueeAPI.ShowStaticAnnouncement("音量鎖定已解除", 2);
+            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.VolumeUnlocked"), 2);
         }
 
         public void VolumeUp()

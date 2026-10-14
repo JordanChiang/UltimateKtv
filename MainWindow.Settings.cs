@@ -226,14 +226,14 @@ namespace UltimateKtv
             // Update button text to give user feedback
             if (sender is Button btn)
             {
-                btn.Content = _showPreviewInMainWindow ? "隱藏預覽" : "顯示預覽";
+                btn.Content = _showPreviewInMainWindow ? Loc.T("Settings.HidePreview") : Loc.T("Settings.ShowPreview");
             }
         }
 
         private void VolumeSubButton_Click(object sender, RoutedEventArgs e)
         {
             // Placeholder for volume settings functionality
-            MessageBox.Show("音量設定功能 - 待實現", "音量設定", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(Loc.T("Settings.VolumeTodo"), Loc.T("Settings.VolumeTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         public void ButtonStyle_Click(object sender, RoutedEventArgs e)

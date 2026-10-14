@@ -121,6 +121,8 @@
         
         <!-- Converter to check if value is not equal to parameter -->
         <local:NotEqualConverter x:Key="NotEqualConverter" />
+        <local:SongLanguageDisplayConverter x:Key="SongLanguageDisplayConverter" />
+        <local:OrderedByDisplayConverter x:Key="OrderedByDisplayConverter" />
 
         <!-- Custom style to increase the height of the slider track -->
         <Style x:Key="ThickSliderStyle" TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
@@ -618,9 +620,9 @@
                                 <Border x:Name="RightHighlight" Grid.Column="1" Background="{DynamicResource PrimaryBrush}"/>
 
                                 <!-- Text Labels -->
-                                <TextBlock x:Name="LeftText" Grid.Column="0" Text="歌曲" 
+                                <TextBlock x:Name="LeftText" Grid.Column="0" Text="{DynamicResource Str.Search.Song}" 
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="RightText" Grid.Column="1" Text="歌星" 
+                                <TextBlock x:Name="RightText" Grid.Column="1" Text="{DynamicResource Str.Search.Singer}" 
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
@@ -944,9 +946,9 @@
                         </Style.Triggers>
                     </Style>
                 </StackPanel.Style>
-                <Button Content="插播" Width="110" Margin="0,0,10,0"
+                <Button Content="{DynamicResource Str.Song.Insert}" Width="110" Margin="0,0,10,0"
                         Style="{StaticResource SongRowActionButtonStyle}" Click="SongInsertButton_Click"/>
-                <Button Width="76" ToolTip="加入最愛"
+                <Button Width="76" ToolTip="{DynamicResource Str.Song.AddFavorite}"
                         Style="{StaticResource SongRowActionButtonStyle}" Click="SongFavoriteButton_Click">
                     <materialDesign:PackIcon Kind="HeartOutline" Width="32" Height="32"/>
                 </Button>
@@ -1011,7 +1013,9 @@
                             <Button Name="FuncBtnSetting" DockPanel.Dock="Bottom" Style="{StaticResource NavRailButtonStyle}" Margin="0" Click="FuncBtnSetting_Click">
                                 <StackPanel HorizontalAlignment="Center">
                                     <materialDesign:PackIcon Kind="Cog" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="設定" HorizontalAlignment="Center"/>
+                                    <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                        <TextBlock Text="{DynamicResource Str.Nav.Setting}"/>
+                                    </Viewbox>
                                 </StackPanel>
                             </Button>
                             <!-- 項目順序由 themesettings.json 的 NavMenuOrder 決定 (ApplyNavMenuOrder) -->
@@ -1019,43 +1023,57 @@
                                 <Button Name="FuncBtnBySinger" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnBySinger_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="AccountMusic" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="歌星" HorizontalAlignment="Center"/>
+                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                            <TextBlock Text="{DynamicResource Str.Nav.Singer}"/>
+                                        </Viewbox>
                                     </StackPanel>
                                 </Button>
                                 <Button Name="FuncBtnByFav" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByFav_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Heart" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="最愛" HorizontalAlignment="Center"/>
+                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                            <TextBlock Text="{DynamicResource Str.Nav.Fav}"/>
+                                        </Viewbox>
                                     </StackPanel>
                                 </Button>
                                 <Button Name="FuncBtnByNum" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNum_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Pound" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="編號" HorizontalAlignment="Center"/>
+                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                            <TextBlock Text="{DynamicResource Str.Nav.Num}"/>
+                                        </Viewbox>
                                     </StackPanel>
                                 </Button>
                                 <Button Name="FuncBtnLanguage" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByLanguage_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Translate" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="語系" HorizontalAlignment="Center"/>
+                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                            <TextBlock Text="{DynamicResource Str.Nav.Language}"/>
+                                        </Viewbox>
                                     </StackPanel>
                                 </Button>
                                 <Button Name="FuncBtnByNew" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNew_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="NewBox" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="新進" HorizontalAlignment="Center"/>
+                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                            <TextBlock Text="{DynamicResource Str.Nav.New}"/>
+                                        </Viewbox>
                                     </StackPanel>
                                 </Button>
                                 <Button Name="FuncBtnByRank" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByRank_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Trophy" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="排行" HorizontalAlignment="Center"/>
+                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                            <TextBlock Text="{DynamicResource Str.Nav.Rank}"/>
+                                        </Viewbox>
                                     </StackPanel>
                                 </Button>
                                 <Button Name="FuncBtnByInput" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByInput_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Magnify" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="搜尋" HorizontalAlignment="Center"/>
+                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                            <TextBlock Text="{DynamicResource Str.Nav.Input}"/>
+                                        </Viewbox>
                                     </StackPanel>
                                 </Button>
                                 <Button Name="FuncBtnByYoutube" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByYoutube_Click">
@@ -1064,7 +1082,7 @@
                                         <materialDesign:PackIcon Kind="Youtube" Width="54" Height="54" HorizontalAlignment="Center" Margin="0,-7,0,-7"/>
                                         <!-- 字數較長，放不下時自動縮小 -->
                                         <Viewbox StretchDirection="DownOnly" Margin="6,0">
-                                            <TextBlock Text="Youtube"/>
+                                            <TextBlock Text="{DynamicResource Str.Nav.Youtube}"/>
                                         </Viewbox>
                                     </StackPanel>
                                 </Button>
@@ -1086,7 +1104,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <!-- SkipSong - Double height on the right (最右邊) -->
-                                    <Button Name="SkipSong" Content="切歌" Grid.Column="2" Style="{DynamicResource LargePlayerControlButtonStyle}" Click="SkipSong_Click"/>
+                                    <Button Name="SkipSong" Content="{DynamicResource Str.Player.Skip}" Grid.Column="2" Style="{DynamicResource LargePlayerControlButtonStyle}" Click="SkipSong_Click"/>
 
                                     <!-- Left side buttons layout (寬度隨面板延展) -->
                                     <Grid Grid.Column="0">
@@ -1102,20 +1120,20 @@
                                         </Grid.ColumnDefinitions>
                                         
                                         <!-- First row - pause and repeat buttons fill the row11 fill the row -->
-                                        <Button Name="PauseBtn" Content="暫停" Grid.Row="0" Grid.Column="0" Width="Auto" Style="{DynamicResource PlayerControlButtonStyle}" Click="Pause_Click"/>
-                                        <Button Name="RepeatBtn" Content="重播" Grid.Row="0" Grid.Column="2" Width="Auto" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
+                                        <Button Name="PauseBtn" Content="{DynamicResource Str.Player.Pause}" Grid.Row="0" Grid.Column="0" Width="Auto" Style="{DynamicResource PlayerControlButtonStyle}" Click="Pause_Click"/>
+                                        <Button Name="RepeatBtn" Content="{DynamicResource Str.Player.Replay}" Grid.Row="0" Grid.Column="2" Width="Auto" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
                                                 Click="Repeat_Click"
                                                 PreviewMouseDown="RepeatBtn_PreviewMouseDown" 
                                                 PreviewMouseUp="RepeatBtn_PreviewMouseUp" 
                                                 MouseRightButtonUp="RepeatBtn_RightClick"/>
                                         
                                         <!-- Second row - buttons 12 and 13 fill the row -->
-                                        <Button Name="VocalBtn" Content="人聲" Grid.Row="2" Grid.Column="0" Width="Auto" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
+                                        <Button Name="VocalBtn" Content="{DynamicResource Str.Player.Vocal}" Grid.Row="2" Grid.Column="0" Width="Auto" Style="{DynamicResource SubmenuPlayerControlButtonStyle}" 
                                                 Click="VocalBtn_Click" 
                                                 PreviewMouseDown="VocalBtn_PreviewMouseDown" 
                                                 PreviewMouseUp="VocalBtn_PreviewMouseUp" 
                                                 MouseRightButtonUp="VocalBtn_RightClick"/>
-                                        <Button Name="MusicBtn" Content="伴唱" Grid.Row="2" Grid.Column="2" Width="Auto" Style="{DynamicResource PlayerControlButtonStyle}" 
+                                        <Button Name="MusicBtn" Content="{DynamicResource Str.Player.Music}" Grid.Row="2" Grid.Column="2" Width="Auto" Style="{DynamicResource PlayerControlButtonStyle}" 
                                                 Click="MusicBtn_Click"
                                                 PreviewMouseDown="MusicBtn_PreviewMouseDown" 
                                                 PreviewMouseUp="MusicBtn_PreviewMouseUp" 
@@ -1165,13 +1183,13 @@
                                                       ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                                 <DataGrid.ContextMenu>
                                                     <ContextMenu>
-                                                        <MenuItem Header="移到最前面" Click="WaitingList_MoveToFirst_Click"/>
-                                                        <MenuItem Header="從清單移除" Click="WaitingList_RemoveFromList_Click"/>
-                                                        <MenuItem Header="往後一首" Click="WaitingList_MoveToNext_Click"/>
+                                                        <MenuItem Header="{DynamicResource Str.Wait.MoveToFirst}" Click="WaitingList_MoveToFirst_Click"/>
+                                                        <MenuItem Header="{DynamicResource Str.Wait.Remove}" Click="WaitingList_RemoveFromList_Click"/>
+                                                        <MenuItem Header="{DynamicResource Str.Wait.MoveToNext}" Click="WaitingList_MoveToNext_Click"/>
                                                     </ContextMenu>
                                                 </DataGrid.ContextMenu>
                                                 <DataGrid.Columns>
-                                                    <DataGridTemplateColumn Header="歌名" Width="300" CanUserSort="False">
+                                                    <DataGridTemplateColumn Header="{DynamicResource Str.Col.SongName}" Width="300" CanUserSort="False">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel Orientation="Horizontal" Margin="0">
@@ -1193,7 +1211,7 @@
                                                                         <Border.ToolTip>
                                                                             <ToolTip>
                                                                                 <TextBlock FontSize="18" FontWeight="Medium">
-                                                                                    <Run Text="{Binding OrderedBy, Mode=OneWay}" FontWeight="Bold"/>
+                                                                                    <Run Text="{Binding OrderedBy, Mode=OneWay, Converter={StaticResource OrderedByDisplayConverter}}" FontWeight="Bold"/>
                                                                                 </TextBlock>
                                                                             </ToolTip>
                                                                         </Border.ToolTip>
@@ -1229,7 +1247,7 @@
                                                             </DataTemplate>
                                                         </DataGridTemplateColumn.CellTemplate>
                                                     </DataGridTemplateColumn>
-                                                    <DataGridTemplateColumn Header="歌手" Width="*" CanUserSort="False">
+                                                    <DataGridTemplateColumn Header="{DynamicResource Str.Col.Singer}" Width="*" CanUserSort="False">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0">
@@ -1265,11 +1283,11 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Viewbox Grid.Column="0" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,8,0">
-                                        <TextBlock Name="WaitListPageInfo" Text="已點 0 首 · 1/1 頁" FontSize="{DynamicResource WaitingListFontSize}" Foreground="{DynamicResource MaterialDesignBody}" />
+                                        <TextBlock Name="WaitListPageInfo" Text="{DynamicResource Str.Wait.PageInfoDefault}" FontSize="{DynamicResource WaitingListFontSize}" Foreground="{DynamicResource MaterialDesignBody}" />
                                     </Viewbox>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <Button Name="WaitListPageUp" Content="上一頁" Style="{StaticResource FunctionButtonStyle}" Margin="0" Width="100" FontSize="26"/>
-                                        <Button Name="WaitListPageDown" Content="下一頁" Style="{StaticResource FunctionButtonStyle}" Margin="10,0,0,0" Width="100" FontSize="26"/>
+                                        <Button Name="WaitListPageUp" Content="{DynamicResource Str.Common.PageUp}" Style="{StaticResource FunctionButtonStyle}" Margin="0" Width="100" FontSize="26"/>
+                                        <Button Name="WaitListPageDown" Content="{DynamicResource Str.Common.PageDown}" Style="{StaticResource FunctionButtonStyle}" Margin="10,0,0,0" Width="100" FontSize="26"/>
                                     </StackPanel>
                                 </Grid>
 
@@ -1302,7 +1320,7 @@
                                                 CornerRadius="7" 
                                                 Margin="0,0,10,0"
                                                 VerticalAlignment="Center"
-                                                ToolTip="待機中">
+                                                ToolTip="{DynamicResource Str.NowPlaying.Idle}">
                                             <materialDesign:PackIcon x:Name="NowPlayingIcon" Kind="MusicNote" Width="22" Height="22" 
                                                                      Foreground="{DynamicResource BrushTextDim}" 
                                                                      HorizontalAlignment="Center"
@@ -1322,7 +1340,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock x:Name="NowPlayingSongText"
                                                        Grid.Column="0"
-                                                       Text="無播放歌曲"
+                                                       Text="{DynamicResource Str.NowPlaying.None}"
                                                        FontSize="30"
                                                        FontWeight="Normal"
                                                        TextTrimming="CharacterEllipsis"
@@ -1417,7 +1435,7 @@
                                                 
                                                 <ToggleButton Grid.Column="3" Name="VolumeLockToggle"
                                                               Style="{StaticResource MaterialDesignActionToggleButton}"
-                                                              ToolTip="鎖定音量"
+                                                              ToolTip="{DynamicResource Str.Player.LockVolume}"
                                                               VerticalAlignment="Center"
                                                               Margin="0,0,10,0"
                                                               Background="Transparent"
@@ -1435,7 +1453,7 @@
                                                 <Button Grid.Column="4" Name="PitchControlBtn"
                                                         Click="PitchControlBtn_Click"
                                                         Style="{StaticResource CyberButton}"
-                                                        ToolTip="音調控制"
+                                                        ToolTip="{DynamicResource Str.Pitch.Title}"
                                                         Margin="0"
                                                         Padding="0"
                                                         Width="44" Height="40">
@@ -1481,17 +1499,17 @@
                             <!-- Language Second Filter: Singer Type -->
                             <UniformGrid x:Name="LanguageSecondFilterGrid" Grid.Row="1" Rows="1" Margin="0,0,0,6" Height="50" Visibility="Collapsed">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="合唱" VerticalAlignment="Center" Margin="0,0,30,0" FontSize="{DynamicResource FuncBtnFontSize}" FontWeight="Bold" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                    <TextBlock Text="{DynamicResource Str.Lang.Duet}" VerticalAlignment="Center" Margin="0,0,30,0" FontSize="{DynamicResource FuncBtnFontSize}" FontWeight="Bold" Foreground="{DynamicResource MaterialDesignBody}"/>
                                     <ToggleButton x:Name="LanguageDuetToggle" IsChecked="False" Style="{StaticResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" Click="LanguageDuetToggle_Click">
                                         <ToggleButton.LayoutTransform>
                                             <ScaleTransform ScaleX="1.8" ScaleY="1.4"/>
                                         </ToggleButton.LayoutTransform>
                                     </ToggleButton>
                                 </StackPanel>
-                                <Button x:Name="LanguageMaleBtn" Content="男歌手" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="0"/>
-                                <Button x:Name="LanguageFemaleBtn" Content="女歌手" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="1"/>
-                                <Button x:Name="LanguageGroupBtn" Content="團體" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="2"/>
-                                <Button x:Name="LanguageOtherBtn" Content="其他" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="99" Margin="0"/>
+                                <Button x:Name="LanguageMaleBtn" Content="{DynamicResource Str.SingerType.Male}" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="0"/>
+                                <Button x:Name="LanguageFemaleBtn" Content="{DynamicResource Str.SingerType.Female}" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="1"/>
+                                <Button x:Name="LanguageGroupBtn" Content="{DynamicResource Str.SingerType.Group}" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="2"/>
+                                <Button x:Name="LanguageOtherBtn" Content="{DynamicResource Str.SingerType.Other}" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageSingerType_Click" Tag="99" Margin="0"/>
                             </UniformGrid>
 
                             <!-- Language Third Filter: Word Count -->
@@ -1505,13 +1523,13 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="字數" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="{DynamicResource FuncBtnFontSize}" FontWeight="Bold" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Lang.WordCount}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="{DynamicResource FuncBtnFontSize}" FontWeight="Bold" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <Button Grid.Column="1" Content="[1~2]" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageWordCount_Click" Tag="1-2"/>
                                 <Button Grid.Column="2" Content="[3]" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageWordCount_Click" Tag="3"/>
                                 <Button Grid.Column="3" Content="[4]" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageWordCount_Click" Tag="4"/>
                                 <Button Grid.Column="4" Content="[5]" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageWordCount_Click" Tag="5"/>
                                 <Button Grid.Column="5" Content="[6~7]" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageWordCount_Click" Tag="6-7"/>
-                                <Button Grid.Column="6" Content="[8以上]" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageWordCount_Click" Tag="8-99" Margin="0"/>
+                                <Button Grid.Column="6" Content="{DynamicResource Str.Lang.WordCount8Plus}" Style="{StaticResource SecondFilterButtonStyle}" Click="LanguageWordCount_Click" Tag="8-99" Margin="0"/>
                             </Grid>
 
                             <!-- Five selector buttons: 1) BopomofoList 2) EngAndNumList 3) PenStyleList 4) song ID 5) blank -->
@@ -1530,22 +1548,22 @@
                                 <Border x:Name="SearchModeSegmentBorder" Grid.Column="0" Background="#121826" BorderBrush="{StaticResource BrushBorderDefault}" BorderThickness="1" CornerRadius="{StaticResource RadiusMedium}" Margin="0,0,8,0" Padding="2" UseLayoutRounding="True">
                                     <UniformGrid x:Name="SearchModeSegment" Columns="2">
                                         <RadioButton x:Name="YoutubeRadio" Visibility="Collapsed"/>
-                                        <RadioButton x:Name="SongRadio" Content="歌曲" IsChecked="True" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
-                                        <RadioButton x:Name="SingerRadio" Content="歌星" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
+                                        <RadioButton x:Name="SongRadio" Content="{DynamicResource Str.Search.Song}" IsChecked="True" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
+                                        <RadioButton x:Name="SingerRadio" Content="{DynamicResource Str.Search.Singer}" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
                                     </UniformGrid>
                                 </Border>
 
-                                <Button x:Name="BopomofoListBtn" Grid.Column="1" Content="注音" Style="{StaticResource FunctionButtonStyle}" Click="BopomofoListBtn_Click" Margin="0,0,8,0"/>
-                                <Button x:Name="PenStyleListBtn" Grid.Column="2" Content="筆劃" Style="{StaticResource FunctionButtonStyle}" Click="PenStyleListBtn_Click" Margin="0,0,8,0"/>
-                                <Button x:Name="EngAndNumListBtn" Grid.Column="3" Content="英數" Style="{StaticResource FunctionButtonStyle}" Click="EngAndNumListBtn_Click" Margin="0,0,8,0"/>
-                                <Button x:Name="SongIdListBtn" Grid.Column="4" Content="編號" Style="{StaticResource FunctionButtonStyle}" Click="SongIdListBtn_Click" Margin="0,0,8,0"/>
+                                <Button x:Name="BopomofoListBtn" Grid.Column="1" Content="{DynamicResource Str.Search.Bopomofo}" Style="{StaticResource FunctionButtonStyle}" Click="BopomofoListBtn_Click" Margin="0,0,8,0"/>
+                                <Button x:Name="PenStyleListBtn" Grid.Column="2" Content="{DynamicResource Str.Search.Stroke}" Style="{StaticResource FunctionButtonStyle}" Click="PenStyleListBtn_Click" Margin="0,0,8,0"/>
+                                <Button x:Name="EngAndNumListBtn" Grid.Column="3" Content="{DynamicResource Str.Search.EngNum}" Style="{StaticResource FunctionButtonStyle}" Click="EngAndNumListBtn_Click" Margin="0,0,8,0"/>
+                                <Button x:Name="SongIdListBtn" Grid.Column="4" Content="{DynamicResource Str.Search.SongId}" Style="{StaticResource FunctionButtonStyle}" Click="SongIdListBtn_Click" Margin="0,0,8,0"/>
                                 
                                 <!-- 寬度與「清除Youtube歌曲」相同 -->
-                                <Button x:Name="YoutubeHistoryBtn" Grid.Column="0" Grid.ColumnSpan="3" Content="Youtube點播記錄" Style="{StaticResource FunctionButtonStyle}" Click="YoutubeHistoryBtn_Click" Margin="0" Visibility="Collapsed"
+                                <Button x:Name="YoutubeHistoryBtn" Grid.Column="0" Grid.ColumnSpan="3" Content="{DynamicResource Str.Youtube.History}" Style="{StaticResource FunctionButtonStyle}" Click="YoutubeHistoryBtn_Click" Margin="0" Visibility="Collapsed"
                                         HorizontalAlignment="Left" Width="{Binding ActualWidth, ElementName=ClearYoutubeBtn}"/>
-                                <Button x:Name="ClearYoutubeBtn" Grid.Column="4" Grid.ColumnSpan="2" Content="清除Youtube歌曲" Style="{StaticResource FunctionButtonStyle}" Click="ClearYoutubeBtn_Click" Margin="0" Visibility="Collapsed" Background="#D32F2F" Foreground="White" BorderBrush="#D32F2F" />
+                                <Button x:Name="ClearYoutubeBtn" Grid.Column="4" Grid.ColumnSpan="2" Content="{DynamicResource Str.Youtube.Clear}" Style="{StaticResource FunctionButtonStyle}" Click="ClearYoutubeBtn_Click" Margin="0" Visibility="Collapsed" Background="#D32F2F" Foreground="White" BorderBrush="#D32F2F" />
 
-                                <Button x:Name="KeyboardListBtn" Grid.Column="5" Content="鍵盤" Style="{StaticResource FunctionButtonStyle}" Click="KeyboardListBtn_Click" Margin="0"/>
+                                <Button x:Name="KeyboardListBtn" Grid.Column="5" Content="{DynamicResource Str.Search.Keyboard}" Style="{StaticResource FunctionButtonStyle}" Click="KeyboardListBtn_Click" Margin="0"/>
                             </Grid>
 
                             <!-- 40 single-word grid (default: Bopomofo list) -->
@@ -1604,15 +1622,15 @@
                                                 </Style>
                                             </TextBox.Style>
                                         </TextBox>
-                                        <Button x:Name="DeleteEnteredWordBtn" Grid.Column="1" Content="刪除" Style="{StaticResource FunctionButtonStyle}"
+                                        <Button x:Name="DeleteEnteredWordBtn" Grid.Column="1" Content="{DynamicResource Str.Search.Delete}" Style="{StaticResource FunctionButtonStyle}"
                                                 Click="DeleteEnteredWordBtn_Click" Margin="0,0,4,0" MinWidth="72"/>
-                                        <Button x:Name="ClearEnteredWordBtn" Grid.Column="2" Content="清空" Style="{StaticResource FunctionButtonStyle}"
+                                        <Button x:Name="ClearEnteredWordBtn" Grid.Column="2" Content="{DynamicResource Str.Search.Clear}" Style="{StaticResource FunctionButtonStyle}"
                                                 Click="ClearEnteredWordBtn_Click" Margin="0,0,4,0" MinWidth="72"/>
                                         <Button x:Name="YoutubeSearchBtn" Grid.Column="3" 
                                                 Click="YoutubeSearchBtn_Click" Margin="0,0,4,0" MinWidth="72">
                                             <Button.Style>
                                                 <Style TargetType="Button" BasedOn="{StaticResource FunctionButtonStyle}">
-                                                    <Setter Property="Content" Value="尋找"/>
+                                                    <Setter Property="Content" Value="{DynamicResource Str.Search.Find}"/>
                                                     <Setter Property="Visibility" Value="Collapsed"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding ElementName=YoutubeRadio, Path=IsChecked}" Value="True">
@@ -1622,7 +1640,7 @@
                                                             <Setter Property="Visibility" Value="Visible"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding IsDownloadingYoutube, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                            <Setter Property="Content" Value="取消"/>
+                                                            <Setter Property="Content" Value="{DynamicResource Str.Common.Cancel}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -1650,13 +1668,13 @@
                                                     </Style>
                                                 </StackPanel.Resources>
                                                 <Ellipse Fill="{StaticResource BrushSingerMale}"/>
-                                                <TextBlock Text="男" Foreground="{StaticResource BrushSingerMale}"/>
+                                                <TextBlock Text="{DynamicResource Str.Legend.Male}" Foreground="{StaticResource BrushSingerMale}"/>
                                                 <Ellipse Fill="{StaticResource BrushSingerFemale}"/>
-                                                <TextBlock Text="女" Foreground="{StaticResource BrushSingerFemale}"/>
+                                                <TextBlock Text="{DynamicResource Str.Legend.Female}" Foreground="{StaticResource BrushSingerFemale}"/>
                                                 <Ellipse Fill="{StaticResource BrushSingerGroup}"/>
-                                                <TextBlock Text="團體" Foreground="{StaticResource BrushSingerGroup}"/>
+                                                <TextBlock Text="{DynamicResource Str.Legend.Group}" Foreground="{StaticResource BrushSingerGroup}"/>
                                                 <Ellipse Fill="{DynamicResource SingerButtonBackground}"/>
-                                                <TextBlock Text="其他" Foreground="{DynamicResource SingerButtonBackground}" Margin="0"/>
+                                                <TextBlock Text="{DynamicResource Str.Legend.Other}" Foreground="{DynamicResource SingerButtonBackground}" Margin="0"/>
                                             </StackPanel>
                                                        
                                             <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="#FFD700"
@@ -1702,11 +1720,11 @@
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.ContextMenu>
                                         <ContextMenu>
-                                            <MenuItem Header="加入最愛" Click="AddToFavorite_Click"/>
+                                            <MenuItem Header="{DynamicResource Str.Song.AddFavorite}" Click="AddToFavorite_Click"/>
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn x:Name="QuickSongNameColumn" Header="歌名" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}">
+                                        <DataGridTextColumn x:Name="QuickSongNameColumn" Header="{DynamicResource Str.Col.SongName}" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="TextAlignment" Value="Left"/>
@@ -1740,10 +1758,10 @@
                                         <DataGridTemplateColumn Width="*">
                                             <DataGridTemplateColumn.HeaderStyle>
                                                 <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource GlobalDataGridColumnHeaderStyle}">
-                                                    <Setter Property="Content" Value="歌手"/>
+                                                    <Setter Property="Content" Value="{DynamicResource Str.Col.Singer}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding ElementName=YoutubeRadio, Path=IsChecked}" Value="True">
-                                                            <Setter Property="Content" Value="歌曲時間"/>
+                                                            <Setter Property="Content" Value="{DynamicResource Str.Col.SongDuration}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -1785,7 +1803,7 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn x:Name="QuickLanguageColumn" Header="語言" Binding="{Binding Language}" Width="{StaticResource SongLanguageColumnWidth}"
+                                        <DataGridTextColumn x:Name="QuickLanguageColumn" Header="{DynamicResource Str.Col.Language}" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="{StaticResource SongLanguageColumnWidth}"
                                                             ElementStyle="{StaticResource SongListDimCellTextStyle}"/>
                                         <!-- 歌星搜尋模式 (列出的是歌手) 時由程式隱藏 -->
                                         <DataGridTemplateColumn x:Name="QuickActionsColumn" Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
@@ -1980,14 +1998,14 @@
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.ContextMenu>
                                         <ContextMenu>
-                                            <MenuItem Header="加入最愛" Click="AddToFavorite_Click"/>
+                                            <MenuItem Header="{DynamicResource Str.Song.AddFavorite}" Click="AddToFavorite_Click"/>
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}"
+                                            <DataGridTextColumn Header="{DynamicResource Str.Col.SongName}" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
-                                            <DataGridTemplateColumn Header="歌手" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
-                                            <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="{StaticResource SongLanguageColumnWidth}"
+                                            <DataGridTemplateColumn Header="{DynamicResource Str.Col.Singer}" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
+                                            <DataGridTextColumn Header="{DynamicResource Str.Col.Language}" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="{StaticResource SongLanguageColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListDimCellTextStyle}"/>
                                             <DataGridTemplateColumn Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
                                         </DataGrid.Columns>
@@ -2023,13 +2041,13 @@
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.ContextMenu>
                                         <ContextMenu>
-                                            <MenuItem Header="加入最愛" Click="AddToFavorite_Click"/>
+                                            <MenuItem Header="{DynamicResource Str.Song.AddFavorite}" Click="AddToFavorite_Click"/>
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="{StaticResource LanguageSongNameColumnWidth}"
+                                            <DataGridTextColumn Header="{DynamicResource Str.Col.SongName}" Binding="{Binding SongName}" Width="{StaticResource LanguageSongNameColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
-                                            <DataGridTemplateColumn Header="歌手" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
+                                            <DataGridTemplateColumn Header="{DynamicResource Str.Col.Singer}" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
                                             <DataGridTemplateColumn Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
                                         </DataGrid.Columns>
                                 </DataGrid>
@@ -2045,9 +2063,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="語言" Binding="{Binding Language}" Width="100"/>
-                                        <DataGridTextColumn Header="歌曲數量" Binding="{Binding Count}" Width="100"/>
-                                        <DataGridTextColumn Header="熱門歌曲" Binding="{Binding PopularSong}" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Language}" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="100"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.SongCount}" Binding="{Binding Count}" Width="100"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.PopularSong}" Binding="{Binding PopularSong}" Width="*"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2059,9 +2077,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="編號" Binding="{Binding Number}" Width="100"/>
-                                        <DataGridTextColumn Header="歌名" Binding="{Binding Title}" Width="*"/>
-                                        <DataGridTextColumn Header="歌手" Binding="{Binding Artist}" Width="200"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Number}" Binding="{Binding Number}" Width="100"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.SongName}" Binding="{Binding Title}" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding Artist}" Width="200"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2073,9 +2091,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="編號" Binding="{Binding SongNumber}" Width="100"/>
-                                        <DataGridTextColumn Header="歌名" Binding="{Binding SongName}" Width="*"/>
-                                        <DataGridTextColumn Header="歌手" Binding="{Binding SingerName}" Width="200"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Number}" Binding="{Binding SongNumber}" Width="100"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.SongName}" Binding="{Binding SongName}" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding SingerName}" Width="200"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2087,9 +2105,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="最愛歌曲" Binding="{Binding FavoriteSong}" Width="*"/>
-                                        <DataGridTextColumn Header="歌手" Binding="{Binding FavoriteArtist}" Width="200"/>
-                                        <DataGridTextColumn Header="點播次數" Binding="{Binding PlayCount}" Width="100"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.FavoriteSong}" Binding="{Binding FavoriteSong}" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding FavoriteArtist}" Width="200"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.PlayCount}" Binding="{Binding PlayCount}" Width="100"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2101,9 +2119,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="新歌" Binding="{Binding NewSong}" Width="*"/>
-                                        <DataGridTextColumn Header="歌手" Binding="{Binding NewArtist}" Width="200"/>
-                                        <DataGridTextColumn Header="發行日期" Binding="{Binding ReleaseDate}" Width="150"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.NewSong}" Binding="{Binding NewSong}" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding NewArtist}" Width="200"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.ReleaseDate}" Binding="{Binding ReleaseDate}" Width="150"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2115,9 +2133,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="排名" Binding="{Binding Rank}" Width="80"/>
-                                        <DataGridTextColumn Header="歌曲" Binding="{Binding RankSong}" Width="*"/>
-                                        <DataGridTextColumn Header="歌手" Binding="{Binding RankArtist}" Width="200"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Rank}" Binding="{Binding Rank}" Width="80"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Song}" Binding="{Binding RankSong}" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding RankArtist}" Width="200"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2129,9 +2147,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="對唱歌曲" Binding="{Binding DuetSong}" Width="*"/>
-                                        <DataGridTextColumn Header="原唱歌手" Binding="{Binding DuetArtist}" Width="200"/>
-                                        <DataGridTextColumn Header="類型" Binding="{Binding DuetType}" Width="100"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.DuetSong}" Binding="{Binding DuetSong}" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.OriginalSinger}" Binding="{Binding DuetArtist}" Width="200"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Type}" Binding="{Binding DuetType}" Width="100"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2143,9 +2161,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="按鈕樣式" Binding="{Binding StyleName}" Width="200"/>
-                                        <DataGridTextColumn Header="描述" Binding="{Binding Description}" Width="*"/>
-                                        <DataGridTextColumn Header="狀態" Binding="{Binding Status}" Width="100"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.ButtonStyle}" Binding="{Binding StyleName}" Width="200"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Description}" Binding="{Binding Description}" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Status}" Binding="{Binding Status}" Width="100"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2157,9 +2175,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="主題名稱" Binding="{Binding ThemeName}" Width="150"/>
-                                        <DataGridTextColumn Header="類型" Binding="{Binding ThemeType}" Width="100"/>
-                                        <DataGridTextColumn Header="顏色配置" Binding="{Binding ColorScheme}" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.ThemeName}" Binding="{Binding ThemeName}" Width="150"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Type}" Binding="{Binding ThemeType}" Width="100"/>
+                                        <DataGridTextColumn Header="{DynamicResource Str.Col.ColorScheme}" Binding="{Binding ColorScheme}" Width="*"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
@@ -2175,7 +2193,7 @@
 
                                 <!-- 列表變窄後頁碼說明可能放不下，太長時等比縮小 -->
                                 <Viewbox Grid.Column="0" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,10,0">
-                                    <TextBlock Name="PageInfoTextBlock" Text="第 1/10 頁" FontSize="{DynamicResource BottomButtonFontSize}" Foreground="{DynamicResource MaterialDesignBody}" />
+                                    <TextBlock Name="PageInfoTextBlock" Text="{DynamicResource Str.Page.Default}" FontSize="{DynamicResource BottomButtonFontSize}" Foreground="{DynamicResource MaterialDesignBody}" />
                                 </Viewbox>
 
                                 <!-- Digital Clock -->
@@ -2184,7 +2202,7 @@
                                     <TextBlock Name="DigitalClockText" Text="00:00" FontSize="40" FontWeight="Medium" VerticalAlignment="Center" Foreground="White" FontFamily="Consolas"/>
                                 </StackPanel>
                                 
-                                <Button Name="PageUp" Grid.Column="2" Content="上一頁" Margin="0,0,10,0" VerticalAlignment="Top" Click="PageUp_Click">
+                                <Button Name="PageUp" Grid.Column="2" Content="{DynamicResource Str.Common.PageUp}" Margin="0,0,10,0" VerticalAlignment="Top" Click="PageUp_Click">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource PaginationButtonStyle}">
                                             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -2193,7 +2211,7 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                                <Button Name="PageDown" Grid.Column="3" Content="下一頁" Margin="0,0,10,0" VerticalAlignment="Top" Click="PageDown_Click">
+                                <Button Name="PageDown" Grid.Column="3" Content="{DynamicResource Str.Common.PageDown}" Margin="0,0,10,0" VerticalAlignment="Top" Click="PageDown_Click">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource PaginationButtonStyle}">
                                             <Setter Property="HorizontalContentAlignment" Value="Center" />

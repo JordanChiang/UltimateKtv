@@ -139,13 +139,13 @@ namespace UltimateKtv
                 {
                     if (mediaUriElement != null && mediaUriElement.IsPlaying)
                     {
-                        if (PauseBtn != null && PauseBtn.Content?.ToString() == "繼續")
+                        if (_pauseBtnShowsResume)
                         {
-                            PauseBtn.Content = "暫停";
+                            SetPauseButtonResume(false);
                         }
                         isPaused = false;
                     }
-                    else if (PauseBtn?.Content?.ToString() == "繼續")
+                    else if (_pauseBtnShowsResume)
                     {
                         isPaused = true;
                     }
@@ -157,7 +157,7 @@ namespace UltimateKtv
                     NowPlayingIcon.Foreground = System.Windows.Media.Brushes.Orange;
                     NowPlayingBadgeBorder.SetResourceReference(Border.BackgroundProperty, "BrushBgSecondary");
                     NowPlayingBadgeBorder.BorderBrush = System.Windows.Media.Brushes.Orange;
-                    NowPlayingBadgeBorder.ToolTip = "暫停中";
+                    NowPlayingBadgeBorder.SetResourceReference(FrameworkElement.ToolTipProperty, Loc.ResourcePrefix + "NowPlaying.Paused");
                     PauseNowPlayingBreathing();
                 }
                 else if (_isRandomSongPlaying)
@@ -166,7 +166,7 @@ namespace UltimateKtv
                     NowPlayingIcon.SetResourceReference(PackIcon.ForegroundProperty, "PrimaryLightBrush");
                     NowPlayingBadgeBorder.SetResourceReference(Border.BackgroundProperty, "BrushCyberButtonGradient");
                     NowPlayingBadgeBorder.SetResourceReference(Border.BorderBrushProperty, "PrimaryBrush");
-                    NowPlayingBadgeBorder.ToolTip = "隨機播放";
+                    NowPlayingBadgeBorder.SetResourceReference(FrameworkElement.ToolTipProperty, Loc.ResourcePrefix + "NowPlaying.Random");
                     StartNowPlayingBreathing();
                 }
                 else
@@ -175,7 +175,7 @@ namespace UltimateKtv
                     NowPlayingIcon.SetResourceReference(PackIcon.ForegroundProperty, "PrimaryLightBrush");
                     NowPlayingBadgeBorder.SetResourceReference(Border.BackgroundProperty, "BrushCyberButtonGradient");
                     NowPlayingBadgeBorder.SetResourceReference(Border.BorderBrushProperty, "PrimaryBrush");
-                    NowPlayingBadgeBorder.ToolTip = "正在播放";
+                    NowPlayingBadgeBorder.SetResourceReference(FrameworkElement.ToolTipProperty, Loc.ResourcePrefix + "NowPlaying.Playing");
                     StartNowPlayingBreathing();
                 }
 
@@ -204,9 +204,9 @@ namespace UltimateKtv
                 NowPlayingBadgeBorder.SetResourceReference(Border.BackgroundProperty, "BrushBgSecondary");
                 NowPlayingBadgeBorder.SetResourceReference(Border.BorderBrushProperty, "BrushBorderDefault");
                 NowPlayingIcon.SetResourceReference(PackIcon.ForegroundProperty, "BrushTextDim");
-                NowPlayingBadgeBorder.ToolTip = "待機中";
+                NowPlayingBadgeBorder.SetResourceReference(FrameworkElement.ToolTipProperty, Loc.ResourcePrefix + "NowPlaying.Idle");
 
-                NowPlayingSongText.Text = "無播放歌曲";
+                NowPlayingSongText.SetResourceReference(TextBlock.TextProperty, Loc.ResourcePrefix + "NowPlaying.None");
                 NowPlayingSongText.FontWeight = FontWeights.Normal;
                 NowPlayingSongText.SetResourceReference(TextBlock.ForegroundProperty, "BrushTextMuted");
 
@@ -323,7 +323,7 @@ namespace UltimateKtv
             ShowPageItems(WaitingListGrid, _waitingListPageItems, displayList);
 
             // Update pagination info (2 lines)
-            WaitListPageInfo.Text = $"已點 {nonEmptySongs.Count} 首 · {_currentWaitingListPage}/{_totalWaitingListPages} 頁";
+            WaitListPageInfo.Text = Loc.T("Wait.PageInfo", nonEmptySongs.Count, _currentWaitingListPage, _totalWaitingListPages);
 
             // Enable/disable pagination buttons
             WaitListPageUp.IsEnabled = _currentWaitingListPage > 1;
@@ -631,7 +631,7 @@ namespace UltimateKtv
                     }
 
                     SetPlayerControlsEnabled(true); // Keep controls interactive when idle
-                    PauseBtn.Content = "暫停"; // Reset pause button text
+                    SetPauseButtonResume(false); // Reset pause button text
                     
                     // Clear pre-loaded cache when list is empty
                     ClearPreLoadingCache();
@@ -660,13 +660,13 @@ namespace UltimateKtv
 
                 // Set playing state flag
                 _isPlayingFromWaitingList = true;
-                _isRandomSongPlaying = (firstSong.OrderedBy == "隨機播放");
+                _isRandomSongPlaying = (firstSong.OrderedBy == Loc.OrderedByRandom);
                 _currentSongOrderedBy = firstSong.OrderedBy ?? string.Empty;
                 _currentPlayingSongName = firstSong.WaitingListSongName ?? string.Empty;
                 _currentPlayingSingerName = firstSong.WaitingListSingerName ?? string.Empty;
                 _currentPlayingSongId = firstSong.SongId ?? string.Empty;
                 IsPlayingYoutube = firstSong.IsYoutube;
-                PauseBtn.Content = "暫停";
+                SetPauseButtonResume(false);
                 UpdateCurrentPlayingDisplay();
 
 
@@ -797,7 +797,7 @@ namespace UltimateKtv
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         // Show message on UI thread
-                        MessageBox.Show("媒體載入逾時，播放器可能已當機。正在嘗試恢復...", "錯誤", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(Loc.T("Player.LoadTimeout"), Loc.T("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
 
                         if (_isTransitioningSong) // Check lock again on UI thread
                         {
@@ -879,8 +879,8 @@ namespace UltimateKtv
                 string? nextSinger = nextSongItem?.WaitingListSingerName;
                 string? nextOrderedBy = nextSongItem?.OrderedBy;
 
-                var songName = _playingSongData.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? "未知歌曲" : "未知歌曲";
-                var singerName = _playingSongData.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? "未知歌手" : "未知歌手";
+                var songName = _playingSongData.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? Loc.T("Song.Unknown") : Loc.T("Song.Unknown");
+                var singerName = _playingSongData.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? Loc.T("Singer.Unknown") : Loc.T("Singer.Unknown");
 
                 MarqueeAPI.ShowSongPlaybackMarquee(
                     songName,
@@ -1082,7 +1082,7 @@ namespace UltimateKtv
             // Add title
             var title = new TextBlock
             {
-                Text = "重複歌曲",
+                Text = Loc.T("Wait.DuplicateTitle"),
                 FontSize = 20,
                 FontWeight = FontWeights.Medium,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -1093,7 +1093,7 @@ namespace UltimateKtv
             // Add message
             var message = new TextBlock
             {
-                Text = $"歌曲「{songName}」- {singerName} 已在等待清單中",
+                Text = Loc.T("Wait.DuplicateMessage", songName, singerName),
                 FontSize = 16,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
@@ -1104,7 +1104,7 @@ namespace UltimateKtv
             // Add OK button
             var okButton = new Button
             {
-                Content = "確定",
+                Content = Loc.T("Common.OK"),
                 Width = 140,
                 Height = 48,
                 FontSize = 20,

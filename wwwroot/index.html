@@ -958,217 +958,217 @@
     <div class="container">
         <div class="header">
             <h1>🎤 UltimateKTV</h1>
-            <p>遠端點歌系統 Remote Song Selection</p>
+            <p data-i18n="Web.Subtitle">遠端點歌系統 Remote Song Selection</p>
         </div>
 
         <div class="status-bar">
             <div class="status-bar-row">
-                <button class="playlist-btn" onclick="showPlaylist()">📋 點播清單</button>
+                <button class="playlist-btn" onclick="showPlaylist()" data-i18n="Web.Playlist">📋 點播清單</button>
                 <div class="dropdown">
-                    <button class="playlist-btn" onclick="toggleSettingsMenu()">⚙️ 設定</button>
+                    <button class="playlist-btn" onclick="toggleSettingsMenu()" data-i18n="Web.Settings">⚙️ 設定</button>
                     <div id="settingsMenu" class="dropdown-content">
-                        <div class="context-menu-item" onclick="controlAction('volup')">音量+</div>
-                        <div class="context-menu-item" onclick="controlAction('voldown')">音量-</div>
-                        <div class="context-menu-item" onclick="controlAction('vollock')">固定音量</div>
-                        <div class="context-menu-item" onclick="controlAction('pitchup')">升調</div>
-                        <div class="context-menu-item" onclick="controlAction('pitchreset')">原調</div>
-                        <div class="context-menu-item" onclick="controlAction('pitchdown')">降調</div>
-                        <div class="context-menu-item danger" onclick="confirmQuitApp()">結束程式</div>
-                        <div class="context-menu-item danger" onclick="confirmShutdownWin()">關閉電腦</div>
+                        <div class="context-menu-item" onclick="controlAction('volup')" data-i18n="Web.VolUp">音量+</div>
+                        <div class="context-menu-item" onclick="controlAction('voldown')" data-i18n="Web.VolDown">音量-</div>
+                        <div class="context-menu-item" onclick="controlAction('vollock')" data-i18n="Web.VolLock">固定音量</div>
+                        <div class="context-menu-item" onclick="controlAction('pitchup')" data-i18n="Web.PitchUp">升調</div>
+                        <div class="context-menu-item" onclick="controlAction('pitchreset')" data-i18n="Web.PitchReset">原調</div>
+                        <div class="context-menu-item" onclick="controlAction('pitchdown')" data-i18n="Web.PitchDown">降調</div>
+                        <div class="context-menu-item danger" onclick="confirmQuitApp()" data-i18n="Web.QuitApp">結束程式</div>
+                        <div class="context-menu-item danger" onclick="confirmShutdownWin()" data-i18n="Web.Shutdown">關閉電腦</div>
                     </div>
                 </div>
             </div>
             <div class="status-bar-row">
-                <button class="playlist-btn" onclick="VocalBtn_Click()">人聲</button>
-                <button class="playlist-btn" onclick="MusicBtn_Click()">伴唱</button>
-                <button class="skip-btn" onclick="skipSong()">⏭️ 切歌</button>
+                <button class="playlist-btn" onclick="VocalBtn_Click()" data-i18n="Web.Vocal">人聲</button>
+                <button class="playlist-btn" onclick="MusicBtn_Click()" data-i18n="Web.Music">伴唱</button>
+                <button class="skip-btn" onclick="skipSong()" data-i18n="Web.Skip">⏭️ 切歌</button>
             </div>
         </div>
 
         <div id="mainMenu" class="main-menu">
             <div class="menu-card" onclick="showSection('searchSong')">
                 <div class="icon">🔍</div>
-                <h2>搜尋歌曲</h2>
+                <h2 data-i18n="Web.Menu.Search">搜尋歌曲</h2>
             </div>
             <div class="menu-card" onclick="showSection('singerSong')">
                 <div class="icon">🎙️</div>
-                <h2>歌星點歌</h2>
+                <h2 data-i18n="Web.Menu.Singer">歌星點歌</h2>
             </div>
             <div class="menu-card" onclick="showSection('newSong')">
                 <div class="icon">🆕</div>
-                <h2>新進點歌</h2>
+                <h2 data-i18n="Web.Menu.New">新進點歌</h2>
             </div>
             <div class="menu-card" onclick="showSection('rankingSong')">
                 <div class="icon">🏆</div>
-                <h2>排行點歌</h2>
+                <h2 data-i18n="Web.Menu.Rank">排行點歌</h2>
             </div>
             <div class="menu-card" onclick="showFavoriteUserMenu()">
                 <div class="icon">❤️</div>
-                <h2>我的最愛</h2>
+                <h2 data-i18n="Web.Menu.Fav">我的最愛</h2>
             </div>
             <div class="menu-card" onclick="showSection('youtubeSong')">
                 <div class="icon" style="position: relative;">
                     ▶️
                     <span class="youtube-queue-badge" style="display: none; position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 14px; font-weight: bold; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10;">0</span>
                 </div>
-                <h2>Youtube點歌</h2>
+                <h2 data-i18n="Web.Menu.Youtube">Youtube點歌</h2>
             </div>
             <div class="menu-card" onclick="showSection('numberSong')">
                 <div class="icon">🔢</div>
-                <h2>編號點歌</h2>
+                <h2 data-i18n="Web.Menu.Number">編號點歌</h2>
             </div>
         </div>
 
         <!-- Search Song Section -->
         <div id="searchSong" class="content-area">
             <div class="content-header">
-                <button class="back-btn" onclick="showMainMenu()">← 返回主選單</button>
-                <h2>搜尋歌曲</h2>
+                <button class="back-btn" onclick="showMainMenu()" data-i18n="Web.BackToMenu">← 返回主選單</button>
+                <h2 data-i18n="Web.Menu.Search">搜尋歌曲</h2>
             </div>
 
             <div class="search-section">
                 <div class="filter-buttons">
-                    <button class="filter-btn" onclick="searchByLang('國語')">國語</button>
-                    <button class="filter-btn" onclick="searchByLang('台語')">台語</button>
-                    <button class="filter-btn" onclick="searchByLang('粵語')">粵語</button>
-                    <button class="filter-btn" onclick="searchByLang('英語')">英語</button>
-                    <button class="filter-btn" onclick="searchByLang('日語')">日語</button>
-                    <button class="filter-btn" onclick="searchByLang('韓語')">韓語</button>
-                    <button class="filter-btn" onclick="searchByLang('')">全部</button>
+                    <button class="filter-btn" onclick="searchByLang('國語')" data-i18n="Web.Lang.Mandarin">國語</button>
+                    <button class="filter-btn" onclick="searchByLang('台語')" data-i18n="Web.Lang.Taiwanese">台語</button>
+                    <button class="filter-btn" onclick="searchByLang('粵語')" data-i18n="Web.Lang.Cantonese">粵語</button>
+                    <button class="filter-btn" onclick="searchByLang('英語')" data-i18n="Web.Lang.English">英語</button>
+                    <button class="filter-btn" onclick="searchByLang('日語')" data-i18n="Web.Lang.Japanese">日語</button>
+                    <button class="filter-btn" onclick="searchByLang('韓語')" data-i18n="Web.Lang.Korean">韓語</button>
+                    <button class="filter-btn" onclick="searchByLang('')" data-i18n="Web.All">全部</button>
                 </div>
 
                 <div class="search-box">
-                    <input type="text" id="songSearch" placeholder="輸入歌名或歌手名稱..."
+                    <input type="text" id="songSearch" placeholder="輸入歌名或歌手名稱..." data-i18n-placeholder="Web.Ph.Song"
                         onkeypress="if(event.key==='Enter')searchSongs()">
-                    <button onclick="searchSongs()">🔍 搜尋</button>
+                    <button onclick="searchSongs()" data-i18n="Web.SearchBtn">🔍 搜尋</button>
                 </div>
             </div>
 
             <div id="searchResults" class="song-list"></div>
-            <div id="searchResults-loading" class="loading" style="display: none;">載入中</div>
+            <div id="searchResults-loading" class="loading" style="display: none;" data-i18n="Web.Loading">載入中</div>
             <div id="searchPagination" class="pagination"></div>
         </div>
 
         <!-- Singer Song Section -->
         <div id="singerSong" class="content-area">
             <div class="content-header">
-                <button class="back-btn" onclick="showMainMenu()">← 返回主選單</button>
-                <button id="backToSingerListBtn" class="back-btn" onclick="backToSingerList()" style="display:none; margin-left: 10px;">← 返回前頁</button>
-                <h2>歌星點歌</h2>
+                <button class="back-btn" onclick="showMainMenu()" data-i18n="Web.BackToMenu">← 返回主選單</button>
+                <button id="backToSingerListBtn" class="back-btn" onclick="backToSingerList()" style="display:none; margin-left: 10px;" data-i18n="Web.BackToPrev">← 返回前頁</button>
+                <h2 data-i18n="Web.Menu.Singer">歌星點歌</h2>
             </div>
 
             <div id="singerSearchArea">
                 <div class="filter-buttons">
-                    <button class="filter-btn" onclick="searchSingerByType(0)">男歌星</button>
-                    <button class="filter-btn" onclick="searchSingerByType(1)">女歌星</button>
-                    <button class="filter-btn" onclick="searchSingerByType(2)">團體</button>
-                    <button class="filter-btn" onclick="searchSingerByType(4)">外國男</button>
-                    <button class="filter-btn" onclick="searchSingerByType(5)">外國女</button>
-                    <button class="filter-btn" onclick="searchSingerByType(6)">外國團</button>
-                    <button class="filter-btn" onclick="searchSingerByType(99)">其它</button>
-                    <button class="filter-btn" onclick="searchSingerByType('')">全部</button>
+                    <button class="filter-btn" onclick="searchSingerByType(0)" data-i18n="Web.Singer.Male">男歌星</button>
+                    <button class="filter-btn" onclick="searchSingerByType(1)" data-i18n="Web.Singer.Female">女歌星</button>
+                    <button class="filter-btn" onclick="searchSingerByType(2)" data-i18n="Web.Singer.Group">團體</button>
+                    <button class="filter-btn" onclick="searchSingerByType(4)" data-i18n="Web.Singer.ForeignMale">外國男</button>
+                    <button class="filter-btn" onclick="searchSingerByType(5)" data-i18n="Web.Singer.ForeignFemale">外國女</button>
+                    <button class="filter-btn" onclick="searchSingerByType(6)" data-i18n="Web.Singer.ForeignGroup">外國團</button>
+                    <button class="filter-btn" onclick="searchSingerByType(99)" data-i18n="Web.Lang.Other">其它</button>
+                    <button class="filter-btn" onclick="searchSingerByType('')" data-i18n="Web.All">全部</button>
                 </div>
 
                 <div class="search-box">
-                    <input type="text" id="singerSearch" placeholder="輸入歌手名稱..."
+                    <input type="text" id="singerSearch" placeholder="輸入歌手名稱..." data-i18n-placeholder="Web.Ph.Singer"
                         onkeypress="if(event.key==='Enter')searchSinger()">
-                    <button onclick="searchSinger()">🔍 搜尋</button>
+                    <button onclick="searchSinger()" data-i18n="Web.SearchBtn">🔍 搜尋</button>
                 </div>
 
                 <div id="singerResults" class="song-list"></div>
-                <div id="singerResults-loading" class="loading" style="display: none;">載入中</div>
+                <div id="singerResults-loading" class="loading" style="display: none;" data-i18n="Web.Loading">載入中</div>
                 <div id="singerPagination" class="pagination"></div>
             </div>
 
             <div id="singerSongListArea" style="display: none;">
                 <div id="singerSongResults" class="song-list"></div>
-                <div id="singerSongResults-loading" class="loading" style="display: none;">載入中</div>
+                <div id="singerSongResults-loading" class="loading" style="display: none;" data-i18n="Web.Loading">載入中</div>
             </div>
         </div>
 
         <!-- New Song Section -->
         <div id="newSong" class="content-area">
             <div class="content-header">
-                <button class="back-btn" onclick="showMainMenu()">← 返回主選單</button>
-                <h2>新進點歌</h2>
+                <button class="back-btn" onclick="showMainMenu()" data-i18n="Web.BackToMenu">← 返回主選單</button>
+                <h2 data-i18n="Web.Menu.New">新進點歌</h2>
             </div>
 
             <div class="filter-buttons">
-                <button class="filter-btn" onclick="loadNewSongsByLang('國語')">國語</button>
-                <button class="filter-btn" onclick="loadNewSongsByLang('台語')">台語</button>
-                <button class="filter-btn" onclick="loadNewSongsByLang('其它')">其它</button>
-                <button class="filter-btn" onclick="loadNewSongsByLang('')">全部</button>
+                <button class="filter-btn" onclick="loadNewSongsByLang('國語')" data-i18n="Web.Lang.Mandarin">國語</button>
+                <button class="filter-btn" onclick="loadNewSongsByLang('台語')" data-i18n="Web.Lang.Taiwanese">台語</button>
+                <button class="filter-btn" onclick="loadNewSongsByLang('其它')" data-i18n="Web.Lang.Other">其它</button>
+                <button class="filter-btn" onclick="loadNewSongsByLang('')" data-i18n="Web.All">全部</button>
             </div>
 
             <div id="newSongResults" class="song-list"></div>
-            <div id="newSongResults-loading" class="loading" style="display: none;">載入中</div>
+            <div id="newSongResults-loading" class="loading" style="display: none;" data-i18n="Web.Loading">載入中</div>
             <div id="newSongPagination" class="pagination"></div>
         </div>
 
         <!-- Ranking Song Section -->
         <div id="rankingSong" class="content-area">
             <div class="content-header">
-                <button class="back-btn" onclick="showMainMenu()">← 返回主選單</button>
-                <h2>排行點歌</h2>
+                <button class="back-btn" onclick="showMainMenu()" data-i18n="Web.BackToMenu">← 返回主選單</button>
+                <h2 data-i18n="Web.Menu.Rank">排行點歌</h2>
             </div>
 
             <div class="filter-buttons">
-                <button class="filter-btn" onclick="loadRankingByLang('國語-單曲')">國語-單曲</button>
-                <button class="filter-btn" onclick="loadRankingByLang('台語-單曲')">台語-單曲</button>
-                <button class="filter-btn" onclick="loadRankingByLang('國語-合唱')">國語-合唱</button>
-                <button class="filter-btn" onclick="loadRankingByLang('台語-合唱')">台語-合唱</button>
-                <button class="filter-btn" onclick="loadRankingByLang('其它')">其它</button>
+                <button class="filter-btn" onclick="loadRankingByLang('國語-單曲')" data-i18n="Web.Rank.MandarinSolo">國語-單曲</button>
+                <button class="filter-btn" onclick="loadRankingByLang('台語-單曲')" data-i18n="Web.Rank.TaiwaneseSolo">台語-單曲</button>
+                <button class="filter-btn" onclick="loadRankingByLang('國語-合唱')" data-i18n="Web.Rank.MandarinDuet">國語-合唱</button>
+                <button class="filter-btn" onclick="loadRankingByLang('台語-合唱')" data-i18n="Web.Rank.TaiwaneseDuet">台語-合唱</button>
+                <button class="filter-btn" onclick="loadRankingByLang('其它')" data-i18n="Web.Lang.Other">其它</button>
             </div>
 
             <div id="rankingSongResults" class="song-list"></div>
-            <div id="rankingSongResults-loading" class="loading" style="display: none;">載入中</div>
+            <div id="rankingSongResults-loading" class="loading" style="display: none;" data-i18n="Web.Loading">載入中</div>
             <div id="rankingSongPagination" class="pagination"></div>
         </div>
 
         <!-- Favorite Song Section -->
         <div id="favoriteSong" class="content-area">
             <div class="content-header">
-                <button class="back-btn" onclick="showMainMenu()">← 返回主選單</button>
-                <h2 id="favoriteSongTitle">我的最愛</h2>
+                <button class="back-btn" onclick="showMainMenu()" data-i18n="Web.BackToMenu">← 返回主選單</button>
+                <h2 id="favoriteSongTitle" data-i18n="Web.Menu.Fav">我的最愛</h2>
             </div>
 
             <div id="favoriteSongResults" class="song-list"></div>
-            <div id="favoriteSongResults-loading" class="loading" style="display: none;">載入中</div>
+            <div id="favoriteSongResults-loading" class="loading" style="display: none;" data-i18n="Web.Loading">載入中</div>
             <div id="favoriteSongPagination" class="pagination"></div>
         </div>
 
         <!-- YouTube Song Section -->
         <div id="youtubeSong" class="content-area">
             <div class="content-header">
-                <button class="back-btn" onclick="showMainMenu()">← 返回主選單</button>
+                <button class="back-btn" onclick="showMainMenu()" data-i18n="Web.BackToMenu">← 返回主選單</button>
                 <h2 style="display: flex; align-items: center;">
-                    Youtube點歌
+                    <span data-i18n="Web.Menu.Youtube">Youtube點歌</span>
                     <span class="youtube-queue-badge" style="display: none; background: #e74c3c; color: white; border-radius: 12px; padding: 2px 10px; font-size: 14px; font-weight: bold; margin-left: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">下載中: 0</span>
                 </h2>
             </div>
 
             <div class="search-box">
-                <input type="text" id="youtubeSearchInput" placeholder="輸入YouTube搜尋關鍵字..."
+                <input type="text" id="youtubeSearchInput" placeholder="輸入YouTube搜尋關鍵字..." data-i18n-placeholder="Web.Ph.Youtube"
                     onkeypress="if(event.key==='Enter')searchYoutube()" style="flex: 0 1 50%; width: 50%;">
-                <button onclick="searchYoutube()" style="white-space: nowrap; flex-shrink: 0;">🔍 搜尋</button>
-                <button onclick="loadYoutubeHistory()" style="background: #4CAF50; white-space: nowrap; flex-shrink: 0;">點播記錄</button>
+                <button onclick="searchYoutube()" style="white-space: nowrap; flex-shrink: 0;" data-i18n="Web.SearchBtn">🔍 搜尋</button>
+                <button onclick="loadYoutubeHistory()" style="background: #4CAF50; white-space: nowrap; flex-shrink: 0;" data-i18n="Web.YoutubeHistory">點播記錄</button>
             </div>
 
             <div id="youtubeResults" class="song-list"></div>
-            <div id="youtubeResults-loading" class="loading" style="display: none;">載入中</div>
+            <div id="youtubeResults-loading" class="loading" style="display: none;" data-i18n="Web.Loading">載入中</div>
         </div>
 
         <!-- Number Song Section -->
         <div id="numberSong" class="content-area">
             <div class="content-header">
-                <button class="back-btn" onclick="showMainMenu()">← 返回主選單</button>
-                <h2>編號點歌</h2>
+                <button class="back-btn" onclick="showMainMenu()" data-i18n="Web.BackToMenu">← 返回主選單</button>
+                <h2 data-i18n="Web.Menu.Number">編號點歌</h2>
             </div>
 
             <div class="number-input-section">
-                <input type="text" id="songNumber" placeholder="輸入5或6位歌曲編號" maxlength="6" oninput="searchSongByNumber()"
+                <input type="text" id="songNumber" placeholder="輸入5或6位歌曲編號" data-i18n-placeholder="Web.Ph.Number" maxlength="6" oninput="searchSongByNumber()"
                     onkeypress="if(event.key==='Enter') searchSongByNumber()">
-                <button class="order-btn" onclick="searchSongByNumber()">🔍 搜尋</button>
+                <button class="order-btn" onclick="searchSongByNumber()" data-i18n="Web.SearchBtn">🔍 搜尋</button>
             </div>
 
             <div class="numeric-keypad">
@@ -1191,7 +1191,7 @@
 
         <!-- Debug Panel -->
         <div class="debug-panel" style="display: none;" id="debugPanel">
-            <h3>系統資訊</h3>
+            <h3 data-i18n="Web.SystemInfo">系統資訊</h3>
             <div class="debug-info" id="debugInfo"></div>
         </div>
     </div>
@@ -1203,9 +1203,9 @@
         style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center;">
         <div
             style="background: white; padding: 40px; border-radius: 15px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-            <h2 style="color: #333; margin-bottom: 10px; text-align: center; font-size: 28px;">🎤 歡迎使用UltimateKTV</h2>
-            <p style="color: #666; margin-bottom: 30px; text-align: center; font-size: 16px;">請輸入您的名稱以開始點歌</p>
-            <input type="text" id="usernameInput" placeholder="輸入您的名稱 (3-20字元)"
+            <h2 style="color: #333; margin-bottom: 10px; text-align: center; font-size: 28px;" data-i18n="Web.Welcome">🎤 歡迎使用UltimateKTV</h2>
+            <p style="color: #666; margin-bottom: 30px; text-align: center; font-size: 16px;" data-i18n="Web.EnterName">請輸入您的名稱以開始點歌</p>
+            <input type="text" id="usernameInput" placeholder="輸入您的名稱 (3-20字元)" data-i18n-placeholder="Web.Ph.Username"
                 style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 18px; margin-bottom: 10px; box-sizing: border-box;"
                 maxlength="20" onkeypress="if(event.key==='Enter')submitUsername()">
             <div id="usernameError" style="color: #f44336; font-size: 14px; margin-bottom: 15px; min-height: 20px;">
@@ -1213,7 +1213,7 @@
             <button onclick="submitUsername()"
                 style="width: 100%; padding: 15px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.3s;"
                 onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">
-                開始點歌
+                <span data-i18n="Web.StartOrdering">開始點歌</span>
             </button>
         </div>
     </div>
@@ -1223,18 +1223,59 @@
     <!-- Context Menu -->
     <div id="contextMenu" class="context-menu">
         <div class="context-menu-item" onclick="event.stopPropagation(); handleContextMenuAction('moveToFirst')">
-            <span>🔝</span> 插播 (移至第一首)
+            <span>🔝</span> <span data-i18n="Web.Ctx.MoveToFirst">插播 (移至第一首)</span>
         </div>
         <div class="context-menu-item" onclick="event.stopPropagation(); handleContextMenuAction('moveToNext')">
-            <span>⬇️</span> 順延 (下移一首)
+            <span>⬇️</span> <span data-i18n="Web.Ctx.MoveToNext">順延 (下移一首)</span>
         </div>
         <div class="context-menu-item danger"
             onclick="event.stopPropagation(); handleContextMenuAction('removeFromList')">
-            <span>🗑️</span> 刪除
+            <span>🗑️</span> <span data-i18n="Web.Ctx.Remove">刪除</span>
         </div>
     </div>
 
     <script>
+        // ===== 介面多國語言 =====
+        // 字串由主程式 Languages\*.json 的 "Web." 項目提供 (?queryType=uistrings)；
+        // 取不到時使用程式碼裡的繁中原文。
+        let I18N = {};
+        function t(key, fallback, ...args) {
+            const s = I18N[key] ?? fallback ?? key;
+            return args.length ? s.replace(/\{(\d+)\}/g, (m, i) => args[i] ?? '') : s;
+        }
+        async function loadI18n() {
+            try {
+                const response = await fetch('?queryType=uistrings');
+                const data = await response.json();
+                I18N = data.strings || {};
+                if (data.culture) document.documentElement.lang = data.culture;
+            } catch (e) {
+                console.warn('Failed to load UI strings', e);
+            }
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const v = I18N[el.dataset.i18n];
+                if (v != null) el.textContent = v;
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const v = I18N[el.dataset.i18nPlaceholder];
+                if (v != null) el.placeholder = v;
+            });
+            if (I18N['Web.Title']) document.title = I18N['Web.Title'];
+        }
+        // 歌曲語系 (資料庫的值) → 語系標籤文字
+        const SONG_LANG_KEYS = { '國語': 'Mandarin', '台語': 'Taiwanese', '粵語': 'Cantonese', '英語': 'English', '日語': 'Japanese', '韓語': 'Korean', '客語': 'Hakka', '兒歌': 'Children', '其他': 'Other', '其它': 'Other' };
+        function songLangBadge(lang) {
+            if (!lang) return '';
+            const k = SONG_LANG_KEYS[lang];
+            return k ? t('Web.LangBadge.' + k, lang.charAt(0)) : lang.charAt(0);
+        }
+        // 點歌人：系統標記依語言顯示，使用者名稱原樣
+        function displayOrderedBy(v) {
+            if (v === '隨機播放') return t('Web.OrderedBy.Random', v);
+            if (v === '網路點歌') return t('Web.OrderedBy.Web', v);
+            return v;
+        }
+
         // Global variables
         let currentLang = '';
         let statusInterval;
@@ -1280,6 +1321,7 @@
 
         // Initialize on page load
         window.onload = async function () {
+            await loadI18n();
             await loadAppOptions();
             checkUsername();
             loadDebugInfo();
@@ -1355,7 +1397,7 @@
 
                 if (progressBar) progressBar.style.width = `${data.percentage}%`;
                 if (progressText) {
-                    const statusStr = data.status || '下載中...';
+                    const statusStr = data.status || t('Web.DownloadingEllipsis', '下載中...');
                     progressText.innerText = `${statusStr} ${Math.round(data.percentage)}%`;
                 }
             });
@@ -1364,16 +1406,16 @@
                 const data = JSON.parse(e.data);
                 const progressContainer = document.getElementById(`yt-progress-container-${data.videoId}`);
                 if (progressContainer) progressContainer.style.display = 'none';
-                setYtRowState(data.videoId, 'done', '點歌成功');
-                showToast('YouTube 歌曲已加入清單！', 'success');
+                setYtRowState(data.videoId, 'done', t('Web.OrderOk', '點歌成功'));
+                showToast(t('Web.YtAdded', 'YouTube 歌曲已加入清單！'), 'success');
             });
 
             eventSource.addEventListener('YoutubeError', (e) => {
                 const data = JSON.parse(e.data);
                 const progressContainer = document.getElementById(`yt-progress-container-${data.videoId}`);
                 if (progressContainer) progressContainer.style.display = 'none';
-                setYtRowState(data.videoId, 'error', '點歌失敗');
-                showToast(`YouTube 下載失敗: ${data.message}`, 'error');
+                setYtRowState(data.videoId, 'error', t('Web.OrderFailed', '點歌失敗'));
+                showToast(t('Web.YtFailed', 'YouTube 下載失敗: {0}', data.message), 'error');
             });
 
             eventSource.addEventListener('YoutubeQueueUpdate', (e) => {
@@ -1392,9 +1434,9 @@
                         // If it's the header badge, prefix with text
                         if (badge.tagName.toLowerCase() === 'span' && badge.parentElement.tagName.toLowerCase() === 'h2') {
                             if (count > 0) {
-                                badge.innerText = `下載中.. (剩餘: ${count})`;
+                                badge.innerText = t('Web.DownloadingRemaining', '下載中.. (剩餘: {0})', count);
                             } else {
-                                badge.innerText = '下載中..';
+                                badge.innerText = t('Web.DownloadingShort', '下載中..');
                             }
                         } else {
                             badge.innerText = count > 0 ? count : '↓';
@@ -1444,13 +1486,13 @@
 
             // Validate username length
             if (username.length < 3) {
-                errorDiv.textContent = '名稱至少需要 3 個字元';
+                errorDiv.textContent = t('Web.NameTooShort', '名稱至少需要 3 個字元');
                 input.focus();
                 return;
             }
 
             if (username.length > 20) {
-                errorDiv.textContent = '名稱不能超過 20 個字元';
+                errorDiv.textContent = t('Web.NameTooLong', '名稱不能超過 20 個字元');
                 input.focus();
                 return;
             }
@@ -1464,7 +1506,7 @@
             errorDiv.textContent = '';
 
             console.log('Username set:', currentUsername);
-            showToast(`歡迎, ${currentUsername}！`, 'success');
+            showToast(t('Web.WelcomeUser', '歡迎, {0}！', currentUsername), 'success');
         }
 
         // Show main menu
@@ -1524,26 +1566,26 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showToast(data.message || '操作成功', 'success');
+                    showToast(data.message || t('Web.ActionOk', '操作成功'), 'success');
                 } else {
-                    showToast(data.message || '操作失敗', 'error');
+                    showToast(data.message || t('Web.ActionFailed', '操作失敗'), 'error');
                 }
             } catch (error) {
                 console.error(`${action} failed:`, error);
-                showToast('操作失敗', 'error');
+                showToast(t('Web.ActionFailed', '操作失敗'), 'error');
             }
         }
 
         // Confirm and quit app
         function confirmQuitApp() {
-            if (confirm('確定要結束程式嗎？')) {
+            if (confirm(t('Web.ConfirmQuit', '確定要結束程式嗎？'))) {
                 controlAction('quit');
             }
         }
 
         // Confirm and shutdown Windows remotely
         function confirmShutdownWin() {
-            if (confirm('確定要關閉電腦嗎？')) {
+            if (confirm(t('Web.ConfirmShutdown', '確定要關閉電腦嗎？'))) {
                 controlAction('shutdownwin');
             }
         }
@@ -1555,13 +1597,13 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showToast(data.message || '切歌成功', 'success');
+                    showToast(data.message || t('Web.SkipOk', '切歌成功'), 'success');
                 } else {
-                    showToast(data.message || '切歌失敗', 'error');
+                    showToast(data.message || t('Web.SkipFailed', '切歌失敗'), 'error');
                 }
             } catch (error) {
                 console.error('Skip song failed:', error);
-                showToast('切歌失敗', 'error');
+                showToast(t('Web.SkipFailed', '切歌失敗'), 'error');
             }
         }
 
@@ -1572,13 +1614,13 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showToast(data.message || '已切換至人聲', 'success');
+                    showToast(data.message || t('Web.Msg.Vocal', '已切換至人聲'), 'success');
                 } else {
-                    showToast(data.message || '切換失敗', 'error');
+                    showToast(data.message || t('Web.SwitchFailed', '切換失敗'), 'error');
                 }
             } catch (error) {
                 console.error('Vocal button failed:', error);
-                showToast('切換失敗', 'error');
+                showToast(t('Web.SwitchFailed', '切換失敗'), 'error');
             }
         }
 
@@ -1589,13 +1631,13 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    showToast(data.message || '已切換至伴唱', 'success');
+                    showToast(data.message || t('Web.Msg.Music', '已切換至伴唱'), 'success');
                 } else {
-                    showToast(data.message || '切換失敗', 'error');
+                    showToast(data.message || t('Web.SwitchFailed', '切換失敗'), 'error');
                 }
             } catch (error) {
                 console.error('Music button failed:', error);
-                showToast('切換失敗', 'error');
+                showToast(t('Web.SwitchFailed', '切換失敗'), 'error');
             }
         }
 
@@ -1604,12 +1646,12 @@
             if (nowPlaying && nowPlaying.isPlaying && nowPlaying.songName) {
                 const singerPart = nowPlaying.singerName ? ` - ${nowPlaying.singerName}` : '';
                 const songTitle = `${nowPlaying.songName}${singerPart}`;
-                const orderedByText = nowPlaying.orderedBy ? ` <span style="color: #64748b; font-size: 14px; font-weight: normal;">(${nowPlaying.orderedBy})</span>` : '';
+                const orderedByText = nowPlaying.orderedBy ? ` <span style="color: #64748b; font-size: 14px; font-weight: normal;">(${displayOrderedBy(nowPlaying.orderedBy)})</span>` : '';
                 return `
                     <div id="playlistNowPlaying" style="padding: 12px 14px; margin-bottom: 12px; background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%); border-radius: 8px; border-left: 4px solid #4f46e5; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(79, 70, 229, 0.1);">
                         <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; width: 100%;">
                             <span style="font-size: 18px; line-height: 1;">▶️</span>
-                            <span style="font-size: 12px; font-weight: bold; color: white; background: #4f46e5; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">正在播放</span>
+                            <span style="font-size: 12px; font-weight: bold; color: white; background: #4f46e5; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">${t('Web.NowPlaying', '正在播放')}</span>
                             <div style="font-size: 17px; font-weight: bold; color: #1e1b4b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
                                 <span>${songTitle}</span>${orderedByText}
                             </div>
@@ -1620,8 +1662,8 @@
                 return `
                     <div id="playlistNowPlaying" style="padding: 10px 14px; margin-bottom: 12px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #94a3b8; display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 15px;">
                         <span style="font-size: 16px; line-height: 1;">⏹️</span>
-                        <span style="font-size: 12px; font-weight: bold; color: #64748b; background: #e2e8f0; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">正在播放</span>
-                        <span>無</span>
+                        <span style="font-size: 12px; font-weight: bold; color: #64748b; background: #e2e8f0; padding: 2px 7px; border-radius: 4px; white-space: nowrap;">${t('Web.NowPlaying', '正在播放')}</span>
+                        <span>${t('Web.None', '無')}</span>
                     </div>
                 `;
             }
@@ -1644,21 +1686,21 @@
 
                 const hasPlaying = nowPlaying && nowPlaying.isPlaying && nowPlaying.songName;
                 if ((!playlist || playlist.length === 0) && !hasPlaying) {
-                    showToast('目前無播放及待播歌曲', 'info');
+                    showToast(t('Web.NothingPlaying', '目前無播放及待播歌曲'), 'info');
                     return;
                 }
 
                 // Create playlist display
                 let playlistHtml = '<div style="background: white; padding: 16px; border-radius: 12px; width: 95%; max-width: 1080px; margin: 10px auto; max-height: 90vh; display: flex; flex-direction: column;">';
                 playlistHtml += '<div id="playlistNowPlayingContainer">' + getNowPlayingHtml(nowPlaying) + '</div>';
-                playlistHtml += '<h2 id="playlistHeader" style="color: #333; margin-bottom: 10px; font-size: 20px;">📋 待播清單 (' + (playlist?.length || 0) + ' 首)</h2>';
+                playlistHtml += '<h2 id="playlistHeader" style="color: #333; margin-bottom: 10px; font-size: 20px;">' + t('Web.PlaylistHeader', '📋 待播清單 ({0} 首)', playlist?.length || 0) + '</h2>';
                 playlistHtml += '<div id="playlistItemsContainer" style="max-height: 60vh; overflow-y: auto; flex: 1;">';
 
                 if (!playlist || playlist.length === 0) {
-                    playlistHtml += '<div style="text-align: center; color: #999; padding: 25px 20px; font-size: 16px;">待播清單目前無歌曲</div>';
+                    playlistHtml += '<div style="text-align: center; color: #999; padding: 25px 20px; font-size: 16px;">' + t('Web.PlaylistEmpty', '待播清單目前無歌曲') + '</div>';
                 } else {
                     playlist.forEach((song, index) => {
-                        const orderedByText = song.OrderedBy ? ` <span style="color: #888; font-size: 16px;">(${song.OrderedBy})</span>` : '';
+                        const orderedByText = song.OrderedBy ? ` <span style="color: #888; font-size: 16px;">(${displayOrderedBy(song.OrderedBy)})</span>` : '';
                         const uniqueId = song.Id || song.SongId;
                         const escapedName = song.SongName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                         playlistHtml += `
@@ -1672,7 +1714,7 @@
                 }
 
                 playlistHtml += '</div>';
-                playlistHtml += '<button onclick="closePlaylistModal()" style="margin-top: 15px; padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 18px;">關閉</button>';
+                playlistHtml += '<button onclick="closePlaylistModal()" style="margin-top: 15px; padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 18px;">' + t('Web.Close', '關閉') + '</button>';
                 playlistHtml += '</div>';
 
                 // Create modal overlay
@@ -1705,7 +1747,7 @@
                 });
             } catch (error) {
                 console.error('Show playlist failed:', error);
-                showToast('載入清單失敗', 'error');
+                showToast(t('Web.PlaylistLoadFailed', '載入清單失敗'), 'error');
             }
         }
 
@@ -1754,7 +1796,7 @@
                 // Update header count
                 const header = document.getElementById('playlistHeader') || modal.querySelector('h2');
                 if (header) {
-                    header.textContent = `📋 待播清單 (${playlist?.length || 0} 首)`;
+                    header.textContent = t('Web.PlaylistHeader', '📋 待播清單 ({0} 首)', playlist?.length || 0);
                 }
 
                 // Find the playlist items container inside the modal
@@ -1762,14 +1804,14 @@
                 if (!container) return;
 
                 if (!playlist || playlist.length === 0) {
-                    container.innerHTML = '<div style="text-align: center; color: #999; padding: 25px 20px; font-size: 16px;">待播清單目前無歌曲</div>';
+                    container.innerHTML = '<div style="text-align: center; color: #999; padding: 25px 20px; font-size: 16px;">' + t('Web.PlaylistEmpty', '待播清單目前無歌曲') + '</div>';
                     return;
                 }
 
                 // Rebuild playlist items
                 let itemsHtml = '';
                 playlist.forEach((song, index) => {
-                    const orderedByText = song.OrderedBy ? ` <span style="color: #888; font-size: 16px;">(${song.OrderedBy})</span>` : '';
+                    const orderedByText = song.OrderedBy ? ` <span style="color: #888; font-size: 16px;">(${displayOrderedBy(song.OrderedBy)})</span>` : '';
                     const uniqueId = song.Id || song.SongId;
                     const escapedName = song.SongName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     itemsHtml += `
@@ -1816,19 +1858,19 @@
                 const debugInfo = document.getElementById('debugInfo');
                 debugInfo.innerHTML = `
                     <div class="debug-item">
-                        <label>歌曲數量</label>
+                        <label>${t('Web.Debug.SongCount', '歌曲數量')}</label>
                         <value>${data.SongDataCount || 0}</value>
                     </div>
                     <div class="debug-item">
-                        <label>歌手數量</label>
+                        <label>${t('Web.Debug.SingerCount', '歌手數量')}</label>
                         <value>${data.SingerDataCount || 0}</value>
                     </div>
                     <div class="debug-item">
-                        <label>播放清單</label>
+                        <label>${t('Web.Debug.Playlist', '播放清單')}</label>
                         <value>${data.PlayListDataCount || 0}</value>
                     </div>
                     <div class="debug-item">
-                        <label>我的最愛</label>
+                        <label>${t('Web.Debug.Favorites', '我的最愛')}</label>
                         <value>${data.FavoriteSongDataCount || 0}</value>
                     </div>
                 `;
@@ -1850,7 +1892,7 @@
         async function searchSongs() {
             const searchText = document.getElementById('songSearch').value.trim();
             const resultsDiv = document.getElementById('searchResults');
-            resultsDiv.innerHTML = '<div class="loading">搜尋中</div>';
+            resultsDiv.innerHTML = '<div class="loading">' + t('Web.Searching', '搜尋中') + '</div>';
             currentPage.searchResults = 0;
 
             try {
@@ -1875,7 +1917,7 @@
                 displaySongs(data, 'searchResults');
             } catch (error) {
                 console.error('Search failed:', error);
-                resultsDiv.innerHTML = '<div class="no-results">搜尋失敗，請稍後再試</div>';
+                resultsDiv.innerHTML = '<div class="no-results">' + t('Web.SearchFailed', '搜尋失敗，請稍後再試') + '</div>';
             }
         }
 
@@ -1886,7 +1928,7 @@
             if (event) event.target.classList.add('active');
 
             const resultsDiv = document.getElementById('singerResults');
-            resultsDiv.innerHTML = '<div class="loading">搜尋中</div>';
+            resultsDiv.innerHTML = '<div class="loading">' + t('Web.Searching', '搜尋中') + '</div>';
             currentPage.singerResults = 0;
 
             try {
@@ -1913,7 +1955,7 @@
                 displaySingers(data, 'singerResults');
             } catch (error) {
                 console.error('Search singer by type failed:', error);
-                resultsDiv.innerHTML = '<div class="no-results">搜尋失敗，請稍後再試</div>';
+                resultsDiv.innerHTML = '<div class="no-results">' + t('Web.SearchFailed', '搜尋失敗，請稍後再試') + '</div>';
             }
         }
 
@@ -1921,12 +1963,12 @@
         async function searchSinger() {
             const singerName = document.getElementById('singerSearch').value.trim();
             if (!singerName) {
-                showToast('請輸入歌手名稱', 'error');
+                showToast(t('Web.EnterSingerName', '請輸入歌手名稱'), 'error');
                 return;
             }
 
             const resultsDiv = document.getElementById('singerResults');
-            resultsDiv.innerHTML = '<div class="loading">搜尋中</div>';
+            resultsDiv.innerHTML = '<div class="loading">' + t('Web.Searching', '搜尋中') + '</div>';
             currentPage.singerResults = 0;
 
             try {
@@ -1946,7 +1988,7 @@
                 displaySingers(data, 'singerResults');
             } catch (error) {
                 console.error('Search failed:', error);
-                resultsDiv.innerHTML = '<div class="no-results">搜尋失敗，請稍後再試</div>';
+                resultsDiv.innerHTML = '<div class="no-results">' + t('Web.SearchFailed', '搜尋失敗，請稍後再試') + '</div>';
             }
         }
 
@@ -1957,7 +1999,7 @@
             if (event && event.target) event.target.classList.add('active');
 
             const resultsDiv = document.getElementById('newSongResults');
-            resultsDiv.innerHTML = '<div class="loading">載入中</div>';
+            resultsDiv.innerHTML = '<div class="loading">' + t('Web.Loading', '載入中') + '</div>';
 
             currentPage.newSongResults = 0;
 
@@ -1974,7 +2016,7 @@
                 displaySongs(data, 'newSongResults');
             } catch (error) {
                 console.error('Load failed:', error);
-                resultsDiv.innerHTML = '<div class="no-results">載入失敗，請稍後再試</div>';
+                resultsDiv.innerHTML = '<div class="no-results">' + t('Web.LoadFailed', '載入失敗，請稍後再試') + '</div>';
             }
         }
 
@@ -1985,7 +2027,7 @@
             if (event && event.target) event.target.classList.add('active');
 
             const resultsDiv = document.getElementById('rankingSongResults');
-            resultsDiv.innerHTML = '<div class="loading">載入中</div>';
+            resultsDiv.innerHTML = '<div class="loading">' + t('Web.Loading', '載入中') + '</div>';
 
             currentPage.rankingSongResults = 0;
 
@@ -2013,7 +2055,7 @@
                 displaySongs(data, 'rankingSongResults');
             } catch (error) {
                 console.error('Load ranking failed:', error);
-                resultsDiv.innerHTML = '<div class="no-results">載入失敗，請稍後再試</div>';
+                resultsDiv.innerHTML = '<div class="no-results">' + t('Web.LoadFailed', '載入失敗，請稍後再試') + '</div>';
             }
         }
 
@@ -2054,7 +2096,7 @@
                 }
             } catch (error) {
                 console.error('Load more failed:', error);
-                showToast('載入失敗，請稍後再試', 'error');
+                showToast(t('Web.LoadFailed', '載入失敗，請稍後再試'), 'error');
             } finally {
                 container.dataset.loading = 'false';
                 document.getElementById(containerId + '-loading').style.display = 'none';
@@ -2097,7 +2139,7 @@
             // --------------------------
             if (!singers || singers.length === 0) {
                 if (!append) {
-                    container.innerHTML = '<div class="no-results">沒有找到符合條件的歌手</div>';
+                    container.innerHTML = '<div class="no-results">' + t('Web.NoSingers', '沒有找到符合條件的歌手') + '</div>';
                 }
                 return;
             }
@@ -2109,7 +2151,7 @@
 
                 let html = '';
                 singers.forEach(singer => {
-                    const singerName = singer.Singer_Name || '未知歌手';
+                    const singerName = singer.Singer_Name || t('Web.UnknownSinger', '未知歌手');
                     // Use a common local image as fallback if the specific one fails
                     const photoUrl = `?queryType=singerphoto&name=${encodeURIComponent(singerName)}`;
 
@@ -2136,7 +2178,7 @@
 
             let html = '';
             singers.forEach(singer => {
-                const singerName = singer.Singer_Name || '未知歌手';
+                const singerName = singer.Singer_Name || t('Web.UnknownSinger', '未知歌手');
                 // In a future step, we could load songs for this singer by clicking.
                 // For now, clicking the item will add their most popular song or similar.
                 // The onclick event needs a function to handle what happens when a singer is clicked.
@@ -2170,12 +2212,12 @@
             console.log('[Debug] Raw server response for songs:', songs);
             if (!Array.isArray(songs)) {
                 console.error('[Debug] Error: Expected an array of songs, but received:', typeof songs);
-                container.innerHTML = '<div class="no-results">錯誤：從伺服器收到的資料格式不正確。</div>';
+                container.innerHTML = '<div class="no-results">' + t('Web.BadData', '錯誤：從伺服器收到的資料格式不正確。') + '</div>';
                 return;
             }
             if (!songs || songs.length === 0) {
                 if (!append) {
-                    container.innerHTML = '<div class="no-results">沒有找到符合條件的歌曲</div>';
+                    container.innerHTML = '<div class="no-results">' + t('Web.NoSongs', '沒有找到符合條件的歌曲') + '</div>';
                 } // If appending and no songs, do nothing, hasMore is already false.
                 return;
             }
@@ -2188,8 +2230,8 @@
             let html = '';
             songs.forEach(song => {
                 // Match the actual column names from the server: Song_SongName, Song_Singer, Song_Id, Song_Lang
-                const songName = song.Song_SongName || song.Song_Name || song.SongName || song.song_name || '未知歌曲';
-                const singerName = song.Song_Singer || song.Singer || song.song_singer || '未知歌手';
+                const songName = song.Song_SongName || song.Song_Name || song.SongName || song.song_name || t('Web.UnknownSong', '未知歌曲');
+                const singerName = song.Song_Singer || song.Singer || song.song_singer || t('Web.UnknownSinger', '未知歌手');
                 const songId = song.Song_Id || song.SongId || song.song_id || '';
                 const lang = song.Song_Lang || song.Language || song.song_lang || '';
                 const langShort = lang ? lang.charAt(0) : ''; // Get first character only
@@ -2200,7 +2242,7 @@
                         <div class="song-info">
                             <span class="song-name">${songName}</span>
                             <span class="singer-name">${singerName}</span>
-                            ${langShort ? `<span class="song-lang ${isMandarin ? 'song-lang-mandarin' : ''}">${langShort}</span>` : ''}
+                            ${langShort ? `<span class="song-lang ${isMandarin ? 'song-lang-mandarin' : ''}">${songLangBadge(lang)}</span>` : ''}
                         </div>
                     </div>
                 `;
@@ -2225,7 +2267,7 @@
 
             // Now perform the search for songs by this singer
             const resultsDiv = document.getElementById('singerSongResults');
-            resultsDiv.innerHTML = '<div class="loading">搜尋中</div>';
+            resultsDiv.innerHTML = '<div class="loading">' + t('Web.Searching', '搜尋中') + '</div>';
             currentPage.singerSongResults = 0;
 
             try {
@@ -2239,7 +2281,7 @@
                 displaySongs(data, 'singerSongResults');
             } catch (error) {
                 console.error('Search failed:', error);
-                resultsDiv.innerHTML = '<div class="no-results">搜尋失敗，請稍後再試</div>';
+                resultsDiv.innerHTML = '<div class="no-results">' + t('Web.SearchFailed', '搜尋失敗，請稍後再試') + '</div>';
             }
         }
 
@@ -2254,13 +2296,13 @@
         // Order song
         async function orderSong(songId, songName = '') {
             if (!songId) {
-                showToast(`歌曲編號 '${songId}' 無效`, 'error');
+                showToast(t('Web.InvalidSongId', '歌曲編號 \'{0}\' 無效', songId), 'error');
                 return;
             }
 
             // Check if username is required based on app option
             if (appOptions.networkRemoteSongUsername && !currentUsername) {
-                showToast('請先設定您的名稱', 'error');
+                showToast(t('Web.SetNameFirst', '請先設定您的名稱'), 'error');
                 showUsernameDialog();
                 return;
             }
@@ -2272,7 +2314,7 @@
                 const isDuplicate = playlist.some(song => song.SongId === songId);
 
                 if (isDuplicate) {
-                    showToast(`歌曲 "${songName}" 已在點播清單中`, 'info');
+                    showToast(t('Web.AlreadyInPlaylist', '歌曲 "{0}" 已在點播清單中', songName), 'info');
                     return;
                 }
             } catch (error) {
@@ -2286,7 +2328,7 @@
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    showToast('✅ 點歌成功！');
+                    showToast(t('Web.OrderOkToast', '✅ 點歌成功！'));
 
                     // Clear the number input and result if it exists
                     const songNumberInput = document.getElementById('songNumber');
@@ -2298,11 +2340,11 @@
                         numberSongResultDiv.innerHTML = '';
                     }
                 } else {
-                    showToast(`❌ ${data.message || '點歌失敗'}`, 'error');
+                    showToast(`❌ ${data.message || t('Web.OrderFailed', '點歌失敗')}`, 'error');
                 }
             } catch (error) {
                 console.error('Order failed:', error);
-                showToast('❌ 點歌失敗，發生連線錯誤', 'error');
+                showToast(t('Web.OrderConnError', '❌ 點歌失敗，發生連線錯誤'), 'error');
             }
         }
 
@@ -2317,7 +2359,7 @@
                 return;
             }
 
-            resultDiv.innerHTML = '<div class="loading">搜尋中</div>';
+            resultDiv.innerHTML = '<div class="loading">' + t('Web.Searching', '搜尋中') + '</div>';
 
             try {
                 const condition = `Song_Id = '${songId}'`;
@@ -2328,8 +2370,8 @@
 
                 if (data && data.length > 0) {
                     const song = data[0];
-                    const songName = song.Song_SongName || '未知歌曲';
-                    const singerName = song.Song_Singer || '未知歌手';
+                    const songName = song.Song_SongName || t('Web.UnknownSong', '未知歌曲');
+                    const singerName = song.Song_Singer || t('Web.UnknownSinger', '未知歌手');
                     const lang = song.Song_Lang || '';
                     const langShort = lang ? lang.charAt(0) : '';
                     const isMandarin = langShort === '國';
@@ -2340,18 +2382,18 @@
                             <div class="song-info">
                                 <span class="song-name">${songName}</span>
                                 <span class="singer-name">${singerName}</span>
-                                ${langShort ? `<span class="song-lang ${isMandarin ? 'song-lang-mandarin' : ''}">${langShort}</span>` : ''}
+                                ${langShort ? `<span class="song-lang ${isMandarin ? 'song-lang-mandarin' : ''}">${songLangBadge(lang)}</span>` : ''}
                             </div>
                         </div>
                     `;
                     // Wait for DOM update then check overflow
                     requestAnimationFrame(() => checkAndApplyWrapMode('numberSongResult'));
                 } else {
-                    resultDiv.innerHTML = '<div class="no-results">找不到此編號的歌曲</div>';
+                    resultDiv.innerHTML = '<div class="no-results">' + t('Web.NumberNotFound', '找不到此編號的歌曲') + '</div>';
                 }
             } catch (error) {
                 console.error('Search by number failed:', error);
-                resultDiv.innerHTML = '<div class="no-results">搜尋失敗，請稍後再試</div>';
+                resultDiv.innerHTML = '<div class="no-results">' + t('Web.SearchFailed', '搜尋失敗，請稍後再試') + '</div>';
             }
         }
 
@@ -2482,16 +2524,16 @@
                 console.log('[ContextMenu] Response:', data);
 
                 if (data.success) {
-                    showToast(data.message || '操作成功');
+                    showToast(data.message || t('Web.ActionOk', '操作成功'));
                     // Close and reopen playlist to refresh
                     closePlaylistModal();
                     showPlaylist();
                 } else {
-                    showToast(data.message || '操作失敗', 'error');
+                    showToast(data.message || t('Web.ActionFailed', '操作失敗'), 'error');
                 }
             } catch (error) {
                 console.error('[ContextMenu] Action failed:', error);
-                showToast('操作失敗', 'error');
+                showToast(t('Web.ActionFailed', '操作失敗'), 'error');
             }
         }
 
@@ -2504,13 +2546,13 @@
                 const users = await response.json();
 
                 if (!users || users.length === 0) {
-                    showToast('沒有可用的使用者', 'info');
+                    showToast(t('Web.NoUsers', '沒有可用的使用者'), 'info');
                     return;
                 }
 
                 // Create user selection popup
                 let menuHtml = '<div style="background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">';
-                menuHtml += '<h2 style="color: #333; margin-bottom: 20px; text-align: center; font-size: 24px;">❤️ 選擇使用者</h2>';
+                menuHtml += '<h2 style="color: #333; margin-bottom: 20px; text-align: center; font-size: 24px;">' + t('Web.SelectUser', '❤️ 選擇使用者') + '</h2>';
                 menuHtml += '<div style="max-height: 400px; overflow-y: auto;">';
 
                 users.forEach(user => {
@@ -2527,7 +2569,7 @@
                 });
 
                 menuHtml += '</div>';
-                menuHtml += '<button onclick="closeFavoriteUserModal()" style="margin-top: 20px; padding: 12px 30px; background: #9e9e9e; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 18px;">取消</button>';
+                menuHtml += '<button onclick="closeFavoriteUserModal()" style="margin-top: 20px; padding: 12px 30px; background: #9e9e9e; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 18px;">' + t('Web.Cancel', '取消') + '</button>';
                 menuHtml += '</div>';
 
                 // Create modal overlay
@@ -2540,7 +2582,7 @@
                 document.body.appendChild(modal);
             } catch (error) {
                 console.error('Show favorite user menu failed:', error);
-                showToast('載入使用者列表失敗', 'error');
+                showToast(t('Web.UsersLoadFailed', '載入使用者列表失敗'), 'error');
             }
         }
 
@@ -2565,7 +2607,7 @@
             }
 
             // Update section title
-            document.getElementById('favoriteSongTitle').textContent = `${userName} 的最愛`;
+            document.getElementById('favoriteSongTitle').textContent = t('Web.UserFavorites', '{0} 的最愛', userName);
 
             // Show the favorite song section
             document.getElementById('mainMenu').style.display = 'none';
@@ -2602,7 +2644,7 @@
 
                 if (!songs || songs.length === 0) {
                     if (isNewSearch) {
-                        container.innerHTML = '<div class="no-results">此使用者沒有收藏歌曲</div>';
+                        container.innerHTML = '<div class="no-results">' + t('Web.NoFavorites', '此使用者沒有收藏歌曲') + '</div>';
                     }
                     container.dataset.hasMore = 'false';
                     return;
@@ -2612,7 +2654,8 @@
                 // 與一般歌曲列表相同：整列即點歌
                 songs.forEach(song => {
                     const songName = song.Song_SongName || '';
-                    const langShort = song.Song_Lang ? song.Song_Lang.charAt(0) : '';
+                    const lang = song.Song_Lang || '';
+                    const langShort = lang ? lang.charAt(0) : '';
                     const isMandarin = langShort === '國';
                     const item = document.createElement('div');
                     item.className = 'song-item';
@@ -2621,7 +2664,7 @@
                         <div class="song-info">
                             <span class="song-name">${songName}</span>
                             <span class="singer-name">${song.Song_Singer || ''}</span>
-                            ${langShort ? `<span class="song-lang ${isMandarin ? 'song-lang-mandarin' : ''}">${langShort}</span>` : ''}
+                            ${langShort ? `<span class="song-lang ${isMandarin ? 'song-lang-mandarin' : ''}">${songLangBadge(lang)}</span>` : ''}
                         </div>
                     `;
                     container.appendChild(item);
@@ -2638,7 +2681,7 @@
                 console.error('Load favorite songs failed:', error);
                 loadingDiv.style.display = 'none';
                 if (isNewSearch) {
-                    container.innerHTML = '<div class="no-results">載入失敗，請稍後再試</div>';
+                    container.innerHTML = '<div class="no-results">' + t('Web.LoadFailed', '載入失敗，請稍後再試') + '</div>';
                 }
             }
         }
@@ -2647,7 +2690,7 @@
         async function searchYoutube() {
             const keyword = document.getElementById('youtubeSearchInput').value.trim();
             if (!keyword) {
-                showToast('請輸入搜尋關鍵字', 'error');
+                showToast(t('Web.EnterKeyword', '請輸入搜尋關鍵字'), 'error');
                 return;
             }
 
@@ -2663,7 +2706,7 @@
                 loadingDiv.style.display = 'none';
 
                 if (!videos || videos.length === 0) {
-                    resultsDiv.innerHTML = '<div class="no-results">找不到相關影片</div>';
+                    resultsDiv.innerHTML = '<div class="no-results">' + t('Web.NoVideos', '找不到相關影片') + '</div>';
                     return;
                 }
 
@@ -2682,7 +2725,7 @@
                             </div>
                             <div id="yt-progress-container-${video.Song_Id}" style="display: none; width: 100%; margin-top: 10px;">
                                 <div style="display: flex; justify-content: space-between; font-size: 13px; color: #f57c00; font-weight: bold; margin-bottom: 4px;">
-                                    <span id="yt-progress-text-${video.Song_Id}">下載中... 0%</span>
+                                    <span id="yt-progress-text-${video.Song_Id}">${t('Web.DownloadingEllipsis', '下載中...')} 0%</span>
                                 </div>
                                 <div style="width: 100%; height: 8px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; overflow: hidden;">
                                     <div id="yt-progress-${video.Song_Id}" style="height: 100%; background: linear-gradient(90deg, #ff9800, #fbc02d); width: 0%; transition: width 0.3s; border-radius: 4px;"></div>
@@ -2698,7 +2741,7 @@
             } catch (error) {
                 console.error('YouTube search failed:', error);
                 loadingDiv.style.display = 'none';
-                resultsDiv.innerHTML = '<div class="no-results">搜尋失敗，請稍後再試</div>';
+                resultsDiv.innerHTML = '<div class="no-results">' + t('Web.SearchFailed', '搜尋失敗，請稍後再試') + '</div>';
             }
         }
 
@@ -2724,14 +2767,14 @@
         // Add method to order a YouTube song from history
         async function orderYoutubeHistory(dbId, videoId) {
             if (isYtRowBusy(videoId)) return;
-            setYtRowState(videoId, 'busy', '處理中...');
+            setYtRowState(videoId, 'busy', t('Web.Processing', '處理中...'));
 
             try {
                 const response = await fetch(`?queryType=orderyoutubehistory&value=${encodeURIComponent(dbId)}`);
                 const result = await response.json();
 
                 if (result.success) {
-                    showToast('點歌成功');
+                    showToast(t('Web.OrderOk', '點歌成功'));
 
                     if (result.isDownloaded) {
                         // It's already played locally, no download needed
@@ -2742,18 +2785,18 @@
                         const progressBar = document.getElementById(`yt-progress-${videoId}`);
                         
                         if (progressContainer) progressContainer.style.display = 'block';
-                        if (progressText) progressText.innerText = '下載中... 0%';
+                        if (progressText) progressText.innerText = t('Web.DownloadingEllipsis', '下載中...') + ' 0%';
                         if (progressBar) progressBar.style.width = '0%';
                         
-                        setYtRowState(videoId, 'busy', '下載中');
+                        setYtRowState(videoId, 'busy', t('Web.Downloading', '下載中'));
                     }
                 } else {
-                    showToast(result.message || '點歌失敗', 'error');
+                    showToast(result.message || t('Web.OrderFailed', '點歌失敗'), 'error');
                     setYtRowState(videoId, '');
                 }
             } catch (error) {
                 console.error('Youtube order history error:', error);
-                showToast('伺服器錯誤', 'error');
+                showToast(t('Web.ServerError', '伺服器錯誤'), 'error');
                 setYtRowState(videoId, '');
             }
         }
@@ -2775,7 +2818,7 @@
                         const checkRes = await fetch('?queryType=checknewyoutube');
                         const checkData = await checkRes.json();
                         if (checkData.count > 0) {
-                            if (confirm(`找到 ${checkData.count} 首未記錄的本機 YouTube 歌曲檔案，是否要把這些歌新增到 點播記錄 裏？`)) {
+                            if (confirm(t('Web.ImportYoutubePrompt', '找到 {0} 首未記錄的本機 YouTube 歌曲檔案，是否要把這些歌新增到 點播記錄 裏？', checkData.count))) {
                                 await fetch('?queryType=importnewyoutube');
                             }
                         }
@@ -2787,7 +2830,7 @@
                 loadingDiv.style.display = 'none';
 
                 if (!history || history.length === 0) {
-                    resultsDiv.innerHTML = '<div class="no-results">無點播記錄</div>';
+                    resultsDiv.innerHTML = '<div class="no-results">' + t('Web.NoHistory', '無點播記錄') + '</div>';
                     return;
                 }
 
@@ -2806,7 +2849,7 @@
                             </div>
                             <div id="yt-progress-container-${videoId}" style="display: none; width: 100%; margin-top: 10px;">
                                 <div style="display: flex; justify-content: space-between; font-size: 13px; color: #f57c00; font-weight: bold; margin-bottom: 4px;">
-                                    <span id="yt-progress-text-${videoId}">下載中... 0%</span>
+                                    <span id="yt-progress-text-${videoId}">${t('Web.DownloadingEllipsis', '下載中...')} 0%</span>
                                 </div>
                                 <div style="width: 100%; height: 8px; background: rgba(0, 0, 0, 0.05); border-radius: 4px; overflow: hidden;">
                                     <div id="yt-progress-${videoId}" style="height: 100%; background: linear-gradient(90deg, #ff9800, #fbc02d); width: 0%; transition: width 0.3s; border-radius: 4px;"></div>
@@ -2820,7 +2863,7 @@
             } catch (error) {
                 console.error('Load history failed:', error);
                 loadingDiv.style.display = 'none';
-                resultsDiv.innerHTML = '<div class="no-results">載入失敗，請稍後再試</div>';
+                resultsDiv.innerHTML = '<div class="no-results">' + t('Web.LoadFailed', '載入失敗，請稍後再試') + '</div>';
             }
         }
 
@@ -2831,7 +2874,7 @@
             const progress = document.getElementById(`yt-progress-${videoId}`);
             const progressText = document.getElementById(`yt-progress-text-${videoId}`);
 
-            setYtRowState(videoId, 'busy', '處理中...');
+            setYtRowState(videoId, 'busy', t('Web.Processing', '處理中...'));
 
             try {
                 const response = await fetch(`?queryType=orderyoutube&value=${encodeURIComponent(videoId)}&user=${encodeURIComponent(currentUsername || '網路點歌')}`);
@@ -2839,22 +2882,22 @@
 
                 if (data.success) {
                     if (data.isDownloaded) {
-                        setYtRowState(videoId, 'done', '點歌成功');
-                        showToast('已加入待播清單', 'success');
+                        setYtRowState(videoId, 'done', t('Web.OrderOk', '點歌成功'));
+                        showToast(t('Web.AddedToQueue', '已加入待播清單'), 'success');
                     } else {
-                        setYtRowState(videoId, 'busy', '下載中');
+                        setYtRowState(videoId, 'busy', t('Web.Downloading', '下載中'));
                         if (progressContainer) progressContainer.style.display = 'block';
                         if (progress) progress.style.width = '0%';
-                        if (progressText) progressText.innerText = '準備下載...';
+                        if (progressText) progressText.innerText = t('Web.PreparingDownload', '準備下載...');
                     }
                 } else {
                     setYtRowState(videoId, '');
-                    showToast(data.message || '點歌失敗', 'error');
+                    showToast(data.message || t('Web.OrderFailed', '點歌失敗'), 'error');
                 }
             } catch (error) {
                 console.error('YouTube order failed:', error);
                 setYtRowState(videoId, '');
-                showToast('伺服器無回應，請稍後再試', 'error');
+                showToast(t('Web.NoResponse', '伺服器無回應，請稍後再試'), 'error');
             }
         }
     </script>

@@ -27,4 +27,22 @@ namespace UltimateKtv
         }
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
     }
+
+    /// <summary>
+    /// 點歌人 → 顯示文字 (隨機播放/網路點歌等系統標記依介面語言顯示)。
+    /// </summary>
+    public class OrderedByDisplayConverter : System.Windows.Data.IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Loc.OrderedBy(value as string);
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// 歌曲語系 (資料庫的值) → 目前介面語言的顯示文字。只用於顯示，比對請繫結原始值。
+    /// </summary>
+    public class SongLanguageDisplayConverter : System.Windows.Data.IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Loc.SongLangShort(value as string);
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+    }
 }

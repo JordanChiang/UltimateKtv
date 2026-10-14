@@ -149,6 +149,14 @@ namespace UltimateKtv
                         needsForceSave = true;
                     }
 
+                    // Validate UiLanguage (unsupported value falls back to zh-TW)
+                    if (!Loc.IsSupported(CurrentSettings.UiLanguage))
+                    {
+                        AppLogger.Log($"UiLanguage value '{CurrentSettings.UiLanguage}' is not supported. Correcting to {Loc.DefaultCulture}.");
+                        CurrentSettings.UiLanguage = Loc.DefaultCulture;
+                        needsForceSave = true;
+                    }
+
                     if (needsForceSave)
                     {
                         SaveSettings(); // Save corrected or new values
@@ -200,7 +208,8 @@ namespace UltimateKtv
                     var descriptionAttribute = prop.GetCustomAttribute<DescriptionAttribute>();
                     if (descriptionAttribute != null)
                     {
-                        sb.AppendLine($"  // {descriptionAttribute.Description}");
+                        // 說明依介面語言輸出 (語言檔沒有時用 [Description] 的繁中原文)
+                        sb.AppendLine($"  // {Loc.Find("SettingDesc." + prop.Name) ?? descriptionAttribute.Description}");
                     }
 
                     // Serialize the value

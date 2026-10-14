@@ -430,7 +430,7 @@ namespace UltimateKtv
             if (!IsValidVideoId(videoId))
             {
                 AppLogger.LogError($"[YouTube Download] '{videoId}' is not a valid YouTube video ID, download aborted.");
-                throw new Exception($"沒有有效的 YouTube 影片 ID（{videoId}），無法重新下載。");
+                throw new Exception(Loc.T("Ytdlp.InvalidId", videoId));
             }
 
             string ffmpegDir = GetFFmpegDir();
@@ -499,16 +499,16 @@ namespace UltimateKtv
                         {
                             if (currentStream <= 1)
                             {
-                                UpdateProgress(currentOverallPct, "下載視訊中...");
+                                UpdateProgress(currentOverallPct, Loc.T("Ytdlp.DownloadingVideo"));
                             }
                             else
                             {
-                                UpdateProgress(Math.Max(currentOverallPct, 75.0), "下載音訊中...");
+                                UpdateProgress(Math.Max(currentOverallPct, 75.0), Loc.T("Ytdlp.DownloadingAudio"));
                             }
                         }
                         else
                         {
-                            UpdateProgress(currentOverallPct, "下載影片中...");
+                            UpdateProgress(currentOverallPct, Loc.T("Ytdlp.Downloading"));
                         }
                     }
 
@@ -517,11 +517,11 @@ namespace UltimateKtv
                     {
                         if (totalStreams == 2 && currentStream <= 1)
                         {
-                            UpdateProgress(75.0, "視訊已下載");
+                            UpdateProgress(75.0, Loc.T("Ytdlp.VideoDone"));
                         }
                         else
                         {
-                            UpdateProgress(90.0, "音訊已下載");
+                            UpdateProgress(90.0, Loc.T("Ytdlp.AudioDone"));
                         }
                     }
 
@@ -541,20 +541,20 @@ namespace UltimateKtv
                                 {
                                     // Video stream: maps to 0% -> 75%
                                     overallPct = (streamPct / 100.0) * 75.0;
-                                    statusMsg = "下載視訊中...";
+                                    statusMsg = Loc.T("Ytdlp.DownloadingVideo");
                                 }
                                 else
                                 {
                                     // Audio stream: maps to 75% -> 90%
                                     overallPct = 75.0 + ((streamPct / 100.0) * 15.0);
-                                    statusMsg = "下載音訊中...";
+                                    statusMsg = Loc.T("Ytdlp.DownloadingAudio");
                                 }
                             }
                             else
                             {
                                 // Single combined stream: maps to 0% -> 92%
                                 overallPct = (streamPct / 100.0) * 92.0;
-                                statusMsg = "下載影片中...";
+                                statusMsg = Loc.T("Ytdlp.Downloading");
                             }
 
                             UpdateProgress(overallPct, statusMsg);
@@ -567,7 +567,7 @@ namespace UltimateKtv
                         if (!isMerging)
                         {
                             isMerging = true;
-                            UpdateProgress(Math.Max(currentOverallPct, 92.0), "影片合併中...");
+                            UpdateProgress(Math.Max(currentOverallPct, 92.0), Loc.T("Ytdlp.Merging"));
 
                             // Gradually increment progress up to 98% while FFmpeg is merging
                             mergerCts = new CancellationTokenSource();
@@ -580,7 +580,7 @@ namespace UltimateKtv
                                     {
                                         await Task.Delay(500, mToken);
                                         if (mToken.IsCancellationRequested) break;
-                                        UpdateProgress(currentOverallPct + 1.0, "影片合併中...");
+                                        UpdateProgress(currentOverallPct + 1.0, Loc.T("Ytdlp.Merging"));
                                     }
                                 }
                                 catch { }
@@ -645,7 +645,7 @@ namespace UltimateKtv
                 if (process.ExitCode == 0 && fileExists)
                 {
                     progress?.Report(1.0);
-                    statusCallback?.Invoke("下載完成");
+                    statusCallback?.Invoke(Loc.T("Ytdlp.Done"));
                     return; // Successfully downloaded!
                 }
 
@@ -662,7 +662,7 @@ namespace UltimateKtv
                 {
                     AppLogger.LogWarn($"[YouTube Download] yt-dlp failed (ExitCode: {process.ExitCode}) for '{videoId}'. Error details: {stderrText}");
                     AppLogger.LogInfo($"[YouTube Download] Updating yt-dlp to latest version before retrying song '{videoId}'...");
-                    statusCallback?.Invoke("yt-dlp 更新中...");
+                    statusCallback?.Invoke(Loc.T("Ytdlp.Updating"));
 
                     // Clean up any incomplete 0-byte file before retrying
                     try
@@ -676,7 +676,7 @@ namespace UltimateKtv
 
                     bool updateSuccess = await UpdateYtDlpAsync(force: true);
                     AppLogger.LogInfo($"[YouTube Download] yt-dlp update completed (result={updateSuccess}). Retrying download for '{videoId}'...");
-                    statusCallback?.Invoke("更新完成，重新下載中...");
+                    statusCallback?.Invoke(Loc.T("Ytdlp.UpdatedRetrying"));
                     progress?.Report(0);
 
                     continue; // Proceed to attempt 2
@@ -684,7 +684,7 @@ namespace UltimateKtv
 
                 // Attempt 2 also failed, or the error is permanent
                 AppLogger.LogError($"[YouTube Download] yt-dlp failed for video '{videoId}' (attempt {attempt}, permanent={isPermanentError}, ExitCode: {process.ExitCode}). Error: {stderrText}");
-                throw new Exception($"yt-dlp 下載失敗 (ExitCode: {process.ExitCode}): {stderrText}");
+                throw new Exception(Loc.T("Ytdlp.Failed", process.ExitCode, stderrText));
             }
         }
     }

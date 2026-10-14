@@ -603,14 +603,14 @@ public class HttpServerHelper
 				FilePath = song.ContainsKey("FilePath") ? Convert.ToString(song["FilePath"]) ?? "" : "",
 				Volume = song.ContainsKey("Song_Volume") && int.TryParse(Convert.ToString(song["Song_Volume"]), out int vol) ? vol : 90,
 				AudioTrack = song.ContainsKey("Song_Track") && int.TryParse(Convert.ToString(song["Song_Track"]), out int track) ? track : 0,
-				OrderedBy = !string.IsNullOrEmpty(userName) ? userName : "網路點歌"
+				OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb
 			};
 
 			// Validate FilePath
 			if (string.IsNullOrEmpty(songItem.FilePath) || !File.Exists(songItem.FilePath))
 			{
 				System.Diagnostics.Debug.WriteLine($"[OrderSong] Invalid FilePath: {songItem.FilePath}");
-				return JsonConvert.SerializeObject(new { success = false, message = "找不到歌曲檔案", songId = value });
+				return JsonConvert.SerializeObject(new { success = false, message = Loc.T("Web.Msg.SongFileNotFound"), songId = value });
 			}
 
 			// Add to waiting list on UI thread
@@ -637,7 +637,7 @@ public class HttpServerHelper
 			}));
 
 			System.Diagnostics.Debug.WriteLine($"[OrderSong] Song queued successfully: {primaryKey}");
-			return JsonConvert.SerializeObject(new { success = true, message = "點歌成功", songId = primaryKey });
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.OrderOk"), songId = primaryKey });
 		}
 		catch (Exception ex)
 		{
@@ -817,7 +817,7 @@ public class HttpServerHelper
 				mainWindow?.SkipSong_Click(null!, null!);
 			}));
 
-			return JsonConvert.SerializeObject(new { success = true, message = "切歌指令已送出" });
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.SkipSent") });
 		}
 		catch (Exception ex)
 		{
@@ -837,7 +837,7 @@ public class HttpServerHelper
 				mainWindow?.VocalBtn_Click(null!, null!);
 			}));
 
-			return JsonConvert.SerializeObject(new { success = true, message = "已切換至人聲" });
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Vocal") });
 		}
 		catch (Exception ex)
 		{
@@ -857,7 +857,7 @@ public class HttpServerHelper
 				mainWindow?.MusicBtn_Click(null!, null!);
 			}));
 
-			return JsonConvert.SerializeObject(new { success = true, message = "已切換至伴唱" });
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Music") });
 		}
 		catch (Exception ex)
 		{
@@ -877,7 +877,7 @@ public class HttpServerHelper
                     var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
                     mainWindow?.MoveSongToFirst(guid);
                 }));
-                return JsonConvert.SerializeObject(new { success = true, message = "已移動至第一首" });
+                return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.MovedToFirst") });
             }
             return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
         }
@@ -898,7 +898,7 @@ public class HttpServerHelper
                     var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
                     mainWindow?.RemoveSongFromList(guid);
                 }));
-                return JsonConvert.SerializeObject(new { success = true, message = "已從清單移除" });
+                return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Removed") });
             }
             return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
         }
@@ -919,7 +919,7 @@ public class HttpServerHelper
                     var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
                     mainWindow?.MoveSongToNext(guid);
                 }));
-                return JsonConvert.SerializeObject(new { success = true, message = "已下移一首" });
+                return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.MovedNext") });
             }
             return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
         }
@@ -1073,7 +1073,7 @@ public class HttpServerHelper
 	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
 	                mainWindow?.VolumeUp();
 	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = "已提升音量" });
+	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.VolUp") });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1090,7 +1090,7 @@ public class HttpServerHelper
 	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
 	                mainWindow?.VolumeDown();
 	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = "已降低音量" });
+	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.VolDown") });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1109,7 +1109,7 @@ public class HttpServerHelper
 	                mainWindow?.ToggleVolumeLock();
 	                isLocking = mainWindow?.VolumeLockToggle.IsChecked ?? false;
 	            });
-	            return JsonConvert.SerializeObject(new { success = true, message = isLocking ? "音量已鎖定" : "音量已解鎖" });
+	            return JsonConvert.SerializeObject(new { success = true, message = isLocking ? Loc.T("Web.Msg.VolLocked") : Loc.T("Web.Msg.VolUnlocked") });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1126,7 +1126,7 @@ public class HttpServerHelper
 	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
 	                mainWindow?.AdjustPitch(1);
 	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = "已升調" });
+	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchUp") });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1143,7 +1143,7 @@ public class HttpServerHelper
 	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
 	                mainWindow?.AdjustPitch(-1);
 	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = "已降調" });
+	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchDown") });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1160,7 +1160,7 @@ public class HttpServerHelper
 	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
 	                mainWindow?.SetOriginalPitch();
 	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = "已恢復原調" });
+	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchReset") });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1176,7 +1176,7 @@ public class HttpServerHelper
 	            {
 	                System.Windows.Application.Current?.Shutdown();
 	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = "程式即將關閉" });
+	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Quitting") });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1205,7 +1205,7 @@ public class HttpServerHelper
 	                System.Windows.Application.Current?.Shutdown();
 	                System.Diagnostics.Process.Start("shutdown", "/s /t 0");
 	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = "電腦即將關閉" });
+	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.ShuttingDown") });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1261,7 +1261,7 @@ public class HttpServerHelper
 	                FilePath = video.Url,
 	                IsYoutube = true,
 	                Volume = 30,
-	                OrderedBy = !string.IsNullOrEmpty(userName) ? userName : "網路點歌",
+	                OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb,
 	                AudioTrack = 0
 	            };
 
@@ -1302,10 +1302,10 @@ public class HttpServerHelper
 
                 if (!downloadQueued)
                 {
-                    return JsonConvert.SerializeObject(new { success = false, message = "無法將歌曲加入下載佇列" });
+                    return JsonConvert.SerializeObject(new { success = false, message = Loc.T("Web.Msg.QueueFailed") });
                 }
 
-	            return JsonConvert.SerializeObject(new { success = true, message = "點歌成功", isDownloaded = isDownloaded });
+	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.OrderOk"), isDownloaded = isDownloaded });
 	        }
 	        catch (Exception ex)
 	        {
@@ -1320,7 +1320,7 @@ public class HttpServerHelper
 	        {
 	            var history = SongDatas.GetYoutubeHistory();
 	            var item = history.FirstOrDefault(h => h.TryGetValue("Id", out var idObj) && idObj?.ToString() == id);
-	            if (item == null) return ErrorResult("Not Found", "無法取得歷史記錄");
+	            if (item == null) return ErrorResult("Not Found", Loc.T("Web.Msg.HistoryNotFound"));
 
 	            string url = item.TryGetValue("Url", out var u) ? u?.ToString() ?? "" : "";
 	            string name = item.TryGetValue("Name", out var n) ? n?.ToString() ?? "" : "";
@@ -1338,20 +1338,20 @@ public class HttpServerHelper
 	            {
 	                SongId = string.IsNullOrEmpty(url) ? id : url,
 	                SongName = name,
-	                SingerName = lengthSeconds > 0 ? TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss") : "未知長度",
+	                SingerName = lengthSeconds > 0 ? TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss") : Loc.T("Web.UnknownLength"),
 	                Language = item.TryGetValue("Lang", out var lang) ? lang?.ToString() ?? "" : "",
 	                FilePath = rawPath,
 	                IsYoutube = true,
 	                YoutubeId = url,
 	                Volume = item.TryGetValue("Volume", out var v) && int.TryParse(v?.ToString(), out int iv) ? iv : 30,
-	                OrderedBy = !string.IsNullOrEmpty(userName) ? userName : "網路點歌",
+	                OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb,
 	                AudioTrack = 0
 	            };
 
 	            bool fileExists = System.IO.File.Exists(rawPath);
 	            if (!fileExists && string.IsNullOrEmpty(url))
 	            {
-	                return ErrorResult("File Not Found", "找不到本機檔案，且沒有YouTube連結，無法播放。");
+	                return ErrorResult("File Not Found", Loc.T("Web.Msg.NoFileNoLink"));
 	            }
 
 	            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
@@ -1365,7 +1365,7 @@ public class HttpServerHelper
 	                }
 	            });
 
-	            return JsonConvert.SerializeObject(new { success = true, isDownloaded = fileExists, message = "點歌成功" });
+	            return JsonConvert.SerializeObject(new { success = true, isDownloaded = fileExists, message = Loc.T("Web.Msg.OrderOk") });
 	        }
 	        catch (Exception ex)
 	        {

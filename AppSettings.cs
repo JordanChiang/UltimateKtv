@@ -127,6 +127,9 @@ namespace UltimateKtv
         [Description("語系點歌複選: 決定語系點歌時是否可以同時選擇多個語系。 true=開啟, false=關閉")]
         public bool IsLanguageMultiSelect { get; set; } = false;
 
+        [Description("介面語言: 程式介面顯示的語言，對應 Languages 目錄下的語言檔名 (例如 zh-TW、zh-CN、en，可自行新增)。預設為 zh-TW。")]
+        public string UiLanguage { get; set; } = "zh-TW";
+
         [Description("啟用錄音功能: 決定是否啟用錄音功能。 true=開啟, false=關閉")]
         public bool EnableRecording { get; set; } = false;
 

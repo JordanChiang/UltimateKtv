@@ -51,8 +51,8 @@ namespace UltimateKtv
             // Update the page information TextBlock
             // 最愛頁：清單是使用者/歌單，且含補位空格，只計實際項目
             PageInfoTextBlock.Text = _currentFilterKey == "FavoriteUsers"
-                ? $"第 {page}/{_totalPages} 頁 (共 {_allSingers.Count(n => !string.IsNullOrEmpty(n))} 項)"
-                : $"第 {page}/{_totalPages} 頁 ({_allSingers.Count} 位歌手)";
+                ? Loc.T("Page.SingerItems", page, _totalPages, _allSingers.Count(n => !string.IsNullOrEmpty(n)))
+                : Loc.T("Page.Singers", page, _totalPages, _allSingers.Count);
 
             // Enable or disable the page buttons based on the current page
             PageUp.IsEnabled = (page > 1);
@@ -301,7 +301,7 @@ namespace UltimateKtv
             }
 
             // Update the page information TextBlock
-            PageInfoTextBlock.Text = $"第 {page}/{_totalSongPages} 頁 ({_currentSongsTitle} - {_allSongs.Count} 首歌曲)";
+            PageInfoTextBlock.Text = Loc.T("Page.Songs", page, _totalSongPages, _currentSongsTitle, _allSongs.Count);
 
             // Enable or disable the page buttons based on the current page
             PageUp.IsEnabled = (page > 1);
@@ -378,7 +378,7 @@ namespace UltimateKtv
         /// <param name="userName">The name of the user to load favorites for</param>
         private void LoadFavoriteSongsForUser(string userName)
         {
-            _currentSongsTitle = $"{userName} 的最愛";
+            _currentSongsTitle = Loc.T("Title.UserFavorites", userName);
             if (SongDatas.FavoriteUserData == null || SongDatas.FavoriteSongData == null || SongDatas.SongData == null)
             {
                 _allSongs = new List<SongDisplayItem>();

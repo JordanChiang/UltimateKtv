@@ -58,7 +58,7 @@ namespace UltimateKtv
             // Title
             var title = new TextBlock
             {
-                Text = "音調控制",
+                Text = Loc.T("Pitch.Title"),
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 16),
@@ -96,7 +96,7 @@ namespace UltimateKtv
             // Button 2: 升調 (Pitch Up)
             var pitchUpBtn = new Button
             {
-                Content = "升調",
+                Content = Loc.T("Pitch.Up"),
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
@@ -108,7 +108,7 @@ namespace UltimateKtv
             // Button 3: 原調 (Original Pitch)
             var originalPitchBtn = new Button
             {
-                Content = "原調",
+                Content = Loc.T("Pitch.Original"),
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
@@ -120,7 +120,7 @@ namespace UltimateKtv
             // Button 4: 降調 (Pitch Down)
             var pitchDownBtn = new Button
             {
-                Content = "降調",
+                Content = Loc.T("Pitch.Down"),
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
@@ -132,7 +132,7 @@ namespace UltimateKtv
             // Button 5: 男調 (Male Pitch)
             var malePitchBtn = new Button
             {
-                Content = "男調",
+                Content = Loc.T("Pitch.Male"),
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
@@ -144,7 +144,7 @@ namespace UltimateKtv
             // Button 6: 女調 (Female Pitch)
             var femalePitchBtn = new Button
             {
-                Content = "女調",
+                Content = Loc.T("Pitch.Female"),
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
@@ -156,7 +156,7 @@ namespace UltimateKtv
             // Button 7: 固定/解除 (Fix/Unfix toggle)
             _fixToggleBtn = new Button
             {
-                Content = _isPitchFixed ? "解除" : "固定",
+                Content = _isPitchFixed ? Loc.T("Pitch.Unfix") : Loc.T("Pitch.Fix"),
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 16),
                 Style = (Style)FindResource(_isPitchFixed ? "CyberAccentGoldButton" : "CyberButton"),
@@ -168,7 +168,7 @@ namespace UltimateKtv
             // Close button
             var closeBtn = new Button
             {
-                Content = "關閉",
+                Content = Loc.T("Common.Close"),
                 Height = 42,
                 Style = (Style)FindResource("CyberButton"),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -186,11 +186,11 @@ namespace UltimateKtv
         private string GetPitchDisplayText()
         {
             if (_currentPitchLevel == 0)
-                return "目前音調: 原調";
+                return Loc.T("Pitch.CurrentOriginal");
             else if (_currentPitchLevel > 0)
-                return $"目前音調: +{_currentPitchLevel}";
+                return Loc.T("Pitch.Current", "+" + _currentPitchLevel);
             else
-                return $"目前音調: {_currentPitchLevel}";
+                return Loc.T("Pitch.Current", _currentPitchLevel);
         }
 
         /// <summary>
@@ -201,7 +201,7 @@ namespace UltimateKtv
             if (mediaUriElement == null || !mediaUriElement.IsPlaying)
             {
                 AppLogger.Log($"User action: Pitch adjust {adjustment:+0;-0} failed - no song playing");
-                MarqueeAPI.ShowCornerText("請先播放歌曲", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
                 return;
             }
 
@@ -221,7 +221,7 @@ namespace UltimateKtv
             ApplyPitchChange();
             
             // Show notification
-            MarqueeAPI.ShowCornerText($"音調: {GetPitchDisplayText()}", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+            MarqueeAPI.ShowCornerText(Loc.T("Pitch.Marquee", GetPitchDisplayText()), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
             
             // Update the dialog display without closing
             UpdatePitchDialogDisplay();
@@ -235,14 +235,14 @@ namespace UltimateKtv
             if (mediaUriElement == null || !mediaUriElement.IsPlaying)
             {
                 AppLogger.Log("User action: Set original pitch failed - no song playing");
-                MarqueeAPI.ShowCornerText("請先播放歌曲", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
                 return;
             }
 
             AppLogger.Log($"User action: Set pitch to original (from {_currentPitchLevel} to 0)");
             _currentPitchLevel = 0;
             ApplyPitchChange();
-            MarqueeAPI.ShowCornerText("音調：原調", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+            MarqueeAPI.ShowCornerText(Loc.T("Pitch.MarqueeOriginal"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
             UpdatePitchDialogDisplay();
         }
 
@@ -254,14 +254,14 @@ namespace UltimateKtv
             if (mediaUriElement == null || !mediaUriElement.IsPlaying)
             {
                 AppLogger.Log("User action: Set male pitch failed - no song playing");
-                MarqueeAPI.ShowCornerText("請先播放歌曲", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
                 return;
             }
 
             AppLogger.Log($"User action: Set pitch to male voice (from {_currentPitchLevel} to -4)");
             _currentPitchLevel = -4;
             ApplyPitchChange();
-            MarqueeAPI.ShowCornerText("男調(-4)", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+            MarqueeAPI.ShowCornerText(Loc.T("Pitch.MarqueeMale"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
             UpdatePitchDialogDisplay();
         }
 
@@ -273,14 +273,14 @@ namespace UltimateKtv
             if (mediaUriElement == null || !mediaUriElement.IsPlaying)
             {
                 AppLogger.Log("User action: Set female pitch failed - no song playing");
-                MarqueeAPI.ShowCornerText("請先播放歌曲", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
                 return;
             }
 
             AppLogger.Log($"User action: Set pitch to female voice (from {_currentPitchLevel} to +4)");
             _currentPitchLevel = 4;
             ApplyPitchChange();
-            MarqueeAPI.ShowCornerText("女調(+4)", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+            MarqueeAPI.ShowCornerText(Loc.T("Pitch.MarqueeFemale"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
             UpdatePitchDialogDisplay();
         }
         
@@ -307,17 +307,17 @@ namespace UltimateKtv
             
             if (_fixToggleBtn != null)
             {
-                _fixToggleBtn.Content = _isPitchFixed ? "解除" : "固定";
+                _fixToggleBtn.Content = _isPitchFixed ? Loc.T("Pitch.Unfix") : Loc.T("Pitch.Fix");
                 _fixToggleBtn.Style = (Style)FindResource(_isPitchFixed ? "CyberAccentGoldButton" : "CyberButton");
             }
             
             if (_isPitchFixed)
             {
-                MarqueeAPI.ShowCornerText($"已固定音調: {_currentPitchLevel}", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                MarqueeAPI.ShowCornerText(Loc.T("Pitch.Fixed", _currentPitchLevel), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
             }
             else
             {
-                MarqueeAPI.ShowCornerText("已解除音調固定", 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                MarqueeAPI.ShowCornerText(Loc.T("Pitch.Unfixed"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
             }
         }
 

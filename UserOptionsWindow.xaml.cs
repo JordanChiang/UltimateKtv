@@ -335,7 +335,7 @@ namespace UltimateKtv
             // Set Change Song Library Drive settings
             ChangeSongLibraryDriveToggle.IsChecked = settings.ChangeSongLibraryDriveEnabled;
             SongLibraryDrivePathText.Text = string.IsNullOrEmpty(settings.SongLibraryDrivePath) 
-                ? "(尚未選擇目錄)" 
+                ? Loc.T("Options.NoDirSelected") 
                 : settings.SongLibraryDrivePath;
 
             // Set Random Play settings
@@ -345,6 +345,10 @@ namespace UltimateKtv
             RandomPlayAudioChannelComboBox.SelectedIndex = settings.RandomPlayAudioChannel;
             InitializeFavoriteUserComboBox();
             UpdateRandomPlayFavoriteUserVisibility();
+
+            // UI language
+            UiLanguageComboBox.ItemsSource = Loc.RefreshCultures(); // 重新掃描，使用者新增的語言檔不用重開程式
+            UiLanguageComboBox.SelectedValue = Loc.Normalize(settings.UiLanguage);
 
             // Update HTTP server status text
             UpdateHttpServerLabelStyle();
@@ -557,7 +561,7 @@ namespace UltimateKtv
             // Save Change Song Library Drive settings
             settings.ChangeSongLibraryDriveEnabled = ChangeSongLibraryDriveToggle.IsChecked == true;
             string drivePathText = SongLibraryDrivePathText.Text;
-            settings.SongLibraryDrivePath = (drivePathText == "(尚未選擇目錄)") ? "" : drivePathText.Trim();
+            settings.SongLibraryDrivePath = (drivePathText == Loc.T("Options.NoDirSelected")) ? "" : drivePathText.Trim();
 
             // Save Random Play settings
             settings.RandomPlayEnabled = RandomPlayToggle.IsChecked == true;
@@ -573,6 +577,11 @@ namespace UltimateKtv
 
             // Save Language settings
             settings.IsLanguageMultiSelect = LanguageMultiSelectToggle.IsChecked == true;
+            if (UiLanguageComboBox.SelectedValue is string uiLanguage && uiLanguage != Loc.CurrentCulture)
+            {
+                settings.UiLanguage = uiLanguage;
+                Loc.Apply(uiLanguage);
+            }
 
             // Apply changes to the running application
             _parentWindow.NewSongDays = settings.NewSongDays;
@@ -599,7 +608,7 @@ namespace UltimateKtv
                 _parentWindow.StartDelayedRandomPlayWhenEmpty();
             }
 
-            MessageBox.Show("設定已套用", "完成", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(Loc.T("Options.Applied"), Loc.T("Common.Done"), MessageBoxButton.OK, MessageBoxImage.Information);
             Hide();
         }
 
@@ -615,7 +624,7 @@ namespace UltimateKtv
             if (HttpServerToggle.IsChecked == true)
             {
                 int port = settings.HttpServerPort;
-                HttpStatusText.Text = "伺服器已啟用，正在取得連線網址...";
+                HttpStatusText.Text = Loc.T("Options.ServerStarting");
                 try
                 {
                     // ServerUrl / GetLocalIPAddress 會列舉網路介面，QR code 產生也耗時 → 全部移到背景
@@ -627,7 +636,7 @@ namespace UltimateKtv
 
                     if (version != _httpQrVersion) return; // toggled again meanwhile
 
-                    HttpStatusText.Text = $"伺服器已啟用，可由此網址連線: {serverUrl}";
+                    HttpStatusText.Text = Loc.T("Options.ServerRunning", serverUrl);
                     QrCodeImage.Source = qrImage;
                     QrCodeImage.Visibility = qrImage != null ? Visibility.Visible : Visibility.Collapsed;
                 }
@@ -638,7 +647,7 @@ namespace UltimateKtv
             }
             else
             {
-                HttpStatusText.Text = "伺服器未啟用。變更將在下次程式啟動時生效。";
+                HttpStatusText.Text = Loc.T("Options.ServerDisabled");
                 QrCodeImage.Source = null;
                 QrCodeImage.Visibility = Visibility.Collapsed;
             }
@@ -752,7 +761,7 @@ namespace UltimateKtv
                 Margin = new Thickness(0, 0, 15, 0)
             };
             var title = new TextBlock {
-                Text = "關閉選項",
+                Text = Loc.T("Options.CloseOptions"),
                 FontSize = 24,
                 FontWeight = FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -764,7 +773,7 @@ namespace UltimateKtv
             mainGrid.Children.Add(headerPanel);
 
             var message = new TextBlock {
-                Text = "請選擇要執行的操作：",
+                Text = Loc.T("Options.ChooseAction"),
                 FontSize = 18,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 20),
@@ -777,7 +786,7 @@ namespace UltimateKtv
             var buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
             
             var cancelBtn = new Button {
-                Content = "取消",
+                Content = Loc.T("Common.Cancel"),
                 Width = 100,
                 Height = 45,
                 Margin = new Thickness(0, 0, 10, 0),
@@ -790,7 +799,7 @@ namespace UltimateKtv
             };
 
             var quitAppBtn = new Button {
-                Content = "關閉程式",
+                Content = Loc.T("Options.CloseProgram"),
                 Width = 120,
                 Height = 45,
                 Margin = new Thickness(0, 0, 10, 0),
@@ -802,7 +811,7 @@ namespace UltimateKtv
             };
 
             var shutdownBtn = new Button {
-                Content = "關閉電腦",
+                Content = Loc.T("Options.Shutdown"),
                 Width = 120,
                 Height = 45,
                 FontSize = 16,
@@ -997,14 +1006,14 @@ namespace UltimateKtv
             int version = ++_publicQrVersion;
             try
             {
-                PublicIpStatusText.Text = "正在取得公網IP...";
+                PublicIpStatusText.Text = Loc.T("Options.PublicIpFetching");
                 string publicIp = await Task.Run(() => HttpServer.GetPublicIPAddressAsync());
                 string publicUrl = $"http://{publicIp}:{port}";
                 var qrImage = await Task.Run(() => CreateQrImage(publicUrl));
 
                 if (version != _publicQrVersion) return; // port changed meanwhile
 
-                PublicIpStatusText.Text = $"公網連線網址: {publicUrl}";
+                PublicIpStatusText.Text = Loc.T("Options.PublicIpUrl", publicUrl);
                 PublicQrCodeImage.Source = qrImage;
                 PublicQrCodeImage.Visibility = qrImage != null ? Visibility.Visible : Visibility.Collapsed;
             }
@@ -1012,7 +1021,7 @@ namespace UltimateKtv
             {
                 if (version != _publicQrVersion) return;
                 AppLogger.LogError("Failed to generate public QR code", ex);
-                PublicIpStatusText.Text = "無法取得公網IP，請檢查網路連線";
+                PublicIpStatusText.Text = Loc.T("Options.PublicIpFailed");
                 PublicQrCodeImage.Source = null;
                 PublicQrCodeImage.Visibility = Visibility.Collapsed;
             }
@@ -1071,13 +1080,13 @@ namespace UltimateKtv
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog
             {
-                Title = "選擇歌庫所在的目錄",
+                Title = Loc.T("Options.SelectLibraryDir"),
                 Multiselect = false
             };
             
             // Set initial path if one is already selected
             string currentPath = SongLibraryDrivePathText.Text;
-            if (!string.IsNullOrEmpty(currentPath) && currentPath != "(尚未選擇目錄)" && Directory.Exists(currentPath))
+            if (!string.IsNullOrEmpty(currentPath) && currentPath != Loc.T("Options.NoDirSelected") && Directory.Exists(currentPath))
             {
                 dialog.InitialDirectory = currentPath;
             }
@@ -1127,7 +1136,7 @@ namespace UltimateKtv
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog
             {
-                Title = "選擇錄音檔存放的目錄",
+                Title = Loc.T("Options.SelectRecordingDir"),
                 Multiselect = false
             };
 

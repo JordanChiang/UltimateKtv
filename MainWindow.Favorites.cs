@@ -43,7 +43,7 @@ namespace UltimateKtv
             {
                 if (songItem.IsYoutube)
                 {
-                    MessageBox.Show("YouTube 歌曲無法加入最愛。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show(Loc.T("Fav.YoutubeNotAllowed"), Loc.T("Common.Hint"), MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
                 AppLogger.Log($"User action: Add to favorite clicked for song '{songItem.SongName}'");
@@ -85,7 +85,7 @@ namespace UltimateKtv
 
                 dialogContent.Children.Add(new TextBlock
                 {
-                    Text = "加入最愛",
+                    Text = Loc.T("Song.AddFavorite"),
                     FontSize = 24,
                     FontWeight = FontWeights.Bold,
                     Margin = new Thickness(0, 0, 0, 15)
@@ -93,7 +93,7 @@ namespace UltimateKtv
 
                 dialogContent.Children.Add(new TextBlock
                 {
-                    Text = $"歌曲: {songItem.SongName}",
+                    Text = Loc.T("Fav.SongLabel", songItem.SongName),
                     FontSize = 18,
                     Margin = new Thickness(0, 0, 0, 5),
                     TextWrapping = TextWrapping.Wrap
@@ -101,7 +101,7 @@ namespace UltimateKtv
 
                 dialogContent.Children.Add(new TextBlock
                 {
-                    Text = $"歌手: {songItem.SingerName}",
+                    Text = Loc.T("Fav.SingerLabel", songItem.SingerName),
                     FontSize = 18,
                     Margin = new Thickness(0, 0, 0, 15),
                     TextWrapping = TextWrapping.Wrap
@@ -109,7 +109,7 @@ namespace UltimateKtv
 
                 dialogContent.Children.Add(new TextBlock
                 {
-                    Text = "選擇使用者:",
+                    Text = Loc.T("Fav.SelectUser"),
                     FontSize = 22,
                     FontWeight = FontWeights.SemiBold,
                     Margin = new Thickness(0, 0, 0, 10)
@@ -155,7 +155,7 @@ namespace UltimateKtv
 
                 var cancelButton = new Button
                 {
-                    Content = "取消",
+                    Content = Loc.T("Common.Cancel"),
                     Width = 100,
                     Height = 40                    
                 };
@@ -163,7 +163,7 @@ namespace UltimateKtv
 
                 var confirmButton = new Button
                 {
-                    Content = "確定",
+                    Content = Loc.T("Common.OK"),
                     Width = 100,
                     Height = 40,
                     Margin = new Thickness(0, 0, 10, 0)
@@ -280,7 +280,7 @@ namespace UltimateKtv
                     AppLogger.Log($"Song {songId} already in favorites for user {userName}");
                     
                     // Show feedback to user
-                    MarqueeAPI.ShowText($"歌曲已在 {userName} 的最愛中", MarqueeDisplayDevice.ConsoleScreen);
+                    MarqueeAPI.ShowText(Loc.T("Fav.AlreadyIn", userName), MarqueeDisplayDevice.ConsoleScreen);
                     return;
                 }
 
@@ -299,7 +299,7 @@ namespace UltimateKtv
                     SongDatas.ReloadFavoriteData(dbPath);
                     
                     // Show success feedback to user
-                    MarqueeAPI.ShowText($"已加入 {userName} 的最愛", MarqueeDisplayDevice.ConsoleScreen);
+                    MarqueeAPI.ShowText(Loc.T("Fav.Added", userName), MarqueeDisplayDevice.ConsoleScreen);
                 }
                 else
                 {
@@ -307,7 +307,7 @@ namespace UltimateKtv
                     AppLogger.LogError($"Failed to add song {songId} to {userName}'s favorites", null);
                     
                     // Show failure feedback to user
-                    MarqueeAPI.ShowText("加入最愛失敗", MarqueeDisplayDevice.ConsoleScreen);
+                    MarqueeAPI.ShowText(Loc.T("Fav.AddFailed"), MarqueeDisplayDevice.ConsoleScreen);
                 }
             }
             catch (Exception ex)

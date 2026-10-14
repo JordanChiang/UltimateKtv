@@ -232,7 +232,7 @@ namespace UltimateKtv
             if (!File.Exists(databaseFile))
             {
                 // Throw a specific, user-friendly exception if the database file is missing.
-                throw new FileNotFoundException($"資料庫檔案遺失，無法啟動程式。\n預期路徑: {databaseFile}", databaseFile);
+                throw new FileNotFoundException(Loc.T("App.DbMissing", databaseFile), databaseFile);
             }
 
             try
@@ -421,7 +421,7 @@ namespace UltimateKtv
             {
                 var genKey = genNum.ToString();
                 var genFilePath = $"gen{genNum}.json";
-                var periodName = $"第{genNum}代";
+                var periodName = Loc.T("Title.GenerationN", genNum);
                 var genSongList = new List<Dictionary<string, object?>>();
 
                 // Initialize with default values

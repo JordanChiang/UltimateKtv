@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        Title="使用者設定選項" 
+        Title="{DynamicResource Str.Options.WindowTitle}" 
         Height="900" 
         Width="1024"
         WindowStartupLocation="CenterOwner"
@@ -58,7 +58,7 @@
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="ExitToApp" Width="26" Height="26" VerticalAlignment="Center" Margin="5,0,5,0"/>
-                            <TextBlock Text="退出程式" VerticalAlignment="Center"/>
+                            <TextBlock Text="{DynamicResource Str.Options.ExitProgram}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button.Content>
                 </Button>
@@ -66,7 +66,7 @@
                     <materialDesign:PackIcon Kind="Settings" Width="32" Height="32"
                                              Foreground="{DynamicResource PrimaryBrush}"
                                              VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBlock Text="使用者設定選項 (Settings)" FontSize="{StaticResource OptionsHeaderFontSize}" FontWeight="Bold"
+                    <TextBlock Text="{DynamicResource Str.Options.Title}" FontSize="{StaticResource OptionsHeaderFontSize}" FontWeight="Bold"
                               VerticalAlignment="Center"
                               Foreground="{DynamicResource MaterialDesignBody}"/>
                 </StackPanel>
@@ -75,6 +75,35 @@
             <!-- Scrollable Options - same content as window version -->
             <ScrollViewer x:Name="OptionsScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="5">
+                    <!-- Row 0: UI Language -->
+                    <Grid Margin="0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- UI Language (語言名稱以各語言本身顯示，不翻譯) -->
+                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
+                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                            <Grid Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.UiLanguage}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <ComboBox x:Name="UiLanguageComboBox" Grid.Column="1"
+                                         Width="200" Height="40"
+                                         FontSize="{StaticResource OptionsItemButtonFontSize}"
+                                         Foreground="{DynamicResource MaterialDesignBody}"
+                                         VerticalAlignment="Center"
+                                         VerticalContentAlignment="Center"
+                                         DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
                     <!-- Row 1: Public IP + Remote Server -->
                     <Grid Margin="0,2">
                         <Grid.ColumnDefinitions>
@@ -97,11 +126,11 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="公網IP連線" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str.Options.PublicIp}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
 
                                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="埠號:" FontSize="{StaticResource OptionsItemLabelFontSize}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                    <TextBlock Text="{DynamicResource Str.Options.Port}" FontSize="{StaticResource OptionsItemLabelFontSize}" VerticalAlignment="Center" Margin="0,0,10,0"
                                               Foreground="{DynamicResource MaterialDesignBody}"/>
                                     <TextBox x:Name="PublicServerPortTextBox"
                                              Style="{x:Null}"
@@ -143,7 +172,7 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Name="HttpServerLabel" Grid.Row="0" Grid.Column="0" Text="遠端點歌伺服器" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Name="HttpServerLabel" Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str.Options.HttpServer}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
 
                                 <ToggleButton Name="HttpServerToggle" Grid.Row="0" Grid.Column="1"
@@ -153,7 +182,7 @@
                                               Unchecked="HttpServerToggle_StateChanged"/>
                                 
                                 <TextBlock Name="HttpStatusText" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                           Text="伺服器未啟用" FontSize="{StaticResource OptionsDescriptionFontSize}" Opacity="0.7" Margin="0,4,0,0"
+                                           Text="{DynamicResource Str.Options.ServerDisabledShort}" FontSize="{StaticResource OptionsDescriptionFontSize}" Opacity="0.7" Margin="0,4,0,0"
                                            VerticalAlignment="Top" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}"/>
 
                                 <Image Name="QrCodeImage" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
@@ -184,7 +213,7 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="更換歌庫磁碟代號" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str.Options.ChangeLibraryDrive}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
 
                                 <ToggleButton Name="ChangeSongLibraryDriveToggle" Grid.Row="0" Grid.Column="1"
@@ -196,10 +225,10 @@
                                 <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0"
                                             Visibility="{Binding ElementName=ChangeSongLibraryDriveToggle, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}"
                                             Name="SongLibraryDrivePathPanel">
-                                    <TextBlock Text="路徑:" FontSize="{StaticResource OptionsDescriptionFontSize}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                    <TextBlock Text="{DynamicResource Str.Options.PathLabel}" FontSize="{StaticResource OptionsDescriptionFontSize}" VerticalAlignment="Center" Margin="0,0,10,0"
                                                Foreground="{DynamicResource MaterialDesignBody}"/>
                                     <TextBlock x:Name="SongLibraryDrivePathText"
-                                               Text="(尚未選擇目錄)"
+                                               Text="{DynamicResource Str.Options.NoDirSelected}"
                                                Width="280"
                                                FontSize="{StaticResource OptionsDescriptionFontSize}" 
                                                VerticalAlignment="Center"
@@ -207,7 +236,7 @@
                                                ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
                                                Foreground="{DynamicResource MaterialDesignBody}"/>
                                     <Button x:Name="BrowseSongLibraryDriveButton"
-                                            Content="瀏覽..."
+                                            Content="{DynamicResource Str.Options.Browse}"
                                             Style="{DynamicResource MaterialDesignOutlinedButton}"
                                             FontSize="{StaticResource OptionsSmallFontSize}"
                                             Height="35"
@@ -230,7 +259,7 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="隨機播放" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str.Options.RandomPlay}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
 
                                 <ToggleButton Name="RandomPlayToggle" Grid.Row="0" Grid.Column="1"
@@ -249,11 +278,11 @@
                                              VerticalContentAlignment="Center"
                                              Margin="0,0,10,0"
                                              SelectionChanged="RandomPlayCategoryComboBox_SelectionChanged">
-                                        <ComboBoxItem Content="國語排行" Tag="0"/>
-                                        <ComboBoxItem Content="台語排行" Tag="1"/>
-                                        <ComboBoxItem Content="新進歌曲" Tag="2"/>
-                                        <ComboBoxItem Content="全部排行" Tag="3"/>
-                                        <ComboBoxItem Content="我的最愛" Tag="10"/>
+                                        <ComboBoxItem Content="{DynamicResource Str.Random.MandarinRank}" Tag="0"/>
+                                        <ComboBoxItem Content="{DynamicResource Str.Random.TaiwaneseRank}" Tag="1"/>
+                                        <ComboBoxItem Content="{DynamicResource Str.Random.NewSongs}" Tag="2"/>
+                                        <ComboBoxItem Content="{DynamicResource Str.Random.AllRank}" Tag="3"/>
+                                        <ComboBoxItem Content="{DynamicResource Str.Random.MyFavorites}" Tag="10"/>
                                     </ComboBox>
 
                                     <ComboBox x:Name="RandomPlayFavoriteUserComboBox"
@@ -272,8 +301,8 @@
                                              VerticalAlignment="Center"
                                              VerticalContentAlignment="Center"
                                              SelectionChanged="RandomPlayAudioChannelComboBox_SelectionChanged">
-                                        <ComboBoxItem Content="人聲" Tag="0"/>
-                                        <ComboBoxItem Content="伴唱" Tag="1"/>
+                                        <ComboBoxItem Content="{DynamicResource Str.Player.Vocal}" Tag="0"/>
+                                        <ComboBoxItem Content="{DynamicResource Str.Player.Music}" Tag="1"/>
                                     </ComboBox>
                                 </StackPanel>
                             </Grid>
@@ -296,7 +325,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="點播螢幕顯示" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.ShowPreview}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="PreviewToggle" Grid.Column="1"
                                              Style="{StaticResource ThemedSwitchToggleButton}"
@@ -314,7 +343,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="保持全螢幕播放" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.FullScreen}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="FullScreenButton" Grid.Column="1"
                                        Style="{StaticResource ThemedSwitchToggleButton}"
@@ -340,7 +369,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="限制游標於主螢幕" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.LimitCursor}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="LimitCursorToggle" Grid.Column="1"
                                              Style="{StaticResource ThemedSwitchToggleButton}"
@@ -358,7 +387,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="新進歌曲天數" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.NewSongDays}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                            VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <TextBox x:Name="NewSongDaysTextBox" Grid.Column="1"
                                          Style="{x:Null}"
@@ -392,7 +421,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="歌曲排序方式" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.SongSort}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ComboBox x:Name="SongSortMethodComboBox" Grid.Column="1"
                                          Width="150" Height="40"
@@ -401,9 +430,9 @@
                                          VerticalAlignment="Center"
                                          VerticalContentAlignment="Center"
                                          SelectionChanged="SongSortMethodComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="點播次數" Tag="1"/>
-                                    <ComboBoxItem Content="加歌日期" Tag="2"/>
-                                    <ComboBoxItem Content="字數" Tag="3"/>
+                                    <ComboBoxItem Content="{DynamicResource Str.Col.PlayCount}" Tag="1"/>
+                                    <ComboBoxItem Content="{DynamicResource Str.Options.SortByDate}" Tag="2"/>
+                                    <ComboBoxItem Content="{DynamicResource Str.Lang.WordCount}" Tag="3"/>
                                 </ComboBox>
                             </Grid>
                         </Border>
@@ -416,7 +445,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="舊版聲道定義" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.LegacyChannel}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="LegacyAudioChannelToggle" Grid.Column="1"
                                              Style="{StaticResource ThemedSwitchToggleButton}"
@@ -443,7 +472,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="預先讀取" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.PreLoad}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="PreLoadingToggle" Grid.Column="1"
                                              Style="{StaticResource ThemedSwitchToggleButton}"
@@ -460,7 +489,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="APP記錄檔" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.AppLog}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="AppLoggerToggle" Grid.Column="1"
                                              Style="{StaticResource ThemedSwitchToggleButton}"
@@ -487,7 +516,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="網路點播使用者記名" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.NetworkUserName}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="NetworkRemoteSongUsernameToggle" Grid.Column="1"
                                              Style="{StaticResource ThemedSwitchToggleButton}"
@@ -505,7 +534,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="播放記錄自動保存次數" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.PlayHistoryCount}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,10,0"/>
                                 <Slider Grid.Column="1" Name="PlayHistoryCountSlider" Minimum="1" Maximum="10" Value="5" 
                                         TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center"
@@ -538,7 +567,7 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="點播次數更新" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str.Options.PlayCountUpdate}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
 
                                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                     <Slider x:Name="PlayCountSlider" Width="200" Minimum="10" Maximum="90"
@@ -553,7 +582,7 @@
                                 </StackPanel>
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                           Text="設定歌曲播放進度超過多少百分比時，計入一次點播次數 (範圍: 10% - 90%)"
+                                           Text="{DynamicResource Str.Options.PlayCountUpdateDesc}"
                                            FontSize="{StaticResource OptionsDescriptionFontSize}" Opacity="0.7" Margin="0,4,0,0"
                                            VerticalAlignment="Top" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}"/>
                             </Grid>
@@ -568,7 +597,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="音響增益值" VerticalAlignment="Center" FontSize="{StaticResource OptionsItemLabelFontSize}" Margin="0,0,20,0" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.AudioAmplify}" VerticalAlignment="Center" FontSize="{StaticResource OptionsItemLabelFontSize}" Margin="0,0,20,0" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <Slider x:Name="AudioAmplifySlider" Grid.Column="1" Minimum="100" Maximum="500"
                                         IsSnapToTickEnabled="True"
                                         TickFrequency="10"
@@ -597,7 +626,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="視訊渲染器" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.VideoRenderer}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ComboBox x:Name="VideoRendererComboBox" Grid.Column="1"
                                          Width="150" Height="40"
@@ -620,7 +649,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="音訊輸出裝置" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.AudioRenderer}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,10,0"/>
                                 <ComboBox x:Name="AudioRendererComboBox" Grid.Column="1"
                                          Height="40"
@@ -649,7 +678,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="啟用硬體解碼" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.HwAccel}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="EnableHWAccelToggle" Grid.Column="1"
                                              Style="{StaticResource ThemedSwitchToggleButton}"
@@ -667,7 +696,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="硬體解碼方式" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.HwAccelMode}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ComboBox x:Name="HWAccelModeComboBox" Grid.Column="1"
                                          Width="250" Height="40"
@@ -702,7 +731,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="語系點歌複選" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.LanguageMultiSelect}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="LanguageMultiSelectToggle" Grid.Column="1"
                                              Style="{StaticResource ThemedSwitchToggleButton}"
@@ -727,7 +756,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="啟用錄音功能" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.EnableRecording}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ToggleButton Name="EnableRecordingToggle" Grid.Column="1"
                                              Style="{StaticResource ThemedSwitchToggleButton}"
@@ -746,7 +775,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="0" Text="錄音輸入裝置" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.RecordingDevice}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,10,0"/>
                                 <ComboBox x:Name="AudioInputDeviceComboBox" Grid.Column="1"
                                           Height="40"
@@ -769,7 +798,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 
-                                <TextBlock Grid.Column="0" Text="錄音檔存放路徑" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.RecordingPath}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,20,0"/>
                                 
                                 <TextBlock x:Name="RecordingPathText" Grid.Column="1"
@@ -781,7 +810,7 @@
                                            Foreground="{DynamicResource MaterialDesignBody}"/>
                                 
                                 <Button x:Name="BrowseRecordingPathButton" Grid.Column="2"
-                                        Content="瀏覽..."
+                                        Content="{DynamicResource Str.Options.Browse}"
                                         Style="{DynamicResource MaterialDesignOutlinedButton}"
                                         FontSize="{StaticResource OptionsSmallFontSize}"
                                         Height="35"
@@ -795,7 +824,7 @@
 
             <!-- Footer -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
-                <Button Name="ApplyButton" Content="套用設定"
+                <Button Name="ApplyButton" Content="{DynamicResource Str.Options.Apply}"
                        Style="{DynamicResource MaterialDesignRaisedButton}"
                        FontSize="{StaticResource OptionsFooterButtonFontSize}" Height="54"
                        Margin="8,0" Padding="16,2"
@@ -803,7 +832,7 @@
                        Background="{DynamicResource PrimaryHueMidBrush}"
                        Foreground="{DynamicResource PrimaryHueMidForegroundBrush}"
                        Click="ApplyButton_Click"/>
-                <Button Name="CancelButton" Content="取消"
+                <Button Name="CancelButton" Content="{DynamicResource Str.Options.Cancel}"
                        Style="{DynamicResource MaterialDesignOutlinedButton}"
                        FontSize="{StaticResource OptionsFooterButtonFontSize}" Height="54"
                        Margin="8,0" Padding="16,2"
@@ -811,7 +840,7 @@
                        BorderBrush="{DynamicResource PrimaryHueMidBrush}"
                        Foreground="{DynamicResource PrimaryHueMidBrush}"
                        Click="CancelButton_Click"/>
-                <Button Name="LeaveButton" Content="離開"
+                <Button Name="LeaveButton" Content="{DynamicResource Str.Options.Leave}"
                        Style="{DynamicResource MaterialDesignOutlinedButton}"
                        FontSize="{StaticResource OptionsFooterButtonFontSize}" Height="54"
                        Margin="8,0" Padding="16,2"

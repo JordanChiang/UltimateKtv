@@ -121,7 +121,7 @@ namespace UltimateKtv
                 });
             });
 
-            DisplaySongsInGrid(newSongs, $"新進歌曲 - {lang}");
+            DisplaySongsInGrid(newSongs, Loc.T("Title.NewSongs", Loc.SongLang(lang)));
         }
 
         private async void RankingFilter_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -179,7 +179,7 @@ namespace UltimateKtv
                     .ToList() ?? new List<SongDisplayItem>();
             });
 
-            DisplaySongsInGrid(rankedSongs, $"排行 - {filterTag}");
+            DisplaySongsInGrid(rankedSongs, Loc.T("Title.Ranking", Loc.SongFilter(filterTag)));
         }
 
         private async void GenerationFilter_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -187,7 +187,7 @@ namespace UltimateKtv
             var genKey = (sender as Button)?.Tag as string ?? "1";
 
             // Retrieve the pre-cached name and song list.
-            var periodName = SongDatas.GenerationNames?.GetValueOrDefault(genKey, $"第{genKey}代");
+            var periodName = SongDatas.GenerationNames?.GetValueOrDefault(genKey, Loc.T("Title.GenerationN", genKey));
             var cachedSongs = SongDatas.GenerationSongs?.GetValueOrDefault(genKey, new List<Dictionary<string, object?>>());
 
             if (cachedSongs == null || periodName == null)
@@ -222,7 +222,7 @@ namespace UltimateKtv
                 });
             });
 
-            DisplaySongsInGrid(genSongs, $"世代 - {periodName}");
+            DisplaySongsInGrid(genSongs, Loc.T("Title.Generation", periodName));
         }
 
         private void LanguageFilter_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -442,8 +442,8 @@ namespace UltimateKtv
                 });
             });
 
-            string title = "語系點歌";
-            if (_selectedLanguages.Any()) title += $" - {string.Join(",", _selectedLanguages)}";
+            string title = Loc.T("Title.LanguageSongs");
+            if (_selectedLanguages.Any()) title += $" - {string.Join(",", _selectedLanguages.Select(Loc.SongLang))}";
             DisplayLanguageSongsInGrid(filteredSongs, title);
 
             // Ensure grid has focus for keyboard navigation

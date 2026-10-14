@@ -33,12 +33,12 @@ namespace UltimateKtv
             {
                 if (remaining > 0)
                 {
-                    YoutubeStatusText.Text = $" 下載中.. (剩餘: {remaining})";
+                    YoutubeStatusText.Text = " " + Loc.T("Youtube.DownloadingRemaining", remaining);
                     YoutubeStatusText.Visibility = Visibility.Visible;
                 }
                 else if (IsDownloadingYoutube)
                 {
-                    YoutubeStatusText.Text = " 下載中..";
+                    YoutubeStatusText.Text = " " + Loc.T("Youtube.Downloading");
                     YoutubeStatusText.Visibility = Visibility.Visible;
                 }
             }
@@ -141,7 +141,7 @@ namespace UltimateKtv
 
                 DebugLog($"YouTube Download: Starting for {song.SongName} ({videoId})");
                 bool isHighQualityEnabled = SettingsManager.Instance.CurrentSettings.HighQualityYoutube;
-                string currentStatus = "下載中...";
+                string currentStatus = Loc.T("Youtube.DownloadingEllipsis");
                 var progress = new Progress<double>(p => {
                     double newPct = Math.Round(p * 100);
                     if (p == 0 || newPct > YoutubeDownloadPercentage)
@@ -164,7 +164,7 @@ namespace UltimateKtv
                             if (YoutubeStatusText != null)
                             {
                                 int rem = _youtubeDownloadQueue.Count;
-                                YoutubeStatusText.Text = rem > 0 ? $" {status} (剩餘: {rem})" : $" {status}";
+                                YoutubeStatusText.Text = rem > 0 ? " " + Loc.T("Youtube.StatusRemaining", status, rem) : $" {status}";
                                 YoutubeStatusText.Visibility = Visibility.Visible;
                             }
                         });
@@ -186,14 +186,14 @@ namespace UltimateKtv
                 {
                     try
                     {
-                        currentStatus = "備用引擎下載中...";
+                        currentStatus = Loc.T("Youtube.FallbackDownloading");
                         YoutubeDownloadPercentage = 0;
                         _ = Dispatcher.BeginInvoke(() =>
                         {
                             if (YoutubeStatusText != null)
                             {
                                 int rem = _youtubeDownloadQueue.Count;
-                                YoutubeStatusText.Text = rem > 0 ? $" 備用引擎下載中... (剩餘: {rem})" : " 備用引擎下載中...";
+                                YoutubeStatusText.Text = rem > 0 ? " " + Loc.T("Youtube.StatusRemaining", Loc.T("Youtube.FallbackDownloading"), rem) : " " + Loc.T("Youtube.FallbackDownloading");
                                 YoutubeStatusText.Visibility = Visibility.Visible;
                             }
                         });
@@ -246,7 +246,7 @@ namespace UltimateKtv
                 catch (OperationCanceledException)
                 {
                     DebugLog("YouTube Download: Cancelled by user. Clearing queue.");
-                    HttpServer.BroadcastEvent("YoutubeError", new { videoId = song.SongId, message = "使用者取消下載" });
+                    HttpServer.BroadcastEvent("YoutubeError", new { videoId = song.SongId, message = Loc.T("Youtube.UserCancelled") });
                     _youtubeDownloadQueue.Clear(); // Clear the remaining queue on cancel
                     break;
                 }
@@ -257,7 +257,7 @@ namespace UltimateKtv
                     
                     if (!string.IsNullOrEmpty(song.YoutubeId) && song.SongId.StartsWith("Y"))
                     {
-                        var result = MessageBox.Show($"下載失敗: {ex.Message}\n這支影片可能已被下架或變更權限。\n是否要將此紀錄從點播歷史中刪除？", "下載錯誤", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                        var result = MessageBox.Show(Loc.T("Youtube.DownloadFailedRemove", ex.Message), Loc.T("Youtube.DownloadErrorTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
                         if (result == MessageBoxResult.Yes)
                         {
                             SongDatas.DeleteYoutubeHistory(song.SongId);
@@ -271,7 +271,7 @@ namespace UltimateKtv
                     }
                     else
                     {
-                        MessageBox.Show($"下載失敗: {ex.Message}", "錯誤", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show(Loc.T("Youtube.DownloadFailed", ex.Message), Loc.T("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }

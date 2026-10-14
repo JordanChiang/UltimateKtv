@@ -356,7 +356,7 @@ namespace UltimateKtv
 
                 // Get the server URL
                 string serverUrl = _httpServer.ServerUrl;
-                string marqueeText = $"遠端點歌網址: {serverUrl}";
+                string marqueeText = Loc.T("Marquee.RemoteUrl", serverUrl);
 
                 AppLogger.Log($"Displaying web host info marquee: {marqueeText}");
 

@@ -113,7 +113,8 @@ namespace UltimateKtv
                     if (descAttr != null && !string.IsNullOrWhiteSpace(descAttr.Description))
                     {
                         string search = $"  \"{prop.Name}\":";
-                        string replace = $"  // {descAttr.Description}{Environment.NewLine}{search}";
+                        string description = Loc.Find("ThemeDesc." + prop.Name) ?? descAttr.Description;
+                        string replace = $"  // {description}{Environment.NewLine}{search}";
                         json = json.Replace(search, replace);
                     }
                 }

@@ -296,8 +296,8 @@ namespace UltimateKtv
                     MessageBoxResult result = MessageBoxResult.Yes;
                     if (!silent)
                     {
-                        var msg = $"找到 {newFiles.Count} 首未記錄的本機 YouTube 歌曲檔案，是否要把這些歌新增到 Youtube 記錄裏？";
-                        result = MessageBox.Show(msg, "新增記錄", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                        var msg = Loc.T("Youtube.ImportPrompt", newFiles.Count);
+                        result = MessageBox.Show(msg, Loc.T("Youtube.ImportTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
                     }
 
                     if (result == MessageBoxResult.Yes)
@@ -333,7 +333,7 @@ namespace UltimateKtv
 
         private void ClearYoutubeBtn_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show("確定要清除所有 Youtube 點播記錄與已下載的檔案嗎？", "確認清除", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var result = MessageBox.Show(Loc.T("Youtube.ClearPrompt"), Loc.T("Youtube.ClearTitle"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
                 // Delete from DB
@@ -777,7 +777,7 @@ namespace UltimateKtv
                             {
                                 SongId = id,
                                 SongName = h.TryGetValue("Name", out var n) ? n?.ToString() ?? "" : "",
-                                SingerName = lengthSeconds > 0 ? TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss") : "未知長度",
+                                SingerName = lengthSeconds > 0 ? TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss") : Loc.T("Youtube.UnknownLength"),
                                 Language = h.TryGetValue("Lang", out var lang) ? lang?.ToString() ?? "" : "",
                                 FilePath = rawPath,
                                 IsYoutube = true,
@@ -800,7 +800,7 @@ namespace UltimateKtv
                     // === YOUTUBE SEARCH MODE ===
                     if (YoutubeStatusText != null)
                     {
-                        YoutubeStatusText.Text = "YouTube 搜尋中...";
+                        YoutubeStatusText.Text = Loc.T("Youtube.Searching");
                         YoutubeStatusText.Visibility = Visibility.Visible;
                     }
 
@@ -931,7 +931,7 @@ namespace UltimateKtv
                                 return new SongDisplayItem
                                 {
                                     SongName = s.TryGetValue("Singer_Name", out var n) ? n?.ToString() ?? string.Empty : string.Empty,
-                                    SingerName = "歌手", // Indicator
+                                    SingerName = Loc.T("Col.Singer"), // Indicator
                                     // 歌星模式沒有語言，借用此欄存放 Singer_Type (歌星按鈕格依類型上色)
                                     Language = s.TryGetValue("Singer_Type", out var t) ? t?.ToString() ?? "" : "",
                                     FilePath = "", // Not playable
@@ -1112,7 +1112,7 @@ namespace UltimateKtv
                 {
                     if (total > 0)
                     {
-                        QuickSongCountText.Text = $"第 {currentPage} / {_quickTotalPages} 頁 · 共 {total} {(_isSingerSearchMode ? "位" : "首")}";
+                        QuickSongCountText.Text = Loc.T(_isSingerSearchMode ? "Search.CountSingers" : "Search.CountSongs", currentPage, _quickTotalPages, total);
                         QuickSongCountText.Visibility = Visibility.Visible;
                     }
                     else
@@ -1125,7 +1125,7 @@ namespace UltimateKtv
                 // Update bottom global pagination bar with search results status
                 if (PageInfoTextBlock != null)
                 {
-                    PageInfoTextBlock.Text = total > 0 ? $"第 {currentPage} / {_quickTotalPages} 頁 (共 {total} {(_isSingerSearchMode ? "位" : "首")})" : "第 1 頁";
+                    PageInfoTextBlock.Text = total > 0 ? Loc.T(_isSingerSearchMode ? "Page.SearchSingers" : "Page.SearchSongs", currentPage, _quickTotalPages, total) : Loc.T("Page.First");
                 }
                 if (PageUp != null) PageUp.IsEnabled = currentPage > 1;
                 if (PageDown != null) PageDown.IsEnabled = currentPage < _quickTotalPages;

@@ -206,6 +206,7 @@ namespace UltimateKtv
             // Load settings from JSON file first
             AppLogger.Log("Loading settings...");
             SettingsManager.Instance.LoadSettings();
+            Loc.LanguageChanged += (_, _) => RefreshFilterButtonTexts();
             ThemeSettingsHandler.LoadSettings();
             ApplyNavMenuOrder();
             ApplySettings();
@@ -234,8 +235,8 @@ namespace UltimateKtv
                 AppLogger.LogError("FATAL: Database initialization failed.", ex);
                 // Show a user-friendly error message.
                 MessageBox.Show(
-                    $"無法載入歌曲資料庫，程式即將關閉。\n\n錯誤訊息: {ex.Message}\n\n請確認 {dbPath} 檔案存在且未被其他程式鎖定。",
-                    "嚴重錯誤",
+                    Loc.T("App.DbLoadFailed", ex.Message, dbPath),
+                    Loc.T("App.FatalError"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
 
@@ -865,8 +866,8 @@ namespace UltimateKtv
                 SettingsManager.Instance.SaveSettings();
 
                 MessageBox.Show(
-                    $"偵測到顯示器設定問題，已自動修正：\n\n主控台螢幕：{settings.ConsoleScreen}\n播放器螢幕：{settings.PlayerScreen}",
-                    "設定已自動修正",
+                    Loc.T("App.ScreenFixed", settings.ConsoleScreen, settings.PlayerScreen),
+                    Loc.T("App.ScreenFixedTitle"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }
@@ -1322,7 +1323,7 @@ namespace UltimateKtv
             // QuickSongListGrid sets the header via Style so Header might be null, use DisplayIndex 1 as fallback
             string? columnHeader = cell?.Column?.Header?.ToString();
 
-            bool isSingerColumn = (columnHeader == "歌手" || cell?.Column?.DisplayIndex == 1);
+            bool isSingerColumn = (columnHeader == Loc.T("Col.Singer") || cell?.Column?.DisplayIndex == 1);
             if (sender == QuickSongListGrid && _searchMode == SearchMode.Youtube)
             {
                 isSingerColumn = false; // YouTube search uses this column for duration

@@ -329,11 +329,12 @@ namespace UltimateKtv
             switch (mode)
             {
                 case MainFilterMode.Singer:
-                    var singerFilters = new[] { "男歌手", "女歌手", "團體", "外國男", "外國女", "外國團", "其他" };
+                    var singerFilters = new[] { "SingerType.Male", "SingerType.Female", "SingerType.Group", "SingerType.ForeignMale", "SingerType.ForeignFemale", "SingerType.ForeignGroup", "SingerType.Other" };
                     var singerActions = new RoutedEventHandler[] { MaleSingerFilter_Click, FemaleSingerFilter_Click, GroupSingerFilter_Click, ForeignMaleSingerFilter_Click, ForeignFemaleSingerFilter_Click, ForeignGroupSingerFilter_Click, OtherSingerFilter_Click };
                     for (int i = 0; i < singerFilters.Length; i++)
                     {
-                        _filterButtons[i].Content = singerFilters[i];
+                        _filterButtons[i].Tag = singerFilters[i];
+                        _filterButtons[i].Content = Loc.T(singerFilters[i]);
                         _filterButtons[i].Click += singerActions[i];
                         _filterButtons[i].Visibility = Visibility.Visible;
                     }
@@ -343,7 +344,7 @@ namespace UltimateKtv
                     var newSongLangs = new[] { "國語", "台語", "英語", "日語", "其它" };
                     for (int i = 0; i < newSongLangs.Length; i++)
                     {
-                        _filterButtons[i].Content = newSongLangs[i];
+                        _filterButtons[i].Content = Loc.SongLang(newSongLangs[i]);
                         _filterButtons[i].Tag = newSongLangs[i];
                         _filterButtons[i].Click += NewSongFilter_Click;
                         _filterButtons[i].Visibility = Visibility.Visible;
@@ -363,12 +364,25 @@ namespace UltimateKtv
                     
                     for (int i = 0; i < langList.Length && i < _filterButtons.Count; i++)
                     {
-                        _filterButtons[i].Content = langList[i];
+                        _filterButtons[i].Content = Loc.SongLang(langList[i]);
                         _filterButtons[i].Tag = langList[i];
                         _filterButtons[i].Click += LanguageFilter_Click;
                         _filterButtons[i].Visibility = Visibility.Visible;
                     }
                     break;
+            }
+        }
+
+        /// <summary>
+        /// 切換介面語言後，依 Tag (資料值) 重新產生篩選按鈕的顯示文字。
+        /// </summary>
+        private void RefreshFilterButtonTexts()
+        {
+            foreach (var btn in _filterButtons)
+            {
+                if (btn.Tag is not string tag) continue;
+                if (tag.StartsWith("SingerType.", StringComparison.Ordinal)) btn.Content = Loc.T(tag);
+                else if (Loc.IsSongFilter(tag)) btn.Content = Loc.SongFilter(tag);
             }
         }
 
@@ -384,7 +398,7 @@ namespace UltimateKtv
             for (int i = 0; i < rankingFilters.Length; i++)
             {
                 if (buttonIndex >= _filterButtons.Count) break;
-                _filterButtons[buttonIndex].Content = rankingFilters[i];
+                _filterButtons[buttonIndex].Content = Loc.SongFilter(rankingFilters[i]);
                 _filterButtons[buttonIndex].Tag = rankingFilters[i];
                 _filterButtons[buttonIndex].Click += RankingFilter_Click;
                 _filterButtons[buttonIndex].Visibility = Visibility.Visible;

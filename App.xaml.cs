@@ -88,6 +88,10 @@ namespace UltimateKtv
             AppLogger.Log("Application starting up.");
             ResourceMonitor.Start();
 
+            // 介面語言要在任何訊息/視窗出現前載入 (MainWindow 建構時 DynamicResource 即可直接取得字串)
+            SettingsManager.Instance.LoadSettings();
+            Loc.Apply(SettingsManager.Instance.CurrentSettings.UiLanguage);
+
             // Perform essential file checks before proceeding
             if (!CheckRequiredFiles())
             {
@@ -171,7 +175,7 @@ namespace UltimateKtv
             // 1. Check for the Codec directory itself
             if (!Directory.Exists(codecDirectory) || !Directory.EnumerateFileSystemEntries(codecDirectory).Any())
             {
-                string errorMessage = "'Codec' 目錄找不到或裏面是空的!!";
+                string errorMessage = Loc.T("App.CodecMissing");
                 AppLogger.LogError(errorMessage, null);
                 StartupSplashScreen?.Close(TimeSpan.Zero);
                 MessageBox.Show(errorMessage, "Missing Components", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -184,10 +188,10 @@ namespace UltimateKtv
             {
                 if (!File.Exists(file))
                 {
-                    string errorMessage = $"必要的檔案 {Path.GetFileName(file)} 找不到!! ";
+                    string errorMessage = Loc.T("App.FileMissing", Path.GetFileName(file));
                     AppLogger.LogError(errorMessage, null);
                     StartupSplashScreen?.Close(TimeSpan.Zero);
-                    MessageBox.Show(errorMessage, "檔案遺失", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(errorMessage, Loc.T("App.FileMissingTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                     Application.Current.Shutdown();
                     return false;
                 }

@@ -56,15 +56,15 @@ namespace UltimateKtv
             {
                 string categoryName = settings.RandomPlayCategory switch
                 {
-                    0 => "國語排行",
-                    1 => "台語排行",
-                    2 => "新進歌曲",
-                    3 => "全部排行",
-                    10 => "我的最愛",
-                    _ => "未知類別"
+                    0 => Loc.T("Random.MandarinRank"),
+                    1 => Loc.T("Random.TaiwaneseRank"),
+                    2 => Loc.T("Random.NewSongs"),
+                    3 => Loc.T("Random.AllRank"),
+                    10 => Loc.T("Random.MyFavorites"),
+                    _ => Loc.T("Random.UnknownCategory")
                 };
                 AppLogger.Log($"Random play: No songs found in {categoryName}");
-                ShowRandomPlayMarquee($"隨機播放: {categoryName} 無可用歌曲");
+                ShowRandomPlayMarquee(Loc.T("Random.NoSongs", categoryName));
                 return false;
             }
 
@@ -87,7 +87,7 @@ namespace UltimateKtv
                 FilePath = randomSong.FilePath,
                 Volume = randomSong.Volume,
                 AudioTrack = audioTrack,
-                OrderedBy = "隨機播放"
+                OrderedBy = Loc.OrderedByRandom
             };
 
             // Add to waiting list
@@ -249,13 +249,13 @@ namespace UltimateKtv
         {
             if (string.IsNullOrEmpty(userName))
             {
-                ShowRandomPlayMarquee("隨機播放: 未選擇最愛用戶");
+                ShowRandomPlayMarquee(Loc.T("Random.NoFavUser"));
                 return null;
             }
 
             if (SongDatas.FavoriteUserData == null || SongDatas.FavoriteSongData == null || SongDatas.SongData == null)
             {
-                ShowRandomPlayMarquee("隨機播放: 歌曲資料未載入");
+                ShowRandomPlayMarquee(Loc.T("Random.DataNotLoaded"));
                 return null;
             }
 
@@ -267,7 +267,7 @@ namespace UltimateKtv
 
                 if (userRow == null)
                 {
-                    ShowRandomPlayMarquee($"隨機播放: 找不到用戶 {userName}");
+                    ShowRandomPlayMarquee(Loc.T("Random.UserNotFound", userName));
                     return null;
                 }
 
@@ -284,7 +284,7 @@ namespace UltimateKtv
 
                 if (favoriteSongs.Count == 0)
                 {
-                    ShowRandomPlayMarquee($"隨機播放: {userName} 沒有最愛歌曲");
+                    ShowRandomPlayMarquee(Loc.T("Random.UserNoFavs", userName));
                     return null;
                 }
 
@@ -322,7 +322,7 @@ namespace UltimateKtv
             catch (Exception ex)
             {
                 AppLogger.LogError($"GetRandomSongFromFavorites: Error getting random favorite for '{userName}'", ex);
-                ShowRandomPlayMarquee("隨機播放: 讀取最愛歌曲失敗");
+                ShowRandomPlayMarquee(Loc.T("Random.ReadFavsFailed"));
                 return null;
             }
         }

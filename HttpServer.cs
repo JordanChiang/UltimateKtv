@@ -224,6 +224,9 @@ public class HttpServer : IDisposable
 		var queryParams = context.Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString());
 		string queryType = queryParams.ContainsKey("queryType") ? queryParams["queryType"] : "";
 
+		// 網頁文字與回應訊息依裝置語言 (瀏覽器的 Accept-Language)；只在這個請求的非同步流程內有效
+		Loc.WebCulture = Loc.ResolveWebCulture(context.Request.Headers["Accept-Language"].ToString());
+
 		// Handle SSE endpoint for real-time notifications
 		if (queryType == "events")
 		{
@@ -276,7 +279,7 @@ public class HttpServer : IDisposable
                 var silentQueries = new System.Collections.Generic.HashSet<string> { 
                     "events", "debug", "queryyoutubequeue", "checknewyoutube", 
                     "queryyoutubehistory", "queryplayerstate", "queryhostserverinfo", 
-                    "queryplaylist", "singerphoto"
+                    "queryplaylist", "singerphoto", "uistrings"
                 };
 
                 if (!silentQueries.Contains(queryType)) 
@@ -324,6 +327,7 @@ public class HttpServer : IDisposable
                 "checknewyoutube" => await HttpServerHelper.CheckNewYoutubeAsync(),
                 "importnewyoutube" => await HttpServerHelper.ImportNewYoutubeAsync(),
                 "queryyoutubequeue" => HttpServerHelper.QueryYoutubeQueue(),
+                "uistrings" => JsonConvert.SerializeObject(new { culture = Loc.WebCulture ?? Loc.CurrentCulture, strings = Loc.GetWebStrings() }),
 				_ => JsonConvert.SerializeObject(new JArray())
 			};
 			
@@ -354,7 +358,7 @@ public class HttpServer : IDisposable
             "movetofirst" or "removefromlist" or "movetonext" or
             "volup" or "voldown" or "vollock" or
             "pitchup" or "pitchdown" or "pitchreset" or "quit" or "shutdownwin" or
-			"debug" or "events" or "singerphoto" or "youtubesearch" or "orderyoutube" or "queryyoutubehistory" or "orderyoutubehistory" or "checknewyoutube" or "importnewyoutube" or "queryyoutubequeue" => true,
+			"debug" or "events" or "singerphoto" or "uistrings" or "youtubesearch" or "orderyoutube" or "queryyoutubehistory" or "orderyoutubehistory" or "checknewyoutube" or "importnewyoutube" or "queryyoutubequeue" => true,
 			_ => false
 		};
 	}
@@ -533,7 +537,7 @@ public class HttpServer : IDisposable
 
 			string localIp = GetLocalIPAddress();
 			string serverUrl = $"http://{(ipAddress == "0.0.0.0" ? localIp : ipAddress)}:{port}";
-			string startupMessage = $"遠端伺服器已啟動: {serverUrl}";
+			string startupMessage = Loc.T("Http.Started", serverUrl);
 			
 			AppLogger.Log(startupMessage);
 			debugLog(startupMessage);
