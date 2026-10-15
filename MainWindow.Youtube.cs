@@ -239,7 +239,7 @@ namespace UltimateKtv
 
                     if (_currentQuickMethod == QuickMethod.YoutubeHistory)
                     {
-                        UpdateSearchWords(true);
+                        UpdateSearchWords(true, resetPage: false);
                     }
                 }
                 }
@@ -265,7 +265,7 @@ namespace UltimateKtv
                             // Also trigger UI refresh for YoutubeHistory tab
                             if (_currentQuickMethod == QuickMethod.YoutubeHistory)
                             {
-                                UpdateSearchWords(true);
+                                UpdateSearchWords(true, resetPage: false);
                             }
                         }
                     }

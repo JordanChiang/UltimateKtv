@@ -588,7 +588,8 @@ namespace UltimateKtv
         }
 
         // Update the static text to reflect current selected words
-        private async void UpdateSearchWords(bool triggerSearch = true)
+        // resetPage: false keeps the current page (e.g. background refresh of YouTube history after a download)
+        private async void UpdateSearchWords(bool triggerSearch = true, bool resetPage = true)
         {
             try
             {
@@ -620,7 +621,7 @@ namespace UltimateKtv
                     // before potential long-running cache rebuild
                     RefreshQuickResultsPage();
                     
-                    _quickMethodCurrentPage[_currentQuickMethod] = 1; // reset to first page on query change
+                    if (resetPage) _quickMethodCurrentPage[_currentQuickMethod] = 1; // reset to first page on query change
                     await RebuildQuickResultsCache();
                 }
                 RefreshQuickResultsPage();
