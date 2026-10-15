@@ -18,14 +18,14 @@
             <sys:Double x:Key="FuncBtnFontSize">32</sys:Double>
             <sys:Double x:Key="BottomButtonFontSize">36</sys:Double>
             <sys:Double x:Key="WaitingListFontSize">24</sys:Double>
-            <sys:Double x:Key="SongListFontSize">38</sys:Double>
+            <sys:Double x:Key="SongListFontSize">36</sys:Double>
             <sys:Double x:Key="VisualSingerNameFontSize">20</sys:Double>
 
             <!-- Fix for MaterialDesign3 ComboBox binding error and dark theme styling -->
             <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource MaterialDesignOutlinedComboBox}">
                 <Setter Property="AutomationProperties.Name" Value="{Binding RelativeSource={RelativeSource Self}, Path=Name, TargetNullValue='ComboBox'}" />
                 <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
-                <Setter Property="Padding" Value="10,4,10,4" />
+                <Setter Property="Padding" Value="12,4,12,4" />
                 <Setter Property="materialDesign:HintAssist.IsFloating" Value="False" />
                 <Setter Property="materialDesign:TextFieldAssist.UnderlineBrush" Value="{DynamicResource PrimaryHueMidBrush}" />
             </Style>

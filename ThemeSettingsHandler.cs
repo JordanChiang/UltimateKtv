@@ -427,13 +427,11 @@ namespace UltimateKtv
                 window.Resources["DataGridColumnHeaderForeground"] = DataGridColumnHeaderForeground;
                 window.Resources["PrimaryBrush"] = PrimaryBrush;
                 window.Resources["PrimaryLightBrush"] = PrimaryLightBrush;
-                var onPrimaryBrush = RowStyleBrushes.ForegroundOn(PrimaryBrush);
-                window.Resources["BrushOnPrimary"] = onPrimaryBrush;
 
                 // Window-level cyber accent resources
-                window.Resources["ColorAccentCyan"] = accentColor;
-                window.Resources["BrushAccentCyan"] = accentBrush;
-                window.Resources["BrushAccentCyanDim"] = accentDimBrush;
+                window.Resources["ColorAccent"] = accentColor;
+                window.Resources["BrushAccent"] = accentBrush;
+                window.Resources["BrushAccentDim"] = accentDimBrush;
                 window.Resources["BrushAccentPressed"] = accentPressedBrush;
                 window.Resources["BrushCyberActiveGradient"] = cyberGradient;
                 window.Resources["BrushOnAccentActive"] = onAccentActiveBrush;
@@ -641,12 +639,11 @@ namespace UltimateKtv
                     appResources["PrimaryHueLightBrush"] = PrimaryLightBrush;
                     appResources["PrimaryHueMidBrush"] = PrimaryBrush;
                     appResources["PrimaryHueMidForegroundBrush"] = Brushes.White;
-                    appResources["BrushOnPrimary"] = onPrimaryBrush;
 
                     // Cyber Accent resources at application level
-                    appResources["ColorAccentCyan"] = accentColor;
-                    appResources["BrushAccentCyan"] = accentBrush;
-                    appResources["BrushAccentCyanDim"] = accentDimBrush;
+                    appResources["ColorAccent"] = accentColor;
+                    appResources["BrushAccent"] = accentBrush;
+                    appResources["BrushAccentDim"] = accentDimBrush;
                     appResources["BrushAccentPressed"] = accentPressedBrush;
                     appResources["BrushCyberActiveGradient"] = cyberGradient;
                     appResources["BrushOnAccentActive"] = onAccentActiveBrush;

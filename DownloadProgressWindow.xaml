@@ -27,18 +27,18 @@
                 <materialDesign:PackIcon Kind="CloudDownload" Width="32" Height="32"
                                          Foreground="{DynamicResource PrimaryBrush}"
                                          VerticalAlignment="Center" Margin="0,0,12,0"/>
-                <TextBlock Text="{DynamicResource Str.Update.DownloadingWait}" FontSize="24" FontWeight="Bold"
+                <TextBlock Text="{DynamicResource Str.Update.DownloadingWait}" FontSize="{StaticResource FontSizeM}" FontWeight="Bold"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource MaterialDesignBody}"/>
             </StackPanel>
             
-            <TextBlock x:Name="StatusText" Grid.Row="1" Text="{DynamicResource Str.Update.Preparing}" FontSize="16" Foreground="{DynamicResource MaterialDesignBody}"
+            <TextBlock x:Name="StatusText" Grid.Row="1" Text="{DynamicResource Str.Update.Preparing}" FontSize="{StaticResource FontSizeXS}" Foreground="{DynamicResource MaterialDesignBody}"
                        VerticalAlignment="Bottom" Margin="0,0,0,4"/>
 
             <ProgressBar x:Name="DownloadProgressBar" Grid.Row="2" Height="20" Minimum="0" Maximum="100" Value="0"
                          Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,12"/>
             
-            <TextBlock x:Name="PercentageText" Grid.Row="3" Text="0%" HorizontalAlignment="Center" FontSize="16" FontWeight="SemiBold"
+            <TextBlock x:Name="PercentageText" Grid.Row="3" Text="0%" HorizontalAlignment="Center" FontSize="{StaticResource FontSizeXS}" FontWeight="SemiBold"
                        Foreground="{DynamicResource MaterialDesignBody}"/>
         </Grid>
     </Border>

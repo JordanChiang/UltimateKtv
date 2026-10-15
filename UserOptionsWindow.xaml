@@ -18,11 +18,18 @@
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <sys:Double x:Key="OptionsHeaderFontSize">32</sys:Double>
             <sys:Double x:Key="OptionsItemLabelFontSize">28</sys:Double>
-            <sys:Double x:Key="OptionsItemButtonFontSize">26</sys:Double>
+            <sys:Double x:Key="OptionsItemButtonFontSize">24</sys:Double>
             <sys:Double x:Key="OptionsFooterButtonFontSize">28</sys:Double>
             <sys:Double x:Key="OptionsDescriptionFontSize">20</sys:Double>
             <sys:Double x:Key="OptionsSmallFontSize">16</sys:Double>
-            
+
+            <!-- MaterialDesign 的中性灰色對應到 Themes 的深藍色系 token (只影響本視窗)，與主介面一致 -->
+            <SolidColorBrush x:Key="MaterialDesignPaper" Color="{StaticResource ColorBgSecondary}"/>
+            <SolidColorBrush x:Key="MaterialDesignCardBackground" Color="{StaticResource ColorSurface}"/>
+            <SolidColorBrush x:Key="MaterialDesignTextFieldBoxBackground" Color="{StaticResource ColorSurfaceRaised}"/>
+            <SolidColorBrush x:Key="MaterialDesignBody" Color="{StaticResource ColorTextMain}"/>
+            <SolidColorBrush x:Key="MaterialDesignDivider" Color="{StaticResource ColorBorderDefault}"/>
+
             <!-- Custom Slider style with theme colors -->
             <Style TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
                 <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}" />
@@ -53,7 +60,7 @@
                 <Button Name="ExitProgramButton" Click="ExitProgramButton_Click" 
                         Style="{StaticResource MaterialDesignRaisedButton}" 
                         Background="{StaticResource BrushDanger}" Foreground="{StaticResource BrushTextMain}" BorderThickness="0"
-                        Height="45" FontSize="24" FontWeight="Bold" 
+                        Height="45" FontSize="{StaticResource FontSizeM}" FontWeight="Bold" 
                         HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">

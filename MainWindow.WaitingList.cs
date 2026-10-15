@@ -154,9 +154,9 @@ namespace UltimateKtv
                 if (isPaused)
                 {
                     NowPlayingIcon.Kind = PackIconKind.PauseCircle;
-                    NowPlayingIcon.Foreground = System.Windows.Media.Brushes.Orange;
+                    NowPlayingIcon.SetResourceReference(PackIcon.ForegroundProperty, "BrushWarning");
                     NowPlayingBadgeBorder.SetResourceReference(Border.BackgroundProperty, "BrushBgSecondary");
-                    NowPlayingBadgeBorder.BorderBrush = System.Windows.Media.Brushes.Orange;
+                    NowPlayingBadgeBorder.SetResourceReference(Border.BorderBrushProperty, "BrushWarning");
                     NowPlayingBadgeBorder.SetResourceReference(FrameworkElement.ToolTipProperty, Loc.ResourcePrefix + "NowPlaying.Paused");
                     PauseNowPlayingBreathing();
                 }
@@ -519,7 +519,7 @@ namespace UltimateKtv
                         Kind = PackIconKind.Web,
                         Width = 16,
                         Height = 16,
-                        Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50")),
+                        Foreground = (System.Windows.Media.Brush)FindResource("BrushSuccess"),
                         VerticalAlignment = VerticalAlignment.Center,
                         Margin = new Thickness(0, 0, 6, 0)
                     };
@@ -530,7 +530,7 @@ namespace UltimateKtv
                     {
                         Text = item.OrderedBy,
                         FontWeight = FontWeights.Bold,
-                        FontSize = 16,
+                        FontSize = (double)FindResource("FontSizeXS"),
                         VerticalAlignment = VerticalAlignment.Center
                     };
                     headerPanel.Children.Add(usernameText);
@@ -1074,7 +1074,7 @@ namespace UltimateKtv
                 Width = 48,
                 Height = 48,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Foreground = new SolidColorBrush(Colors.Orange),
+                Foreground = (System.Windows.Media.Brush)FindResource("BrushWarning"),
                 Margin = new Thickness(0, 0, 0, 16)
             };
             dialogContent.Children.Add(icon);
@@ -1083,7 +1083,7 @@ namespace UltimateKtv
             var title = new TextBlock
             {
                 Text = Loc.T("Wait.DuplicateTitle"),
-                FontSize = 20,
+                FontSize = (double)FindResource("FontSizeS"),
                 FontWeight = FontWeights.Medium,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 0, 0, 8)
@@ -1094,7 +1094,7 @@ namespace UltimateKtv
             var message = new TextBlock
             {
                 Text = Loc.T("Wait.DuplicateMessage", songName, singerName),
-                FontSize = 16,
+                FontSize = (double)FindResource("FontSizeXS"),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 24)
@@ -1107,7 +1107,7 @@ namespace UltimateKtv
                 Content = Loc.T("Common.OK"),
                 Width = 140,
                 Height = 48,
-                FontSize = 20,
+                FontSize = (double)FindResource("FontSizeS"),
                 FontWeight = FontWeights.SemiBold,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Command = DialogHost.CloseDialogCommand,

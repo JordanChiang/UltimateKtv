@@ -815,7 +815,7 @@ namespace UltimateKtv
             {
                 RepeatBtn.SetResourceReference(ContentControl.ContentProperty, Loc.ResourcePrefix + "Player.Loop");
                 RepeatBtn.Background = _fixedButtonBackground ?? ThemeSettingsHandler.PrimaryBrush;
-                RepeatBtn.Foreground = _activeButtonForeground ?? new SolidColorBrush(Colors.White);
+                RepeatBtn.Foreground = _activeButtonForeground ?? (Brush)FindResource("BrushTextMain");
                 _repeatBtnFlashStoryboard?.Begin(RepeatBtn, true);
                 MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LoopOn"), 5);
                 AppLogger.Log("User action: Loop play enabled");
@@ -1380,7 +1380,7 @@ namespace UltimateKtv
                     Padding = new Thickness(8, 6, 8, 6),
                     Effect = new System.Windows.Media.Effects.DropShadowEffect
                     {
-                        Color = Colors.Black,
+                        Color = (Color)FindResource("ColorShadow"),
                         Direction = 315,
                         ShadowDepth = 5,
                         Opacity = 0.5
@@ -1664,7 +1664,7 @@ namespace UltimateKtv
                     Padding = new Thickness(8, 6, 8, 6),
                     Effect = new System.Windows.Media.Effects.DropShadowEffect
                     {
-                        Color = Colors.Black,
+                        Color = (Color)FindResource("ColorShadow"),
                         Direction = 315,
                         ShadowDepth = 5,
                         Opacity = 0.5

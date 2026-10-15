@@ -311,15 +311,15 @@ namespace StyleSimulator
             if (btn == null) return;
             if (isActive)
             {
-                btn.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3F51B5"));
-                btn.Foreground = Brushes.White;
-                btn.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#82B1FF"));
+                btn.Background = (Brush)FindResource("SimBrushIndigo500");
+                btn.Foreground = (Brush)FindResource("BrushTextMain");
+                btn.BorderBrush = (Brush)FindResource("SimBrushBlue200");
             }
             else
             {
-                btn.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#232332"));
-                btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA"));
-                btn.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3A3A4C"));
+                btn.Background = (Brush)FindResource("SimBrushNeutral800");
+                btn.Foreground = (Brush)FindResource("SimBrushTextDim");
+                btn.BorderBrush = (Brush)FindResource("SimBrushNeutral700");
             }
         }
 
@@ -652,8 +652,8 @@ namespace StyleSimulator
                         EndPoint = new Point(1, 0),
                         GradientStops = new GradientStopCollection
                         {
-                            new GradientStop(Color.FromArgb(0xD1, 0x12, 0x18, 0x26), 0.0),
-                            new GradientStop(Color.FromArgb(0xD9, 0x1C, 0x26, 0x3C), 1.0)
+                            new GradientStop((Color)FindResource("ColorBgCard"), 0.0),
+                            new GradientStop((Color)FindResource("ColorBgCardHover"), 1.0)
                         }
                     };
                     grad.Freeze();
@@ -721,20 +721,19 @@ namespace StyleSimulator
             var onAccentActiveBrush = UltimateKtv.RowStyleBrushes.ForegroundOn(cyberActiveGradient);
 
             // 一般 (未選取) 按鈕背景：純色深底 (與主程式 Themes/Colors.xaml 的 BrushButtonFlat 一致)，只有選取中的按鈕用漸層
-            var buttonFlatBrush = (Brush)(TryFindResource("BrushButtonFlat") ?? new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x26)));
+            var buttonFlatBrush = (Brush)FindResource("BrushButtonFlat");
 
             // Update Window Resource Dictionary for DynamicResource bindings
             this.Resources["PrimaryBrush"] = primaryBrush;
-            this.Resources["BrushOnPrimary"] = UltimateKtv.RowStyleBrushes.ForegroundOn(primaryBrush);
             this.Resources["PrimaryLightBrush"] = primaryLightBrush;
             this.Resources["DataGridHeaderBgBrush"] = gridHeaderBgBrush;
             this.Resources["DataGridHeaderFgBrush"] = gridHeaderFgBrush;
             this.Resources["AnnouncementFgBrush"] = announcementFgBrush;
             this.Resources["StaticTextFgBrush"] = staticTextFgBrush;
             this.Resources["WebHostInfoFgBrush"] = webHostInfoFgBrush;
-            this.Resources["ColorAccentCyan"] = accentColor;
-            this.Resources["BrushAccentCyan"] = accentBrush;
-            this.Resources["BrushAccentCyanDim"] = accentDimBrush;
+            this.Resources["ColorAccent"] = accentColor;
+            this.Resources["BrushAccent"] = accentBrush;
+            this.Resources["BrushAccentDim"] = accentDimBrush;
             this.Resources["BrushAccentPressed"] = accentPressedBrush;
             this.Resources["BrushCyberActiveGradient"] = cyberActiveGradient;
             this.Resources["BrushOnAccentActive"] = onAccentActiveBrush;
@@ -833,7 +832,7 @@ namespace StyleSimulator
             this.Resources["BrushTextSelectedGradient"] = textSelectedGradientBrush;
 
             // Option 4 Inward Glow Dynamic Brushes
-            this.Resources["BrushInnerGlowDefault"] = new SolidColorBrush(Color.FromRgb(24, 27, 36));
+            this.Resources["BrushInnerGlowDefault"] = (Brush)FindResource("BrushSurface");
 
             this.Resources["UiFontFamily"] = uiFont;
             var appRes = Application.Current?.Resources;
@@ -843,7 +842,7 @@ namespace StyleSimulator
             }
 
             // 歌手 / 語言欄一般文字顏色 (與主程式 BrushTextDim 一致)
-            var textDimBrush = (Brush)(TryFindResource("BrushTextDim") ?? new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8)));
+            var textDimBrush = (Brush)FindResource("BrushTextDim");
 
             // 13 Song List rows (與主程式 SongPageSize = 13 一致)
             TextBlock?[] songRowNames = {
@@ -870,7 +869,7 @@ namespace StyleSimulator
                     songRowNames[i]!.FontSize = SldSongListFontSize.Value;
                     // In UltimateKtv (MainWindow.xaml & MainWindow.Converters.cs), non-Mandarin songs use LightSkyBlue
                     bool isNonMandarin = songRowLangs[i] != null && !string.Equals(songRowLangs[i]!.Text?.Trim(), "國語", StringComparison.Ordinal);
-                    songRowNames[i]!.Foreground = isNonMandarin ? Brushes.LightSkyBlue : Brushes.White;
+                    songRowNames[i]!.Foreground = (Brush)FindResource(isNonMandarin ? "BrushSongForeign" : "BrushTextMain");
                     songRowNames[i]!.ClearValue(TextBlock.FontWeightProperty);
                 }
                 // 歌手 / 語言欄每次都重設為一般顏色 (主程式為 BrushTextDim)；
@@ -897,7 +896,7 @@ namespace StyleSimulator
             for (int i = 0; i < waitSongs.Length; i++)
             {
                 // 同上：每次重設為一般顏色，避免殘留舊主題的選取漸層
-                if (waitSongs[i] != null) { waitSongs[i]!.FontFamily = uiFont; waitSongs[i]!.FontSize = SldWaitingListFontSize.Value; waitSongs[i]!.Foreground = Brushes.White; waitSongs[i]!.ClearValue(TextBlock.FontWeightProperty); }
+                if (waitSongs[i] != null) { waitSongs[i]!.FontFamily = uiFont; waitSongs[i]!.FontSize = SldWaitingListFontSize.Value; waitSongs[i]!.Foreground = (Brush)FindResource("BrushTextMain"); waitSongs[i]!.ClearValue(TextBlock.FontWeightProperty); }
                 if (waitSingers[i] != null) { waitSingers[i]!.FontFamily = uiFont; waitSingers[i]!.FontSize = SldWaitingListFontSize.Value; waitSingers[i]!.Foreground = textDimBrush; waitSingers[i]!.ClearValue(TextBlock.FontWeightProperty); }
             }
             if (TxtWaitPageInfo != null)
@@ -1088,7 +1087,7 @@ namespace StyleSimulator
 
             // Row 1 Singer Highlight (showcases PrimaryLightColor)
             if (BorderSingerRow1 != null) BorderSingerRow1.Background = primaryLightBrush;
-            if (TxtSingerRow1 != null) TxtSingerRow1.Foreground = Brushes.Black;
+            if (TxtSingerRow1 != null) TxtSingerRow1.Foreground = UltimateKtv.RowStyleBrushes.ForegroundOn((Brush)this.Resources["PrimaryLightBrush"]);
 
             if (TxtGridHeaderCol1 != null) { TxtGridHeaderCol1.FontFamily = uiFont; TxtGridHeaderCol1.FontSize = SldSongListFontSize.Value; TxtGridHeaderCol1.Foreground = gridHeaderFgBrush; }
             if (TxtGridHeaderCol2 != null) { TxtGridHeaderCol2.FontFamily = uiFont; TxtGridHeaderCol2.FontSize = SldSongListFontSize.Value; TxtGridHeaderCol2.Foreground = gridHeaderFgBrush; }
@@ -1477,18 +1476,14 @@ namespace StyleSimulator
 
             // 風格 5~8 與主程式共用同一組筆刷
             var extraBrushes = UltimateKtv.RowStyleBrushes.Create(primaryColor, primaryLightCol);
-            var glossSheenBrush = new LinearGradientBrush
-            {
-                StartPoint = new Point(0, 0),
-                EndPoint = new Point(0, 1),
-                GradientStops = new GradientStopCollection
-                {
-                    new GradientStop(Color.FromArgb(64, 255, 255, 255), 0.0),
-                    new GradientStop(Color.FromArgb(18, 255, 255, 255), 0.49),
-                    new GradientStop(Color.FromArgb(0, 255, 255, 255), 0.5)
-                }
-            };
-            glossSheenBrush.Freeze();
+            // 列表底色、外框與光澤取自 Themes token，與主程式各列表風格一致 (主程式列表不做奇偶交替)
+            var rowSurfaceBrush = (Brush)FindResource("BrushSurface");
+            var rowCapsuleBgBrush = (Brush)FindResource("BrushBgSecondary");
+            var rowRaisedBrush = (Brush)FindResource("BrushSurfaceRaised");
+            var rowSunkenBrush = (Brush)FindResource("BrushSurfaceSunken");
+            var rowBorderBrush = (Brush)FindResource("BrushBorderDefault");
+            var rowBorderStrongBrush = (Brush)FindResource("BrushBorderStrong");
+            var glossSheenBrush = (Brush)FindResource("BrushGlossHighlight");
 
             // 風格 8 四角括號 (掛在指示條元件的 Child 上)
             UIElement BuildBrackets(Brush brush)
@@ -1569,7 +1564,6 @@ namespace StyleSimulator
                     bool isSelectedRow = (i == selectedIdx);
                     bool isHoveredRow = (i == hoveredIdx);
                     bool isHighlighted = isSelectedRow || isHoveredRow;
-                    bool isEven = (i % 2 == 0);
 
                     // 預設關閉內光暈邊緣層
                     if (glow != null) glow.BorderBrush = Brushes.Transparent;
@@ -1614,7 +1608,7 @@ namespace StyleSimulator
                                 ? (isSelectedRow && isHoveredRow 
                                     ? capsuleActiveHoverBgBrush 
                                     : (isHoveredRow ? capsuleHoverBgBrush : capsuleActiveBgBrush))
-                                : new SolidColorBrush(Color.FromRgb(16, 19, 27));
+                                : rowCapsuleBgBrush;
                             if (accent != null) accent.Visibility = Visibility.Collapsed;
                             break;
 
@@ -1624,10 +1618,10 @@ namespace StyleSimulator
                             border.CornerRadius = new CornerRadius(8);
                             border.Margin = new Thickness(8, 1.5, 8, 1.5);
                             border.BorderThickness = new Thickness(1);
-                            border.BorderBrush = isHighlighted ? (isHoveredRow ? primaryLightBrush : primaryBrush) : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
+                            border.BorderBrush = isHighlighted ? (isHoveredRow ? primaryLightBrush : primaryBrush) : rowBorderBrush;
                             border.Background = isHighlighted 
-                                ? Brushes.Black 
-                                : (isEven ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) : new SolidColorBrush(Color.FromRgb(20, 23, 32)));
+                                ? rowSunkenBrush 
+                                : rowSurfaceBrush;
                             if (accent != null)
                             {
                                 accent.Visibility = Visibility.Visible;
@@ -1645,15 +1639,15 @@ namespace StyleSimulator
                             border.CornerRadius = new CornerRadius(8);
                             border.Margin = new Thickness(8, 1.5, 8, 1.5);
                             border.BorderThickness = new Thickness(1);
-                            border.BorderBrush = isHighlighted ? (isHoveredRow ? primaryLightBrush : primaryBrush) : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
-                            border.Background = isHighlighted ? cyberButtonGradient : (isEven ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) : new SolidColorBrush(Color.FromRgb(20, 23, 32)));
+                            border.BorderBrush = isHighlighted ? (isHoveredRow ? primaryLightBrush : primaryBrush) : rowBorderBrush;
+                            border.Background = isHighlighted ? cyberButtonGradient : rowSurfaceBrush;
                             if (accent != null) accent.Visibility = Visibility.Collapsed;
                             break;
 
                         case 5: // 風格 5：霓虹底線 (無卡片的扁平清單，只有細分隔線；選取時底部粗霓虹線 + 主色反光)
                             border.CornerRadius = new CornerRadius(8, 8, 0, 0);
                             border.BorderThickness = new Thickness(0, 0, 0, 1);
-                            border.BorderBrush = new SolidColorBrush(Color.FromArgb(38, 255, 255, 255));
+                            border.BorderBrush = rowBorderBrush;
                             border.Background = isHighlighted
                                 ? (isHoveredRow && !isSelectedRow ? extraBrushes["BrushNeonTintHover"] : extraBrushes["BrushNeonTint"])
                                 : Brushes.Transparent;
@@ -1675,10 +1669,10 @@ namespace StyleSimulator
                             border.CornerRadius = new CornerRadius(12);
                             border.BorderBrush = isHighlighted
                                 ? (isHoveredRow ? primaryLightBrush : primaryBrush)
-                                : new SolidColorBrush(Color.FromArgb(48, 255, 255, 255));
+                                : rowBorderStrongBrush;
                             border.Background = isHighlighted
                                 ? (isHoveredRow && !isSelectedRow ? extraBrushes["BrushGlossHover"] : extraBrushes["BrushGlossActive"])
-                                : new SolidColorBrush(Color.FromRgb(30, 34, 48));
+                                : rowRaisedBrush;
                             if (accent != null)
                             {
                                 accent.Visibility = Visibility.Visible;
@@ -1693,10 +1687,10 @@ namespace StyleSimulator
                             border.BorderThickness = new Thickness(isHighlighted ? 2.5 : 1);
                             border.BorderBrush = isHighlighted
                                 ? (isHoveredRow ? extraBrushes["BrushDuoRimHover"] : extraBrushes["BrushDuoRim"])
-                                : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
+                                : rowBorderBrush;
                             border.Background = isHighlighted
                                 ? (isHoveredRow && !isSelectedRow ? extraBrushes["BrushDuoTintHover"] : extraBrushes["BrushDuoTint"])
-                                : (isEven ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) : new SolidColorBrush(Color.FromRgb(20, 23, 32)));
+                                : rowSurfaceBrush;
                             if (accent != null) accent.Visibility = Visibility.Collapsed;
                             break;
 
@@ -1704,8 +1698,8 @@ namespace StyleSimulator
                             border.CornerRadius = new CornerRadius(2);
                             border.BorderBrush = isHighlighted
                                 ? (isHoveredRow && !isSelectedRow ? extraBrushes["BrushBracketBorderHover"] : extraBrushes["BrushBracketBorder"])
-                                : new SolidColorBrush(Color.FromArgb(28, 255, 255, 255));
-                            border.Background = new SolidColorBrush(Color.FromRgb(22, 25, 34));
+                                : rowBorderBrush;
+                            border.Background = rowSurfaceBrush;
                             if (accent != null)
                             {
                                 accent.Visibility = isHighlighted ? Visibility.Visible : Visibility.Collapsed;
@@ -1725,10 +1719,8 @@ namespace StyleSimulator
                             border.BorderThickness = isHighlighted ? new Thickness(1.5) : new Thickness(1);
                             border.BorderBrush = isHighlighted 
                                 ? (isHoveredRow ? primaryLightBrush : primaryBrush) 
-                                : new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
-                            border.Background = isEven 
-                                ? new SolidColorBrush(Color.FromRgb(24, 27, 36)) 
-                                : new SolidColorBrush(Color.FromRgb(20, 23, 32));
+                                : rowBorderBrush;
+                            border.Background = rowSurfaceBrush;
                             if (accent != null) accent.Visibility = Visibility.Collapsed;
 
                             // 透過 BlurEffect 渲染真實高斯光暈

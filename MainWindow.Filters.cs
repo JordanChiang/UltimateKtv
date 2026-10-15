@@ -261,11 +261,11 @@ namespace UltimateKtv
             if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = System.Windows.Visibility.Visible;
             if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = System.Windows.Visibility.Visible;
 
-            var activeBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberActiveGradient") ?? TryFindResource("PrimaryHueMidBrush") ?? System.Windows.Media.Brushes.DarkOrange);
+            var activeBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberActiveGradient") ?? FindResource("PrimaryBrush"));
             var inactiveBg = (System.Windows.Media.Brush)(TryFindResource("BrushButtonFlat") ?? System.Windows.Media.Brushes.Transparent);
-            var activeFg = (System.Windows.Media.Brush)(TryFindResource("BrushOnAccentActive") ?? System.Windows.Media.Brushes.White);
+            var activeFg = (System.Windows.Media.Brush)FindResource("BrushOnAccentActive");
             var inactiveFg = (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
-            var activeBorder = (System.Windows.Media.Brush)(TryFindResource("BrushAccentCyan") ?? TryFindResource("PrimaryHueMidBrush") ?? activeBg);
+            var activeBorder = (System.Windows.Media.Brush)(TryFindResource("BrushAccent") ?? TryFindResource("PrimaryHueMidBrush") ?? activeBg);
             var inactiveBorder = (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
 
             // 1. Update top language buttons

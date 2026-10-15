@@ -718,7 +718,7 @@ namespace UltimateKtv
             dialogContent.Children.Add(new TextBlock
             {
                 Text = title,
-                FontSize = 18,
+                FontSize = (double)FindResource("FontSizeS"),
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 15)
             });
@@ -1418,12 +1418,12 @@ namespace UltimateKtv
             if (_searchMode == SearchMode.Youtube) return;
             if (sender is Border border)
             {
-                border.Background = TryFindResource("PrimaryHueLightBrush") as Brush ?? Brushes.Gold;
+                border.Background = TryFindResource("PrimaryHueLightBrush") as Brush ?? (Brush)FindResource("PrimaryLightBrush");
                 // Find the TextBlock child and change its foreground
                 var viewbox = border.Child as Viewbox;
                 if (viewbox?.Child is TextBlock textBlock)
                 {
-                    textBlock.Foreground = Brushes.Black;
+                    textBlock.Foreground = RowStyleBrushes.ForegroundOn(border.Background);
                 }
             }
         }
@@ -1441,7 +1441,7 @@ namespace UltimateKtv
                 var viewbox = border.Child as Viewbox;
                 if (viewbox?.Child is TextBlock textBlock)
                 {
-                    textBlock.Foreground = TryFindResource("BrushTextDim") as Brush ?? new SolidColorBrush(Color.FromRgb(148, 163, 184));
+                    textBlock.Foreground = (Brush)FindResource("BrushTextDim");
                 }
             }
         }

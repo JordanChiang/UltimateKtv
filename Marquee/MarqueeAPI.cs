@@ -476,7 +476,7 @@ namespace UltimateKtv
             int displayDevice = GetDisplayDeviceIndex(device);
             MarqueeManager.Instance.ShowMarquee(
                 $"⚠ {alertText} ⚠", 
-                Brushes.Red,
+                (Brush)(Application.Current?.TryFindResource("BrushDanger") ?? Brushes.Red),
                 new FontFamily("Microsoft JhengHei UI"), 
                 settings.MarqueeTextFontSize, 
                 settings.MarqueeTextPlayCount, 

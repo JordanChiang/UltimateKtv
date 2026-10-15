@@ -10,92 +10,159 @@
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="ClearType"
-        Background="#141419" Foreground="#EAEAEA">
+        Background="{DynamicResource SimBrushNeutral900}" Foreground="{DynamicResource SimBrushText}">
     <Window.Resources>
+        <!-- ===== 模擬器介面 token：只用於 StyleSimulator 本身的外觀 (預覽區一律引用 Themes/Colors.xaml 的主程式 token) ===== -->
+        <Color x:Key="SimNeutral950">#06060A</Color>
+        <Color x:Key="SimNeutral900">#121218</Color>
+        <Color x:Key="SimNeutral850">#1C1C24</Color>
+        <Color x:Key="SimNeutral800">#232332</Color>
+        <Color x:Key="SimNeutral750">#2E2E42</Color>
+        <Color x:Key="SimNeutral700">#38384D</Color>
+        <Color x:Key="SimNeutral600">#44445A</Color>
+        <Color x:Key="SimNeutral500">#5C5C7A</Color>
+        <Color x:Key="SimNeutral400">#777777</Color>
+        <Color x:Key="SimText">#EAEAEA</Color>
+        <Color x:Key="SimTextSoft">#CCCCCC</Color>
+        <Color x:Key="SimTextDim">#AAAAAA</Color>
+        <Color x:Key="SimBlue200">#82B1FF</Color>
+        <Color x:Key="SimIndigo50">#E8EAF6</Color>
+        <Color x:Key="SimIndigo200">#9FA8DA</Color>
+        <Color x:Key="SimIndigo300">#7986CB</Color>
+        <Color x:Key="SimIndigo400">#5C6BC0</Color>
+        <Color x:Key="SimIndigo500">#3F51B5</Color>
+        <Color x:Key="SimIndigo700">#303F9F</Color>
+        <Color x:Key="SimIndigo900">#1A237E</Color>
+        <Color x:Key="SimIndigoA400">#3D5AFE</Color>
+        <Color x:Key="SimIndigoBg">#1A2035</Color>
+        <Color x:Key="SimGreen300">#81C784</Color>
+        <Color x:Key="SimGreen700">#388E3C</Color>
+        <Color x:Key="SimGreen800">#2E7D32</Color>
+        <Color x:Key="SimRed800">#C62828</Color>
+        <Color x:Key="SimOrange800">#EF6C00</Color>
+        <Color x:Key="SimOrange900">#E65100</Color>
+        <Color x:Key="SimGlowGold500A26">#42FFB300</Color>
+        <Color x:Key="SimGlowGold500A19">#30FFB300</Color>
+        <Color x:Key="SimGlowGold500A63">#A0FFB300</Color>
+        <Color x:Key="SimGlowAmberDeepA08">#14664D00</Color>
+        <Color x:Key="SimGlowGold200A38">#60FFE082</Color>
+        <Color x:Key="SimGlowGold200A09">#18FFE082</Color>
+        <Color x:Key="SimGlowGold200A75">#C0FFE082</Color>
+        <Color x:Key="SimGlowGold200A25">#40FFE082</Color>
+        <SolidColorBrush x:Key="SimBrushBlue200" Color="{StaticResource SimBlue200}"/>
+        <SolidColorBrush x:Key="SimBrushGreen300" Color="{StaticResource SimGreen300}"/>
+        <SolidColorBrush x:Key="SimBrushGreen700" Color="{StaticResource SimGreen700}"/>
+        <SolidColorBrush x:Key="SimBrushGreen800" Color="{StaticResource SimGreen800}"/>
+        <SolidColorBrush x:Key="SimBrushIndigo200" Color="{StaticResource SimIndigo200}"/>
+        <SolidColorBrush x:Key="SimBrushIndigo300" Color="{StaticResource SimIndigo300}"/>
+        <SolidColorBrush x:Key="SimBrushIndigo400" Color="{StaticResource SimIndigo400}"/>
+        <SolidColorBrush x:Key="SimBrushIndigo50" Color="{StaticResource SimIndigo50}"/>
+        <SolidColorBrush x:Key="SimBrushIndigo500" Color="{StaticResource SimIndigo500}"/>
+        <SolidColorBrush x:Key="SimBrushIndigo700" Color="{StaticResource SimIndigo700}"/>
+        <SolidColorBrush x:Key="SimBrushIndigoA400" Color="{StaticResource SimIndigoA400}"/>
+        <SolidColorBrush x:Key="SimBrushIndigoBg" Color="{StaticResource SimIndigoBg}"/>
+        <SolidColorBrush x:Key="SimBrushNeutral400" Color="{StaticResource SimNeutral400}"/>
+        <SolidColorBrush x:Key="SimBrushNeutral500" Color="{StaticResource SimNeutral500}"/>
+        <SolidColorBrush x:Key="SimBrushNeutral600" Color="{StaticResource SimNeutral600}"/>
+        <SolidColorBrush x:Key="SimBrushNeutral700" Color="{StaticResource SimNeutral700}"/>
+        <SolidColorBrush x:Key="SimBrushNeutral750" Color="{StaticResource SimNeutral750}"/>
+        <SolidColorBrush x:Key="SimBrushNeutral800" Color="{StaticResource SimNeutral800}"/>
+        <SolidColorBrush x:Key="SimBrushNeutral850" Color="{StaticResource SimNeutral850}"/>
+        <SolidColorBrush x:Key="SimBrushNeutral900" Color="{StaticResource SimNeutral900}"/>
+        <SolidColorBrush x:Key="SimBrushNeutral950" Color="{StaticResource SimNeutral950}"/>
+        <SolidColorBrush x:Key="SimBrushOrange800" Color="{StaticResource SimOrange800}"/>
+        <SolidColorBrush x:Key="SimBrushOrange900" Color="{StaticResource SimOrange900}"/>
+        <SolidColorBrush x:Key="SimBrushRed800" Color="{StaticResource SimRed800}"/>
+        <SolidColorBrush x:Key="SimBrushSteel600" Color="{StaticResource ColorSteel600}"/>
+        <SolidColorBrush x:Key="SimBrushSteel800" Color="{StaticResource ColorSteel800}"/>
+        <SolidColorBrush x:Key="SimBrushText" Color="{StaticResource SimText}"/>
+        <SolidColorBrush x:Key="SimBrushTextDim" Color="{StaticResource SimTextDim}"/>
+        <SolidColorBrush x:Key="SimBrushTextSoft" Color="{StaticResource SimTextSoft}"/>
+
         <!-- Dynamic Theme Brushes for Live KTV Preview -->
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#FFB300" />
-        <SolidColorBrush x:Key="PrimaryLightBrush" Color="#FFE082" />
+        <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource ColorGold500}" />
+        <SolidColorBrush x:Key="PrimaryLightBrush" Color="{StaticResource ColorGold200}" />
         <LinearGradientBrush x:Key="DataGridHeaderBgBrush" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#FFA000" Offset="0.0"/>
-            <GradientStop Color="#FFCA28" Offset="1.0"/>
+            <GradientStop Color="{StaticResource ColorGold600}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource ColorGold400}" Offset="1.0"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#E6FFB300" Offset="0.0"/>
-            <GradientStop Color="#D08A6403" Offset="1.0"/>
+            <GradientStop Color="{StaticResource ColorGold500A90}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource ColorGold900A82}" Offset="1.0"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="BrushCyberButtonGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#42FFB300" Offset="0.0"/>
-            <GradientStop Color="#14664D00" Offset="1.0"/>
+            <GradientStop Color="{StaticResource SimGlowGold500A26}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource SimGlowAmberDeepA08}" Offset="1.0"/>
         </LinearGradientBrush>
-        <SolidColorBrush x:Key="DataGridHeaderFgBrush" Color="#FFFFFFFF" />
-        <SolidColorBrush x:Key="AnnouncementFgBrush" Color="#FFFFFF" />
-        <SolidColorBrush x:Key="StaticTextFgBrush" Color="#FFFFFF" />
-        <SolidColorBrush x:Key="WebHostInfoFgBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="DataGridHeaderFgBrush" Color="{StaticResource ColorWhite}" />
+        <SolidColorBrush x:Key="AnnouncementFgBrush" Color="{StaticResource ColorWhite}" />
+        <SolidColorBrush x:Key="StaticTextFgBrush" Color="{StaticResource ColorWhite}" />
+        <SolidColorBrush x:Key="WebHostInfoFgBrush" Color="{StaticResource ColorWhite}" />
 
         <!-- Option 4 Inward Glow Dynamic Brushes (朝內微光，未選取純淨無橫紋) -->
-        <SolidColorBrush x:Key="BrushInnerGlowDefault" Color="#181B24"/>
+        <SolidColorBrush x:Key="BrushInnerGlowDefault" Color="{StaticResource ColorSurface}"/>
         <LinearGradientBrush x:Key="BrushInnerGlowHover" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#60FFE082" Offset="0.0"/>
-            <GradientStop Color="#18FFE082" Offset="1.0"/>
+            <GradientStop Color="{StaticResource SimGlowGold200A38}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource SimGlowGold200A09}" Offset="1.0"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="BrushInnerGlowActive" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#A0FFB300" Offset="0.0"/>
-            <GradientStop Color="#30FFB300" Offset="1.0"/>
+            <GradientStop Color="{StaticResource SimGlowGold500A63}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource SimGlowGold500A19}" Offset="1.0"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="BrushInnerGlowActiveHover" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#C0FFE082" Offset="0.0"/>
-            <GradientStop Color="#40FFE082" Offset="1.0"/>
+            <GradientStop Color="{StaticResource SimGlowGold200A75}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource SimGlowGold200A25}" Offset="1.0"/>
         </LinearGradientBrush>
 
         <!-- 風格 3 (AccentStrip) 預設漸層筆刷 -->
         <LinearGradientBrush x:Key="BrushAccentStripActive" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#F59E0B" Offset="0.0"/>
-            <GradientStop Color="#FFF9C4" Offset="0.4"/>
-            <GradientStop Color="#FFCA28" Offset="0.6"/>
-            <GradientStop Color="#D97706" Offset="1.0"/>
+            <GradientStop Color="{StaticResource ColorGold600}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource ColorGold100}" Offset="0.4"/>
+            <GradientStop Color="{StaticResource ColorGold400}" Offset="0.6"/>
+            <GradientStop Color="{StaticResource ColorGold800}" Offset="1.0"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="BrushAccentStripHover" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FFE082" Offset="0.0"/>
-            <GradientStop Color="#FFFFFF" Offset="0.45"/>
-            <GradientStop Color="#FFD54F" Offset="1.0"/>
+            <GradientStop Color="{StaticResource ColorGold200}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource ColorWhite}" Offset="0.45"/>
+            <GradientStop Color="{StaticResource ColorGold300}" Offset="1.0"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="BrushAccentStripInactive" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#546E7A" Offset="0.0"/>
-            <GradientStop Color="#CFD8DC" Offset="0.45"/>
-            <GradientStop Color="#90A4AE" Offset="0.6"/>
-            <GradientStop Color="#37474F" Offset="1.0"/>
+            <GradientStop Color="{StaticResource ColorSteel600}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource ColorSteel100}" Offset="0.45"/>
+            <GradientStop Color="{StaticResource ColorSteel300}" Offset="0.6"/>
+            <GradientStop Color="{StaticResource ColorSteel800}" Offset="1.0"/>
         </LinearGradientBrush>
         <LinearGradientBrush x:Key="BrushAccentStripGlow" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#50FFA000" Offset="0.0"/>
-            <GradientStop Color="#18FFA000" Offset="0.5"/>
-            <GradientStop Color="#00FFA000" Offset="1.0"/>
+            <GradientStop Color="{StaticResource ColorGold600A31}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource ColorGold600A09}" Offset="0.5"/>
+            <GradientStop Color="{StaticResource ColorGold600A00}" Offset="1.0"/>
         </LinearGradientBrush>
 
         <!-- 選中文字立體金屬漸層筆刷 -->
         <LinearGradientBrush x:Key="BrushTextSelectedGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FFFFFFF0" Offset="0.0"/>
-            <GradientStop Color="#FFFDE7" Offset="0.25"/>
-            <GradientStop Color="#FFE082" Offset="0.55"/>
-            <GradientStop Color="#FFB300" Offset="0.85"/>
-            <GradientStop Color="#FF8F00" Offset="1.0"/>
+            <GradientStop Color="{StaticResource ColorIvory}" Offset="0.0"/>
+            <GradientStop Color="{StaticResource ColorGold50}" Offset="0.25"/>
+            <GradientStop Color="{StaticResource ColorGold200}" Offset="0.55"/>
+            <GradientStop Color="{StaticResource ColorGold500}" Offset="0.85"/>
+            <GradientStop Color="{StaticResource ColorGold700}" Offset="1.0"/>
         </LinearGradientBrush>
 
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#EAEAEA" />
+            <Setter Property="Foreground" Value="{StaticResource SimBrushText}" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="FontSize" Value="14" />
         </Style>
         <Style TargetType="TextBox">
-            <Setter Property="Background" Value="#22222D" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="BorderBrush" Value="#44445A" />
+            <Setter Property="Background" Value="{StaticResource SimBrushNeutral800}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushTextMain}" />
+            <Setter Property="BorderBrush" Value="{StaticResource SimBrushNeutral600}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="7,5" />
             <Setter Property="FontSize" Value="14.5" />
         </Style>
         <Style TargetType="ComboBoxItem">
-            <Setter Property="Background" Value="#22222D" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Background" Value="{StaticResource SimBrushNeutral800}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushTextMain}" />
             <Setter Property="Padding" Value="9,7" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Template">
@@ -106,12 +173,12 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="#38384D" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource SimBrushNeutral700}" />
+                                <Setter Property="Foreground" Value="{StaticResource BrushTextMain}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="#3F51B5" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource SimBrushIndigo500}" />
+                                <Setter Property="Foreground" Value="{StaticResource BrushTextMain}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -130,27 +197,27 @@
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="1" />
-                <Path x:Name="Arrow" Grid.Column="1" Fill="#CCCCCC"
+                <Path x:Name="Arrow" Grid.Column="1" Fill="{StaticResource SimBrushTextSoft}"
                       HorizontalAlignment="Center" VerticalAlignment="Center"
                       Data="M 0 0 L 4 4 L 8 0 Z" />
             </Grid>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="Border" Property="Background" Value="#2D2D3B" />
-                    <Setter TargetName="Border" Property="BorderBrush" Value="#5C5C7A" />
-                    <Setter TargetName="Arrow" Property="Fill" Value="#FFFFFF" />
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource SimBrushNeutral750}" />
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource SimBrushNeutral500}" />
+                    <Setter TargetName="Arrow" Property="Fill" Value="{StaticResource BrushTextMain}" />
                 </Trigger>
                 <Trigger Property="IsChecked" Value="True">
-                    <Setter TargetName="Border" Property="Background" Value="#2D2D3B" />
-                    <Setter TargetName="Border" Property="BorderBrush" Value="#82B1FF" />
+                    <Setter TargetName="Border" Property="Background" Value="{StaticResource SimBrushNeutral750}" />
+                    <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource SimBrushBlue200}" />
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
 
         <Style TargetType="ComboBox">
-            <Setter Property="Background" Value="#22222D" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="BorderBrush" Value="#44445A" />
+            <Setter Property="Background" Value="{StaticResource SimBrushNeutral800}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushTextMain}" />
+            <Setter Property="BorderBrush" Value="{StaticResource SimBrushNeutral600}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Padding" Value="9,6" />
@@ -186,8 +253,8 @@
                                    PopupAnimation="Slide">
                                 <Grid Name="DropDown" SnapsToDevicePixels="True"
                                       MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}">
-                                    <Border x:Name="DropDownBorder" Background="#1C1C24"
-                                            BorderThickness="1" BorderBrush="#44445A" CornerRadius="4" Margin="0,2,0,0">
+                                    <Border x:Name="DropDownBorder" Background="{StaticResource SimBrushNeutral850}"
+                                            BorderThickness="1" BorderBrush="{StaticResource SimBrushNeutral600}" CornerRadius="4" Margin="0,2,0,0">
                                         <ScrollViewer Margin="2,4" SnapsToDevicePixels="True">
                                             <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
                                         </ScrollViewer>
@@ -204,8 +271,8 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
         <Style TargetType="Button" x:Key="ActionButton">
-            <Setter Property="Background" Value="#3F51B5" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Background" Value="{StaticResource SimBrushIndigo500}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushTextMain}" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Padding" Value="11,6" />
@@ -227,7 +294,7 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#5C6BC0" />
+                    <Setter Property="Background" Value="{StaticResource SimBrushIndigo400}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -369,7 +436,7 @@
                                     <Thumb>
                                         <Thumb.Template>
                                             <ControlTemplate>
-                                                <Ellipse Width="14" Height="14" Fill="{DynamicResource PrimaryBrush}" Stroke="#FFFFFF" StrokeThickness="1.5" Cursor="Hand" />
+                                                <Ellipse Width="14" Height="14" Fill="{DynamicResource PrimaryBrush}" Stroke="{StaticResource BrushTextMain}" StrokeThickness="1.5" Cursor="Hand" />
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>
@@ -378,7 +445,7 @@
                                     <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
                                         <RepeatButton.Template>
                                             <ControlTemplate>
-                                                <Border Height="6" CornerRadius="3" Background="#333344" />
+                                                <Border Height="6" CornerRadius="3" Background="{StaticResource SimBrushNeutral750}" />
                                             </ControlTemplate>
                                         </RepeatButton.Template>
                                     </RepeatButton>
@@ -390,50 +457,50 @@
             </Setter>
         </Style>
         <Style TargetType="Button" x:Key="SuccessButton" BasedOn="{StaticResource ActionButton}">
-            <Setter Property="Background" Value="#2E7D32" />
+            <Setter Property="Background" Value="{StaticResource SimBrushGreen800}" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#388E3C" />
+                    <Setter Property="Background" Value="{StaticResource SimBrushGreen700}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
         <Style TargetType="Button" x:Key="DangerButton" BasedOn="{StaticResource ActionButton}">
-            <Setter Property="Background" Value="#C62828" />
+            <Setter Property="Background" Value="{StaticResource SimBrushRed800}" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#D32F2F" />
+                    <Setter Property="Background" Value="{StaticResource BrushDanger}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
         <Style TargetType="Button" x:Key="SecondaryButton" BasedOn="{StaticResource ActionButton}">
-            <Setter Property="Background" Value="#37474F" />
+            <Setter Property="Background" Value="{StaticResource SimBrushSteel800}" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#455A64" />
+                    <Setter Property="Background" Value="{StaticResource SimBrushSteel600}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
         <Style TargetType="Button" x:Key="ResetButton" BasedOn="{StaticResource ActionButton}">
-            <Setter Property="Background" Value="#E65100" />
+            <Setter Property="Background" Value="{StaticResource SimBrushOrange900}" />
             <Setter Property="Padding" Value="9,5" />
             <Setter Property="FontSize" Value="13.5" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#EF6C00" />
+                    <Setter Property="Background" Value="{StaticResource SimBrushOrange800}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
         <Style TargetType="Button" x:Key="CategoryNavButton" BasedOn="{StaticResource ActionButton}">
-            <Setter Property="Background" Value="#232332" />
-            <Setter Property="Foreground" Value="#AAAAAA" />
+            <Setter Property="Background" Value="{StaticResource SimBrushNeutral800}" />
+            <Setter Property="Foreground" Value="{StaticResource SimBrushTextDim}" />
             <Setter Property="Padding" Value="12,7" />
             <Setter Property="FontSize" Value="13.5" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="#3A3A4C" />
+            <Setter Property="BorderBrush" Value="{StaticResource SimBrushNeutral700}" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#2E2E42" />
-                    <Setter Property="Foreground" Value="#FFFFFF" />
+                    <Setter Property="Background" Value="{StaticResource SimBrushNeutral750}" />
+                    <Setter Property="Foreground" Value="{StaticResource BrushTextMain}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -447,7 +514,7 @@
         </Grid.RowDefinitions>
 
         <!-- Top Header Bar -->
-        <Border Grid.Row="0" Background="#0F0F14" BorderBrush="#22222E" BorderThickness="0,0,0,1" Padding="14,8">
+        <Border Grid.Row="0" Background="{StaticResource SimBrushNeutral900}" BorderBrush="{StaticResource SimBrushNeutral800}" BorderThickness="0,0,0,1" Padding="14,8">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -459,14 +526,14 @@
                 <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="🎤" FontSize="24" Margin="0,0,8,0" />
                     <StackPanel>
-                        <TextBlock Text="UltimateKTV 樣式與效果模擬器" FontSize="18" FontWeight="Bold" Foreground="#82B1FF" />                        
+                        <TextBlock Text="UltimateKTV 樣式與效果模擬器" FontSize="18" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />                        
                     </StackPanel>
                 </StackPanel>
 
                 <!-- File Selector & Actions (Responsive WrapPanel) -->
                 <WrapPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,6,2">
-                        <TextBlock Text="目前編輯檔:" Foreground="#CCC" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <TextBlock Text="目前編輯檔:" Foreground="{StaticResource SimBrushTextSoft}" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
                         <ComboBox x:Name="CboConfigFileType" Width="160" SelectionChanged="CboConfigFileType_SelectionChanged">
                             <ComboBoxItem Content="🎨 UI介面" IsSelected="True" />
                             <ComboBoxItem Content="⚙️ 跑馬燈/提示" />
@@ -502,9 +569,9 @@
                 </Grid.RowDefinitions>
 
                 <!-- Top Quick Test Bar (Visible when settings.json is active) -->
-                <Border x:Name="MarqueeTestBar" Grid.Row="0" Background="#1D1D27" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                <Border x:Name="MarqueeTestBar" Grid.Row="0" Background="{StaticResource SimBrushNeutral850}" CornerRadius="6" Padding="8" Margin="0,0,0,8">
                     <StackPanel>
-                        <TextBlock Text="⚡ 點擊跑馬燈進行模擬並檢視右側完整參數:" FontWeight="Bold" Margin="0,0,0,6" Foreground="#FFD54F" />
+                        <TextBlock Text="⚡ 點擊跑馬燈進行模擬並檢視右側完整參數:" FontWeight="Bold" Margin="0,0,0,6" Foreground="{StaticResource BrushWarning}" />
                         <WrapPanel>
                             <Button Content="🎵 播放跑馬燈 (1:有待播)" Style="{StaticResource ActionButton}" Click="BtnPlaySong1_Click" Margin="0,0,5,5" ToolTip="點擊模擬播放並在右側列出範本1完整參數" />
                             <Button Content="🎵 播放跑馬燈 (2:無待播)" Style="{StaticResource ActionButton}" Click="BtnPlaySong2_Click" Margin="0,0,5,5" ToolTip="點擊模擬播放並在右側列出範本2完整參數" />
@@ -518,34 +585,34 @@
                 </Border>
 
                 <!-- UI Info Bar (Visible when themesettings.json is active) -->
-                <Border x:Name="UiInfoBar" Grid.Row="0" Background="#1D1D27" CornerRadius="6" Padding="8" Margin="0,0,0,8" Visibility="Collapsed">
+                <Border x:Name="UiInfoBar" Grid.Row="0" Background="{StaticResource SimBrushNeutral850}" CornerRadius="6" Padding="8" Margin="0,0,0,8" Visibility="Collapsed">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🎨 點歌機操作介面 (UI 樣式與排版模擬)" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" />
-                        <TextBlock Text="（調整右側字級與顏色立即反映於下方介面）" Foreground="#AAA" Margin="8,0,0,0" FontSize="11" VerticalAlignment="Center" />
+                        <TextBlock Text="🎨 點歌機操作介面 (UI 樣式與排版模擬)" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" VerticalAlignment="Center" />
+                        <TextBlock Text="（調整右側字級與顏色立即反映於下方介面）" Foreground="{StaticResource SimBrushTextDim}" Margin="8,0,0,0" FontSize="11" VerticalAlignment="Center" />
                     </StackPanel>
                 </Border>
 
                 <!-- Dynamic Preview Container -->
                 <Grid Grid.Row="1">
                     <!-- VIEW 1: 16:9 播放螢幕 (Player Stage Screen for settings.json) -->
-                    <Border x:Name="PlayerScreenView" Background="#06060A" BorderBrush="#FFFFFF" BorderThickness="2" CornerRadius="8" ClipToBounds="True" Padding="6">
+                    <Border x:Name="PlayerScreenView" Background="{StaticResource SimBrushNeutral950}" BorderBrush="{StaticResource BrushTextMain}" BorderThickness="2" CornerRadius="8" ClipToBounds="True" Padding="6">
                         <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Border Width="1920" Height="1080" Background="#050508" BorderBrush="#FFFFFF" BorderThickness="3" CornerRadius="4">
+                            <Border Width="1920" Height="1080" Background="{StaticResource SimBrushNeutral950}" BorderBrush="{StaticResource BrushTextMain}" BorderThickness="3" CornerRadius="4">
                                 <Grid ClipToBounds="True">
                                     <!-- Background Stage Ambient & Watermark -->
-                                    <Rectangle Fill="#08080E" />
+                                    <Rectangle Fill="{StaticResource SimBrushNeutral950}" />
                                     <Ellipse Width="1200" Height="600" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.22">
                                         <Ellipse.Fill>
                                             <RadialGradientBrush>
-                                                <GradientStop Color="#3F51B5" Offset="0" />
-                                                <GradientStop Color="#1A237E" Offset="0.5" />
+                                                <GradientStop Color="{StaticResource SimIndigo500}" Offset="0" />
+                                                <GradientStop Color="{StaticResource SimIndigo900}" Offset="0.5" />
                                                 <GradientStop Color="Transparent" Offset="1" />
                                             </RadialGradientBrush>
                                         </Ellipse.Fill>
                                     </Ellipse>
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.8">
-                                        <TextBlock Text="📺 電視播放螢幕模擬" HorizontalAlignment="Center" Foreground="#9FA8DA" FontSize="42" FontWeight="Bold" Margin="0,0,0,12" />
-                                        <TextBlock Text="標準 16:9 比例 (1920 × 1080 Full HD)" HorizontalAlignment="Center" Foreground="#7986CB" FontSize="26" />
+                                        <TextBlock Text="📺 電視播放螢幕模擬" HorizontalAlignment="Center" Foreground="{StaticResource SimBrushIndigo200}" FontSize="42" FontWeight="Bold" Margin="0,0,0,12" />
+                                        <TextBlock Text="標準 16:9 比例 (1920 × 1080 Full HD)" HorizontalAlignment="Center" Foreground="{StaticResource SimBrushIndigo300}" FontSize="26" />
                                     </StackPanel>
 
                                     <!-- 1920x1080 Marquee Canvas -->
@@ -556,9 +623,9 @@
                     </Border>
 
                     <!-- VIEW 2: 點歌機操作介面 (KTV UI View for themesettings.json - 1920x1080 Viewbox) -->
-                    <Border x:Name="KtvUiView" Background="#0A0A0E" BorderBrush="#333344" BorderThickness="2" CornerRadius="8" ClipToBounds="True" Padding="6" Visibility="Collapsed">
+                    <Border x:Name="KtvUiView" Background="{StaticResource SimBrushNeutral950}" BorderBrush="{StaticResource SimBrushNeutral750}" BorderThickness="2" CornerRadius="8" ClipToBounds="True" Padding="6" Visibility="Collapsed">
                         <Viewbox Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Border x:Name="BorderKtvFrame" Width="1920" Height="1080" Background="#1E1E1E" SnapsToDevicePixels="True" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="0" CornerRadius="0">
+                            <Border x:Name="BorderKtvFrame" Width="1920" Height="1080" Background="{StaticResource BrushBgPrimary}" SnapsToDevicePixels="True" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="0" CornerRadius="0">
                                 <!-- 與主程式相同：整個 1920x1080 直接是導覽列 / 歌曲列表 / 播放區 (主程式沒有公告列) -->
                                 <Grid Margin="0">
                                     <!-- Main Content Area: 左側導覽列 (120px) + 中間歌曲列表 (*) + 右側播放區 (460px)，與 UltimateKtv MainWindow.xaml 新版面一致 -->
@@ -662,7 +729,7 @@
                                             </UniformGrid>
 
                                             <!-- Song List Table：歌名 660 / 歌手 * / 語言 120 / 操作 230 (插播、最愛) -->
-                                            <Border Grid.Row="1" x:Name="BorderSongList" Background="#121212" BorderThickness="0" BorderBrush="{DynamicResource PrimaryBrush}" CornerRadius="4" ClipToBounds="True">
+                                            <Border Grid.Row="1" x:Name="BorderSongList" Background="{StaticResource BrushBgCard}" BorderThickness="0" BorderBrush="{DynamicResource PrimaryBrush}" CornerRadius="4" ClipToBounds="True">
                                                 <Grid>
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto" MinHeight="50" /> <!-- Column Header -->
@@ -686,14 +753,14 @@
                                                     <!-- 13 Song Rows (與主程式 SongPageSize = 13 一致) -->
                                                     <UniformGrid Grid.Row="1" Rows="13" Columns="1">
                                                         <!-- Row 1 -->
-                                                        <Border x:Name="BorderSongRow1" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow1" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow1" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow1" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow1" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -701,11 +768,11 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow1" Text="突然好想你" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSongRow1" Text="突然好想你" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
                                                                     <Border x:Name="BorderSingerRow1" Grid.Column="1" Background="{DynamicResource PrimaryLightBrush}" CornerRadius="4" Padding="10,2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0" ToolTip="由 [PrimaryLightColor] 主要淺色顏色控制 (歌手懸停/標籤高亮)">
-                                                                        <TextBlock x:Name="TxtSingerRow1" Text="五月天" Foreground="#000000" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                        <TextBlock x:Name="TxtSingerRow1" Text="五月天" Foreground="{DynamicResource BrushOnAccentActive}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                                     </Border>
-                                                                    <TextBlock x:Name="TxtLangRow1" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtLangRow1" Grid.Column="2" Text="國語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -715,14 +782,14 @@
                                                         </Border>
 
                                                         <!-- Row 2 -->
-                                                        <Border x:Name="BorderSongRow2" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow2" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow2" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow2" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow2" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -730,9 +797,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow2" Text="如果可以" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow2" Grid.Column="1" Text="韋禮安" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow2" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow2" Text="如果可以" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow2" Grid.Column="1" Text="韋禮安" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow2" Grid.Column="2" Text="國語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -742,14 +809,14 @@
                                                         </Border>
 
                                                         <!-- Row 3 -->
-                                                        <Border x:Name="BorderSongRow3" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow3" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow3" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow3" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow3" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -757,9 +824,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow3" Text="浪子回頭" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow3" Grid.Column="1" Text="茄子蛋" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow3" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow3" Text="浪子回頭" Foreground="{StaticResource BrushSongForeign}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow3" Grid.Column="1" Text="茄子蛋" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow3" Grid.Column="2" Text="台語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -769,14 +836,14 @@
                                                         </Border>
 
                                                         <!-- Row 4 -->
-                                                        <Border x:Name="BorderSongRow4" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow4" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow4" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow4" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow4" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -784,9 +851,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow4" Text="刻在我心底的名字" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow4" Grid.Column="1" Text="盧廣仲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow4" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow4" Text="刻在我心底的名字" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow4" Grid.Column="1" Text="盧廣仲" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow4" Grid.Column="2" Text="國語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -796,14 +863,14 @@
                                                         </Border>
 
                                                         <!-- Row 5 -->
-                                                        <Border x:Name="BorderSongRow5" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow5" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow5" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow5" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow5" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -811,9 +878,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow5" Text="家後" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow5" Grid.Column="1" Text="江蕙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow5" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow5" Text="家後" Foreground="{StaticResource BrushSongForeign}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow5" Grid.Column="1" Text="江蕙" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow5" Grid.Column="2" Text="台語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -823,14 +890,14 @@
                                                         </Border>
 
                                                         <!-- Row 6 -->
-                                                        <Border x:Name="BorderSongRow6" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow6" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow6" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow6" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow6" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -838,9 +905,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow6" Text="連名帶姓" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow6" Grid.Column="1" Text="張惠妹" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow6" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow6" Text="連名帶姓" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow6" Grid.Column="1" Text="張惠妹" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow6" Grid.Column="2" Text="國語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -850,14 +917,14 @@
                                                         </Border>
 
                                                         <!-- Row 7 -->
-                                                        <Border x:Name="BorderSongRow7" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow7" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow7" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow7" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow7" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -865,9 +932,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow7" Text="海闊天空" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow7" Grid.Column="1" Text="Beyond" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow7" Grid.Column="2" Text="粵語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow7" Text="海闊天空" Foreground="{StaticResource BrushSongForeign}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow7" Grid.Column="1" Text="Beyond" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow7" Grid.Column="2" Text="粵語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -877,14 +944,14 @@
                                                         </Border>
 
                                                         <!-- Row 8 -->
-                                                        <Border x:Name="BorderSongRow8" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow8" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow8" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow8" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow8" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -892,9 +959,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow8" Text="魚仔" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow8" Grid.Column="1" Text="盧廣仲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow8" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow8" Text="魚仔" Foreground="{StaticResource BrushSongForeign}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow8" Grid.Column="1" Text="盧廣仲" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow8" Grid.Column="2" Text="台語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -904,14 +971,14 @@
                                                         </Border>
 
                                                         <!-- Row 9 -->
-                                                        <Border x:Name="BorderSongRow9" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow9" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow9" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow9" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow9" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -919,9 +986,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow9" Text="演員" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow9" Grid.Column="1" Text="薛之謙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow9" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow9" Text="演員" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow9" Grid.Column="1" Text="薛之謙" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow9" Grid.Column="2" Text="國語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -931,14 +998,14 @@
                                                         </Border>
 
                                                         <!-- Row 10 -->
-                                                        <Border x:Name="BorderSongRow10" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow10" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow10" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow10" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow10" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -946,9 +1013,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow10" Text="愛如潮水" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow10" Grid.Column="1" Text="張信哲" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow10" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow10" Text="愛如潮水" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow10" Grid.Column="1" Text="張信哲" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow10" Grid.Column="2" Text="國語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -958,14 +1025,14 @@
                                                         </Border>
 
                                                         <!-- Row 11 -->
-                                                        <Border x:Name="BorderSongRow11" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow11" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow11" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow11" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow11" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -973,9 +1040,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow11" Text="落雨聲" Foreground="LightSkyBlue" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow11" Grid.Column="1" Text="江蕙" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow11" Grid.Column="2" Text="台語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow11" Text="落雨聲" Foreground="{StaticResource BrushSongForeign}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow11" Grid.Column="1" Text="江蕙" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow11" Grid.Column="2" Text="台語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -985,14 +1052,14 @@
                                                         </Border>
 
                                                         <!-- Row 12 -->
-                                                        <Border x:Name="BorderSongRow12" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow12" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow12" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow12" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow12" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -1000,9 +1067,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow12" Text="想見你想見你想見你" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow12" Grid.Column="1" Text="八三夭" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow12" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow12" Text="想見你想見你想見你" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow12" Grid.Column="1" Text="八三夭" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow12" Grid.Column="2" Text="國語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -1012,14 +1079,14 @@
                                                         </Border>
 
                                                         <!-- Row 13 -->
-                                                        <Border x:Name="BorderSongRow13" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderSongRow13" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowSongRow13" Margin="1" CornerRadius="7" BorderThickness="4" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarSongRow13" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarSongRow13" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="660" />
@@ -1027,9 +1094,9 @@
                                                                         <ColumnDefinition Width="120" />
                                                                         <ColumnDefinition Width="230" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtSongRow13" Text="小幸運" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtSingerRow13" Grid.Column="1" Text="田馥甄" Foreground="White" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtLangRow13" Grid.Column="2" Text="國語" Foreground="White" VerticalAlignment="Center" Margin="16,0" />
+                                                                    <TextBlock x:Name="TxtSongRow13" Text="小幸運" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtSingerRow13" Grid.Column="1" Text="田馥甄" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtLangRow13" Grid.Column="2" Text="國語" Foreground="{StaticResource BrushTextDim}" VerticalAlignment="Center" Margin="16,0" />
                                                                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                                                                         <Button Content="插播" Width="110" Height="50" Margin="0,0,10,0" Style="{StaticResource SongRowActionButtonStyle}" />
                                                                         <Button Content="♡" Width="76" Height="50" Style="{StaticResource SongRowActionButtonStyle}" ToolTip="加入最愛" />
@@ -1171,12 +1238,12 @@
                                             </Border>
 
                                             <!-- Mini Video Player (16:9，460x259) + 進度/音量列 -->
-                                            <Border DockPanel.Dock="Top" Background="#000000" BorderThickness="0" Margin="0,4,0,0">
+                                            <Border DockPanel.Dock="Top" Background="{StaticResource BrushSurfaceSunken}" BorderThickness="0" Margin="0,4,0,0">
                                                 <StackPanel>
-                                                    <Grid Height="259" Background="#050505">
-                                                        <TextBlock Text="[ 16:9 播放畫面 ]" Foreground="#55FFFFFF" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Grid Height="259" Background="{StaticResource BrushSurfaceSunken}">
+                                                        <TextBlock Text="[ 16:9 播放畫面 ]" Foreground="{StaticResource BrushTextMuted}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Grid>
-                                                    <Border Background="#EA080808" Padding="8,4">
+                                                    <Border Background="{StaticResource BrushScrim}" Padding="8,4">
                                                         <StackPanel>
                                                             <Grid Margin="0,0,0,4">
                                                                 <Slider x:Name="VideoProgressSliderPreview" Minimum="0" Maximum="100" Value="25" VerticalAlignment="Center" Style="{StaticResource KtvSliderStyle}" ToolTip="進度軌道與滑塊由 [PrimaryColor] 主要主題色控制" />
@@ -1212,7 +1279,7 @@
                                             </Grid>
 
                                             <!-- Waiting List (8 列，與主程式 WaitingListPageSize = 8 一致) -->
-                                            <Border x:Name="BorderWaitList" Margin="0,4,0,0" Background="#121212" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="0" CornerRadius="4" ClipToBounds="True">
+                                            <Border x:Name="BorderWaitList" Margin="0,4,0,0" Background="{StaticResource BrushBgCard}" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="0" CornerRadius="4" ClipToBounds="True">
                                                 <Grid>
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto" MinHeight="45" />   <!-- Header -->
@@ -1226,161 +1293,161 @@
                                                                 <ColumnDefinition Width="*" />
                                                             </Grid.ColumnDefinitions>
                                                             <TextBlock x:Name="TxtWaitHeaderCol1" Text="歌名" FontWeight="Bold" FontSize="24" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" Margin="16,0" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
-                                                            <Border Grid.Column="0" HorizontalAlignment="Right" Width="1" Background="#33FFFFFF" Margin="0,8" />
+                                                            <Border Grid.Column="0" HorizontalAlignment="Right" Width="1" Background="{StaticResource BrushBorderStrong}" Margin="0,8" />
                                                             <TextBlock x:Name="TxtWaitHeaderCol2" Grid.Column="1" Text="歌手" FontWeight="Bold" FontSize="24" Foreground="{DynamicResource DataGridHeaderFgBrush}" VerticalAlignment="Center" Margin="16,0" ToolTip="由 [DataGridColumnHeaderForegroundColor] 表格標題文字色控制" />
                                                         </Grid>
                                                     </Border>
 
                                                     <UniformGrid Grid.Row="1" Rows="8" Columns="1">
                                                         <!-- Row 1 -->
-                                                        <Border x:Name="BorderWaitRow1" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderWaitRow1" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowWaitRow1" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarWaitRow1" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarWaitRow1" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid VerticalAlignment="Center" Margin="16,0">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="300" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtWaitSong1" Text="倒帶" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtWaitSinger1" Grid.Column="1" Text="蔡依林" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSong1" Text="倒帶" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSinger1" Grid.Column="1" Text="蔡依林" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
                                                                 </Grid>
                                                             </Grid>
                                                         </Border>
                                                         <!-- Row 2 -->
-                                                        <Border x:Name="BorderWaitRow2" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderWaitRow2" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowWaitRow2" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarWaitRow2" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarWaitRow2" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid VerticalAlignment="Center" Margin="16,0">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="300" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtWaitSong2" Text="告白氣球" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtWaitSinger2" Grid.Column="1" Text="周杰倫" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSong2" Text="告白氣球" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSinger2" Grid.Column="1" Text="周杰倫" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
                                                                 </Grid>
                                                             </Grid>
                                                         </Border>
                                                         <!-- Row 3 -->
-                                                        <Border x:Name="BorderWaitRow3" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderWaitRow3" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowWaitRow3" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarWaitRow3" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarWaitRow3" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid VerticalAlignment="Center" Margin="16,0">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="300" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtWaitSong3" Text="修煉愛情" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtWaitSinger3" Grid.Column="1" Text="林俊傑" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSong3" Text="修煉愛情" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSinger3" Grid.Column="1" Text="林俊傑" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
                                                                 </Grid>
                                                             </Grid>
                                                         </Border>
                                                         <!-- Row 4 -->
-                                                        <Border x:Name="BorderWaitRow4" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderWaitRow4" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowWaitRow4" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarWaitRow4" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarWaitRow4" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid VerticalAlignment="Center" Margin="16,0">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="300" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtWaitSong4" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtWaitSinger4" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSong4" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSinger4" Grid.Column="1" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
                                                                 </Grid>
                                                             </Grid>
                                                         </Border>
                                                         <!-- Row 5 -->
-                                                        <Border x:Name="BorderWaitRow5" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderWaitRow5" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowWaitRow5" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarWaitRow5" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarWaitRow5" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid VerticalAlignment="Center" Margin="16,0">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="300" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtWaitSong5" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtWaitSinger5" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSong5" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSinger5" Grid.Column="1" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
                                                                 </Grid>
                                                             </Grid>
                                                         </Border>
                                                         <!-- Row 6 -->
-                                                        <Border x:Name="BorderWaitRow6" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderWaitRow6" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowWaitRow6" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarWaitRow6" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarWaitRow6" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid VerticalAlignment="Center" Margin="16,0">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="300" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtWaitSong6" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtWaitSinger6" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSong6" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSinger6" Grid.Column="1" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
                                                                 </Grid>
                                                             </Grid>
                                                         </Border>
                                                         <!-- Row 7 -->
-                                                        <Border x:Name="BorderWaitRow7" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#181B24" ClipToBounds="True">
+                                                        <Border x:Name="BorderWaitRow7" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowWaitRow7" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarWaitRow7" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarWaitRow7" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid VerticalAlignment="Center" Margin="16,0">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="300" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtWaitSong7" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtWaitSinger7" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSong7" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSinger7" Grid.Column="1" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
                                                                 </Grid>
                                                             </Grid>
                                                         </Border>
                                                         <!-- Row 8 -->
-                                                        <Border x:Name="BorderWaitRow8" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="#20FFFFFF" Background="#141720" ClipToBounds="True">
+                                                        <Border x:Name="BorderWaitRow8" CornerRadius="8" Margin="8,1.5" BorderThickness="1" BorderBrush="{StaticResource BrushBorderDefault}" Background="{StaticResource BrushSurface}" ClipToBounds="True">
                                                             <Grid>
                                                                 <Border x:Name="InnerGlowWaitRow8" Margin="1" CornerRadius="7" BorderThickness="3.5" BorderBrush="Transparent" Background="Transparent" IsHitTestVisible="False">
                                                                     <Border.Effect>
                                                                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
                                                                     </Border.Effect>
                                                                 </Border>
-                                                                <Border x:Name="AccentBarWaitRow8" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="#3300F0FF" Visibility="Collapsed" />
+                                                                <Border x:Name="AccentBarWaitRow8" Width="16" HorizontalAlignment="Left" CornerRadius="7,0,0,7" Background="{DynamicResource BrushAccentPressed}" Visibility="Collapsed" />
                                                                 <Grid VerticalAlignment="Center" Margin="16,0">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="300" />
                                                                         <ColumnDefinition Width="*" />
                                                                     </Grid.ColumnDefinitions>
-                                                                    <TextBlock x:Name="TxtWaitSong8" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                                                    <TextBlock x:Name="TxtWaitSinger8" Grid.Column="1" Text="" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSong8" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock x:Name="TxtWaitSinger8" Grid.Column="1" Text="" Foreground="{StaticResource BrushTextMain}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
                                                                 </Grid>
                                                             </Grid>
                                                         </Border>
@@ -1396,23 +1463,23 @@
                 </Grid>
 
                 <!-- Status Bar Below Screen -->
-                <Border Grid.Row="2" Background="#121218" CornerRadius="6" Padding="10,6" Margin="0,8,0,0">
+                <Border Grid.Row="2" Background="{StaticResource SimBrushNeutral900}" CornerRadius="6" Padding="10,6" Margin="0,8,0,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="TxtSimStatus" Text="狀態: 就緒" Foreground="#81C784" />
-                        <TextBlock x:Name="TxtAnimInfo" Grid.Column="1" Text="" Foreground="#AAA" />
+                        <TextBlock x:Name="TxtSimStatus" Text="狀態: 就緒" Foreground="{StaticResource SimBrushGreen300}" />
+                        <TextBlock x:Name="TxtAnimInfo" Grid.Column="1" Text="" Foreground="{StaticResource SimBrushTextDim}" />
                     </Grid>
                 </Border>
             </Grid>
 
             <!-- GridSplitter between Live Preview and Settings Panel -->
-            <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#222232" Cursor="SizeWE" Margin="2,0" />
+            <GridSplitter Grid.Column="1" Width="6" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="{StaticResource SimBrushNeutral800}" Cursor="SizeWE" Margin="2,0" />
 
             <!-- Right: Settings Panel Container -->
-            <Border Grid.Column="2" Background="#1B1B24" CornerRadius="8" Padding="10">
+            <Border Grid.Column="2" Background="{StaticResource SimBrushNeutral850}" CornerRadius="8" Padding="10">
                 <Grid>
                     <!-- PANEL 1: settings.json 跑馬燈專屬設定 -->
                     <Grid x:Name="SettingsJsonGrid">
@@ -1423,9 +1490,9 @@
                         </Grid.RowDefinitions>
 
                         <!-- Header with Reset Button -->
-                        <Border Grid.Row="0" Background="#242432" CornerRadius="4" Padding="10,6" Margin="0,0,0,8">
+                        <Border Grid.Row="0" Background="{StaticResource SimBrushNeutral800}" CornerRadius="4" Padding="10,6" Margin="0,0,0,8">
                             <Grid>
-                                <TextBlock Text="⚙️ settings.json 跑馬燈與提示參數" FontWeight="Bold" Foreground="#FFD54F" />
+                                <TextBlock Text="⚙️ settings.json 跑馬燈與提示參數" FontWeight="Bold" Foreground="{StaticResource BrushWarning}" />
                                 <Button Content="🔄 回復預設值" HorizontalAlignment="Right" Style="{StaticResource ResetButton}" Click="BtnResetSettingsDefaults_Click" ToolTip="將所有跑馬燈與提示參數重設為原廠預設值" />
                             </Grid>
                         </Border>
@@ -1444,8 +1511,8 @@
 
                                 <!-- CARD 1: 跑馬燈設定 (播放 & 啟動共用) -->
                                 <StackPanel x:Name="CardPlayback">
-                                    <Border Background="#232332" CornerRadius="4" Padding="8,4" Margin="0,0,0,8">
-                                        <TextBlock Text="🎵 跑馬燈外觀與文字設定 (啟動/播放共用)" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <Border Background="{StaticResource SimBrushNeutral800}" CornerRadius="4" Padding="8,4" Margin="0,0,0,8">
+                                        <TextBlock Text="🎵 跑馬燈外觀與文字設定 (啟動/播放共用)" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                     </Border>
 
                                     <!-- Font Family -->
@@ -1469,7 +1536,7 @@
                                                     <ColumnDefinition Width="36" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBox x:Name="TxtFillColor" TextChanged="ParamChanged" />
-                                                <Border x:Name="RectFillColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectFillColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                                <Border x:Name="RectFillColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectFillColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                             </Grid>
                                         </StackPanel>
 
@@ -1482,7 +1549,7 @@
                                                     <ColumnDefinition Width="36" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBox x:Name="TxtStrokeColor" TextChanged="ParamChanged" />
-                                                <Border x:Name="RectStrokeColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectStrokeColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                                <Border x:Name="RectStrokeColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectStrokeColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                             </Grid>
                                         </StackPanel>
                                     </Grid>
@@ -1514,7 +1581,7 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="字體大小:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 12 ~ 128 像素" />
-                                                <TextBlock x:Name="LblFontSize" Grid.Column="1" Text="72 像素" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                                <TextBlock x:Name="LblFontSize" Grid.Column="1" Text="72 像素" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldFontSize" Minimum="12" Maximum="128" Value="72" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
                                         </StackPanel>
@@ -1527,7 +1594,7 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="文字描邊:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 0 ~ 32 像素" />
-                                                <TextBlock x:Name="LblStrokeThickness" Grid.Column="1" Text="8 像素" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                                <TextBlock x:Name="LblStrokeThickness" Grid.Column="1" Text="8 像素" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldStrokeThickness" Minimum="0" Maximum="32" Value="8" ValueChanged="ParamChanged" />
                                         </StackPanel>
@@ -1540,7 +1607,7 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="滾動速度:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 100 ~ 1000 像素/秒" />
-                                                <TextBlock x:Name="LblSpeed" Grid.Column="1" Text="200 像素/秒" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                                <TextBlock x:Name="LblSpeed" Grid.Column="1" Text="200 像素/秒" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldSpeed" Minimum="100" Maximum="1000" Value="200" TickFrequency="100" IsSnapToTickEnabled="True" SmallChange="100" LargeChange="100" ValueChanged="ParamChanged" />
                                         </StackPanel>
@@ -1553,7 +1620,7 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="間隔時間:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 0 ~ 5 秒" />
-                                                <TextBlock x:Name="LblHoldTime" Grid.Column="1" Text="1 秒" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                                <TextBlock x:Name="LblHoldTime" Grid.Column="1" Text="1 秒" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldHoldTime" Minimum="0" Maximum="5" Value="1" TickFrequency="0.5" IsSnapToTickEnabled="True" SmallChange="0.5" LargeChange="1" ValueChanged="ParamChanged" />
                                         </StackPanel>
@@ -1566,13 +1633,13 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="重覆次數:" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="範圍: 0 ~ 10 次 (0=關閉)" />
-                                                <TextBlock x:Name="LblPlayCount" Grid.Column="1" Text="2 次" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" Margin="4,0,0,0" />
+                                                <TextBlock x:Name="LblPlayCount" Grid.Column="1" Text="2 次" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" VerticalAlignment="Center" Margin="4,0,0,0" />
                                             </Grid>
                                             <Slider x:Name="SldPlayCount" Minimum="0" Maximum="10" Value="2" TickFrequency="1" IsSnapToTickEnabled="True" SmallChange="1" LargeChange="1" ValueChanged="ParamChanged" />
                                         </StackPanel>
                                     </Grid>
 
-                                    <Separator Background="#353545" Margin="0,4,0,6" />
+                                    <Separator Background="{StaticResource SimBrushNeutral700}" Margin="0,4,0,6" />
 
                                     <TextBlock Text="範本 1 (有待播歌曲 - MarqueeTextString1):" FontWeight="SemiBold" Margin="0,2,0,2" />
                                     <TextBox x:Name="TxtTemplate1" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" GotFocus="TxtTemplate_GotFocus" />
@@ -1586,17 +1653,17 @@
                                     <TextBlock Text="啟動跑馬燈範本 (進入程式時 - MarqueeTextStartup):" FontWeight="SemiBold" Margin="0,4,0,2" />
                                     <TextBox x:Name="TxtTemplateStartup" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" GotFocus="TxtTemplate_GotFocus" />
 
-                                    <TextBlock Text="參數: {0}=歌名, {1}=歌手, {2}=下首歌名, {3}=下首歌手, {4}=區網網址, {5}=外網網址, {6}=本首點播者, {7}=下首點播者" Foreground="#FFD54F" FontSize="13.5" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                    <TextBlock Text="參數: {0}=歌名, {1}=歌手, {2}=下首歌名, {3}=下首歌手, {4}=區網網址, {5}=外網網址, {6}=本首點播者, {7}=下首點播者" Foreground="{StaticResource BrushWarning}" FontSize="13.5" FontWeight="SemiBold" Margin="0,6,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
 
                                 <!-- CARD 2: 點播成功提示 -->
                                 <StackPanel x:Name="CardSongAdded" Visibility="Collapsed">
-                                    <Border Background="#232332" CornerRadius="4" Padding="10,6" Margin="0,0,0,8">
-                                        <TextBlock Text="✉️ 點播成功提示設定" FontWeight="Bold" FontSize="15" Foreground="#82B1FF" />
+                                    <Border Background="{StaticResource SimBrushNeutral800}" CornerRadius="4" Padding="10,6" Margin="0,0,0,8">
+                                        <TextBlock Text="✉️ 點播成功提示設定" FontWeight="Bold" FontSize="15" Foreground="{StaticResource SimBrushBlue200}" />
                                     </Border>
                                     <TextBlock Text="點播成功文字範本 (MarqueeSongAddedString):" FontWeight="SemiBold" Margin="0,4,0,2" />
                                     <TextBox x:Name="TxtSongAddedTemplate" TextWrapping="Wrap" Height="42" Padding="6,0" TextAlignment="Left" VerticalContentAlignment="Center" TextChanged="ParamChanged" />
-                                    <TextBlock Text="參數: {0}=歌名, {1}=歌手, {4}=區網網址, {5}=外網網址, {6}=本首點播者" Foreground="#FFD54F" FontSize="13.5" FontWeight="SemiBold" Margin="0,4,0,8" TextWrapping="Wrap" />
+                                    <TextBlock Text="參數: {0}=歌名, {1}=歌手, {4}=區網網址, {5}=外網網址, {6}=本首點播者" Foreground="{StaticResource BrushWarning}" FontSize="13.5" FontWeight="SemiBold" Margin="0,4,0,8" TextWrapping="Wrap" />
 
                                     <TextBlock Text="點播成功字型 (FontFamily):" FontWeight="SemiBold" Margin="0,4,0,2" />
                                     <ComboBox x:Name="CboSongAddedFontFamily" DisplayMemberPath="DisplayName" SelectionChanged="ParamChanged" />
@@ -1607,7 +1674,7 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="字體大小 (12 ~ 128 像素):" FontWeight="SemiBold" />
-                                        <TextBlock x:Name="LblSongAddedFontSize" Grid.Column="1" Text="48 像素" FontWeight="Bold" Foreground="#82B1FF" />
+                                        <TextBlock x:Name="LblSongAddedFontSize" Grid.Column="1" Text="48 像素" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                     </Grid>
                                     <Slider x:Name="SldSongAddedFontSize" Minimum="12" Maximum="128" Value="48" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
@@ -1618,7 +1685,7 @@
                                             <ColumnDefinition Width="40" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox x:Name="TxtSongAddedFillColor" TextChanged="ParamChanged" />
-                                        <Border x:Name="RectSongAddedFillColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectSongAddedFillColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                        <Border x:Name="RectSongAddedFillColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectSongAddedFillColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                     </Grid>
 
                                     <Grid Margin="0,6,0,2">
@@ -1627,15 +1694,15 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="顯示時間 (0 ~ 60 秒, 0=關閉):" FontWeight="SemiBold" />
-                                        <TextBlock x:Name="LblSongAddedDuration" Grid.Column="1" Text="3 秒" FontWeight="Bold" Foreground="#82B1FF" />
+                                        <TextBlock x:Name="LblSongAddedDuration" Grid.Column="1" Text="3 秒" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                     </Grid>
                                     <Slider x:Name="SldSongAddedDuration" Minimum="0" Maximum="60" Value="3" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
                                 </StackPanel>
 
                                 <!-- CARD 4: 系統廣播 -->
                                 <StackPanel x:Name="CardBroadcast" Visibility="Collapsed">
-                                    <Border Background="#232332" CornerRadius="4" Padding="8,4" Margin="0,0,0,8">
-                                        <TextBlock Text="📢 系統廣播設定 (音量/音調等)" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <Border Background="{StaticResource SimBrushNeutral800}" CornerRadius="4" Padding="8,4" Margin="0,0,0,8">
+                                        <TextBlock Text="📢 系統廣播設定 (音量/音調等)" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                     </Border>
                                     <TextBlock Text="系統廣播字型 (FontFamily):" FontWeight="SemiBold" Margin="0,4,0,2" />
                                     <ComboBox x:Name="CboBroadcastFontFamily" DisplayMemberPath="DisplayName" SelectionChanged="ParamChanged" />
@@ -1646,7 +1713,7 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="廣播字體大小 (12 ~ 128 像素):" FontWeight="SemiBold" />
-                                        <TextBlock x:Name="LblBroadcastFontSize" Grid.Column="1" Text="48 像素" FontWeight="Bold" Foreground="#82B1FF" />
+                                        <TextBlock x:Name="LblBroadcastFontSize" Grid.Column="1" Text="48 像素" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                     </Grid>
                                     <Slider x:Name="SldBroadcastFontSize" Minimum="12" Maximum="128" Value="48" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
@@ -1657,7 +1724,7 @@
                                             <ColumnDefinition Width="40" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox x:Name="TxtBroadcastFillColor" TextChanged="ParamChanged" />
-                                        <Border x:Name="RectBroadcastFillColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectBroadcastFillColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                        <Border x:Name="RectBroadcastFillColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectBroadcastFillColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                     </Grid>
 
                                     <Grid Margin="0,6,0,2">
@@ -1666,15 +1733,15 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="廣播顯示時間 (0 ~ 60 秒, 0=關閉):" FontWeight="SemiBold" />
-                                        <TextBlock x:Name="LblBroadcastDuration" Grid.Column="1" Text="3 秒" FontWeight="Bold" Foreground="#82B1FF" />
+                                        <TextBlock x:Name="LblBroadcastDuration" Grid.Column="1" Text="3 秒" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                     </Grid>
                                     <Slider x:Name="SldBroadcastDuration" Minimum="0" Maximum="60" Value="3" ValueChanged="ParamChanged" />
                                 </StackPanel>
 
                                 <!-- CARD 5: 模擬資料 -->
                                 <StackPanel x:Name="CardMockData" Visibility="Collapsed">
-                                    <Border Background="#232332" CornerRadius="4" Padding="8,4" Margin="0,0,0,8">
-                                        <TextBlock Text="🛠️ 模擬測試資料" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <Border Background="{StaticResource SimBrushNeutral800}" CornerRadius="4" Padding="8,4" Margin="0,0,0,8">
+                                        <TextBlock Text="🛠️ 模擬測試資料" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                     </Border>
                                     <TextBlock Text="當前歌名 {0}:" FontWeight="SemiBold" Margin="0,4,0,2" />
                                     <TextBox x:Name="TxtMockSong" Text="晴天" TextChanged="ParamChanged" />
@@ -1713,9 +1780,9 @@
                         </Grid.RowDefinitions>
 
                         <!-- Header with Reset Button -->
-                        <Border Grid.Row="0" Background="#242432" CornerRadius="4" Padding="10,6" Margin="0,0,0,8">
+                        <Border Grid.Row="0" Background="{StaticResource SimBrushNeutral800}" CornerRadius="4" Padding="10,6" Margin="0,0,0,8">
                             <Grid>
-                                <TextBlock Text="🎨 themesettings.json 點歌機介面字級與主題色彩" FontWeight="Bold" Foreground="#82B1FF" />
+                                <TextBlock Text="🎨 themesettings.json 點歌機介面字級與主題色彩" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                 <Button Content="🔄 回復預設值" HorizontalAlignment="Right" Style="{StaticResource ResetButton}" Click="BtnResetThemeSettingsDefaults_Click" ToolTip="將點歌機介面所有字體與色彩重設為原廠預設值" />
                             </Grid>
                         </Border>
@@ -1724,9 +1791,9 @@
                             <StackPanel Margin="0,0,8,0">
 
                                 <!-- TOP OPTION: 歌曲清單列外觀風格 (Song List Row Style) -->
-                                <Border Background="#1A2035" BorderBrush="#3D5AFE" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                                <Border Background="{StaticResource SimBrushIndigoBg}" BorderBrush="{StaticResource SimBrushIndigoA400}" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
                                     <StackPanel>
-                                        <TextBlock Text="📋 歌曲列表外觀風格 (Song List Row Style)" FontWeight="Bold" Foreground="#82B1FF" Margin="0,0,0,6" />
+                                        <TextBlock Text="📋 歌曲列表外觀風格 (Song List Row Style)" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" Margin="0,0,0,6" />
                                         <ComboBox x:Name="CboSongListRowStyle" Margin="0,0,0,4" SelectionChanged="CboSongListRowStyle_SelectionChanged"
                                                   Height="34" FontSize="13.5">
                                             <ComboBoxItem Content="🌟 風格 1：靜態微光光暈風格 (推薦 / 預設)" Tag="1" IsSelected="True" />
@@ -1738,28 +1805,28 @@
                                             <ComboBoxItem Content="🌈 風格 7：雙色漸層框 (主色漸變第二色)" Tag="7" />
                                             <ComboBoxItem Content="🔲 風格 8：科技切角框 (四角括號)" Tag="8" />
                                         </ComboBox>
-                                        <TextBlock Text="💡 選擇後即時套用至左側模擬畫面，儲存後直接生效於主程式。" Foreground="#9FA8DA" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
+                                        <TextBlock Text="💡 選擇後即時套用至左側模擬畫面，儲存後直接生效於主程式。" Foreground="{StaticResource SimBrushIndigo200}" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
 
                                 <!-- 左側主選單順序 (NavMenuOrder) -->
-                                <Border Background="#1A2035" BorderBrush="#3D5AFE" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                                <Border Background="{StaticResource SimBrushIndigoBg}" BorderBrush="{StaticResource SimBrushIndigoA400}" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
                                     <StackPanel>
                                         <Grid Margin="0,0,0,6">
-                                            <TextBlock Text="☰ 左側主選單順序 (Nav Menu Order)" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" />
+                                            <TextBlock Text="☰ 左側主選單順序 (Nav Menu Order)" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" VerticalAlignment="Center" />
                                             <Button Content="↺ 恢復預設順序" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Right" Click="BtnResetNavMenuOrder_Click" />
                                         </Grid>
-                                        <TextBlock x:Name="TxtNavMenuOrder" Foreground="#E8EAF6" FontSize="13" TextWrapping="Wrap" Margin="2,0,0,4" />
-                                        <TextBlock Text="💡 在左側模擬畫面按住主選單按鈕上下拖曳即可調整順序 (「設定」固定在最下方)，儲存後重新啟動主程式生效。" Foreground="#9FA8DA" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="TxtNavMenuOrder" Foreground="{StaticResource SimBrushIndigo50}" FontSize="13" TextWrapping="Wrap" Margin="2,0,0,4" />
+                                        <TextBlock Text="💡 在左側模擬畫面按住主選單按鈕上下拖曳即可調整順序 (「設定」固定在最下方)，儲存後重新啟動主程式生效。" Foreground="{StaticResource SimBrushIndigo200}" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
 
                                 <!-- THEME PRESETS SELECTOR -->
-                                <Border Background="#1C2438" BorderBrush="#3D5AFE" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                                <Border Background="{StaticResource SimBrushIndigoBg}" BorderBrush="{StaticResource SimBrushIndigoA400}" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
                                     <StackPanel>
                                         <Grid Margin="0,0,0,6">
-                                            <TextBlock Text="🎭 範本主題快速套用 (Sample Presets)" FontWeight="Bold" Foreground="#82B1FF" VerticalAlignment="Center" />
-                                            <TextBlock Text="參照 SampleSettings" FontSize="11" Foreground="#90CAF9" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock Text="🎭 範本主題快速套用 (Sample Presets)" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" VerticalAlignment="Center" />
+                                            <TextBlock Text="參照 SampleSettings" FontSize="11" Foreground="{StaticResource SimBrushBlue200}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                                         </Grid>
                                         <ComboBox x:Name="CboThemePresets" SelectionChanged="CboThemePresets_SelectionChanged">
                                             <ComboBoxItem Content="-- 自訂或目前配置 (Custom) --" Tag="" IsSelected="True" />
@@ -1775,13 +1842,13 @@
                                             <ComboBoxItem Content="🥂 香檳金 (Champagne Gold)" Tag="theme_champagne_gold.json" />
                                             <ComboBoxItem Content="🌟 原廠預設金琥珀 (Default Amber)" Tag="theme_default_amber.json" />
                                         </ComboBox>
-                                        <TextBlock Text="💡 選擇主題將即時更新下方各項參數並在右側 1:1 模擬畫面精確展現" FontSize="11" Foreground="#9E9E9E" Margin="2,4,0,0" />
+                                        <TextBlock Text="💡 選擇主題將即時更新下方各項參數並在右側 1:1 模擬畫面精確展現" FontSize="11" Foreground="{StaticResource SimBrushTextDim}" Margin="2,4,0,0" />
                                     </StackPanel>
                                 </Border>
 
                                 <!-- SECTION 1: UI 佈景與主題色彩 -->
-                                <Border Background="#232332" CornerRadius="4" Padding="8,4" Margin="0,0,0,6">
-                                    <TextBlock Text="🎨 UI 佈景與主題筆刷 (Theme &amp; UI Brushes)" FontWeight="Bold" Foreground="#82B1FF" />
+                                <Border Background="{StaticResource SimBrushNeutral800}" CornerRadius="4" Padding="8,4" Margin="0,0,0,6">
+                                    <TextBlock Text="🎨 UI 佈景與主題筆刷 (Theme &amp; UI Brushes)" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                 </Border>
 
                                 <!-- Primary Color -->
@@ -1792,14 +1859,14 @@
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TxtPrimaryColor" Text="#FFB300" TextChanged="TxtPrimaryColor_TextChanged" />
-                                    <Border x:Name="RectPrimaryColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectPrimaryColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                    <Border x:Name="RectPrimaryColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectPrimaryColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
 
                                 <!-- Harmonize Tools Box -->
-                                <Border Background="#1C2235" BorderBrush="#3949AB" BorderThickness="1" CornerRadius="4" Padding="8,6" Margin="0,0,0,8">
+                                <Border Background="{StaticResource SimBrushIndigoBg}" BorderBrush="{StaticResource SimBrushIndigo700}" BorderThickness="1" CornerRadius="4" Padding="8,6" Margin="0,0,0,8">
                                     <StackPanel>
-                                        <CheckBox x:Name="ChkAutoHarmonize" Content="變更主色時自動調配全套衍生色彩" IsChecked="True" Foreground="#90CAF9" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="開啟時，變更 PrimaryColor 會自動依色彩學調配深色、淺色標籤與標題列底色" />
-                                        <Button x:Name="BtnHarmonize" Content="⚡ 依主要色彩自動調配全套配色" Click="BtnHarmonize_Click" Background="#303F9F" Foreground="#FFFFFF" FontWeight="Bold" FontSize="12.5" Padding="8,4" Margin="0,6,0,0" Height="28" Cursor="Hand" ToolTip="依據目前 PrimaryColor 重新調配下方所有主題關聯色階" />
+                                        <CheckBox x:Name="ChkAutoHarmonize" Content="變更主色時自動調配全套衍生色彩" IsChecked="True" Foreground="{StaticResource SimBrushBlue200}" FontWeight="SemiBold" VerticalAlignment="Center" ToolTip="開啟時，變更 PrimaryColor 會自動依色彩學調配深色、淺色標籤與標題列底色" />
+                                        <Button x:Name="BtnHarmonize" Content="⚡ 依主要色彩自動調配全套配色" Click="BtnHarmonize_Click" Background="{StaticResource SimBrushIndigo700}" Foreground="{StaticResource BrushTextMain}" FontWeight="Bold" FontSize="12.5" Padding="8,4" Margin="0,6,0,0" Height="28" Cursor="Hand" ToolTip="依據目前 PrimaryColor 重新調配下方所有主題關聯色階" />
                                     </StackPanel>
                                 </Border>
 
@@ -1811,7 +1878,7 @@
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TxtPrimaryLightColor" Text="#FFECB3" TextChanged="ParamChanged" />
-                                    <Border x:Name="RectPrimaryLightColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectPrimaryLightColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                    <Border x:Name="RectPrimaryLightColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectPrimaryLightColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
                                 
                                 <!-- Accent / Glow Color -->
@@ -1822,9 +1889,9 @@
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TxtAccentColor" Text="" TextChanged="ParamChanged" ToolTip="留空時自動依 PrimaryColor 計算" />
-                                    <Border x:Name="RectAccentColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectAccentColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                    <Border x:Name="RectAccentColor" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectAccentColor_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
-                                <CheckBox x:Name="ChkAutoAccentColor" Content="自動根據主色調生成發光色 (Auto Derive)" IsChecked="True" Foreground="#80D8FF" FontWeight="Normal" Margin="0,0,0,6" Click="ChkAutoAccentColor_Click" ToolTip="打勾時發光與選中色彩自動跟隨 PrimaryColor；取消打勾可自由指定顏色" />
+                                <CheckBox x:Name="ChkAutoAccentColor" Content="自動根據主色調生成發光色 (Auto Derive)" IsChecked="True" Foreground="{StaticResource SimBrushBlue200}" FontWeight="Normal" Margin="0,0,0,6" Click="ChkAutoAccentColor_Click" ToolTip="打勾時發光與選中色彩自動跟隨 PrimaryColor；取消打勾可自由指定顏色" />
                                 
                                 <!-- DataGrid Column Header Foreground -->
                                 <TextBlock Text="表格標題文字顏色 (DataGridColumnHeaderForegroundColor):" FontWeight="SemiBold" Margin="0,4,0,2" />
@@ -1834,7 +1901,7 @@
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TxtDataGridHeaderFg" Text="#FFFFFFFF" TextChanged="ParamChanged" />
-                                    <Border x:Name="RectDataGridHeaderFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectDataGridHeaderFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                    <Border x:Name="RectDataGridHeaderFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectDataGridHeaderFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
 
                                 <!-- DataGrid Header Bg -->
@@ -1845,14 +1912,14 @@
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TxtDataGridHeaderBg" Text="#FF4A4A4A" TextChanged="ParamChanged" />
-                                    <Border x:Name="RectDataGridHeaderBg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectDataGridHeaderBg_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                    <Border x:Name="RectDataGridHeaderBg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectDataGridHeaderBg_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
 
-                                <Separator Background="#353545" Margin="0,10" />
+                                <Separator Background="{StaticResource SimBrushNeutral700}" Margin="0,10" />
 
                                 <!-- SECTION 2: 字型與字級 -->
-                                <Border Background="#232332" CornerRadius="4" Padding="8,4" Margin="0,0,0,6">
-                                    <TextBlock Text="🔤 點歌機全域字型與字級" FontWeight="Bold" Foreground="#82B1FF" />
+                                <Border Background="{StaticResource SimBrushNeutral800}" CornerRadius="4" Padding="8,4" Margin="0,0,0,6">
+                                    <TextBlock Text="🔤 點歌機全域字型與字級" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                 </Border>
 
                                 <TextBlock Text="點歌機全域字型 (FontFamily):" FontWeight="SemiBold" Margin="0,2,0,2" />
@@ -1864,7 +1931,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="歌曲清單字體大小 (SongListFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblSongListFontSize" Grid.Column="1" Text="38 像素" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblSongListFontSize" Grid.Column="1" Text="38 像素" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                 </Grid>
                                 <Slider x:Name="SldSongListFontSize" Minimum="16" Maximum="72" Value="38" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
@@ -1874,7 +1941,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="待播清單字體大小 (WaitingListFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblWaitingListFontSize" Grid.Column="1" Text="24 像素" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblWaitingListFontSize" Grid.Column="1" Text="24 像素" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                 </Grid>
                                 <Slider x:Name="SldWaitingListFontSize" Minimum="12" Maximum="60" Value="24" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
@@ -1884,7 +1951,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="功能按鈕字體大小 (FuncBtnFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblFuncBtnFontSize" Grid.Column="1" Text="32 像素" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblFuncBtnFontSize" Grid.Column="1" Text="32 像素" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                 </Grid>
                                 <Slider x:Name="SldFuncBtnFontSize" Minimum="14" Maximum="64" Value="32" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
@@ -1894,7 +1961,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="底部按鈕字體大小 (BottomButtonFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblBottomButtonFontSize" Grid.Column="1" Text="36 像素" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblBottomButtonFontSize" Grid.Column="1" Text="36 像素" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                 </Grid>
                                 <Slider x:Name="SldBottomButtonFontSize" Minimum="14" Maximum="64" Value="36" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
@@ -1904,15 +1971,15 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="網路主機資訊字體大小 (WebHostInfoFontSize):" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="LblWebHostInfoFontSize" Grid.Column="1" Text="32 像素" FontWeight="Bold" Foreground="#82B1FF" />
+                                    <TextBlock x:Name="LblWebHostInfoFontSize" Grid.Column="1" Text="32 像素" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                 </Grid>
                                 <Slider x:Name="SldWebHostInfoFontSize" Minimum="12" Maximum="60" Value="32" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="ParamChanged" />
 
-                                <Separator Background="#353545" Margin="0,10" />
+                                <Separator Background="{StaticResource SimBrushNeutral700}" Margin="0,10" />
 
                                 <!-- SECTION 3: 文字前景色 -->
-                                <Border Background="#232332" CornerRadius="4" Padding="8,4" Margin="0,0,0,6">
-                                    <TextBlock Text="💬 文字前景色 (Text Colors)" FontWeight="Bold" Foreground="#82B1FF" />
+                                <Border Background="{StaticResource SimBrushNeutral800}" CornerRadius="4" Padding="8,4" Margin="0,0,0,6">
+                                    <TextBlock Text="💬 文字前景色 (Text Colors)" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" />
                                 </Border>
 
                                 <!-- Announcement Foreground -->
@@ -1923,7 +1990,7 @@
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TxtAnnouncementFg" Text="#FFFFFF" TextChanged="ParamChanged" />
-                                    <Border x:Name="RectAnnouncementFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectAnnouncementFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                    <Border x:Name="RectAnnouncementFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectAnnouncementFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
 
                                 <!-- Static Text Foreground -->
@@ -1934,7 +2001,7 @@
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TxtStaticTextFg" Text="#FFFFFF" TextChanged="ParamChanged" />
-                                    <Border x:Name="RectStaticTextFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectStaticTextFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                    <Border x:Name="RectStaticTextFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectStaticTextFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
 
                                 <!-- Web Host Info Foreground -->
@@ -1945,7 +2012,7 @@
                                         <ColumnDefinition Width="40" />
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="TxtWebHostInfoFg" Text="#FFFFFF" TextChanged="ParamChanged" />
-                                    <Border x:Name="RectWebHostInfoFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="#777" BorderThickness="1.5" Cursor="Hand" MouseDown="RectWebHostInfoFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
+                                    <Border x:Name="RectWebHostInfoFg" Grid.Column="1" Margin="6,0,0,0" CornerRadius="4" BorderBrush="{StaticResource SimBrushNeutral400}" BorderThickness="1.5" Cursor="Hand" MouseDown="RectWebHostInfoFg_MouseDown" ToolTip="點擊開啟調色盤選色" />
                                 </Grid>
 
                             </StackPanel>
@@ -1956,8 +2023,8 @@
         </Grid>
 
         <!-- Status Bar -->
-        <StatusBar Grid.Row="2" Background="#0C0C11" BorderBrush="#1C1C24" BorderThickness="0,1,0,0" Padding="10,5">
-            <TextBlock Text="💡 提示: 點擊上方跑馬燈按鈕會自動切換右側參數分頁；點擊色彩方塊可直接叫出調色盤選色。" Foreground="#9FA8DA" FontSize="13" />
+        <StatusBar Grid.Row="2" Background="{StaticResource SimBrushNeutral900}" BorderBrush="{StaticResource SimBrushNeutral850}" BorderThickness="0,1,0,0" Padding="10,5">
+            <TextBlock Text="💡 提示: 點擊上方跑馬燈按鈕會自動切換右側參數分頁；點擊色彩方塊可直接叫出調色盤選色。" Foreground="{StaticResource SimBrushIndigo200}" FontSize="13" />
         </StatusBar>
     </Grid>
 </Window>

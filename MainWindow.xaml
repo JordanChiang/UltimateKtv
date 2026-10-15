@@ -29,7 +29,7 @@
         <sys:Double x:Key="FuncBtnFontSize">32</sys:Double>
         <sys:Double x:Key="BottomButtonFontSize">36</sys:Double>
         <sys:Double x:Key="WaitingListFontSize">24</sys:Double>
-        <sys:Double x:Key="SongListFontSize">38</sys:Double>
+        <sys:Double x:Key="SongListFontSize">36</sys:Double>
         <sys:Double x:Key="VisualSingerNameFontSize">20</sys:Double>
 
         <!-- Other Variables -->
@@ -685,7 +685,7 @@
 
         <!-- Style for the buttons inside the singer grid -->
         <Style x:Key="SingerGridButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
-            <Setter Property="FontSize" Value="48" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeDisplay}" />
             <Setter Property="Margin" Value="2" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="VerticalAlignment" Value="Stretch" />
@@ -721,75 +721,6 @@
             <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
         </Style>
 
-        <!-- Style for the function toggle buttons -->
-        <Style x:Key="FunctionToggleButtonStyle" TargetType="ToggleButton">
-            <Setter Property="materialDesign:RippleAssist.IsDisabled" Value="True" />
-            <Setter Property="materialDesign:TransitionAssist.DisableTransitions" Value="True" />
-            <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
-            <Setter Property="Height" Value="{StaticResource FunBtnHeight}" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="{DynamicResource BorderThicknessButton}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="0,0,2,0" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="border"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="{StaticResource RadiusXSmall}"
-                                ClipToBounds="True">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <!-- Indicator Backgrounds: Use Primary Brush for contrast with White Text -->
-                                <Border x:Name="LeftHighlight" Grid.Column="0" Background="{DynamicResource PrimaryBrush}"/>
-                                <Border x:Name="RightHighlight" Grid.Column="1" Background="{DynamicResource PrimaryBrush}"/>
-
-                                <!-- Text Labels -->
-                                <TextBlock x:Name="LeftText" Grid.Column="0" Text="{DynamicResource Str.Search.Song}" 
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="RightText" Grid.Column="1" Text="{DynamicResource Str.Search.Singer}" 
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <!-- UNCHECKED (Default): Song Mode -->
-                            <!-- Active Left: White on Dark | Inactive Right: Primary Color on Transparent -->
-                            <Trigger Property="IsChecked" Value="False">
-                                <Setter TargetName="LeftHighlight" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="RightHighlight" Property="Visibility" Value="Hidden"/>
-                                <Setter TargetName="LeftText" Property="Foreground" Value="{DynamicResource BrushOnPrimary}"/>
-                                <Setter TargetName="RightText" Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
-                            </Trigger>
-
-                            <!-- CHECKED: Singer Mode -->
-                            <!-- Active Right: White on Dark | Inactive Left: Primary Color on Transparent -->
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="LeftHighlight" Property="Visibility" Value="Hidden"/>
-                                <Setter TargetName="RightHighlight" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="LeftText" Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
-                                <Setter TargetName="RightText" Property="Foreground" Value="{DynamicResource BrushOnPrimary}"/>
-                            </Trigger>
-
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- Style for 3-segment RadioButton (Youtube, Song, Singer) - Cyber Aesthetic -->
         <Style x:Key="SearchSegmentRadioButtonStyle" TargetType="RadioButton">
             <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
@@ -815,16 +746,16 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="tabBorder" Property="Background" Value="{DynamicResource BrushAccentCyanDim}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource BrushAccentCyan}"/>
+                                <Setter TargetName="tabBorder" Property="Background" Value="{DynamicResource BrushAccentDim}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource BrushAccent}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="tabBorder" Property="Background" Value="{DynamicResource BrushCyberActiveGradient}"/>
-                                <Setter TargetName="tabBorder" Property="BorderBrush" Value="{DynamicResource BrushAccentCyan}"/>
+                                <Setter TargetName="tabBorder" Property="BorderBrush" Value="{DynamicResource BrushAccent}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource BrushOnAccentActive}"/>
                                 <Setter TargetName="tabBorder" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="{StaticResource GlowBlurActive}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityActive}"/>
+                                        <DropShadowEffect Color="{DynamicResource ColorAccent}" BlurRadius="{StaticResource GlowBlurActive}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityActive}"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -836,7 +767,7 @@
 
         <!-- Style for the 40 small single-word buttons, based on FunctionButtonStyle -->
         <Style x:Key="QuickWordButtonStyle" TargetType="Button" BasedOn="{StaticResource FunctionButtonStyle}">
-            <Setter Property="FontSize" Value="26" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeL}" />
             <Setter Property="Height" Value="50" />
             <Setter Property="Width" Value="Auto" /> <!-- Let UniformGrid handle width -->
             <Setter Property="Margin" Value="2" />
@@ -865,35 +796,6 @@
             <!-- Dynamic colors - outlined buttons use BorderBrush and Foreground -->
             <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
-        </Style>
-
-        <!-- Style for the singer filter toggle buttons (Simple style to avoid MD binding errors) -->
-        <Style x:Key="SecondFilterToggleButtonStyle" TargetType="ToggleButton">
-            <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
-            <Setter Property="Height" Value="50" />
-            <Setter Property="Margin" Value="0,0,4,0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
-            <Setter Property="BorderThickness" Value="{DynamicResource BorderThicknessButton}"/>
-            <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusXSmall}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource BrushOnPrimary}"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <!-- Style for the small player control buttons (暫停, 伴唱) -->
@@ -993,7 +895,7 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-            <Setter Property="Foreground" Value="LightSkyBlue"/>
+            <Setter Property="Foreground" Value="{StaticResource BrushSongForeign}"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Language}" Value="國語">
                     <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
@@ -1058,7 +960,7 @@
         <!-- 列內操作按鈕 (插播 / 最愛)，觸控尺寸 -->
         <Style x:Key="SongRowActionButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
             <Setter Property="materialDesign:RippleAssist.IsDisabled" Value="True" />
-            <Setter Property="FontSize" Value="28" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeL}" />
             <Setter Property="Height" Value="50" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -1090,7 +992,7 @@
 
         <!-- Style for Visual Singer Buttons -->
         <Style x:Key="VisualSingerButtonStyle" TargetType="Button">
-            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontSize" Value="{StaticResource FontSizeS}"/>
             <Setter Property="FontSize" Value="{DynamicResource VisualSingerNameFontSize}"/>
             <Setter Property="Background" Value="{StaticResource BrushSurfaceRaised}"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -1343,7 +1245,7 @@
                                                                         </Border.Style>
                                                                         <Border.ToolTip>
                                                                             <ToolTip>
-                                                                                <TextBlock FontSize="20" FontWeight="Normal">
+                                                                                <TextBlock FontSize="{StaticResource FontSizeS}" FontWeight="Normal">
                                                                                     <Run Text="{Binding OrderedBy, Mode=OneWay, Converter={StaticResource OrderedByDisplayConverter}}" FontWeight="Bold"/>
                                                                                 </TextBlock>
                                                                             </ToolTip>
@@ -1419,8 +1321,8 @@
                                         <TextBlock Name="WaitListPageInfo" Text="{DynamicResource Str.Wait.PageInfoDefault}" FontSize="{DynamicResource WaitingListFontSize}" Foreground="{DynamicResource MaterialDesignBody}" />
                                     </Viewbox>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <Button Name="WaitListPageUp" Content="{DynamicResource Str.Common.PageUp}" Style="{StaticResource FunctionButtonStyle}" Margin="0" Width="100" FontSize="24"/>
-                                        <Button Name="WaitListPageDown" Content="{DynamicResource Str.Common.PageDown}" Style="{StaticResource FunctionButtonStyle}" Margin="12,0,0,0" Width="100" FontSize="24"/>
+                                        <Button Name="WaitListPageUp" Content="{DynamicResource Str.Common.PageUp}" Style="{StaticResource FunctionButtonStyle}" Margin="0" Width="100" FontSize="{StaticResource FontSizeM}"/>
+                                        <Button Name="WaitListPageDown" Content="{DynamicResource Str.Common.PageDown}" Style="{StaticResource FunctionButtonStyle}" Margin="12,0,0,0" Width="100" FontSize="{StaticResource FontSizeM}"/>
                                     </StackPanel>
                                 </Grid>
 
@@ -1474,7 +1376,7 @@
                                             <TextBlock x:Name="NowPlayingSongText"
                                                        Grid.Column="0"
                                                        Text="{DynamicResource Str.NowPlaying.None}"
-                                                       FontSize="30"
+                                                       FontSize="{StaticResource FontSizeL}"
                                                        FontWeight="Normal"
                                                        TextTrimming="CharacterEllipsis"
                                                        Foreground="{DynamicResource BrushTextMuted}"
@@ -1482,14 +1384,14 @@
                                             <TextBlock x:Name="NowPlayingSeparator"
                                                        Grid.Column="1"
                                                        Text=" / "
-                                                       FontSize="30"
+                                                       FontSize="{StaticResource FontSizeL}"
                                                        Foreground="{DynamicResource BrushTextMuted}"
                                                        VerticalAlignment="Center"
                                                        Visibility="Collapsed"/>
                                             <TextBlock x:Name="NowPlayingSingerText"
                                                        Grid.Column="2"
                                                        Text=""
-                                                       FontSize="30"
+                                                       FontSize="{StaticResource FontSizeL}"
                                                        FontWeight="SemiBold"
                                                        Foreground="{DynamicResource PrimaryLightBrush}"
                                                        VerticalAlignment="Center"/>
@@ -1498,7 +1400,7 @@
                                 </Border>
 
                                 <!-- Media Player Panel -->
-                                <Border Grid.Row="1" Margin="0,4,0,0" BorderThickness="0" Background="Black">
+                                <Border Grid.Row="1" Margin="0,4,0,0" BorderThickness="0" Background="{StaticResource BrushSurfaceSunken}">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="259" />    <!-- Video player area: exact 16:9 ratio (460x259) -->
@@ -1526,7 +1428,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 
                                                 <TextBlock Grid.Column="0" Name="CurrentTimeText" Text="00:00" 
-                                                           Foreground="{StaticResource BrushTextMain}" FontSize="24" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                           Foreground="{StaticResource BrushTextMain}" FontSize="{StaticResource FontSizeM}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                 
                                                 <Slider Grid.Column="1" Name="VideoProgressSlider" 
                                                         Minimum="0" Maximum="100" Value="0"
@@ -1535,7 +1437,7 @@
                                                         Thumb.DragCompleted="VideoProgressSlider_DragCompleted"/>
                                                 
                                                 <TextBlock Grid.Column="2" Name="TotalTimeText" Text="00:00" 
-                                                           Foreground="{StaticResource BrushTextMain}" FontSize="24" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                                           Foreground="{StaticResource BrushTextMain}" FontSize="{StaticResource FontSizeM}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                             </Grid>
                                             
                                             <!-- Volume Control Slider -->
@@ -1563,7 +1465,7 @@
                                                         Margin="0,0,12,0"/>
                                                 
                                                 <TextBlock Grid.Column="2" Name="VolumeText" Text="100" 
-                                                           Foreground="{StaticResource BrushTextMain}" FontSize="24" VerticalAlignment="Center" 
+                                                           Foreground="{StaticResource BrushTextMain}" FontSize="{StaticResource FontSizeM}" VerticalAlignment="Center" 
                                                            TextAlignment="Left" Width="50" Margin="0,0,12,0"/>
                                                 
                                                 <ToggleButton Grid.Column="3" Name="VolumeLockToggle"
@@ -1795,7 +1697,7 @@
                                                         <Setter Property="VerticalAlignment" Value="Center"/>
                                                     </Style>
                                                     <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                                        <Setter Property="FontSize" Value="26"/>
+                                                        <Setter Property="FontSize" Value="{StaticResource FontSizeM}"/>
                                                         <Setter Property="Margin" Value="0,0,20,0"/>
                                                         <Setter Property="VerticalAlignment" Value="Center"/>
                                                     </Style>
@@ -1811,9 +1713,9 @@
                                             </StackPanel>
                                                        
                                             <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="{StaticResource BrushWarning}"
-                                                       FontSize="20" FontWeight="Bold" Margin="0,0,12,0" Visibility="Collapsed"/>
+                                                       FontSize="{StaticResource FontSizeS}" FontWeight="Bold" Margin="0,0,12,0" Visibility="Collapsed"/>
                                             <TextBlock x:Name="YoutubeDownloadText" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource BrushWarning}"
-                                                       FontSize="20" FontWeight="Bold"
+                                                       FontSize="{StaticResource FontSizeS}" FontWeight="Bold"
                                                        Visibility="Collapsed" Text="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:0}%}"/>
                                         </StackPanel>
                                     </Grid>
@@ -1874,7 +1776,7 @@
                                                                  <Condition Binding="{Binding ElementName=SingerRadio, Path=IsChecked}" Value="False"/>
                                                                  <Condition Binding="{Binding Language, Converter={StaticResource NotEqualConverter}, ConverterParameter=國語}" Value="True"/>
                                                             </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="LightSkyBlue"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource BrushSongForeign}"/>
                                                         </MultiDataTrigger>
                                                         <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
                                                             <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
@@ -1954,7 +1856,7 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <!-- Margin：上下 6 (排距 12)、左右 14 (按鈕較窄)；8 排 x 74 = 592，鍵盤 11 排 x 74 = 814 -->
-                                            <Button Style="{DynamicResource SingerGridButtonStyle}" FontSize="36" MinHeight="0" Height="62" Margin="16,8"
+                                            <Button Style="{DynamicResource SingerGridButtonStyle}" FontSize="{StaticResource FontSizeXXL}" MinHeight="0" Height="62" Margin="16,8"
                                                     Click="QuickSingerButton_Click" Tag="{Binding Name}">
                                                 <Viewbox StretchDirection="DownOnly">
                                                     <!-- 文字顏色依歌手類型：男 藍、女 粉、團體 綠、其他 主題色 -->
@@ -2026,7 +1928,7 @@
                                                                               UnloadedBehavior="Stop" 
                                                                               Volume="0" />
                                                                 <Border x:Name="TitleBorder" Grid.Row="1" Background="{StaticResource BrushScrim}">
-                                                                    <TextBlock Text="{Binding SongName}" Foreground="{StaticResource BrushTextMain}" TextAlignment="Center" Padding="2" FontSize="20" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                                                    <TextBlock Text="{Binding SongName}" Foreground="{StaticResource BrushTextMain}" TextAlignment="Center" Padding="2" FontSize="{StaticResource FontSizeS}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
                                                                 </Border>
                                                             </Grid>
                                                         </Border>
@@ -2058,7 +1960,7 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button x:Name="SingerNameButton" Style="{DynamicResource SingerGridButtonStyle}" FontSize="36" MinHeight="0" Height="62" Margin="16,8"
+                                    <Button x:Name="SingerNameButton" Style="{DynamicResource SingerGridButtonStyle}" FontSize="{StaticResource FontSizeXXL}" MinHeight="0" Height="62" Margin="16,8"
                                             Click="SingerButton_Click" Tag="{Binding}">
                                                 <Viewbox StretchDirection="DownOnly">
                                                     <TextBlock Text="{Binding}" Padding="4,0" Foreground="{DynamicResource SingerButtonBackground}"/>
@@ -2332,7 +2234,7 @@
                                 <!-- Digital Clock -->
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,32,0">
                                     <materialDesign:PackIcon Kind="ClockOutline" Width="46" Height="46" VerticalAlignment="Center" Foreground="{StaticResource BrushTextMain}" Margin="0,0,12,0"/>
-                                    <TextBlock Name="DigitalClockText" Text="00:00" FontSize="36" FontWeight="Normal" VerticalAlignment="Center" Foreground="{StaticResource BrushTextMain}" FontFamily="Consolas"/>
+                                    <TextBlock Name="DigitalClockText" Text="00:00" FontSize="{StaticResource FontSizeXXL}" FontWeight="Normal" VerticalAlignment="Center" Foreground="{StaticResource BrushTextMain}" FontFamily="Consolas"/>
                                 </StackPanel>
                                 
                                 <Button Name="PageUp" Grid.Column="2" Content="{DynamicResource Str.Common.PageUp}" Margin="0,0,12,0" VerticalAlignment="Top" Click="PageUp_Click">

@@ -86,7 +86,7 @@ namespace UltimateKtv
                 dialogContent.Children.Add(new TextBlock
                 {
                     Text = Loc.T("Song.AddFavorite"),
-                    FontSize = 24,
+                    FontSize = (double)FindResource("FontSizeM"),
                     FontWeight = FontWeights.Bold,
                     Margin = new Thickness(0, 0, 0, 15)
                 });
@@ -94,7 +94,7 @@ namespace UltimateKtv
                 dialogContent.Children.Add(new TextBlock
                 {
                     Text = Loc.T("Fav.SongLabel", songItem.SongName),
-                    FontSize = 18,
+                    FontSize = (double)FindResource("FontSizeS"),
                     Margin = new Thickness(0, 0, 0, 5),
                     TextWrapping = TextWrapping.Wrap
                 });
@@ -102,7 +102,7 @@ namespace UltimateKtv
                 dialogContent.Children.Add(new TextBlock
                 {
                     Text = Loc.T("Fav.SingerLabel", songItem.SingerName),
-                    FontSize = 18,
+                    FontSize = (double)FindResource("FontSizeS"),
                     Margin = new Thickness(0, 0, 0, 15),
                     TextWrapping = TextWrapping.Wrap
                 });
@@ -110,7 +110,7 @@ namespace UltimateKtv
                 dialogContent.Children.Add(new TextBlock
                 {
                     Text = Loc.T("Fav.SelectUser"),
-                    FontSize = 22,
+                    FontSize = (double)FindResource("FontSizeM"),
                     FontWeight = FontWeights.SemiBold,
                     Margin = new Thickness(0, 0, 0, 10)
                 });
@@ -120,7 +120,7 @@ namespace UltimateKtv
                 {
                     ItemsSource = users,
                     DisplayMemberPath = "UserName",
-                    FontSize = 28,
+                    FontSize = (double)FindResource("FontSizeL"),
                     Height = 300,
                     Margin = new Thickness(0, 0, 0, 15),
                     BorderThickness = new Thickness(2),
@@ -129,9 +129,9 @@ namespace UltimateKtv
 
                 // Try to find theme brushes, fallback to solid colors if not found
                 var borderBrush = TryFindResource("PrimaryHueMidBrush") as System.Windows.Media.Brush 
-                    ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(33, 150, 243));
+                    ?? (System.Windows.Media.Brush)FindResource("PrimaryBrush");
                 var dividerBrush = TryFindResource("MaterialDesignDivider") as System.Windows.Media.Brush
-                    ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(224, 224, 224));
+                    ?? (System.Windows.Media.Brush)FindResource("BrushBorderDefault");
 
                 userListBox.BorderBrush = borderBrush;
 

@@ -720,7 +720,7 @@ namespace UltimateKtv
             var optionsDialog = new Window
             {
                 Title = "",
-                Width = 450,
+                Width = 480,
                 Height = 280,
                 WindowStyle = System.Windows.WindowStyle.None,
                 AllowsTransparency = true,
@@ -731,19 +731,20 @@ namespace UltimateKtv
                 Topmost = true
             }; 
 
+            // 深色對話框：配色、字級、按鈕樣式皆取自 Themes 的 token (與主介面一致)
             var border = new Border
             {
-                Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(250, 250, 250)),
-                BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(200, 200, 200)),
+                Background = (System.Windows.Media.Brush)FindResource("BrushBgSecondary"),
+                BorderBrush = (System.Windows.Media.Brush)FindResource("BrushBorderControl"),
                 BorderThickness = new Thickness(1),
                 CornerRadius = (CornerRadius)FindResource("RadiusMedium"),
                 Effect = new System.Windows.Media.Effects.DropShadowEffect
                 {
-                    Color = Colors.Black,
+                    Color = (System.Windows.Media.Color)FindResource("ColorShadow"),
                     Direction = 315,
                     ShadowDepth = 8,
                     Opacity = 0.3,
-                    BlurRadius = 10
+                    BlurRadius = 12
                 }
             };
 
@@ -755,17 +756,17 @@ namespace UltimateKtv
             var headerPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 20) };
             var icon = new TextBlock {
                 Text = "⚠",
-                FontSize = 32,
-                Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 152, 0)),
+                FontSize = (double)FindResource("FontSizeXL"),
+                Foreground = (System.Windows.Media.Brush)FindResource("BrushWarning"),
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 15, 0)
+                Margin = new Thickness(0, 0, 16, 0)
             };
             var title = new TextBlock {
                 Text = Loc.T("Options.CloseOptions"),
-                FontSize = 24,
+                FontSize = (double)FindResource("FontSizeM"),
                 FontWeight = FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center,
-                Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(60, 60, 60))
+                Foreground = (System.Windows.Media.Brush)FindResource("BrushTextMain")
             };
             headerPanel.Children.Add(icon);
             headerPanel.Children.Add(title);
@@ -774,52 +775,56 @@ namespace UltimateKtv
 
             var message = new TextBlock {
                 Text = Loc.T("Options.ChooseAction"),
-                FontSize = 18,
+                FontSize = (double)FindResource("FontSizeS"),
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 20),
-                Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(80, 80, 80)),
-                LineHeight = 24
+                Foreground = (System.Windows.Media.Brush)FindResource("BrushTextDim"),
+                LineHeight = 28
             };
             Grid.SetRow(message, 1);
             mainGrid.Children.Add(message);
 
             var buttonPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
             
+            // 按鈕沿用 CyberButton 系列樣式：移入/按下的疊色與光暈由樣式處理
             var cancelBtn = new Button {
                 Content = Loc.T("Common.Cancel"),
+                Style = (Style)FindResource("CyberButton"),
                 Width = 100,
-                Height = 45,
-                Margin = new Thickness(0, 0, 10, 0),
-                FontSize = 16,
-                Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(240, 240, 240)),
-                BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(200, 200, 200)),
-                BorderThickness = new Thickness(1),
-                Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(60, 60, 60)),
-                Cursor = Cursors.Hand
+                Height = 48,
+                Margin = new Thickness(0, 0, 12, 0),
+                FontSize = (double)FindResource("FontSizeXS")
             };
 
+            // 圖示 + 文字 (圖示顏色跟隨按鈕 Foreground)
+            object IconLabel(PackIconKind kind, string text)
+            {
+                var panel = new StackPanel { Orientation = Orientation.Horizontal };
+                panel.Children.Add(new PackIcon { Kind = kind, Width = 28, Height = 28, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+                panel.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+                return panel;
+            }
+
+            // 關閉程式 (較輕)：金色外框 + 離開圖示；關閉電腦 (最重)：紅色實心 + 電源圖示。
+            // 以顏色、填色方式與圖示三者區分，不只靠顏色。
             var quitAppBtn = new Button {
-                Content = Loc.T("Options.CloseProgram"),
-                Width = 120,
-                Height = 45,
-                Margin = new Thickness(0, 0, 10, 0),
-                FontSize = 16,
-                Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(244, 67, 54)),
-                BorderThickness = new Thickness(0),
-                Foreground = System.Windows.Media.Brushes.White,
-                Cursor = Cursors.Hand
+                Content = IconLabel(PackIconKind.ExitToApp, Loc.T("Options.CloseProgram")),
+                Style = (Style)FindResource("CyberAccentGoldButton"),
+                Width = 150,
+                Height = 48,
+                Margin = new Thickness(0, 0, 12, 0),
+                FontSize = (double)FindResource("FontSizeXS")
             };
 
             var shutdownBtn = new Button {
-                Content = Loc.T("Options.Shutdown"),
-                Width = 120,
-                Height = 45,
-                FontSize = 16,
-                Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(63, 81, 181)),
-                BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 63, 159)),
-                BorderThickness = new Thickness(2),
-                Foreground = System.Windows.Media.Brushes.White,
-                Cursor = Cursors.Hand
+                Content = IconLabel(PackIconKind.Power, Loc.T("Options.Shutdown")),
+                Style = (Style)FindResource("CyberButton"),
+                Width = 150,
+                Height = 48,
+                FontSize = (double)FindResource("FontSizeXS"),
+                Background = (System.Windows.Media.Brush)FindResource("BrushDanger"),
+                BorderBrush = (System.Windows.Media.Brush)FindResource("BrushDanger"),
+                Foreground = (System.Windows.Media.Brush)FindResource("BrushTextMain")
             };
 
             cancelBtn.Click += (s, ev) => optionsDialog.Close();
@@ -865,13 +870,6 @@ namespace UltimateKtv
                 // Shutdown the computer
                 System.Diagnostics.Process.Start("shutdown", "/s /t 0");
             };
-
-            cancelBtn.MouseEnter += (s, ev) => cancelBtn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(230, 230, 230));
-            cancelBtn.MouseLeave += (s, ev) => cancelBtn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(240, 240, 240));
-            quitAppBtn.MouseEnter += (s, ev) => quitAppBtn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(229, 57, 44));
-            quitAppBtn.MouseLeave += (s, ev) => quitAppBtn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(244, 67, 54));
-            shutdownBtn.MouseEnter += (s, ev) => shutdownBtn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(48, 63, 159));
-            shutdownBtn.MouseLeave += (s, ev) => shutdownBtn.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(63, 81, 181));
 
             buttonPanel.Children.Add(cancelBtn);
             buttonPanel.Children.Add(quitAppBtn);

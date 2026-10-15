@@ -27,7 +27,7 @@
                 <materialDesign:PackIcon Kind="Update" Width="36" Height="36"
                                          Foreground="{DynamicResource PrimaryBrush}"
                                          VerticalAlignment="Center" Margin="0,0,12,0"/>
-                <TextBlock Text="{DynamicResource Str.Update.Available}" FontSize="30" FontWeight="Bold"
+                <TextBlock Text="{DynamicResource Str.Update.Available}" FontSize="{StaticResource FontSizeL}" FontWeight="Bold"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource MaterialDesignBody}"/>
             </StackPanel>
@@ -42,11 +42,11 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str.Update.CurrentVersion}" FontSize="20" Foreground="{DynamicResource MaterialDesignBody}"/>
-                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="CurrentVersionText" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource MaterialDesignBody}"/>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Str.Update.CurrentVersion}" FontSize="{StaticResource FontSizeS}" Foreground="{DynamicResource MaterialDesignBody}"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="CurrentVersionText" FontSize="{StaticResource FontSizeS}" FontWeight="SemiBold" Foreground="{DynamicResource MaterialDesignBody}"/>
                 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="{DynamicResource Str.Update.LatestVersion}" FontSize="20" Foreground="{DynamicResource PrimaryBrush}" Margin="0,4,0,0"/>
-                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="NewVersionText" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="{DynamicResource Str.Update.LatestVersion}" FontSize="{StaticResource FontSizeS}" Foreground="{DynamicResource PrimaryBrush}" Margin="0,4,0,0"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="NewVersionText" FontSize="{StaticResource FontSizeS}" FontWeight="Bold" Foreground="{DynamicResource PrimaryBrush}" Margin="0,4,0,0"/>
             </Grid>
 
             <!-- Release Notes -->
@@ -54,7 +54,7 @@
                     CornerRadius="{StaticResource RadiusXSmall}" Padding="12" Margin="0,0,0,20"
                     BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <TextBlock x:Name="ReleaseNotesText" TextWrapping="Wrap" FontSize="16" Foreground="{DynamicResource MaterialDesignBody}"/>
+                    <TextBlock x:Name="ReleaseNotesText" TextWrapping="Wrap" FontSize="{StaticResource FontSizeXS}" Foreground="{DynamicResource MaterialDesignBody}"/>
                 </ScrollViewer>
             </Border>
 
@@ -62,7 +62,7 @@
             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button Name="UpdateButton" Content="{DynamicResource Str.Update.Now}"
                         Style="{DynamicResource MaterialDesignRaisedButton}"
-                        FontSize="24" Height="45"
+                        FontSize="{StaticResource FontSizeM}" Height="45"
                         Margin="4,0" Padding="20,8"
                         VerticalContentAlignment="Center"
                         Background="{DynamicResource PrimaryHueMidBrush}"
@@ -70,7 +70,7 @@
                         Click="UpdateButton_Click"/>
                 <Button Name="SkipButton" Content="{DynamicResource Str.Update.Later}"
                         Style="{DynamicResource MaterialDesignOutlinedButton}"
-                        FontSize="24" Height="45"
+                        FontSize="{StaticResource FontSizeM}" Height="45"
                         Margin="4,0" Padding="20,8"
                         VerticalContentAlignment="Center"
                         BorderBrush="{DynamicResource PrimaryHueMidBrush}"

@@ -129,7 +129,7 @@ namespace UltimateKtv
                         // Multiple monitors but same screen setting - host in main window
                         var containerGrid = new Grid();
                         containerGrid.Children.Add(mediaUriElement);
-                        containerGrid.Background = new SolidColorBrush(Colors.Black);
+                        containerGrid.Background = (Brush)FindResource("BrushSurfaceSunken");
 
                         MediaPlayerContainer.Children.Clear();
                         MediaPlayerContainer.Children.Add(containerGrid);

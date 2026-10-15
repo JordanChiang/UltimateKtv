@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="VideoDisplayWindow" WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False" 
         Topmost="False">
-    <Grid x:Name="VideoContainer" Background="Black" MouseLeftButtonDown="VideoContainer_MouseLeftButtonDown">
+    <Grid x:Name="VideoContainer" Background="{StaticResource BrushSurfaceSunken}" MouseLeftButtonDown="VideoContainer_MouseLeftButtonDown">
         <!-- Marquee Container for overlay text -->
         <Grid x:Name="MarqueeContainer" Panel.ZIndex="100" />
         
@@ -12,7 +12,7 @@
                    Panel.ZIndex="50"
                    Text="" 
                    Foreground="{StaticResource BrushTextMain}" 
-                   FontSize="80" 
+                   FontSize="{StaticResource FontSizeHero}" 
                    FontWeight="Bold" 
                    HorizontalAlignment="Center" 
                    VerticalAlignment="Bottom" 

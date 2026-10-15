@@ -59,11 +59,11 @@ namespace UltimateKtv
             var title = new TextBlock
             {
                 Text = Loc.T("Pitch.Title"),
-                FontSize = 24,
+                FontSize = (double)FindResource("FontSizeM"),
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 16),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Foreground = (Brush)FindResource("BrushAccentCyan")
+                Foreground = (Brush)FindResource("BrushAccent")
             };
             dialogPanel.Children.Add(title);
 
@@ -76,16 +76,16 @@ namespace UltimateKtv
                 Style = (Style)FindResource("CyberButton"),
                 IsHitTestVisible = false, // Non-clickable display banner without dimming
                 Focusable = false,
-                FontSize = 22,
-                Foreground = (Brush)(TryFindResource("BrushOnAccentActive") ?? Brushes.White),
+                FontSize = (double)FindResource("FontSizeM"),
+                Foreground = (Brush)FindResource("BrushOnAccentActive"),
                 FontWeight = FontWeights.Bold,
                 Background = (Brush)FindResource("BrushCyberActiveGradient"),
-                BorderBrush = (Brush)FindResource("BrushAccentCyan"),
+                BorderBrush = (Brush)FindResource("BrushAccent"),
                 BorderThickness = new Thickness(1.5),
                 Opacity = 1.0,
                 Effect = new System.Windows.Media.Effects.DropShadowEffect
                 {
-                    Color = (Color)FindResource("ColorAccentCyan"),
+                    Color = (Color)FindResource("ColorAccent"),
                     BlurRadius = (double)FindResource("GlowBlurActive"),
                     ShadowDepth = 0,
                     Opacity = (double)FindResource("GlowOpacityActive")
@@ -100,7 +100,7 @@ namespace UltimateKtv
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
-                FontSize = 20
+                FontSize = (double)FindResource("FontSizeS")
             };
             pitchUpBtn.Click += (s, e) => AdjustPitch(1);
             dialogPanel.Children.Add(pitchUpBtn);
@@ -112,7 +112,7 @@ namespace UltimateKtv
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
-                FontSize = 20
+                FontSize = (double)FindResource("FontSizeS")
             };
             originalPitchBtn.Click += (s, e) => SetOriginalPitch();
             dialogPanel.Children.Add(originalPitchBtn);
@@ -124,7 +124,7 @@ namespace UltimateKtv
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
-                FontSize = 20
+                FontSize = (double)FindResource("FontSizeS")
             };
             pitchDownBtn.Click += (s, e) => AdjustPitch(-1);
             dialogPanel.Children.Add(pitchDownBtn);
@@ -136,7 +136,7 @@ namespace UltimateKtv
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
-                FontSize = 20
+                FontSize = (double)FindResource("FontSizeS")
             };
             malePitchBtn.Click += (s, e) => SetMalePitch();
             dialogPanel.Children.Add(malePitchBtn);
@@ -148,7 +148,7 @@ namespace UltimateKtv
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 10),
                 Style = (Style)FindResource("CyberButton"),
-                FontSize = 20
+                FontSize = (double)FindResource("FontSizeS")
             };
             femalePitchBtn.Click += (s, e) => SetFemalePitch();
             dialogPanel.Children.Add(femalePitchBtn);
@@ -160,7 +160,7 @@ namespace UltimateKtv
                 Height = 48,
                 Margin = new Thickness(0, 0, 0, 16),
                 Style = (Style)FindResource(_isPitchFixed ? "CyberAccentGoldButton" : "CyberButton"),
-                FontSize = 20
+                FontSize = (double)FindResource("FontSizeS")
             };
             _fixToggleBtn.Click += (s, e) => TogglePitchFix();
             dialogPanel.Children.Add(_fixToggleBtn);
@@ -172,7 +172,7 @@ namespace UltimateKtv
                 Height = 42,
                 Style = (Style)FindResource("CyberButton"),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                FontSize = 18
+                FontSize = (double)FindResource("FontSizeS")
             };
             closeBtn.Click += (s, e) => DialogHost.CloseDialogCommand.Execute(null, null);
             dialogPanel.Children.Add(closeBtn);

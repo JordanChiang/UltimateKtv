@@ -528,10 +528,10 @@ namespace UltimateKtv
 
                 // Visual selection: highlight clicked by changing colors, de-emphasize others
                 var activeBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberActiveGradient") ?? FindResource("SingerButtonBackground"));
-                var activeFg = (System.Windows.Media.Brush)(TryFindResource("BrushOnAccentActive") ?? System.Windows.Media.Brushes.White);
+                var activeFg = (System.Windows.Media.Brush)FindResource("BrushOnAccentActive");
                 var inactiveBg = (System.Windows.Media.Brush)(TryFindResource("BrushButtonFlat") ?? System.Windows.Media.Brushes.Transparent);
                 var inactiveFg = (System.Windows.Media.Brush)FindResource("SingerButtonBackground");
-                var activeBorder = (System.Windows.Media.Brush)(TryFindResource("BrushAccentCyan") ?? TryFindResource("PrimaryHueMidBrush") ?? activeBg);
+                var activeBorder = (System.Windows.Media.Brush)(TryFindResource("BrushAccent") ?? TryFindResource("PrimaryHueMidBrush") ?? activeBg);
                 var inactiveBorder = (System.Windows.Media.Brush)FindResource("SingerButtonBackground");
 
                 var buttons = new[] { BopomofoListBtn, EngAndNumListBtn, PenStyleListBtn, SongIdListBtn, KeyboardListBtn, YoutubeHistoryBtn };
