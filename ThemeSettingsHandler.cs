@@ -334,6 +334,20 @@ namespace UltimateKtv
         }
 
         /// <summary>
+        /// Gets the resolved Accent Pressed Brush (20% opacity for pressed button backgrounds).
+        /// </summary>
+        public static SolidColorBrush AccentPressedBrush
+        {
+            get
+            {
+                var c = ResolvedAccentColor;
+                var brush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, c.R, c.G, c.B));
+                brush.Freeze();
+                return brush;
+            }
+        }
+
+        /// <summary>
         /// Gets the resolved Cyber Active Gradient Brush (matching the prominent "歌星" selected appearance, tuned warm and comfortable).
         /// </summary>
         public static LinearGradientBrush CyberActiveGradientBrush
@@ -403,7 +417,9 @@ namespace UltimateKtv
                 var accentColor = ResolvedAccentColor;
                 var accentBrush = AccentBrush;
                 var accentDimBrush = AccentDimBrush;
+                var accentPressedBrush = AccentPressedBrush;
                 var cyberGradient = CyberActiveGradientBrush;
+                var onAccentActiveBrush = RowStyleBrushes.ForegroundOn(cyberGradient);
                 var cyberButtonGradient = CyberButtonGradientBrush;
 
                 // Window-level resources (defined in MainWindow.xaml Resources section)
@@ -411,12 +427,16 @@ namespace UltimateKtv
                 window.Resources["DataGridColumnHeaderForeground"] = DataGridColumnHeaderForeground;
                 window.Resources["PrimaryBrush"] = PrimaryBrush;
                 window.Resources["PrimaryLightBrush"] = PrimaryLightBrush;
+                var onPrimaryBrush = RowStyleBrushes.ForegroundOn(PrimaryBrush);
+                window.Resources["BrushOnPrimary"] = onPrimaryBrush;
 
                 // Window-level cyber accent resources
                 window.Resources["ColorAccentCyan"] = accentColor;
                 window.Resources["BrushAccentCyan"] = accentBrush;
                 window.Resources["BrushAccentCyanDim"] = accentDimBrush;
+                window.Resources["BrushAccentPressed"] = accentPressedBrush;
                 window.Resources["BrushCyberActiveGradient"] = cyberGradient;
+                window.Resources["BrushOnAccentActive"] = onAccentActiveBrush;
                 window.Resources["BrushCyberButtonGradient"] = cyberButtonGradient;
 
                 // Dynamic UI Font Family
@@ -621,12 +641,15 @@ namespace UltimateKtv
                     appResources["PrimaryHueLightBrush"] = PrimaryLightBrush;
                     appResources["PrimaryHueMidBrush"] = PrimaryBrush;
                     appResources["PrimaryHueMidForegroundBrush"] = Brushes.White;
+                    appResources["BrushOnPrimary"] = onPrimaryBrush;
 
                     // Cyber Accent resources at application level
                     appResources["ColorAccentCyan"] = accentColor;
                     appResources["BrushAccentCyan"] = accentBrush;
                     appResources["BrushAccentCyanDim"] = accentDimBrush;
+                    appResources["BrushAccentPressed"] = accentPressedBrush;
                     appResources["BrushCyberActiveGradient"] = cyberGradient;
+                    appResources["BrushOnAccentActive"] = onAccentActiveBrush;
                     appResources["BrushCyberButtonGradient"] = cyberButtonGradient;
 
                     // Option 2 & 3 dynamic theme brushes at application level

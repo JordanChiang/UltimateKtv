@@ -41,78 +41,6 @@
         <sys:Double x:Key="PlayingBtnHeight">50</sys:Double>
         <sys:Double x:Key="ExtendedBtnWidth">150</sys:Double>
 
-        <!-- DataGrid Column Header Colors (橫向科技微漸層背景：深藍黑至深石板藍) -->
-        <LinearGradientBrush x:Key="DataGridColumnHeaderBackground" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#D1121826" Offset="0.0"/>
-            <GradientStop Color="#D91C263C" Offset="1.0"/>
-        </LinearGradientBrush>
-        <SolidColorBrush x:Key="DataGridColumnHeaderForeground" Color="#FFFFFFFF"/>
-
-        <!-- Primary theme brush (overridden by ThemeSettings at startup) -->
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#FFB300"/>
-        <SolidColorBrush x:Key="PrimaryLightBrush" Color="#FFE082"/>
-
-        <!-- Option 4 Inset Glow Rim Brushes (由框向內散發微光約 4~5px，核心維持深黑底色) -->
-        <SolidColorBrush x:Key="BrushInnerGlowRim1" Color="#73FFB300"/>
-        <SolidColorBrush x:Key="BrushInnerGlowRim2" Color="#32FFB300"/>
-        <SolidColorBrush x:Key="BrushInnerGlowRim3" Color="#14FFB300"/>
-        <SolidColorBrush x:Key="BrushInnerGlowHoverRim1" Color="#5AFFE082"/>
-        <SolidColorBrush x:Key="BrushInnerGlowHoverRim2" Color="#28FFE082"/>
-        <SolidColorBrush x:Key="BrushInnerGlowHoverRim3" Color="#10FFE082"/>
-        <Color x:Key="ColorRowGlowActive">#FFB300</Color>
-        <Color x:Key="ColorRowGlowHover">#FFE082</Color>
-
-        <!-- Cyber Button & Selection Gradient Brushes (overridden by ThemeSettings at startup) -->
-        <LinearGradientBrush x:Key="BrushCyberButtonGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#77FFB300" Offset="0.0"/>
-            <GradientStop Color="#33FFB300" Offset="1.0"/>
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#E6FFB300" Offset="0.0"/>
-            <GradientStop Color="#D08A6403" Offset="1.0"/>
-        </LinearGradientBrush>
-
-        <!-- 風格 3 (AccentStrip) 預設漸層筆刷 (啟動時由 ThemeSettingsHandler 根據主題色動態覆寫) -->
-        <LinearGradientBrush x:Key="BrushAccentStripActive" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#F59E0B" Offset="0.0"/>
-            <GradientStop Color="#FFF9C4" Offset="0.4"/>
-            <GradientStop Color="#FFCA28" Offset="0.6"/>
-            <GradientStop Color="#D97706" Offset="1.0"/>
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="BrushAccentStripHover" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FFE082" Offset="0.0"/>
-            <GradientStop Color="#FFFFFF" Offset="0.45"/>
-            <GradientStop Color="#FFD54F" Offset="1.0"/>
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="BrushAccentStripInactive" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#546E7A" Offset="0.0"/>
-            <GradientStop Color="#CFD8DC" Offset="0.45"/>
-            <GradientStop Color="#90A4AE" Offset="0.6"/>
-            <GradientStop Color="#37474F" Offset="1.0"/>
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="BrushAccentStripGlow" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#50FFA000" Offset="0.0"/>
-            <GradientStop Color="#18FFA000" Offset="0.5"/>
-            <GradientStop Color="#00FFA000" Offset="1.0"/>
-        </LinearGradientBrush>
-
-        <!-- 選中文字立體金屬漸層筆刷 (預設香檳白金至琥珀金，啟動時由 ThemeSettingsHandler 根據主題色動態覆寫) -->
-        <LinearGradientBrush x:Key="BrushTextSelectedGradient" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FFFFFFF0" Offset="0.0"/>
-            <GradientStop Color="#FFFDE7" Offset="0.25"/>
-            <GradientStop Color="#FFE082" Offset="0.55"/>
-            <GradientStop Color="#FFB300" Offset="0.85"/>
-            <GradientStop Color="#FF8F00" Offset="1.0"/>
-        </LinearGradientBrush>
-
-        <!-- Singer Grid Button Colors (will be overridden by ThemeSettings at startup) -->
-        <SolidColorBrush x:Key="SingerButtonBackground" Color="#FFB300"/>
-
-        <!-- 歌星搜尋按鈕格：依歌手類型的文字顏色 (其他類型沿用 SingerButtonBackground) -->
-        <SolidColorBrush x:Key="BrushSingerMale" Color="#7EC8FF"/>
-        <SolidColorBrush x:Key="BrushSingerFemale" Color="#FF8FC8"/>
-        <SolidColorBrush x:Key="BrushSingerGroup" Color="#7EE0A8"/>
-
         <!-- Converter for binding a boolean value to the Stretch property -->
         <local:BoolToStretchConverter x:Key="BoolToStretchConverter" />
 
@@ -171,7 +99,7 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#1AFFFFFF"/>
+                    <Setter Property="Background" Value="{StaticResource BrushOverlayHover}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -228,10 +156,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
                         <Border x:Name="RowBorder"
-                                Background="#181B24"
-                                BorderBrush="#20FFFFFF"
+                                Background="{StaticResource BrushSurface}"
+                                BorderBrush="{StaticResource BrushBorderDefault}"
                                 BorderThickness="1"
-                                CornerRadius="8"
+                                CornerRadius="{StaticResource RadiusSmall}"
                                 ClipToBounds="True"
                                 SnapsToDevicePixels="True">
                             <DataGridCellsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
@@ -269,10 +197,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
                         <Border x:Name="RowBorder"
-                                Background="#121520"
+                                Background="{StaticResource BrushBgSecondary}"
                                 BorderBrush="{DynamicResource BrushCapsuleRowBorder}"
                                 BorderThickness="1"
-                                CornerRadius="16"
+                                CornerRadius="{StaticResource RadiusLarge}"
                                 ClipToBounds="True"
                                 SnapsToDevicePixels="True">
                             <DataGridCellsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
@@ -312,10 +240,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
                         <Border x:Name="RowBorder"
-                                Background="#181B24"
-                                BorderBrush="#20FFFFFF"
+                                Background="{StaticResource BrushSurface}"
+                                BorderBrush="{StaticResource BrushBorderDefault}"
                                 BorderThickness="1"
-                                CornerRadius="8"
+                                CornerRadius="{StaticResource RadiusSmall}"
                                 SnapsToDevicePixels="True">
                             <Grid>
                                 <!-- 水平微光擴散 (選取或懸停時亮起) -->
@@ -332,20 +260,20 @@
                                         CornerRadius="7,0,0,7"
                                         Background="{DynamicResource BrushAccentStripInactive}"/>
                                 <!-- 歌曲內容區，左邊距微調避開指示條 -->
-                                <DataGridCellsPresenter Margin="6,0,0,0"
+                                <DataGridCellsPresenter Margin="8,0,0,0"
                                                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                                                         VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="RowBorder" Property="Background" Value="#000000"/>
+                                <Setter TargetName="RowBorder" Property="Background" Value="{StaticResource BrushSurfaceSunken}"/>
                                 <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource BrushAccentStripHover}"/>
                                 <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
                                 <Setter TargetName="AccentGlow" Property="Visibility" Value="Visible"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="RowBorder" Property="Background" Value="#000000"/>
+                                <Setter TargetName="RowBorder" Property="Background" Value="{StaticResource BrushSurfaceSunken}"/>
                                 <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource BrushAccentStripActive}"/>
                                 <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
                                 <Setter TargetName="RowBorder" Property="BorderThickness" Value="1"/>
@@ -356,7 +284,7 @@
                                     <Condition Property="IsSelected" Value="True"/>
                                     <Condition Property="IsMouseOver" Value="True"/>
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="RowBorder" Property="Background" Value="#000000"/>
+                                <Setter TargetName="RowBorder" Property="Background" Value="{StaticResource BrushSurfaceSunken}"/>
                                 <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource BrushAccentStripHover}"/>
                                 <Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource PrimaryLightBrush}"/>
                                 <Setter TargetName="AccentGlow" Property="Visibility" Value="Visible"/>
@@ -386,14 +314,14 @@
          但它讓「每一列」在每次重繪都要做裁切。
          改成只裁切光暈那一層 (GlowClip,與 RowBorder 同大小),平時收起來,一般列完全不需要裁切。 -->
     <Grid>
-        <Border x:Name="RowBorder" Background="#181B24" BorderBrush="#20FFFFFF"
-                BorderThickness="1" CornerRadius="8" SnapsToDevicePixels="True"/>
+        <Border x:Name="RowBorder" Background="{StaticResource BrushSurface}" BorderBrush="{StaticResource BrushBorderDefault}"
+                BorderThickness="1" CornerRadius="{StaticResource RadiusSmall}" SnapsToDevicePixels="True"/>
         <Grid x:Name="GlowClip" ClipToBounds="True" Visibility="Collapsed" IsHitTestVisible="False">
             <Grid x:Name="GlowHost" Margin="1">
                 <Grid.CacheMode>
                     <BitmapCache EnableClearType="False" SnapsToDevicePixels="False"/>
                 </Grid.CacheMode>
-                <Border x:Name="InnerGlowRim" Margin="1" CornerRadius="7" BorderThickness="4"
+                <Border x:Name="InnerGlowRim" Margin="1" CornerRadius="{StaticResource RadiusSmallInner}" BorderThickness="4"
                         BorderBrush="Transparent">
                     <Border.Effect>
                         <BlurEffect Radius="8" KernelType="Gaussian" RenderingBias="Quality"/>
@@ -403,7 +331,7 @@
         </Grid>
         <!-- 疊層亮邊:取代原本 hover/選取時 RowBorder 厚度 1→1.5 的變化 (1 + 0.5 = 1.5,外觀相同),
              改厚度會觸發整列重新排版,疊一層 0.5 的亮邊則不需要 -->
-        <Border x:Name="AccentRim" Margin="1" CornerRadius="7" BorderThickness="0.5" Visibility="Collapsed"
+        <Border x:Name="AccentRim" Margin="1" CornerRadius="{StaticResource RadiusSmallInner}" BorderThickness="0.5" Visibility="Collapsed"
                 BorderBrush="Transparent" IsHitTestVisible="False"/>
         <DataGridCellsPresenter Margin="1" VerticalAlignment="Center"/>
     </Grid>
@@ -451,7 +379,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
                         <Grid Background="Transparent">
-                            <Border x:Name="RowBorder" Margin="10,0" BorderBrush="#26FFFFFF" BorderThickness="0,0,0,1" SnapsToDevicePixels="True"/>
+                            <Border x:Name="RowBorder" Margin="12,0" BorderBrush="{StaticResource BrushBorderDefault}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True"/>
                             <Border x:Name="NeonTint" CornerRadius="8,8,0,0" Visibility="Collapsed"
                                     Background="{DynamicResource BrushNeonTint}" IsHitTestVisible="False"/>
                             <Grid x:Name="NeonLineHost" Height="16" VerticalAlignment="Bottom" Visibility="Collapsed" IsHitTestVisible="False">
@@ -507,20 +435,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
                         <Grid>
-                            <Border x:Name="RowBorder" Background="#1E2230" BorderBrush="#30FFFFFF"
-                                    BorderThickness="1" CornerRadius="12" SnapsToDevicePixels="True"/>
-                            <Border x:Name="GlossFill" Margin="1" CornerRadius="11" Visibility="Collapsed"
+                            <Border x:Name="RowBorder" Background="{StaticResource BrushSurfaceRaised}" BorderBrush="{StaticResource BrushBorderStrong}"
+                                    BorderThickness="1" CornerRadius="{StaticResource RadiusMedium}" SnapsToDevicePixels="True"/>
+                            <Border x:Name="GlossFill" Margin="1" CornerRadius="{StaticResource RadiusMediumInner}" Visibility="Collapsed"
                                     Background="{DynamicResource BrushGlossActive}" IsHitTestVisible="False"/>
                             <!-- 上半部光澤 (於 0.5 處硬切，形成糖果/水晶按鈕的反光) -->
-                            <Border Margin="1" CornerRadius="11" IsHitTestVisible="False">
-                                <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#40FFFFFF" Offset="0"/>
-                                        <GradientStop Color="#12FFFFFF" Offset="0.49"/>
-                                        <GradientStop Color="#00FFFFFF" Offset="0.5"/>
-                                    </LinearGradientBrush>
-                                </Border.Background>
-                            </Border>
+                            <Border Margin="1" CornerRadius="{StaticResource RadiusMediumInner}" IsHitTestVisible="False"
+                                    Background="{StaticResource BrushGlossHighlight}"/>
                             <DataGridCellsPresenter Margin="1" VerticalAlignment="Center"/>
                         </Grid>
                         <ControlTemplate.Triggers>
@@ -557,10 +478,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
                         <Grid>
-                            <Border x:Name="RowBorder" Background="#181B24" BorderBrush="#20FFFFFF"
-                                    BorderThickness="1" CornerRadius="8" SnapsToDevicePixels="True"/>
+                            <Border x:Name="RowBorder" Background="{StaticResource BrushSurface}" BorderBrush="{StaticResource BrushBorderDefault}"
+                                    BorderThickness="1" CornerRadius="{StaticResource RadiusSmall}" SnapsToDevicePixels="True"/>
                             <!-- 漸層外框疊在 RowBorder 上 (平時收起)，不改 RowBorder 厚度以免重新排版 -->
-                            <Border x:Name="DuoRim" CornerRadius="8" BorderThickness="2.5" Visibility="Collapsed"
+                            <Border x:Name="DuoRim" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="2.5" Visibility="Collapsed"
                                     BorderBrush="{DynamicResource BrushDuoRim}" Background="{DynamicResource BrushDuoTint}"
                                     IsHitTestVisible="False"/>
                             <DataGridCellsPresenter Margin="1" VerticalAlignment="Center"/>
@@ -599,8 +520,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
                         <Grid>
-                            <Border x:Name="RowBorder" Background="#161922" BorderBrush="#1CFFFFFF"
-                                    BorderThickness="1" CornerRadius="2" SnapsToDevicePixels="True"/>
+                            <Border x:Name="RowBorder" Background="{StaticResource BrushSurface}" BorderBrush="{StaticResource BrushBorderDefault}"
+                                    BorderThickness="1" CornerRadius="{StaticResource RadiusSharp}" SnapsToDevicePixels="True"/>
                             <Grid x:Name="BracketLayer" Visibility="Collapsed" IsHitTestVisible="False">
                                 <Border x:Name="BracketTint" Margin="1" Background="{DynamicResource BrushBracketTint}"/>
                                 <Border x:Name="BrTL" Width="28" Height="14" HorizontalAlignment="Left" VerticalAlignment="Top"
@@ -661,7 +582,7 @@
             <Setter Property="BorderBrush" Value="{DynamicResource BrushBorderDefault}"/>
             <Setter Property="BorderThickness" Value="{DynamicResource BorderThicknessGrid}"/>
             <Setter Property="GridLinesVisibility" Value="{DynamicResource DataGridLinesVisibility}"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="#12FFFFFF"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BrushBorderSubtle}"/>
             <Setter Property="VerticalGridLinesBrush" Value="{x:Null}"/>
             <Setter Property="RowBackground" Value="Transparent"/>
             <Setter Property="AlternatingRowBackground" Value="Transparent"/>
@@ -682,18 +603,18 @@
                             <Grid.CacheMode>
                                 <BitmapCache EnableClearType="False" SnapsToDevicePixels="False"/>
                             </Grid.CacheMode>
-                            <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                            <Border Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusMedium}">
                                 <Border.Effect>
-                                    <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.4" Color="#000000"/>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="0" Opacity="0.4" Color="{StaticResource ColorShadow}"/>
                                 </Border.Effect>
                             </Border>
                         </Grid>
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="12"
+                                CornerRadius="{StaticResource RadiusMedium}"
                                 SnapsToDevicePixels="True">
-                            <Border CornerRadius="11" ClipToBounds="True">
+                            <Border CornerRadius="{StaticResource RadiusMediumInner}" ClipToBounds="True">
                                 <ScrollViewer x:Name="DG_ScrollViewer" Focusable="False">
                                     <ScrollViewer.Template>
                                         <ControlTemplate TargetType="{x:Type ScrollViewer}">
@@ -711,7 +632,7 @@
                                                 <!-- 表格上方圓角外框與底部分隔線 (8px 左右 Margin 與卡片外緣精確對齊) -->
                                                 <Border Grid.Column="1" 
                                                         Grid.Row="0" 
-                                                        CornerRadius="8" 
+                                                        CornerRadius="{StaticResource RadiusSmall}" 
                                                         Margin="8,2,8,2"
                                                         Background="{DynamicResource DataGridColumnHeaderBackground}"
                                                         BorderThickness="0"
@@ -819,7 +740,7 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="4"
+                                CornerRadius="{StaticResource RadiusXSmall}"
                                 ClipToBounds="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -844,7 +765,7 @@
                             <Trigger Property="IsChecked" Value="False">
                                 <Setter TargetName="LeftHighlight" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="RightHighlight" Property="Visibility" Value="Hidden"/>
-                                <Setter TargetName="LeftText" Property="Foreground" Value="White"/>
+                                <Setter TargetName="LeftText" Property="Foreground" Value="{DynamicResource BrushOnPrimary}"/>
                                 <Setter TargetName="RightText" Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
                             </Trigger>
 
@@ -854,7 +775,7 @@
                                 <Setter TargetName="LeftHighlight" Property="Visibility" Value="Hidden"/>
                                 <Setter TargetName="RightHighlight" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="LeftText" Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
-                                <Setter TargetName="RightText" Property="Foreground" Value="White"/>
+                                <Setter TargetName="RightText" Property="Foreground" Value="{DynamicResource BrushOnPrimary}"/>
                             </Trigger>
 
                             <Trigger Property="IsMouseOver" Value="True">
@@ -886,8 +807,8 @@
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
-                                Padding="3,2">
+                                CornerRadius="{StaticResource RadiusSmall}"
+                                Padding="4,2">
                             <ContentPresenter HorizontalAlignment="Center" 
                                               VerticalAlignment="Center" 
                                               x:Name="Content"/>
@@ -900,10 +821,10 @@
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="tabBorder" Property="Background" Value="{DynamicResource BrushCyberActiveGradient}"/>
                                 <Setter TargetName="tabBorder" Property="BorderBrush" Value="{DynamicResource BrushAccentCyan}"/>
-                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter Property="Foreground" Value="{DynamicResource BrushOnAccentActive}"/>
                                 <Setter TargetName="tabBorder" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="12" ShadowDepth="0" Opacity="0.55"/>
+                                        <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="{StaticResource GlowBlurActive}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityActive}"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -937,7 +858,7 @@
         <Style x:Key="SecondFilterButtonStyle" TargetType="Button" BasedOn="{StaticResource CyberButton}">
             <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
             <Setter Property="Height" Value="50" />
-            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="Margin" Value="0,0,4,0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="2" />
@@ -950,7 +871,7 @@
         <Style x:Key="SecondFilterToggleButtonStyle" TargetType="ToggleButton">
             <Setter Property="FontSize" Value="{DynamicResource FuncBtnFontSize}" />
             <Setter Property="Height" Value="50" />
-            <Setter Property="Margin" Value="0,0,5,0" />
+            <Setter Property="Margin" Value="0,0,4,0" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="{DynamicResource SingerButtonBackground}" />
             <Setter Property="BorderThickness" Value="{DynamicResource BorderThicknessButton}"/>
@@ -958,13 +879,13 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusXSmall}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="{DynamicResource PrimaryBrush}"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Foreground" Value="{DynamicResource BrushOnPrimary}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
@@ -1016,7 +937,7 @@
                                   Opacity="0.85" 
                                   HorizontalAlignment="Right" 
                                   VerticalAlignment="Bottom" 
-                                  Margin="0,0,6,6" 
+                                  Margin="0,0,8,8" 
                                   IsHitTestVisible="False" />
                         </Grid>
                     </DataTemplate>
@@ -1158,7 +1079,7 @@
                         </Style.Triggers>
                     </Style>
                 </StackPanel.Style>
-                <Button Content="{DynamicResource Str.Song.Insert}" Width="110" Margin="0,0,10,0"
+                <Button Content="{DynamicResource Str.Song.Insert}" Width="110" Margin="0,0,12,0"
                         Style="{StaticResource SongRowActionButtonStyle}" Click="SongInsertButton_Click"/>
                 <Button Width="76" ToolTip="{DynamicResource Str.Song.AddFavorite}"
                         Style="{StaticResource SongRowActionButtonStyle}" Click="SongFavoriteButton_Click">
@@ -1171,7 +1092,7 @@
         <Style x:Key="VisualSingerButtonStyle" TargetType="Button">
             <Setter Property="FontSize" Value="20"/>
             <Setter Property="FontSize" Value="{DynamicResource VisualSingerNameFontSize}"/>
-            <Setter Property="Background" Value="#2A2A2A"/>
+            <Setter Property="Background" Value="{StaticResource BrushSurfaceRaised}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="2"/>
@@ -1184,7 +1105,7 @@
                     <ControlTemplate TargetType="Button">
                         <!-- 不使用 ClipToBounds:照片為 Uniform 等比縮放、名字條也在格子內,沒有東西會超出邊界,
                              裁切對畫面沒有作用,卻讓 18 格每次重繪都要額外做裁切 -->
-                        <Border x:Name="border" BorderThickness="0" CornerRadius="4" Background="{TemplateBinding Background}">
+                        <Border x:Name="border" BorderThickness="0" CornerRadius="{StaticResource RadiusXSmall}" Background="{TemplateBinding Background}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*"/>
@@ -1193,14 +1114,14 @@
                                 <!-- Photo 是背景解碼好的縮圖 (SingerThumbnailCache)，不在 UI 執行緒解碼原圖 -->
                                 <Image Grid.Row="0" Grid.RowSpan="2" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"
                                        Source="{Binding Photo}"/>
-                                <Border Grid.Row="1" Background="#CC000000">
-                                    <TextBlock Text="{Binding Name}" Foreground="White" TextAlignment="Center" Padding="2" FontSize="{TemplateBinding FontSize}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                <Border Grid.Row="1" Background="{StaticResource BrushScrim}">
+                                    <TextBlock Text="{Binding Name}" Foreground="{StaticResource BrushTextMain}" TextAlignment="Center" Padding="2" FontSize="{TemplateBinding FontSize}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
                                 </Border>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#20FFFFFF"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource BrushOverlayHover}"/>
                             </Trigger>
                             <DataTrigger Binding="{Binding Name}" Value="">
                                 <Setter Property="Visibility" Value="Hidden"/>
@@ -1220,12 +1141,12 @@
             <Grid Width="1920" Height="1080" Background="{DynamicResource BrushBgPrimary}">
                 <DockPanel Margin="0">
                     <!-- Left Nav Rail (功能鍵直排，選中的頁面由 SetActiveNavButton 標示) -->
-                    <Border DockPanel.Dock="Left" Width="120" Margin="0,0,10,0">
+                    <Border DockPanel.Dock="Left" Width="120" Margin="0,0,12,0">
                         <DockPanel x:Name="NavRailPanel" Margin="0" ButtonBase.Click="NavRail_Click">
                             <Button Name="FuncBtnSetting" DockPanel.Dock="Bottom" Style="{StaticResource NavRailButtonStyle}" Margin="0" Click="FuncBtnSetting_Click">
                                 <StackPanel HorizontalAlignment="Center">
                                     <materialDesign:PackIcon Kind="Cog" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                    <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                    <Viewbox StretchDirection="DownOnly" Margin="8,0">
                                         <TextBlock Text="{DynamicResource Str.Nav.Setting}"/>
                                     </Viewbox>
                                 </StackPanel>
@@ -1235,7 +1156,7 @@
                                 <Button Name="FuncBtnBySinger" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnBySinger_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="AccountMusic" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                        <Viewbox StretchDirection="DownOnly" Margin="8,0">
                                             <TextBlock Text="{DynamicResource Str.Nav.Singer}"/>
                                         </Viewbox>
                                     </StackPanel>
@@ -1243,7 +1164,7 @@
                                 <Button Name="FuncBtnByFav" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByFav_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Heart" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                        <Viewbox StretchDirection="DownOnly" Margin="8,0">
                                             <TextBlock Text="{DynamicResource Str.Nav.Fav}"/>
                                         </Viewbox>
                                     </StackPanel>
@@ -1251,7 +1172,7 @@
                                 <Button Name="FuncBtnByNum" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNum_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Pound" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                        <Viewbox StretchDirection="DownOnly" Margin="8,0">
                                             <TextBlock Text="{DynamicResource Str.Nav.Num}"/>
                                         </Viewbox>
                                     </StackPanel>
@@ -1259,7 +1180,7 @@
                                 <Button Name="FuncBtnLanguage" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByLanguage_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Translate" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                        <Viewbox StretchDirection="DownOnly" Margin="8,0">
                                             <TextBlock Text="{DynamicResource Str.Nav.Language}"/>
                                         </Viewbox>
                                     </StackPanel>
@@ -1267,7 +1188,7 @@
                                 <Button Name="FuncBtnByNew" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNew_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="NewBox" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                        <Viewbox StretchDirection="DownOnly" Margin="8,0">
                                             <TextBlock Text="{DynamicResource Str.Nav.New}"/>
                                         </Viewbox>
                                     </StackPanel>
@@ -1275,7 +1196,7 @@
                                 <Button Name="FuncBtnByRank" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByRank_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Trophy" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                        <Viewbox StretchDirection="DownOnly" Margin="8,0">
                                             <TextBlock Text="{DynamicResource Str.Nav.Rank}"/>
                                         </Viewbox>
                                     </StackPanel>
@@ -1283,7 +1204,7 @@
                                 <Button Name="FuncBtnByInput" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByInput_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Magnify" Width="40" Height="40" HorizontalAlignment="Center"/>
-                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                        <Viewbox StretchDirection="DownOnly" Margin="8,0">
                                             <TextBlock Text="{DynamicResource Str.Nav.Input}"/>
                                         </Viewbox>
                                     </StackPanel>
@@ -1291,9 +1212,9 @@
                                 <Button Name="FuncBtnByYoutube" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByYoutube_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <!-- Youtube 圖示本身留白較多，放大一點才和其他圖示看起來一樣大 -->
-                                        <materialDesign:PackIcon Kind="Youtube" Width="54" Height="54" HorizontalAlignment="Center" Margin="0,-7,0,-7"/>
+                                        <materialDesign:PackIcon Kind="Youtube" Width="54" Height="54" HorizontalAlignment="Center" Margin="0,-8,0,-8"/>
                                         <!-- 字數較長，放不下時自動縮小 -->
-                                        <Viewbox StretchDirection="DownOnly" Margin="6,0">
+                                        <Viewbox StretchDirection="DownOnly" Margin="8,0">
                                             <TextBlock Text="{DynamicResource Str.Nav.Youtube}"/>
                                         </Viewbox>
                                     </StackPanel>
@@ -1303,12 +1224,12 @@
                     </Border>
 
                     <!-- Right Player Panel (正在播放 / 影片 / 已點歌單 / 播放控制) -->
-                    <Border DockPanel.Dock="Right" Width="460" Margin="10,0,0,0">
+                    <Border DockPanel.Dock="Right" Width="460" Margin="12,0,0,0">
                         <DockPanel Margin="0">
 
                             <!-- Bottom Button Panel -->
                             <Border DockPanel.Dock="Bottom" Height="116">
-                                <Grid Margin="0,0,0,5">
+                                <Grid Margin="0,0,0,4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="8"/>
@@ -1355,7 +1276,7 @@
                             </Border>
 
                             <!-- Center Content: Now Playing, Media Player, and Waiting List -->
-                            <Grid Margin="0,0,0,10">
+                            <Grid Margin="0,0,0,12">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" /> <!-- Currently Playing Panel -->
                                     <RowDefinition Height="Auto" /> <!-- Media player -->
@@ -1422,7 +1343,7 @@
                                                                         </Border.Style>
                                                                         <Border.ToolTip>
                                                                             <ToolTip>
-                                                                                <TextBlock FontSize="18" FontWeight="Medium">
+                                                                                <TextBlock FontSize="20" FontWeight="Normal">
                                                                                     <Run Text="{Binding OrderedBy, Mode=OneWay, Converter={StaticResource OrderedByDisplayConverter}}" FontWeight="Bold"/>
                                                                                 </TextBlock>
                                                                             </ToolTip>
@@ -1432,7 +1353,7 @@
                                                                                                Height="16" 
                                                                                                Margin="0,0,4,0"
                                                                                                VerticalAlignment="Center"
-                                                                                               Foreground="#4CAF50"/>
+                                                                                               Foreground="{StaticResource BrushSuccess}"/>
                                                                     </Border>
                                                                     <!-- Song name -->
                                                                     <TextBlock Text="{Binding WaitingListSongName}" 
@@ -1489,17 +1410,17 @@
                                 </Border>
 
                                 <!-- Buttons for Waiting List Pagination -->
-                                <Grid Grid.Row="3" Margin="0,6,0,0">
+                                <Grid Grid.Row="3" Margin="0,8,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Viewbox Grid.Column="0" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,8,0">
+                                    <Viewbox Grid.Column="0" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,8,0">
                                         <TextBlock Name="WaitListPageInfo" Text="{DynamicResource Str.Wait.PageInfoDefault}" FontSize="{DynamicResource WaitingListFontSize}" Foreground="{DynamicResource MaterialDesignBody}" />
                                     </Viewbox>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <Button Name="WaitListPageUp" Content="{DynamicResource Str.Common.PageUp}" Style="{StaticResource FunctionButtonStyle}" Margin="0" Width="100" FontSize="26"/>
-                                        <Button Name="WaitListPageDown" Content="{DynamicResource Str.Common.PageDown}" Style="{StaticResource FunctionButtonStyle}" Margin="10,0,0,0" Width="100" FontSize="26"/>
+                                        <Button Name="WaitListPageUp" Content="{DynamicResource Str.Common.PageUp}" Style="{StaticResource FunctionButtonStyle}" Margin="0" Width="100" FontSize="24"/>
+                                        <Button Name="WaitListPageDown" Content="{DynamicResource Str.Common.PageDown}" Style="{StaticResource FunctionButtonStyle}" Margin="12,0,0,0" Width="100" FontSize="24"/>
                                     </StackPanel>
                                 </Grid>
 
@@ -1511,8 +1432,8 @@
                                         Background="{DynamicResource BrushBgCard}" 
                                         BorderBrush="{DynamicResource BrushBorderDefault}" 
                                         BorderThickness="1" 
-                                        CornerRadius="8" 
-                                        Padding="10,0"
+                                        CornerRadius="{StaticResource RadiusSmall}" 
+                                        Padding="12,0"
                                         SnapsToDevicePixels="True"
                                         UseLayoutRounding="True">
                                     <Grid VerticalAlignment="Center">
@@ -1529,8 +1450,8 @@
                                                 Background="{DynamicResource BrushBgSecondary}" 
                                                 BorderBrush="{DynamicResource BrushBorderDefault}"
                                                 BorderThickness="1"
-                                                CornerRadius="7" 
-                                                Margin="0,0,10,0"
+                                                CornerRadius="{StaticResource RadiusSmallInner}" 
+                                                Margin="0,0,12,0"
                                                 VerticalAlignment="Center"
                                                 ToolTip="{DynamicResource Str.NowPlaying.Idle}">
                                             <materialDesign:PackIcon x:Name="NowPlayingIcon" Kind="MusicNote" Width="22" Height="22" 
@@ -1590,14 +1511,14 @@
                                         <Grid x:Name="MarqueeContainer" Grid.Row="0" Height="259" Panel.ZIndex="100" ClipToBounds="False" IsHitTestVisible="False" />
                                         
                                         <!-- Control Sliders Panel -->
-                                        <Grid Grid.Row="1" Background="#CC000000" Margin="5,0,5,5">
+                                        <Grid Grid.Row="1" Background="{StaticResource BrushScrim}" Margin="4,0,4,4">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
                                             
                                             <!-- Video Progress Slider -->
-                                            <Grid Grid.Row="0" Margin="5,5,5,2">
+                                            <Grid Grid.Row="0" Margin="4,4,4,2">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="*" />
@@ -1605,7 +1526,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 
                                                 <TextBlock Grid.Column="0" Name="CurrentTimeText" Text="00:00" 
-                                                           Foreground="White" FontSize="26" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                           Foreground="{StaticResource BrushTextMain}" FontSize="24" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                 
                                                 <Slider Grid.Column="1" Name="VideoProgressSlider" 
                                                         Minimum="0" Maximum="100" Value="0"
@@ -1614,11 +1535,11 @@
                                                         Thumb.DragCompleted="VideoProgressSlider_DragCompleted"/>
                                                 
                                                 <TextBlock Grid.Column="2" Name="TotalTimeText" Text="00:00" 
-                                                           Foreground="White" FontSize="26" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                           Foreground="{StaticResource BrushTextMain}" FontSize="24" VerticalAlignment="Center" Margin="4,0,0,0"/>
                                             </Grid>
                                             
                                             <!-- Volume Control Slider -->
-                                            <Grid Grid.Row="1" Margin="5,2,5,5">
+                                            <Grid Grid.Row="1" Margin="4,2,4,4">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="*" />
@@ -1630,26 +1551,26 @@
                                                 <Button Grid.Column="0" Name="MuteButton" Click="MuteButton_Click"
                                                         Style="{StaticResource MaterialDesignIconButton}"
                                                         ToolTip="Mute/Unmute"
-                                                        Margin="0,0,5,0">
+                                                        Margin="0,0,4,0">
                                                     <materialDesign:PackIcon Name="VolumeIcon" Kind="VolumeHigh" 
-                                                                             Foreground="White" Width="36" Height="36" 
+                                                                             Foreground="{StaticResource BrushTextMain}" Width="36" Height="36" 
                                                                              VerticalAlignment="Center"/>
                                                 </Button>
                                                 
                                                 <Slider Grid.Column="1" Name="VolumeSlider" 
                                                         Minimum="0" Maximum="100" Value="100"
                                                         Style="{StaticResource ThickSliderStyle}"
-                                                        Margin="0,0,10,0"/>
+                                                        Margin="0,0,12,0"/>
                                                 
                                                 <TextBlock Grid.Column="2" Name="VolumeText" Text="100" 
-                                                           Foreground="White" FontSize="28" VerticalAlignment="Center" 
-                                                           TextAlignment="Left" Width="50" Margin="0,0,10,0"/>
+                                                           Foreground="{StaticResource BrushTextMain}" FontSize="24" VerticalAlignment="Center" 
+                                                           TextAlignment="Left" Width="50" Margin="0,0,12,0"/>
                                                 
                                                 <ToggleButton Grid.Column="3" Name="VolumeLockToggle"
                                                               Style="{StaticResource MaterialDesignActionToggleButton}"
                                                               ToolTip="{DynamicResource Str.Player.LockVolume}"
                                                               VerticalAlignment="Center"
-                                                              Margin="0,0,10,0"
+                                                              Margin="0,0,12,0"
                                                               Background="Transparent"
                                                               Checked="VolumeLockToggle_Checked"
                                                               Unchecked="VolumeLockToggle_Unchecked">
@@ -1698,7 +1619,7 @@
                             </Grid.RowDefinitions>
 
                             <!-- Top 7 buttons for 2nd filter, default is singer -->
-                            <UniformGrid Grid.Row="0" Rows="1" Margin="0,0,0,6">
+                            <UniformGrid Grid.Row="0" Rows="1" Margin="0,0,0,8">
                                 <Button x:Name="FilterButton1" Style="{DynamicResource SecondFilterButtonStyle}"/>
                                 <Button x:Name="FilterButton2" Style="{DynamicResource SecondFilterButtonStyle}"/>
                                 <Button x:Name="FilterButton3" Style="{DynamicResource SecondFilterButtonStyle}"/>
@@ -1709,9 +1630,9 @@
                             </UniformGrid>
 
                             <!-- Language Second Filter: Singer Type -->
-                            <UniformGrid x:Name="LanguageSecondFilterGrid" Grid.Row="1" Rows="1" Margin="0,0,0,6" Height="50" Visibility="Collapsed">
+                            <UniformGrid x:Name="LanguageSecondFilterGrid" Grid.Row="1" Rows="1" Margin="0,0,0,8" Height="50" Visibility="Collapsed">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="{DynamicResource Str.Lang.Duet}" VerticalAlignment="Center" Margin="0,0,30,0" FontSize="{DynamicResource FuncBtnFontSize}" FontWeight="Bold" Foreground="{DynamicResource MaterialDesignBody}"/>
+                                    <TextBlock Text="{DynamicResource Str.Lang.Duet}" VerticalAlignment="Center" Margin="0,0,32,0" FontSize="{DynamicResource FuncBtnFontSize}" FontWeight="Bold" Foreground="{DynamicResource MaterialDesignBody}"/>
                                     <ToggleButton x:Name="LanguageDuetToggle" IsChecked="False" Style="{StaticResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" Click="LanguageDuetToggle_Click">
                                         <ToggleButton.LayoutTransform>
                                             <ScaleTransform ScaleX="1.8" ScaleY="1.4"/>
@@ -1757,7 +1678,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- 歌曲/歌星切換 (Youtube 已移到左側主選單；YoutubeRadio 隱藏保留，作為 Youtube 模式的狀態供各 DataTrigger 使用) -->
-                                <Border x:Name="SearchModeSegmentBorder" Grid.Column="0" Background="#121826" BorderBrush="{StaticResource BrushBorderDefault}" BorderThickness="1" CornerRadius="{StaticResource RadiusMedium}" Margin="0,0,8,0" Padding="2" UseLayoutRounding="True">
+                                <Border x:Name="SearchModeSegmentBorder" Grid.Column="0" Background="{StaticResource BrushBgSecondary}" BorderBrush="{StaticResource BrushBorderDefault}" BorderThickness="1" CornerRadius="{StaticResource RadiusMedium}" Margin="0,0,8,0" Padding="2" UseLayoutRounding="True">
                                     <UniformGrid x:Name="SearchModeSegment" Columns="2">
                                         <RadioButton x:Name="YoutubeRadio" Visibility="Collapsed"/>
                                         <RadioButton x:Name="SongRadio" Content="{DynamicResource Str.Search.Song}" IsChecked="True" Style="{StaticResource SearchSegmentRadioButtonStyle}" Click="SearchMode_Click"/>
@@ -1773,7 +1694,7 @@
                                 <!-- 寬度與「清除Youtube歌曲」相同 -->
                                 <Button x:Name="YoutubeHistoryBtn" Grid.Column="0" Grid.ColumnSpan="3" Content="{DynamicResource Str.Youtube.History}" Style="{StaticResource FunctionButtonStyle}" Click="YoutubeHistoryBtn_Click" Margin="0" Visibility="Collapsed"
                                         HorizontalAlignment="Left" Width="{Binding ActualWidth, ElementName=ClearYoutubeBtn}"/>
-                                <Button x:Name="ClearYoutubeBtn" Grid.Column="4" Grid.ColumnSpan="2" Content="{DynamicResource Str.Youtube.Clear}" Style="{StaticResource FunctionButtonStyle}" Click="ClearYoutubeBtn_Click" Margin="0" Visibility="Collapsed" Background="#D32F2F" Foreground="White" BorderBrush="#D32F2F" />
+                                <Button x:Name="ClearYoutubeBtn" Grid.Column="4" Grid.ColumnSpan="2" Content="{DynamicResource Str.Youtube.Clear}" Style="{StaticResource FunctionButtonStyle}" Click="ClearYoutubeBtn_Click" Margin="0" Visibility="Collapsed" Background="{StaticResource BrushDanger}" Foreground="{StaticResource BrushTextMain}" BorderBrush="{StaticResource BrushDanger}" />
 
                                 <Button x:Name="KeyboardListBtn" Grid.Column="5" Content="{DynamicResource Str.Search.Keyboard}" Style="{StaticResource FunctionButtonStyle}" Click="KeyboardListBtn_Click" Margin="0"/>
                             </Grid>
@@ -1797,8 +1718,8 @@
                             </ItemsControl>
 
                             <!-- Static user input words (max 10) + actions -->
-                            <Border x:Name="SearchSymbolPanel" Grid.Row="5" Margin="0,6,0,0" Visibility="Collapsed"
-                                    BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1" CornerRadius="4" Padding="6">
+                            <Border x:Name="SearchSymbolPanel" Grid.Row="5" Margin="0,8,0,0" Visibility="Collapsed"
+                                    BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1" CornerRadius="{StaticResource RadiusXSmall}" Padding="8">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <!-- Fixed width text so buttons stay close -->
@@ -1811,10 +1732,10 @@
                                         <TextBox x:Name="SearchWords" Grid.Column="0" Text="" VerticalAlignment="Center" 
                                                  Background="Transparent" BorderThickness="0"
                                                  Foreground="{DynamicResource DataGridColumnHeaderForeground}"
-                                                 Width="260" FontSize="{DynamicResource BottomButtonFontSize}" Margin="0,0,6,0" 
+                                                 Width="260" FontSize="{DynamicResource BottomButtonFontSize}" Margin="0,0,8,0" 
                                                  MaxLength="20"
                                                  TextChanged="SearchWords_TextChanged"
-                                                 CaretBrush="White">
+                                                 CaretBrush="{StaticResource BrushTextMain}">
                                             <TextBox.Style>
                                                 <Style TargetType="TextBox">
                                                     <Setter Property="IsReadOnly" Value="True"/>
@@ -1860,22 +1781,22 @@
                                         </Button>
                                         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
                                             <TextBlock x:Name="QuickSongCountText" Text="" Visibility="Collapsed" Foreground="{DynamicResource MaterialDesignBody}"
-                                                       VerticalAlignment="Center" Margin="0,0,10,0"
+                                                       VerticalAlignment="Center" Margin="0,0,12,0"
                                                        FontSize="{DynamicResource BottomButtonFontSize}" />
 
                                             <!-- 歌星按鈕格的顏色圖例 (跟著 QuickSingerGrid 顯示/隱藏) -->
-                                            <StackPanel x:Name="SingerColorLegend" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,10,0"
+                                            <StackPanel x:Name="SingerColorLegend" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,12,0"
                                                         Visibility="{Binding Visibility, ElementName=QuickSingerGrid}">
                                                 <StackPanel.Resources>
                                                     <Style TargetType="Ellipse">
                                                         <Setter Property="Width" Value="18"/>
                                                         <Setter Property="Height" Value="18"/>
-                                                        <Setter Property="Margin" Value="0,0,6,0"/>
+                                                        <Setter Property="Margin" Value="0,0,8,0"/>
                                                         <Setter Property="VerticalAlignment" Value="Center"/>
                                                     </Style>
                                                     <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                                         <Setter Property="FontSize" Value="26"/>
-                                                        <Setter Property="Margin" Value="0,0,18,0"/>
+                                                        <Setter Property="Margin" Value="0,0,20,0"/>
                                                         <Setter Property="VerticalAlignment" Value="Center"/>
                                                     </Style>
                                                 </StackPanel.Resources>
@@ -1889,10 +1810,10 @@
                                                 <TextBlock Text="{DynamicResource Str.Legend.Other}" Foreground="{DynamicResource SingerButtonBackground}" Margin="0"/>
                                             </StackPanel>
                                                        
-                                            <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="#FFD700"
-                                                       FontSize="22" FontWeight="Bold" Margin="0,0,10,0" Visibility="Collapsed"/>
-                                            <TextBlock x:Name="YoutubeDownloadText" Margin="6,0,0,0" VerticalAlignment="Center" Foreground="#FFD700"
-                                                       FontSize="22" FontWeight="Bold"
+                                            <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="{StaticResource BrushWarning}"
+                                                       FontSize="20" FontWeight="Bold" Margin="0,0,12,0" Visibility="Collapsed"/>
+                                            <TextBlock x:Name="YoutubeDownloadText" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource BrushWarning}"
+                                                       FontSize="20" FontWeight="Bold"
                                                        Visibility="Collapsed" Text="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:0}%}"/>
                                         </StackPanel>
                                     </Grid>
@@ -2033,11 +1954,11 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <!-- Margin：上下 6 (排距 12)、左右 14 (按鈕較窄)；8 排 x 74 = 592，鍵盤 11 排 x 74 = 814 -->
-                                            <Button Style="{DynamicResource SingerGridButtonStyle}" FontSize="36" MinHeight="0" Height="62" Margin="14,6"
+                                            <Button Style="{DynamicResource SingerGridButtonStyle}" FontSize="36" MinHeight="0" Height="62" Margin="16,8"
                                                     Click="QuickSingerButton_Click" Tag="{Binding Name}">
                                                 <Viewbox StretchDirection="DownOnly">
                                                     <!-- 文字顏色依歌手類型：男 藍、女 粉、團體 綠、其他 主題色 -->
-                                                    <TextBlock Text="{Binding Name}" Padding="5,0">
+                                                    <TextBlock Text="{Binding Name}" Padding="4,0">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}"/>
@@ -2082,7 +2003,7 @@
                                                     MouseEnter="YoutubeThumbnail_MouseEnter" MouseLeave="YoutubeThumbnail_MouseLeave">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
-                                                        <Border x:Name="border" BorderThickness="0" CornerRadius="4" Background="#2A2A2A" ClipToBounds="True" Margin="2">
+                                                        <Border x:Name="border" BorderThickness="0" CornerRadius="{StaticResource RadiusXSmall}" Background="{StaticResource BrushSurfaceRaised}" ClipToBounds="True" Margin="2">
                                                             <Grid>
                                                                 <Grid.RowDefinitions>
                                                                     <RowDefinition Height="*"/>
@@ -2104,14 +2025,14 @@
                                                                               LoadedBehavior="Manual" 
                                                                               UnloadedBehavior="Stop" 
                                                                               Volume="0" />
-                                                                <Border x:Name="TitleBorder" Grid.Row="1" Background="#CC000000">
-                                                                    <TextBlock Text="{Binding SongName}" Foreground="White" TextAlignment="Center" Padding="2" FontSize="20" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                                                <Border x:Name="TitleBorder" Grid.Row="1" Background="{StaticResource BrushScrim}">
+                                                                    <TextBlock Text="{Binding SongName}" Foreground="{StaticResource BrushTextMain}" TextAlignment="Center" Padding="2" FontSize="20" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
                                                                 </Border>
                                                             </Grid>
                                                         </Border>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="border" Property="Background" Value="#20FFFFFF"/>
+                                                                <Setter TargetName="border" Property="Background" Value="{StaticResource BrushOverlayHover}"/>
                                                             </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -2137,10 +2058,10 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Button x:Name="SingerNameButton" Style="{DynamicResource SingerGridButtonStyle}" FontSize="36" MinHeight="0" Height="62" Margin="14,6"
+                                    <Button x:Name="SingerNameButton" Style="{DynamicResource SingerGridButtonStyle}" FontSize="36" MinHeight="0" Height="62" Margin="16,8"
                                             Click="SingerButton_Click" Tag="{Binding}">
                                                 <Viewbox StretchDirection="DownOnly">
-                                                    <TextBlock Text="{Binding}" Padding="5,0" Foreground="{DynamicResource SingerButtonBackground}"/>
+                                                    <TextBlock Text="{Binding}" Padding="4,0" Foreground="{DynamicResource SingerButtonBackground}"/>
                                                 </Viewbox>
                                             </Button>
                                             <!-- 補位用的空格 (最愛分類對齊、最後一頁) 不顯示按鈕外框 -->
@@ -2230,7 +2151,7 @@
                                           ColumnHeaderHeight="52"
                                           Height="832"
                                           VerticalAlignment="Top"
-                                          Margin="0,6,0,0"
+                                          Margin="0,8,0,0"
                                           HeadersVisibility="Column"
                                           BorderThickness="0"
                                           Padding="0"
@@ -2266,9 +2187,9 @@
                             </Grid>
 
                             <!-- Container for other DataGrids - Always visible in remaining space -->
-                            <Grid Grid.Row="6" Margin="0,10,0,0">
+                            <Grid Grid.Row="6" Margin="0,12,0,0">
                                 <!-- DataGrid 2 - Language Search Results -->
-                                <DataGrid Name="LanguageResultGrid" Margin="0,0,0,5" 
+                                <DataGrid Name="LanguageResultGrid" Margin="0,0,0,4" 
                                           FontSize="{DynamicResource SongListFontSize}"
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           CanUserSortColumns="False"
@@ -2282,7 +2203,7 @@
                                 </DataGrid>
                                 
                                 <!-- DataGrid 3 - Search Results -->
-                                <DataGrid Name="SearchResultGrid" Margin="0,0,0,5" 
+                                <DataGrid Name="SearchResultGrid" Margin="0,0,0,4" 
                                           FontSize="{DynamicResource SongListFontSize}"
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           CanUserSortColumns="False"
@@ -2296,7 +2217,7 @@
                                 </DataGrid>
                                 
                                 <!-- DataGrid 4 - Number Search Results -->
-                                <DataGrid Name="NumberResultGrid" Margin="0,0,0,5" 
+                                <DataGrid Name="NumberResultGrid" Margin="0,0,0,4" 
                                           FontSize="{DynamicResource SongListFontSize}"
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           CanUserSortColumns="False"
@@ -2310,7 +2231,7 @@
                                 </DataGrid>
                                 
                                 <!-- DataGrid 5 - Favorite Songs -->
-                                <DataGrid Name="FavoriteResultGrid" Margin="0,0,0,5" 
+                                <DataGrid Name="FavoriteResultGrid" Margin="0,0,0,4" 
                                           FontSize="{DynamicResource SongListFontSize}"
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           CanUserSortColumns="False"
@@ -2324,7 +2245,7 @@
                                 </DataGrid>
                                 
                                 <!-- DataGrid 6 - New Songs -->
-                                <DataGrid Name="NewSongResultGrid" Margin="0,0,0,5" 
+                                <DataGrid Name="NewSongResultGrid" Margin="0,0,0,4" 
                                           FontSize="{DynamicResource SongListFontSize}"
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           CanUserSortColumns="False"
@@ -2338,7 +2259,7 @@
                                 </DataGrid>
                                 
                                 <!-- DataGrid 7 - Ranking Songs -->
-                                <DataGrid Name="RankResultGrid" Margin="0,0,0,5" 
+                                <DataGrid Name="RankResultGrid" Margin="0,0,0,4" 
                                           FontSize="{DynamicResource SongListFontSize}"
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           CanUserSortColumns="False"
@@ -2352,7 +2273,7 @@
                                 </DataGrid>
                                 
                                 <!-- DataGrid 8 - Duet Songs -->
-                                <DataGrid Name="DuetResultGrid" Margin="0,0,0,5" 
+                                <DataGrid Name="DuetResultGrid" Margin="0,0,0,4" 
                                           FontSize="{DynamicResource SongListFontSize}"
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           CanUserSortColumns="False"
@@ -2366,7 +2287,7 @@
                                 </DataGrid>
                                 
                                 <!-- DataGrid 9 - Button Style Data -->
-                                <DataGrid Name="ButtonStyleGrid" Margin="0,0,0,5" 
+                                <DataGrid Name="ButtonStyleGrid" Margin="0,0,0,4" 
                                           FontSize="{DynamicResource SongListFontSize}"
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           CanUserSortColumns="False"
@@ -2380,7 +2301,7 @@
                                 </DataGrid>
                                 
                                 <!-- DataGrid 10 - Theme Data -->
-                                <DataGrid Name="ThemeGrid" Margin="0,0,0,5" 
+                                <DataGrid Name="ThemeGrid" Margin="0,0,0,4" 
                                           FontSize="{DynamicResource SongListFontSize}"
                                           AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
                                           CanUserSortColumns="False"
@@ -2404,17 +2325,17 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!-- 列表變窄後頁碼說明可能放不下，太長時等比縮小 -->
-                                <Viewbox Grid.Column="0" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,10,0">
+                                <Viewbox Grid.Column="0" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,12,0">
                                     <TextBlock Name="PageInfoTextBlock" Text="{DynamicResource Str.Page.Default}" FontSize="{DynamicResource BottomButtonFontSize}" Foreground="{DynamicResource MaterialDesignBody}" />
                                 </Viewbox>
 
                                 <!-- Digital Clock -->
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,30,0">
-                                    <materialDesign:PackIcon Kind="ClockOutline" Width="46" Height="46" VerticalAlignment="Center" Foreground="White" Margin="0,0,12,0"/>
-                                    <TextBlock Name="DigitalClockText" Text="00:00" FontSize="40" FontWeight="Medium" VerticalAlignment="Center" Foreground="White" FontFamily="Consolas"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,32,0">
+                                    <materialDesign:PackIcon Kind="ClockOutline" Width="46" Height="46" VerticalAlignment="Center" Foreground="{StaticResource BrushTextMain}" Margin="0,0,12,0"/>
+                                    <TextBlock Name="DigitalClockText" Text="00:00" FontSize="36" FontWeight="Normal" VerticalAlignment="Center" Foreground="{StaticResource BrushTextMain}" FontFamily="Consolas"/>
                                 </StackPanel>
                                 
-                                <Button Name="PageUp" Grid.Column="2" Content="{DynamicResource Str.Common.PageUp}" Margin="0,0,10,0" VerticalAlignment="Top" Click="PageUp_Click">
+                                <Button Name="PageUp" Grid.Column="2" Content="{DynamicResource Str.Common.PageUp}" Margin="0,0,12,0" VerticalAlignment="Top" Click="PageUp_Click">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource PaginationButtonStyle}">
                                             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -2423,7 +2344,7 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                                <Button Name="PageDown" Grid.Column="3" Content="{DynamicResource Str.Common.PageDown}" Margin="0,0,10,0" VerticalAlignment="Top" Click="PageDown_Click">
+                                <Button Name="PageDown" Grid.Column="3" Content="{DynamicResource Str.Common.PageDown}" Margin="0,0,12,0" VerticalAlignment="Top" Click="PageDown_Click">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource PaginationButtonStyle}">
                                             <Setter Property="HorizontalContentAlignment" Value="Center" />

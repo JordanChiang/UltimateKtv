@@ -1406,7 +1406,7 @@ namespace UltimateKtv
         {
             // Use ThemeSettingsHandler brushes directly for consistent theming
             _activeButtonBackground = ThemeSettingsHandler.PrimaryBrush;
-            _activeButtonForeground = Brushes.White;
+            _activeButtonForeground = RowStyleBrushes.ForegroundOn(_activeButtonBackground);
             _fixedButtonBackground = ThemeSettingsHandler.PrimaryBrush;
         }
 

@@ -38,7 +38,7 @@
     <Border Background="{DynamicResource MaterialDesignPaper}"
             BorderBrush="{DynamicResource PrimaryBrush}"
             BorderThickness="2"
-            CornerRadius="10" 
+            CornerRadius="{StaticResource RadiusMedium}" 
             Width="1024" Height="900"
             Effect="{DynamicResource MaterialDesignShadowDepth5}">
         <Grid Margin="20">
@@ -52,12 +52,12 @@
             <Grid Grid.Row="0" Margin="0,0,0,20">
                 <Button Name="ExitProgramButton" Click="ExitProgramButton_Click" 
                         Style="{StaticResource MaterialDesignRaisedButton}" 
-                        Background="#F44336" Foreground="White" BorderThickness="0"
-                        Height="45" FontSize="26" FontWeight="Bold" 
+                        Background="{StaticResource BrushDanger}" Foreground="{StaticResource BrushTextMain}" BorderThickness="0"
+                        Height="45" FontSize="24" FontWeight="Bold" 
                         HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="ExitToApp" Width="26" Height="26" VerticalAlignment="Center" Margin="5,0,5,0"/>
+                            <materialDesign:PackIcon Kind="ExitToApp" Width="26" Height="26" VerticalAlignment="Center" Margin="4,0,4,0"/>
                             <TextBlock Text="{DynamicResource Str.Options.ExitProgram}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button.Content>
@@ -65,7 +65,7 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                     <materialDesign:PackIcon Kind="Settings" Width="32" Height="32"
                                              Foreground="{DynamicResource PrimaryBrush}"
-                                             VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                             VerticalAlignment="Center" Margin="0,0,12,0"/>
                     <TextBlock Text="{DynamicResource Str.Options.Title}" FontSize="{StaticResource OptionsHeaderFontSize}" FontWeight="Bold"
                               VerticalAlignment="Center"
                               Foreground="{DynamicResource MaterialDesignBody}"/>
@@ -74,7 +74,7 @@
 
             <!-- Scrollable Options - same content as window version -->
             <ScrollViewer x:Name="OptionsScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel Margin="5">
+                <StackPanel Margin="4">
                     <!-- Row 0: UI Language -->
                     <Grid Margin="0,2">
                         <Grid.ColumnDefinitions>
@@ -85,7 +85,7 @@
 
                         <!-- UI Language (語言名稱以各語言本身顯示，不翻譯) -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -114,7 +114,7 @@
 
                         <!-- Public IP QR Code (Left) -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -130,7 +130,7 @@
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
 
                                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="{DynamicResource Str.Options.Port}" FontSize="{StaticResource OptionsItemLabelFontSize}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                    <TextBlock Text="{DynamicResource Str.Options.Port}" FontSize="{StaticResource OptionsItemLabelFontSize}" VerticalAlignment="Center" Margin="0,0,12,0"
                                               Foreground="{DynamicResource MaterialDesignBody}"/>
                                     <TextBox x:Name="PublicServerPortTextBox"
                                              Style="{x:Null}"
@@ -139,7 +139,7 @@
                                              VerticalAlignment="Center"
                                              VerticalContentAlignment="Center"
                                              TextAlignment="Center"
-                                             Padding="5"
+                                             Padding="4"
                                              BorderBrush="{DynamicResource MaterialDesignDivider}"
                                              BorderThickness="1"
                                              Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
@@ -153,14 +153,14 @@
                                            VerticalAlignment="Top" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}"/>
 
                                 <Image Name="PublicQrCodeImage" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
-                                       Width="200" Height="200" Margin="0,10,0,0"
+                                       Width="200" Height="200" Margin="0,12,0,0"
                                        Visibility="Collapsed" HorizontalAlignment="Center"/>
                             </Grid>
                         </Border>
 
                         <!-- Local HTTP Server QR Code (Right) -->
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -186,7 +186,7 @@
                                            VerticalAlignment="Top" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}"/>
 
                                 <Image Name="QrCodeImage" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
-                                       Width="200" Height="200" Margin="0,10,0,0"
+                                       Width="200" Height="200" Margin="0,12,0,0"
                                        Visibility="Collapsed" HorizontalAlignment="Center"/>
                             </Grid>
                         </Border>
@@ -202,7 +202,7 @@
 
                         <!-- Change Song Library Drive (Left) -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -225,7 +225,7 @@
                                 <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,8,0,0"
                                             Visibility="{Binding ElementName=ChangeSongLibraryDriveToggle, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}}"
                                             Name="SongLibraryDrivePathPanel">
-                                    <TextBlock Text="{DynamicResource Str.Options.PathLabel}" FontSize="{StaticResource OptionsDescriptionFontSize}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                    <TextBlock Text="{DynamicResource Str.Options.PathLabel}" FontSize="{StaticResource OptionsDescriptionFontSize}" VerticalAlignment="Center" Margin="0,0,12,0"
                                                Foreground="{DynamicResource MaterialDesignBody}"/>
                                     <TextBlock x:Name="SongLibraryDrivePathText"
                                                Text="{DynamicResource Str.Options.NoDirSelected}"
@@ -240,7 +240,7 @@
                                             Style="{DynamicResource MaterialDesignOutlinedButton}"
                                             FontSize="{StaticResource OptionsSmallFontSize}"
                                             Height="35"
-                                            Margin="10,0,0,0"
+                                            Margin="12,0,0,0"
                                             Click="BrowseSongLibraryDrive_Click"/>
                                 </StackPanel>
                             </Grid>
@@ -248,7 +248,7 @@
 
                         <!-- Random Play (Right) -->
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -276,7 +276,7 @@
                                              Foreground="{DynamicResource MaterialDesignBody}"
                                              VerticalAlignment="Center"
                                              VerticalContentAlignment="Center"
-                                             Margin="0,0,10,0"
+                                             Margin="0,0,12,0"
                                              SelectionChanged="RandomPlayCategoryComboBox_SelectionChanged">
                                         <ComboBoxItem Content="{DynamicResource Str.Random.MandarinRank}" Tag="0"/>
                                         <ComboBoxItem Content="{DynamicResource Str.Random.TaiwaneseRank}" Tag="1"/>
@@ -291,7 +291,7 @@
                                              Foreground="{DynamicResource MaterialDesignBody}"
                                              VerticalAlignment="Center"
                                              VerticalContentAlignment="Center"
-                                             Margin="0,0,10,0"
+                                             Margin="0,0,12,0"
                                              Visibility="Collapsed"/>
 
                                     <ComboBox x:Name="RandomPlayAudioChannelComboBox"
@@ -319,7 +319,7 @@
 
                         <!-- Preview Option -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -337,7 +337,7 @@
 
                         <!-- System Option -->
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -363,7 +363,7 @@
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -381,7 +381,7 @@
 
                         <!-- Volume Option (New Song Days) -->
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -396,7 +396,7 @@
                                          VerticalAlignment="Center"
                                          VerticalContentAlignment="Center"
                                          TextAlignment="Center"
-                                         Padding="5"
+                                         Padding="4"
                                          BorderBrush="{DynamicResource MaterialDesignDivider}"
                                          BorderThickness="1"
                                          Background="{DynamicResource MaterialDesignTextFieldBoxBackground}"
@@ -415,7 +415,7 @@
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -439,7 +439,7 @@
 
                         <!-- Legacy Audio Channel Definition -->
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -466,7 +466,7 @@
 
                         <!-- Pre-Loading Option -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -483,7 +483,7 @@
                         </Border>
 
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -510,7 +510,7 @@
 
                         <!-- Network Remote Song Username Recording Option -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -527,7 +527,7 @@
                         </Border>
 
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -535,12 +535,12 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.PlayHistoryCount}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
-                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,10,0"/>
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,12,0"/>
                                 <Slider Grid.Column="1" Name="PlayHistoryCountSlider" Minimum="1" Maximum="10" Value="5" 
                                         TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center"
                                         ValueChanged="PlayHistoryCountSlider_ValueChanged"/>
                                 <TextBlock Grid.Column="2" Name="PlayHistoryCountValue" Text="5" FontSize="{StaticResource OptionsItemLabelFontSize}" 
-                                          FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0" Width="30" TextAlignment="Right"
+                                          FontWeight="Bold" VerticalAlignment="Center" Margin="12,0,0,0" Width="30" TextAlignment="Right"
                                           Foreground="{DynamicResource MaterialDesignBody}"/>
                             </Grid>
                         </Border>
@@ -556,7 +556,7 @@
 
                         <!-- Play Count -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -577,7 +577,7 @@
                                     <TextBlock x:Name="PlayCountValueText"
                                                Text="{Binding ElementName=PlayCountSlider, Path=Value, StringFormat={}{0:F0}%}"
                                                FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold" Width="60" TextAlignment="Right"
-                                               VerticalAlignment="Center" Margin="10,0,0,0"
+                                               VerticalAlignment="Center" Margin="12,0,0,0"
                                                Foreground="{DynamicResource MaterialDesignBody}"/>
                                 </StackPanel>
 
@@ -590,7 +590,7 @@
 
                         <!-- Audio Amplify Setting -->
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50" VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -620,7 +620,7 @@
 
                         <!-- Video Renderer -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -643,14 +643,14 @@
 
                         <!-- Audio Renderer -->
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.AudioRenderer}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
-                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,10,0"/>
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,12,0"/>
                                 <ComboBox x:Name="AudioRendererComboBox" Grid.Column="1"
                                          Height="40"
                                          FontSize="{StaticResource OptionsSmallFontSize}"
@@ -672,7 +672,7 @@
 
                         <!-- Enable HW Accel -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -690,7 +690,7 @@
 
                         <!-- HW Accel Mode -->
                         <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -725,7 +725,7 @@
 
                         <!-- Language Multi-Select -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -750,7 +750,7 @@
 
                         <!-- Enable Recording (Left) -->
                         <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -768,7 +768,7 @@
 
                         <!-- Audio Input Device (Right) -->
                         <Border x:Name="RecordingDeviceBorder" Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -776,7 +776,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.RecordingDevice}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
-                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,10,0"/>
+                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}" Margin="0,0,12,0"/>
                                 <ComboBox x:Name="AudioInputDeviceComboBox" Grid.Column="1"
                                           Height="40"
                                           FontSize="{StaticResource OptionsSmallFontSize}"
@@ -790,7 +790,7 @@
                     <!-- Row 13: Recording Path (Full Width) -->
                     <Grid Margin="0,2">
                         <Border x:Name="RecordingPathBorder" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="5" Effect="{DynamicResource MaterialDesignShadowDepth1}">
+                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -823,7 +823,7 @@
             </ScrollViewer>
 
             <!-- Footer -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,10">
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,12">
                 <Button Name="ApplyButton" Content="{DynamicResource Str.Options.Apply}"
                        Style="{DynamicResource MaterialDesignRaisedButton}"
                        FontSize="{StaticResource OptionsFooterButtonFontSize}" Height="54"

@@ -11,7 +11,7 @@
         <TextBlock x:Name="LrcTextBlock" 
                    Panel.ZIndex="50"
                    Text="" 
-                   Foreground="White" 
+                   Foreground="{StaticResource BrushTextMain}" 
                    FontSize="80" 
                    FontWeight="Bold" 
                    HorizontalAlignment="Center" 
@@ -22,7 +22,7 @@
                    IsHitTestVisible="False"
                    Visibility="Collapsed">
             <TextBlock.Effect>
-                <DropShadowEffect Color="Black" BlurRadius="8" ShadowDepth="3" Opacity="1"/>
+                <DropShadowEffect Color="{StaticResource ColorShadow}" BlurRadius="8" ShadowDepth="3" Opacity="1"/>
             </TextBlock.Effect>
         </TextBlock>
     </Grid>

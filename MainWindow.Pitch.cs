@@ -77,7 +77,7 @@ namespace UltimateKtv
                 IsHitTestVisible = false, // Non-clickable display banner without dimming
                 Focusable = false,
                 FontSize = 22,
-                Foreground = Brushes.White,
+                Foreground = (Brush)(TryFindResource("BrushOnAccentActive") ?? Brushes.White),
                 FontWeight = FontWeights.Bold,
                 Background = (Brush)FindResource("BrushCyberActiveGradient"),
                 BorderBrush = (Brush)FindResource("BrushAccentCyan"),
@@ -86,9 +86,9 @@ namespace UltimateKtv
                 Effect = new System.Windows.Media.Effects.DropShadowEffect
                 {
                     Color = (Color)FindResource("ColorAccentCyan"),
-                    BlurRadius = 15,
+                    BlurRadius = (double)FindResource("GlowBlurActive"),
                     ShadowDepth = 0,
-                    Opacity = 0.55
+                    Opacity = (double)FindResource("GlowOpacityActive")
                 }
             };
             dialogPanel.Children.Add(_currentPitchDisplayBtn);

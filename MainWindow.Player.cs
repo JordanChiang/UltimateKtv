@@ -1372,10 +1372,10 @@ namespace UltimateKtv
                 // Create the dialog content with reduced padding
                 var dialogBorder = new Border
                 {
-                    Background = new SolidColorBrush(Color.FromRgb(0x12, 0x18, 0x26)),
+                    Background = (Brush)FindResource("BrushBgSecondary"),
                     BorderBrush = ThemeSettingsHandler.PrimaryBrush,
                     BorderThickness = new Thickness(1.5),
-                    CornerRadius = new CornerRadius(8),
+                    CornerRadius = (CornerRadius)FindResource("RadiusSmall"),
                     Height = 60,
                     Padding = new Thickness(8, 6, 8, 6),
                     Effect = new System.Windows.Media.Effects.DropShadowEffect
@@ -1656,10 +1656,10 @@ namespace UltimateKtv
                 // Create the dialog content with styling matching Vocal dialog
                 var dialogBorder = new Border
                 {
-                    Background = new SolidColorBrush(Color.FromRgb(0x12, 0x18, 0x26)),
+                    Background = (Brush)FindResource("BrushBgSecondary"),
                     BorderBrush = ThemeSettingsHandler.PrimaryBrush,
                     BorderThickness = new Thickness(1.5),
-                    CornerRadius = new CornerRadius(8),
+                    CornerRadius = (CornerRadius)FindResource("RadiusSmall"),
                     Height = 60,
                     Padding = new Thickness(8, 6, 8, 6),
                     Effect = new System.Windows.Media.Effects.DropShadowEffect

@@ -5,6 +5,8 @@
         <ResourceDictionary Source="Colors.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
+    <!-- 光暈 3 級 (按下 / 移入 / 選取)，數值見 Colors.xaml 的 Glow* token -->
+
     <!-- ========================================================= -->
     <!-- 1. 標準賽博龐克按鈕 (CyberButton)                           -->
     <!-- ========================================================= -->
@@ -16,7 +18,7 @@
         <Setter Property="FontFamily" Value="{DynamicResource UiFontFamily}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="FontSize" Value="16"/>
-        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="Padding" Value="12,8"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -30,36 +32,34 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{StaticResource RadiusMedium}">
-                        <ContentPresenter x:Name="contentPresenter"
-                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          Margin="{TemplateBinding Padding}"
-                                          RecognizesAccessKey="True"/>
+                        <Grid>
+                            <!-- 移入/按下的半透明疊色：疊在原底色上而不取代，選取中 (漸層底) 的按鈕移入時仍維持選取底色與文字對比 -->
+                            <Border x:Name="stateOverlay" Background="Transparent" CornerRadius="{StaticResource RadiusMediumInner}" IsHitTestVisible="False"/>
+                            <ContentPresenter x:Name="contentPresenter"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Margin="{TemplateBinding Padding}"
+                                              RecognizesAccessKey="True"/>
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <!-- 滑鼠移入：動態青色發光與高亮 -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource BrushAccentCyanDim}"/>
+                            <Setter TargetName="stateOverlay" Property="Background" Value="{DynamicResource BrushAccentCyanDim}"/>
                             <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource BrushAccentCyan}"/>
                             <Setter Property="Foreground" Value="{DynamicResource BrushAccentCyan}"/>
                             <Setter TargetName="border" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" 
-                                                      BlurRadius="15" 
-                                                      ShadowDepth="0" 
-                                                      Opacity="0.5"/>
+                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="{StaticResource GlowBlurHover}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityHover}"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
                         <!-- 按下狀態：位移回饋與深色縮排 -->
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#3300F0FF"/>
+                            <Setter TargetName="stateOverlay" Property="Background" Value="{DynamicResource BrushAccentPressed}"/>
                             <Setter TargetName="border" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" 
-                                                      BlurRadius="8" 
-                                                      ShadowDepth="0" 
-                                                      Opacity="0.4"/>
+                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="{StaticResource GlowBlurPressed}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityPressed}"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -90,10 +90,14 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{StaticResource RadiusMedium}">
-                            <ContentPresenter x:Name="contentPresenter"
-                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                              Margin="{TemplateBinding Padding}"/>
+                            <Grid>
+                                <!-- 移入/按下的半透明疊色 (同 CyberButton)：不取代原底色 -->
+                                <Border x:Name="stateOverlay" Background="Transparent" CornerRadius="{StaticResource RadiusMediumInner}" IsHitTestVisible="False"/>
+                                <ContentPresenter x:Name="contentPresenter"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Margin="{TemplateBinding Padding}"/>
+                            </Grid>
                         </Border>
                         <!-- 右下角向量三角指示符 -->
                         <Path x:Name="triangleMark"
@@ -102,22 +106,33 @@
                               Opacity="0.8"
                               HorizontalAlignment="Right"
                               VerticalAlignment="Bottom"
-                              Margin="0,0,5,5"/>
+                              Margin="0,0,4,4"/>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="{DynamicResource BrushAccentCyanDim}"/>
+                            <Setter TargetName="stateOverlay" Property="Background" Value="{DynamicResource BrushAccentCyanDim}"/>
                             <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource BrushAccentCyan}"/>
                             <Setter Property="Foreground" Value="{DynamicResource BrushAccentCyan}"/>
                             <Setter TargetName="triangleMark" Property="Opacity" Value="1.0"/>
                             <Setter TargetName="border" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="15" ShadowDepth="0" Opacity="0.5"/>
+                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="{StaticResource GlowBlurHover}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityHover}"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#3300F0FF"/>
+                            <Setter TargetName="stateOverlay" Property="Background" Value="{DynamicResource BrushAccentPressed}"/>
+                            <Setter TargetName="border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="{StaticResource GlowBlurPressed}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityPressed}"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <!-- 停用狀態 -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="border" Property="Opacity" Value="0.38"/>
+                            <Setter TargetName="triangleMark" Property="Opacity" Value="0.3"/>
+                            <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -129,14 +144,14 @@
     <!-- 3. 分類切換 / 開關按鈕 (CyberToggleButton)                  -->
     <!-- ========================================================= -->
     <Style x:Key="CyberToggleButton" TargetType="{x:Type ToggleButton}">
-        <Setter Property="Background" Value="#121826"/>
+        <Setter Property="Background" Value="{StaticResource BrushBgSecondary}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BrushBorderDefault}"/>
         <Setter Property="BorderThickness" Value="{DynamicResource BorderThicknessButton}"/>
         <Setter Property="Foreground" Value="{StaticResource BrushTextMain}"/>
         <Setter Property="FontFamily" Value="{DynamicResource UiFontFamily}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="FontSize" Value="16"/>
-        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="Padding" Value="12,8"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -163,20 +178,34 @@
                             <Setter Property="Foreground" Value="{DynamicResource BrushAccentCyan}"/>
                             <Setter TargetName="border" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="12" ShadowDepth="0" Opacity="0.4"/>
+                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="{StaticResource GlowBlurHover}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityHover}"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
-                        <!-- 選中狀態 (IsChecked = True) active 藍青漸層與強烈光暈 -->
+                        <!-- 按下狀態 (未選取時)：與 CyberButton 相同的按下回饋 -->
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="{DynamicResource BrushAccentPressed}"/>
+                            <Setter TargetName="border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="{StaticResource GlowBlurPressed}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityPressed}"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <!-- 選中狀態 (IsChecked = True) 主題色漸層與強烈光暈 (排在按下之後，選取中不被按下狀態蓋掉) -->
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="border" Property="Background" Value="{DynamicResource BrushCyberActiveGradient}"/>
                             <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource BrushAccentCyan}"/>
-                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                            <Setter Property="Foreground" Value="{DynamicResource BrushOnAccentActive}"/>
                             <Setter TargetName="border" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="18" ShadowDepth="0" Opacity="0.6"/>
+                                    <DropShadowEffect Color="{DynamicResource ColorAccentCyan}" BlurRadius="{StaticResource GlowBlurActive}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityActive}"/>
                                 </Setter.Value>
                             </Setter>
+                        </Trigger>
+                        <!-- 停用狀態 -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="border" Property="Opacity" Value="0.38"/>
+                            <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -199,26 +228,26 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{StaticResource RadiusMedium}">
                         <ContentPresenter x:Name="contentPresenter"
-                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Margin="{TemplateBinding Padding}"
                                           RecognizesAccessKey="True"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#33FFB703"/>
-                            <Setter Property="Foreground" Value="#FFF2A7"/>
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource BrushAccentGoldHoverBg}"/>
+                            <Setter Property="Foreground" Value="{StaticResource BrushAccentGoldLight}"/>
                             <Setter TargetName="border" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="{StaticResource ColorAccentGold}" BlurRadius="16" ShadowDepth="0" Opacity="0.6"/>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentGold}" BlurRadius="{StaticResource GlowBlurHover}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityHover}"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#55FFB703"/>
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource BrushAccentGoldPressedBg}"/>
                             <Setter TargetName="border" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="{StaticResource ColorAccentGold}" BlurRadius="8" ShadowDepth="0" Opacity="0.4"/>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentGold}" BlurRadius="{StaticResource GlowBlurPressed}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityPressed}"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
@@ -248,26 +277,26 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{StaticResource RadiusMedium}">
                         <ContentPresenter x:Name="contentPresenter"
-                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
-                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Margin="{TemplateBinding Padding}"
                                           RecognizesAccessKey="True"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#33FF0077"/>
-                            <Setter Property="Foreground" Value="#FFA3CF"/>
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource BrushAccentMagentaHoverBg}"/>
+                            <Setter Property="Foreground" Value="{StaticResource BrushAccentMagentaLight}"/>
                             <Setter TargetName="border" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="{StaticResource ColorAccentMagenta}" BlurRadius="16" ShadowDepth="0" Opacity="0.6"/>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentMagenta}" BlurRadius="{StaticResource GlowBlurHover}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityHover}"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#55FF0077"/>
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource BrushAccentMagentaPressedBg}"/>
                             <Setter TargetName="border" Property="Effect">
                                 <Setter.Value>
-                                    <DropShadowEffect Color="{StaticResource ColorAccentMagenta}" BlurRadius="8" ShadowDepth="0" Opacity="0.4"/>
+                                    <DropShadowEffect Color="{StaticResource ColorAccentMagenta}" BlurRadius="{StaticResource GlowBlurPressed}" ShadowDepth="0" Opacity="{StaticResource GlowOpacityPressed}"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>

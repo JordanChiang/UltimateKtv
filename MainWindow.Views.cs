@@ -164,7 +164,7 @@ namespace UltimateKtv
 
             // 用資源參照，主題變更時跟著更新
             btn.SetResourceReference(Control.BackgroundProperty, "BrushCyberActiveGradient");
-            btn.Foreground = System.Windows.Media.Brushes.White;
+            btn.SetResourceReference(Control.ForegroundProperty, "BrushOnAccentActive");
             _activeNavButton = btn;
         }
 

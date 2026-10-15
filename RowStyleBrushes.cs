@@ -6,6 +6,7 @@ namespace UltimateKtv
     /// <summary>
     /// 歌曲列表列外觀風格 5~8 依主題色計算的筆刷。主程式 (ThemeSettingsHandler) 與 StyleSimulator 共用，
     /// 確保模擬畫面與實際畫面配色一致。回傳的筆刷皆已 Freeze。
+    /// 另提供 ForegroundOn：依底色挑選對比足夠的文字色 (選取中按鈕用)。
     /// </summary>
     public static class RowStyleBrushes
     {
@@ -40,6 +41,54 @@ namespace UltimateKtv
                 ["BrushBracketBorderHover"] = Solid(light, 90),
             };
             return d;
+        }
+
+        // 選取中按鈕的深色字與按鈕底下的面板色 (半透明漸層要先疊在面板色上才能算對比)
+        private static readonly Color Ink = Color.FromRgb(0x0A, 0x0C, 0x14);
+        private static readonly Color Backdrop = Color.FromRgb(0x12, 0x16, 0x24);
+        private static readonly SolidColorBrush InkBrush = Solid(Ink, 255);
+
+        /// <summary>
+        /// 依底色挑文字色：白字對比 ≥ 4.5:1 或比深色字清楚時用白字，否則用深色字 (#0A0C14)。
+        /// 漸層取所有色標的平均 (文字位於按鈕中間)。
+        /// </summary>
+        public static Brush ForegroundOn(Brush background)
+        {
+            Color c = background switch
+            {
+                SolidColorBrush s => s.Color,
+                GradientBrush g when g.GradientStops.Count > 0 => Average(g.GradientStops),
+                _ => Backdrop
+            };
+            double a = c.A / 255.0;
+            c = Color.FromRgb(
+                (byte)Math.Round(c.R * a + Backdrop.R * (1 - a)),
+                (byte)Math.Round(c.G * a + Backdrop.G * (1 - a)),
+                (byte)Math.Round(c.B * a + Backdrop.B * (1 - a)));
+
+            double l = Luminance(c);
+            double white = 1.05 / (l + 0.05);
+            double ink = (l + 0.05) / (Luminance(Ink) + 0.05);
+            return white >= 4.5 || white >= ink ? Brushes.White : InkBrush;
+        }
+
+        private static Color Average(GradientStopCollection stops)
+        {
+            double a = 0, r = 0, g = 0, b = 0;
+            foreach (var s in stops) { a += s.Color.A; r += s.Color.R; g += s.Color.G; b += s.Color.B; }
+            int n = stops.Count;
+            return Color.FromArgb((byte)(a / n), (byte)(r / n), (byte)(g / n), (byte)(b / n));
+        }
+
+        /// <summary>WCAG 相對亮度。</summary>
+        private static double Luminance(Color c)
+        {
+            static double Lin(byte v)
+            {
+                double s = v / 255.0;
+                return s <= 0.03928 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4);
+            }
+            return 0.2126 * Lin(c.R) + 0.7152 * Lin(c.G) + 0.0722 * Lin(c.B);
         }
 
         private static Color Lighten(Color c)

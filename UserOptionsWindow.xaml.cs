@@ -736,7 +736,7 @@ namespace UltimateKtv
                 Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(250, 250, 250)),
                 BorderBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(200, 200, 200)),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(10),
+                CornerRadius = (CornerRadius)FindResource("RadiusMedium"),
                 Effect = new System.Windows.Media.Effects.DropShadowEffect
                 {
                     Color = Colors.Black,

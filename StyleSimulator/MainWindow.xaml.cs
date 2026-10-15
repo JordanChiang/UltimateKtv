@@ -711,16 +711,21 @@ namespace StyleSimulator
                     new GradientStop(Color.FromArgb(215, (byte)(accentColor.R * 0.58), (byte)(accentColor.G * 0.55), (byte)(accentColor.B * 0.52)), 1.0)
                 }
             };
+            var accentPressedBrush = new SolidColorBrush(Color.FromArgb(0x33, accentColor.R, accentColor.G, accentColor.B));
             accentBrush.Freeze();
             accentDimBrush.Freeze();
+            accentPressedBrush.Freeze();
             cyberButtonGradient.Freeze();
             cyberActiveGradient.Freeze();
+            // 選取中按鈕的文字色 (白字對比不足時用深色字，與主程式相同算法)
+            var onAccentActiveBrush = UltimateKtv.RowStyleBrushes.ForegroundOn(cyberActiveGradient);
 
             // 一般 (未選取) 按鈕背景：純色深底 (與主程式 Themes/Colors.xaml 的 BrushButtonFlat 一致)，只有選取中的按鈕用漸層
             var buttonFlatBrush = (Brush)(TryFindResource("BrushButtonFlat") ?? new SolidColorBrush(Color.FromRgb(0x16, 0x1A, 0x26)));
 
             // Update Window Resource Dictionary for DynamicResource bindings
             this.Resources["PrimaryBrush"] = primaryBrush;
+            this.Resources["BrushOnPrimary"] = UltimateKtv.RowStyleBrushes.ForegroundOn(primaryBrush);
             this.Resources["PrimaryLightBrush"] = primaryLightBrush;
             this.Resources["DataGridHeaderBgBrush"] = gridHeaderBgBrush;
             this.Resources["DataGridHeaderFgBrush"] = gridHeaderFgBrush;
@@ -729,7 +734,10 @@ namespace StyleSimulator
             this.Resources["WebHostInfoFgBrush"] = webHostInfoFgBrush;
             this.Resources["ColorAccentCyan"] = accentColor;
             this.Resources["BrushAccentCyan"] = accentBrush;
+            this.Resources["BrushAccentCyanDim"] = accentDimBrush;
+            this.Resources["BrushAccentPressed"] = accentPressedBrush;
             this.Resources["BrushCyberActiveGradient"] = cyberActiveGradient;
+            this.Resources["BrushOnAccentActive"] = onAccentActiveBrush;
             this.Resources["BrushCyberButtonGradient"] = cyberButtonGradient;
 
             // Option 2 & 3 Dynamic Theme-Calculated Brushes
@@ -924,7 +932,7 @@ namespace StyleSimulator
                     {
                         // Active Mode Button: uses CyberActiveGradient background & White text with accent border
                         b.Background = cyberActiveGradient;
-                        b.Foreground = Brushes.White;
+                        b.Foreground = onAccentActiveBrush;
                         b.BorderBrush = accentBrush;
                         b.BorderThickness = new Thickness(1.5);
                         b.FontWeight = FontWeights.Bold;
@@ -954,7 +962,7 @@ namespace StyleSimulator
                     {
                         // Selected Category Tab: uses CyberActiveGradient background & White text with accent border
                         b.Background = cyberActiveGradient;
-                        b.Foreground = Brushes.White;
+                        b.Foreground = onAccentActiveBrush;
                         b.BorderBrush = accentBrush;
                         b.BorderThickness = new Thickness(1.5);
                         b.FontWeight = FontWeights.Bold;
@@ -984,7 +992,7 @@ namespace StyleSimulator
                     {
                         // Active toggle: only "伴唱" is pressed
                         b.Background = cyberActiveGradient;
-                        b.Foreground = Brushes.White;
+                        b.Foreground = onAccentActiveBrush;
                         b.BorderBrush = accentBrush;
                         b.BorderThickness = new Thickness(1.5);
                         b.FontWeight = FontWeights.Bold;

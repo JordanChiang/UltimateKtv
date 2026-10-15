@@ -1,68 +1,208 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <!-- === 核心色碼 (Color) === -->
-    <!-- 深色背景色調 -->
+    <!-- ========================================================= -->
+    <!-- 設計 token：元件 → 語意 (Brush) → 原始色值 (Color)。      -->
+    <!-- 畫面上的顏色一律引用語意筆刷，不直接寫 #hex。              -->
+    <!-- ========================================================= -->
+
+    <!-- === 1. 原始色值 (Color) === -->
+    <!-- 深色表面階層：視窗底 → 面板 → 表面 (按鈕/列表列) → 浮起表面 -->
     <Color x:Key="ColorBgPrimary">#0A0C14</Color>
     <Color x:Key="ColorBgSecondary">#121624</Color>
+    <Color x:Key="ColorSurface">#161A26</Color>
+    <Color x:Key="ColorSurfaceRaised">#1E2230</Color>
+    <Color x:Key="ColorSurfaceSunken">#000000</Color>
     <Color x:Key="ColorBgCard">#D1121826</Color>
     <Color x:Key="ColorBgCardHover">#D91C263C</Color>
+    <!-- 圖片上的文字底條 / 控制列底 -->
+    <Color x:Key="ColorScrim">#CC000000</Color>
+    <!-- 陰影 (非光暈) -->
+    <Color x:Key="ColorShadow">#000000</Color>
 
-    <!-- 邊框與光暈 -->
+    <!-- 白色透明度：邊框與覆蓋 -->
+    <Color x:Key="ColorBorderSubtle">#12FFFFFF</Color>
     <Color x:Key="ColorBorderDefault">#1FFFFFFF</Color>
-    <Color x:Key="ColorBorderGlowCyan">#5900F0FF</Color>
-    <Color x:Key="ColorBorderGlowGold">#59FFB703</Color>
-    <Color x:Key="ColorBorderGlowMagenta">#59FF0077</Color>
+    <Color x:Key="ColorBorderStrong">#30FFFFFF</Color>
+    <Color x:Key="ColorOverlayHover">#20FFFFFF</Color>
+    <!-- 糖果光澤 (列表風格 6) 上半部反光 -->
+    <Color x:Key="ColorGlossTop">#40FFFFFF</Color>
+    <Color x:Key="ColorGlossMid">#12FFFFFF</Color>
+    <Color x:Key="ColorGlossEnd">#00FFFFFF</Color>
 
-    <!-- 霓虹強調色 -->
+    <!-- 霓虹強調色 (青色為主題色預設，啟動時由 ThemeSettingsHandler 覆寫) -->
     <Color x:Key="ColorAccentCyan">#00F0FF</Color>
     <Color x:Key="ColorAccentCyanDim">#2600F0FF</Color>
     <Color x:Key="ColorAccentMagenta">#FF0077</Color>
-    <Color x:Key="ColorAccentGold">#FFB703</Color>
-    <Color x:Key="ColorAccentGreen">#00FF88</Color>
-    <Color x:Key="ColorAccentBlue">#0072FF</Color>
+    <Color x:Key="ColorAccentMagentaLight">#FFA3CF</Color>
+    <Color x:Key="ColorAccentMagentaHoverBg">#33FF0077</Color>
+    <Color x:Key="ColorAccentMagentaPressedBg">#55FF0077</Color>
+
+    <!-- 金色色階 (切歌按鈕與預設主題色共用同一條色階) -->
+    <Color x:Key="ColorGold50">#FFFDE7</Color>
+    <Color x:Key="ColorGold100">#FFF9C4</Color>
+    <Color x:Key="ColorGold200">#FFE082</Color>
+    <Color x:Key="ColorGold300">#FFD54F</Color>
+    <Color x:Key="ColorGold400">#FFCA28</Color>
+    <Color x:Key="ColorGold500">#FFB300</Color>
+    <Color x:Key="ColorGold600">#FFA000</Color>
+    <Color x:Key="ColorGold700">#FF8F00</Color>
+    <Color x:Key="ColorGold800">#D97706</Color>
+    <Color x:Key="ColorGold900">#8A6403</Color>
+    <Color x:Key="ColorAccentGold">#FFB300</Color>
+    <Color x:Key="ColorAccentGoldHoverBg">#33FFB300</Color>
+    <Color x:Key="ColorAccentGoldPressedBg">#55FFB300</Color>
+
+    <!-- 狀態色 (只用於狀態，不當裝飾) -->
+    <Color x:Key="ColorDanger">#E53935</Color>
+    <Color x:Key="ColorSuccess">#4CAF50</Color>
 
     <!-- 文字色調 -->
     <Color x:Key="ColorTextMain">#F8FAFC</Color>
     <Color x:Key="ColorTextDim">#94A3B8</Color>
     <Color x:Key="ColorTextMuted">#64748B</Color>
+    <Color x:Key="ColorTextInk">#0A0C14</Color>
 
-    <!-- === 筆刷定義 (SolidColorBrush) === -->
+    <!-- === 2. 語意筆刷 (SolidColorBrush) === -->
     <SolidColorBrush x:Key="BrushBgPrimary" Color="{StaticResource ColorBgPrimary}"/>
     <SolidColorBrush x:Key="BrushBgSecondary" Color="{StaticResource ColorBgSecondary}"/>
+    <SolidColorBrush x:Key="BrushSurface" Color="{StaticResource ColorSurface}"/>
+    <SolidColorBrush x:Key="BrushSurfaceRaised" Color="{StaticResource ColorSurfaceRaised}"/>
+    <SolidColorBrush x:Key="BrushSurfaceSunken" Color="{StaticResource ColorSurfaceSunken}"/>
     <SolidColorBrush x:Key="BrushBgCard" Color="{StaticResource ColorBgCard}"/>
+    <SolidColorBrush x:Key="BrushScrim" Color="{StaticResource ColorScrim}"/>
+
+    <SolidColorBrush x:Key="BrushBorderSubtle" Color="{StaticResource ColorBorderSubtle}"/>
     <SolidColorBrush x:Key="BrushBorderDefault" Color="{StaticResource ColorBorderDefault}"/>
+    <SolidColorBrush x:Key="BrushBorderStrong" Color="{StaticResource ColorBorderStrong}"/>
+    <SolidColorBrush x:Key="BrushOverlayHover" Color="{StaticResource ColorOverlayHover}"/>
 
     <SolidColorBrush x:Key="BrushAccentCyan" Color="{StaticResource ColorAccentCyan}"/>
     <SolidColorBrush x:Key="BrushAccentCyanDim" Color="{StaticResource ColorAccentCyanDim}"/>
+    <!-- 按下狀態底色 (主題色 20%)；啟動時由 ThemeSettingsHandler 依主題色覆寫 -->
+    <SolidColorBrush x:Key="BrushAccentPressed" Color="#3300F0FF"/>
+    <!-- 選取中按鈕 (BrushCyberActiveGradient 底) 的文字色：白字對比不足時用深色字；啟動時依主題色重新計算 -->
+    <SolidColorBrush x:Key="BrushOnAccentActive" Color="{StaticResource ColorTextInk}"/>
+
     <SolidColorBrush x:Key="BrushAccentMagenta" Color="{StaticResource ColorAccentMagenta}"/>
+    <SolidColorBrush x:Key="BrushAccentMagentaLight" Color="{StaticResource ColorAccentMagentaLight}"/>
+    <SolidColorBrush x:Key="BrushAccentMagentaHoverBg" Color="{StaticResource ColorAccentMagentaHoverBg}"/>
+    <SolidColorBrush x:Key="BrushAccentMagentaPressedBg" Color="{StaticResource ColorAccentMagentaPressedBg}"/>
     <SolidColorBrush x:Key="BrushAccentGold" Color="{StaticResource ColorAccentGold}"/>
-    <SolidColorBrush x:Key="BrushAccentGreen" Color="{StaticResource ColorAccentGreen}"/>
+    <SolidColorBrush x:Key="BrushAccentGoldLight" Color="{StaticResource ColorGold100}"/>
+    <SolidColorBrush x:Key="BrushAccentGoldHoverBg" Color="{StaticResource ColorAccentGoldHoverBg}"/>
+    <SolidColorBrush x:Key="BrushAccentGoldPressedBg" Color="{StaticResource ColorAccentGoldPressedBg}"/>
+
+    <SolidColorBrush x:Key="BrushDanger" Color="{StaticResource ColorDanger}"/>
+    <SolidColorBrush x:Key="BrushSuccess" Color="{StaticResource ColorSuccess}"/>
+    <SolidColorBrush x:Key="BrushWarning" Color="{StaticResource ColorGold300}"/>
 
     <SolidColorBrush x:Key="BrushTextMain" Color="{StaticResource ColorTextMain}"/>
     <SolidColorBrush x:Key="BrushTextDim" Color="{StaticResource ColorTextDim}"/>
     <SolidColorBrush x:Key="BrushTextMuted" Color="{StaticResource ColorTextMuted}"/>
 
-    <!-- === 特殊漸層筆刷 (選中/啟動狀態、按鈕一般背景、表格標題) === -->
-    <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#F000F0FF" Offset="0.0"/>
-        <GradientStop Color="#DC0066CC" Offset="1.0"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="BrushCyberButtonGradient" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#4D00F0FF" Offset="0.0"/>
-        <GradientStop Color="#1A004080" Offset="1.0"/>
-    </LinearGradientBrush>
     <!-- 按鈕一般 (未選取) 背景：純色深底，只有選取中的按鈕用漸層，畫面較不雜 -->
-    <SolidColorBrush x:Key="BrushButtonFlat" Color="#161A26"/>
-    <LinearGradientBrush x:Key="BrushTableHeaderGradient" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#D1121826" Offset="0.0"/>
-        <GradientStop Color="#D91C263C" Offset="1.0"/>
+    <SolidColorBrush x:Key="BrushButtonFlat" Color="{StaticResource ColorSurface}"/>
+
+    <!-- 列表風格 6 糖果光澤反光 -->
+    <LinearGradientBrush x:Key="BrushGlossHighlight" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource ColorGlossTop}" Offset="0"/>
+        <GradientStop Color="{StaticResource ColorGlossMid}" Offset="0.49"/>
+        <GradientStop Color="{StaticResource ColorGlossEnd}" Offset="0.5"/>
     </LinearGradientBrush>
 
-    <!-- 圓角大小統一規格 -->
-    <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
-    <CornerRadius x:Key="RadiusMedium">10</CornerRadius>
-    <CornerRadius x:Key="RadiusLarge">14</CornerRadius>
+    <!-- === 3. 主題預設值 (啟動時由 ThemeSettingsHandler 依主題色覆寫，這裡只是設計時與覆寫前的預設) === -->
+    <!-- 選中/啟動狀態漸層、按鈕漸層 -->
+    <LinearGradientBrush x:Key="BrushCyberActiveGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#E6FFB300" Offset="0.0"/>
+        <GradientStop Color="#D08A6403" Offset="1.0"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushCyberButtonGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#77FFB300" Offset="0.0"/>
+        <GradientStop Color="#33FFB300" Offset="1.0"/>
+    </LinearGradientBrush>
+
+    <!-- DataGrid 欄位標題 (橫向科技微漸層背景：深藍黑至深石板藍) -->
+    <LinearGradientBrush x:Key="DataGridColumnHeaderBackground" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="{StaticResource ColorBgCard}" Offset="0.0"/>
+        <GradientStop Color="{StaticResource ColorBgCardHover}" Offset="1.0"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="DataGridColumnHeaderForeground" Color="{StaticResource ColorTextMain}"/>
+
+    <!-- 主題色 -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource ColorGold500}"/>
+    <SolidColorBrush x:Key="PrimaryLightBrush" Color="{StaticResource ColorGold200}"/>
+    <SolidColorBrush x:Key="SingerButtonBackground" Color="{StaticResource ColorGold500}"/>
+    <!-- 主題色實心底 (PrimaryBrush) 上的文字色：白字對比不足時用深色字；啟動時依主題色重新計算 -->
+    <SolidColorBrush x:Key="BrushOnPrimary" Color="{StaticResource ColorTextInk}"/>
+
+    <!-- 列表風格 4 向內光暈 (由框向內散發微光約 4~5px，核心維持深黑底色) -->
+    <SolidColorBrush x:Key="BrushInnerGlowRim1" Color="#73FFB300"/>
+    <SolidColorBrush x:Key="BrushInnerGlowRim2" Color="#32FFB300"/>
+    <SolidColorBrush x:Key="BrushInnerGlowRim3" Color="#14FFB300"/>
+    <SolidColorBrush x:Key="BrushInnerGlowHoverRim1" Color="#5AFFE082"/>
+    <SolidColorBrush x:Key="BrushInnerGlowHoverRim2" Color="#28FFE082"/>
+    <SolidColorBrush x:Key="BrushInnerGlowHoverRim3" Color="#10FFE082"/>
+    <Color x:Key="ColorRowGlowActive">#FFB300</Color>
+    <Color x:Key="ColorRowGlowHover">#FFE082</Color>
+
+    <!-- 列表風格 3 (AccentStrip) 金屬側條 -->
+    <LinearGradientBrush x:Key="BrushAccentStripActive" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource ColorGold600}" Offset="0.0"/>
+        <GradientStop Color="{StaticResource ColorGold100}" Offset="0.4"/>
+        <GradientStop Color="{StaticResource ColorGold400}" Offset="0.6"/>
+        <GradientStop Color="{StaticResource ColorGold800}" Offset="1.0"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushAccentStripHover" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="{StaticResource ColorGold200}" Offset="0.0"/>
+        <GradientStop Color="{StaticResource ColorTextMain}" Offset="0.45"/>
+        <GradientStop Color="{StaticResource ColorGold300}" Offset="1.0"/>
+    </LinearGradientBrush>
+    <!-- 未選取：鋼鐵灰金屬條 -->
+    <LinearGradientBrush x:Key="BrushAccentStripInactive" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#546E7A" Offset="0.0"/>
+        <GradientStop Color="#CFD8DC" Offset="0.45"/>
+        <GradientStop Color="#90A4AE" Offset="0.6"/>
+        <GradientStop Color="#37474F" Offset="1.0"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushAccentStripGlow" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#50FFA000" Offset="0.0"/>
+        <GradientStop Color="#18FFA000" Offset="0.5"/>
+        <GradientStop Color="#00FFA000" Offset="1.0"/>
+    </LinearGradientBrush>
+
+    <!-- 選中文字立體金屬漸層 (香檳白金至琥珀金) -->
+    <LinearGradientBrush x:Key="BrushTextSelectedGradient" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFFFFFF0" Offset="0.0"/>
+        <GradientStop Color="{StaticResource ColorGold50}" Offset="0.25"/>
+        <GradientStop Color="{StaticResource ColorGold200}" Offset="0.55"/>
+        <GradientStop Color="{StaticResource ColorGold500}" Offset="0.85"/>
+        <GradientStop Color="{StaticResource ColorGold700}" Offset="1.0"/>
+    </LinearGradientBrush>
+
+    <!-- 歌星搜尋按鈕格：依歌手類型的文字顏色 (其他類型沿用 SingerButtonBackground) -->
+    <SolidColorBrush x:Key="BrushSingerMale" Color="#7EC8FF"/>
+    <SolidColorBrush x:Key="BrushSingerFemale" Color="#FF8FC8"/>
+    <SolidColorBrush x:Key="BrushSingerGroup" Color="#7EE0A8"/>
+
+    <!-- === 4. 圓角 (4 級 + 內框與細線) === -->
+    <!-- 內框 = 外框圓角 - 1 (內縮 1px 的邊框，避免四角露縫) -->
+    <CornerRadius x:Key="RadiusSharp">2</CornerRadius>
+    <CornerRadius x:Key="RadiusXSmall">4</CornerRadius>
+    <CornerRadius x:Key="RadiusSmall">8</CornerRadius>
+    <CornerRadius x:Key="RadiusSmallInner">7</CornerRadius>
+    <CornerRadius x:Key="RadiusMedium">12</CornerRadius>
+    <CornerRadius x:Key="RadiusMediumInner">11</CornerRadius>
+    <CornerRadius x:Key="RadiusLarge">16</CornerRadius>
+
+    <!-- === 5. 光暈 (3 級：按下 / 移入 / 選取) === -->
+    <sys:Double x:Key="GlowBlurPressed">8</sys:Double>
+    <sys:Double x:Key="GlowOpacityPressed">0.4</sys:Double>
+    <sys:Double x:Key="GlowBlurHover">16</sys:Double>
+    <sys:Double x:Key="GlowOpacityHover">0.5</sys:Double>
+    <sys:Double x:Key="GlowBlurActive">18</sys:Double>
+    <sys:Double x:Key="GlowOpacityActive">0.6</sys:Double>
 
     <!-- 外框粗細統一規格 -->
     <Thickness x:Key="BorderThicknessButton">2</Thickness>

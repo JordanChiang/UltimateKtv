@@ -12,7 +12,7 @@
     <Border Background="{DynamicResource MaterialDesignPaper}"
             BorderBrush="{DynamicResource PrimaryBrush}"
             BorderThickness="2"
-            CornerRadius="10" Margin="10"
+            CornerRadius="{StaticResource RadiusMedium}" Margin="12"
             Effect="{DynamicResource MaterialDesignShadowDepth5}">
         <Grid Margin="20">
             <Grid.RowDefinitions>
@@ -23,20 +23,20 @@
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
                 <materialDesign:PackIcon Kind="CloudDownload" Width="32" Height="32"
                                          Foreground="{DynamicResource PrimaryBrush}"
-                                         VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="{DynamicResource Str.Update.DownloadingWait}" FontSize="22" FontWeight="Bold"
+                                         VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Text="{DynamicResource Str.Update.DownloadingWait}" FontSize="24" FontWeight="Bold"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource MaterialDesignBody}"/>
             </StackPanel>
             
             <TextBlock x:Name="StatusText" Grid.Row="1" Text="{DynamicResource Str.Update.Preparing}" FontSize="16" Foreground="{DynamicResource MaterialDesignBody}"
-                       VerticalAlignment="Bottom" Margin="0,0,0,5"/>
+                       VerticalAlignment="Bottom" Margin="0,0,0,4"/>
 
             <ProgressBar x:Name="DownloadProgressBar" Grid.Row="2" Height="20" Minimum="0" Maximum="100" Value="0"
-                         Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,10"/>
+                         Foreground="{DynamicResource PrimaryBrush}" Margin="0,0,0,12"/>
             
             <TextBlock x:Name="PercentageText" Grid.Row="3" Text="0%" HorizontalAlignment="Center" FontSize="16" FontWeight="SemiBold"
                        Foreground="{DynamicResource MaterialDesignBody}"/>
