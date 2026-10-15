@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using UltimateKtv.Enums;
@@ -143,6 +144,19 @@ namespace UltimateKtv
         {
             if (string.IsNullOrEmpty(configured)) return Loc.T(emptyKey);
             return configured == defaultValue ? Loc.T(defaultKey) : configured;
+        }
+
+        /// <summary>
+        /// 欄位值為空 (如 YT 歌曲沒有歌手) 時，把範本中的 {index} 連同相鄰的分隔符號 (- / | 等) 一起拿掉，
+        /// 避免出現「點播歌曲： - 歌名」。
+        /// </summary>
+        private static string RemoveEmptyPlaceholder(string template, int index)
+        {
+            string ph = Regex.Escape("{" + index + "}");
+            const string sep = @"\s*[-–—/|·]\s*";
+            template = Regex.Replace(template, ph + sep, "");
+            template = Regex.Replace(template, sep + ph, "");
+            return Regex.Replace(template, ph, "");
         }
 
         public static void ShowSongPlaybackMarquee(string currentSong, string currentSinger, string? nextSong, string? nextSinger, bool isRandomSong = false, string? orderedBy = null, string? nextOrderedBy = null, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
@@ -370,13 +384,20 @@ namespace UltimateKtv
             string displayOrderedBy = (!string.IsNullOrWhiteSpace(orderedBy) && orderedBy != "本機" && orderedBy != Loc.OrderedByRandom && orderedBy != Loc.OrderedByWeb) ? orderedBy : "";
 
             string formattedText;
+            string fallbackTemplate = Loc.T("Marquee.FallbackSongAdded");
+            if (string.IsNullOrWhiteSpace(singerName))
+            {
+                template = RemoveEmptyPlaceholder(template, 1);
+                fallbackTemplate = RemoveEmptyPlaceholder(fallbackTemplate, 1);
+            }
+
             try
             {
                 formattedText = string.Format(template, songName ?? "", singerName ?? "", "", "", lanIpPort, wanIpPort, displayOrderedBy);
             }
             catch
             {
-                formattedText = string.Format(Loc.T("Marquee.FallbackSongAdded"), songName, singerName);
+                formattedText = string.Format(fallbackTemplate, songName, singerName);
             }
 
             FontFamily fontFamily = ParseFontFamily(settings.MarqueeSongAddedFontFamily);

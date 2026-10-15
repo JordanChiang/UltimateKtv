@@ -1042,7 +1042,7 @@ namespace UltimateKtv
 
                 MarqueeAPI.ShowSongAddedNotification(
                     song.SongName,
-                    song.SingerName,
+                    song.IsYoutube ? string.Empty : song.SingerName, // YT 的 SingerName 存的是頻道名/歌曲時間
                     song.OrderedBy,
                     Enums.MarqueeDisplayDevice.PlayerScreen
                 );
