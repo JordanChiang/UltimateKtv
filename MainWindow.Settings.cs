@@ -280,6 +280,9 @@ namespace UltimateKtv
                         newStyle.Setters.Add(setter);
                     }
                     this.Resources[key] = newStyle;
+                    // Also publish app-wide: DataTemplate buttons (e.g. SingerGrid) resolve DynamicResource before/after being
+                    // attached to the window; without an app-level fallback WPF traces "Resource not found" for each one
+                    if (Application.Current != null) Application.Current.Resources[key] = newStyle;
                 }
             }
 

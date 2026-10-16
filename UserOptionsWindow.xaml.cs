@@ -559,6 +559,8 @@ namespace UltimateKtv
             settings.IsLegacyAudioChannelDefinitionEnabled = LegacyAudioChannelToggle.IsChecked == true;
 
             // Save Change Song Library Drive settings
+            bool oldLibraryDriveEnabled = settings.ChangeSongLibraryDriveEnabled;
+            string oldLibraryDrivePath = settings.SongLibraryDrivePath ?? "";
             settings.ChangeSongLibraryDriveEnabled = ChangeSongLibraryDriveToggle.IsChecked == true;
             string drivePathText = SongLibraryDrivePathText.Text;
             settings.SongLibraryDrivePath = (drivePathText == Loc.T("Options.NoDirSelected")) ? "" : drivePathText.Trim();
@@ -599,8 +601,11 @@ namespace UltimateKtv
             // Save settings to the JSON file
             SettingsManager.Instance.SaveSettings();
 
-            // Rebuild song file paths to apply the new library path immediately
-            SongDatas.RebuildSongFilePaths();
+            // Rebuild song file paths only when the library path changed (36k songs; skip for unrelated settings)
+            if (oldLibraryDriveEnabled != settings.ChangeSongLibraryDriveEnabled || oldLibraryDrivePath != (settings.SongLibraryDrivePath ?? ""))
+            {
+                SongDatas.RebuildSongFilePaths();
+            }
 
             // If random play was enabled, trigger delayed check if waiting list is empty and nothing is currently playing
             if (settings.RandomPlayEnabled && _parentWindow != null)

@@ -12,6 +12,20 @@ namespace UltimateKtv
     {
         private readonly Random _random = new Random();
         private bool _isRandomSongPlaying = false; // Tracks if the current song is from random play
+        private const int RecentRandomWindow = 20;
+        private readonly Queue<string> _recentRandomSongIds = new(); // Most recent random picks, oldest first
+
+        /// <summary>
+        /// Picks a random item, skipping songs picked recently. The window is capped at half the pool so small pools still rotate.
+        /// </summary>
+        private T PickRandomAvoidingRecent<T>(IList<T> items, Func<T, string> getSongId)
+        {
+            int window = Math.Min(RecentRandomWindow, items.Count / 2);
+            var recent = _recentRandomSongIds.Skip(Math.Max(0, _recentRandomSongIds.Count - window)).ToHashSet();
+            var candidates = items.Where(i => !recent.Contains(getSongId(i))).ToList();
+            if (candidates.Count == 0) candidates = items.ToList();
+            return candidates[_random.Next(candidates.Count)];
+        }
 
 
         /// <summary>
@@ -94,6 +108,8 @@ namespace UltimateKtv
             _waitingList?.Add(waitingItem);
             
             AppLogger.Log($"Random play: Added '{randomSong.SongName}' by '{randomSong.SingerName}'");
+            _recentRandomSongIds.Enqueue(randomSong.SongId);
+            while (_recentRandomSongIds.Count > RecentRandomWindow) _recentRandomSongIds.Dequeue();
             DebugLog($"Random play: Added '{randomSong.SongName}' by '{randomSong.SingerName}'");
 
             // Apply the audio channel after the song starts playing
@@ -174,8 +190,7 @@ namespace UltimateKtv
                 }
 
                 // Random select one
-                var randomIndex = _random.Next(rankedSongs.Count);
-                var song = rankedSongs[randomIndex];
+                var song = PickRandomAvoidingRecent(rankedSongs, s => s.TryGetValue("Song_Id", out var sid) ? sid?.ToString() ?? "" : "");
 
                 return new SongDisplayItem
                 {
@@ -221,8 +236,7 @@ namespace UltimateKtv
                 if (newSongs.Count == 0) return null;
 
                 // Random select one
-                var randomIndex = _random.Next(newSongs.Count);
-                var song = newSongs[randomIndex];
+                var song = PickRandomAvoidingRecent(newSongs, s => s.TryGetValue("Song_Id", out var sid) ? sid?.ToString() ?? "" : "");
 
                 return new SongDisplayItem
                 {
@@ -289,8 +303,7 @@ namespace UltimateKtv
                 }
 
                 // Random select one favorite
-                var randomIndex = _random.Next(favoriteSongs.Count);
-                var favorite = favoriteSongs[randomIndex];
+                var favorite = PickRandomAvoidingRecent(favoriteSongs, f => f.TryGetValue("Song_Id", out var sid) ? sid?.ToString() ?? "" : "");
 
                 var songId = favorite.TryGetValue("Song_Id", out var sidObj) ? sidObj?.ToString() ?? "" : "";
                 if (string.IsNullOrEmpty(songId))

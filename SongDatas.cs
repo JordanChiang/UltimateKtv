@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -553,9 +553,51 @@ namespace UltimateKtv
             {
                 Debug.WriteLine($"Failed to create YoutubeSongList table: {ex.Message}");
             }
+
+            EnsureYoutubeNameColumnLength(databasePath);
         }
 
-        private static bool _isYoutubeDbAltered = false;
+        // Actual YoutubeSongList.Name length; older databases may still have a shorter column if ALTER failed
+        private static int _youtubeNameMaxLength = 255;
+
+        /// <summary>
+        /// Widens YoutubeSongList.Name to TEXT(255) if it is shorter, then records the real length so writes never exceed it.
+        /// </summary>
+        private static void EnsureYoutubeNameColumnLength(string databasePath)
+        {
+            try
+            {
+                using var conn = DbHelper.Access.OpenConn(databasePath);
+                int ReadNameLength()
+                {
+                    var columns = conn.GetSchema("Columns", new string?[] { null, null, "YoutubeSongList", "Name" });
+                    if (columns.Rows.Count == 0 || columns.Rows[0]["CHARACTER_MAXIMUM_LENGTH"] is not object lenObj || lenObj == DBNull.Value) return 0;
+                    return Convert.ToInt32(lenObj);
+                }
+
+                int len = ReadNameLength();
+                if (len > 0 && len < 255)
+                {
+                    try
+                    {
+                        using var cmd = conn.CreateCommand();
+                        cmd.CommandText = "ALTER TABLE YoutubeSongList ALTER COLUMN Name TEXT(255)";
+                        cmd.ExecuteNonQuery();
+                        AppLogger.Log($"DB Write: Widened YoutubeSongList.Name from {len} to 255.");
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.Log($"Failed to widen YoutubeSongList.Name ({len}): {ex.Message}");
+                    }
+                    len = ReadNameLength();
+                }
+                if (len > 0) _youtubeNameMaxLength = Math.Min(len, 255);
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"Failed to check YoutubeSongList.Name length: {ex.Message}");
+            }
+        }
         private static readonly System.Text.RegularExpressions.Regex DurationLikeLangRegex = new(@"^\d{1,2}(:\d{2}){1,2}$");
 
         /// <summary>
@@ -566,16 +608,6 @@ namespace UltimateKtv
             string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
             try
             {
-                if (!_isYoutubeDbAltered)
-                {
-                    try
-                    {
-                        DbHelper.Access.ExecuteNonQuery(dbPath, "ALTER TABLE YoutubeSongList ALTER COLUMN Name TEXT(255)", null);
-                    }
-                    catch { /* Ignore if already altered or unsupported */ }
-                    _isYoutubeDbAltered = true;
-                }
-
                 // Url must be the real video ID, never the internal history Id (e.g. "Y0017")
                 string videoId = YtDlpHelper.ResolveVideoId(song.YoutubeId, song.SongId, song.FilePath);
 
@@ -626,9 +658,7 @@ namespace UltimateKtv
                 }
 
                 string name = song.SongName;
-                if (!string.IsNullOrEmpty(name) && name.Length > 40) name = name.Substring(0, 40);
-
-
+                if (!string.IsNullOrEmpty(name) && name.Length > _youtubeNameMaxLength) name = name.Substring(0, _youtubeNameMaxLength);
 
                 string insertSql = @"INSERT INTO YoutubeSongList 
                     (Id, Name, CreatDate, Url, Singer, Lang, PlayCount, Length, FileName, FileSize, Track, Volume, WordCount) 
@@ -642,7 +672,7 @@ namespace UltimateKtv
                     new System.Data.OleDb.OleDbParameter("@Url", videoId),
                     new System.Data.OleDb.OleDbParameter("@Singer", ""),
                     new System.Data.OleDb.OleDbParameter("@Lang", song.Language ?? ""),
-                    new System.Data.OleDb.OleDbParameter("@PlayCount", System.Data.OleDb.OleDbType.Integer) { Value = 1 },
+                    new System.Data.OleDb.OleDbParameter("@PlayCount", System.Data.OleDb.OleDbType.Integer) { Value = 0 }, // counted when actually played
                     new System.Data.OleDb.OleDbParameter("@Length", System.Data.OleDb.OleDbType.Integer) { Value = 0 },
                     new System.Data.OleDb.OleDbParameter("@FileName", Path.GetFileName(song.FilePath) ?? ""),
                     new System.Data.OleDb.OleDbParameter("@FileSize", System.Data.OleDb.OleDbType.Integer) { Value = File.Exists(song.FilePath) ? (int)Math.Min(new FileInfo(song.FilePath).Length, int.MaxValue) : 0 },
@@ -711,50 +741,7 @@ namespace UltimateKtv
                 
                 foreach (System.Data.DataRow row in dt.Rows)
                 {
-                    var dict = new Dictionary<string, object?>();
-                    foreach (System.Data.DataColumn col in dt.Columns)
-                    {
-                        dict[col.ColumnName] = row[col] == DBNull.Value ? null : row[col];
-                    }
-
-                    // Imported files have an empty Url; recover the video ID from "{title}_{videoId}.mp4" and persist it
-                    if (string.IsNullOrEmpty(dict.GetValueOrDefault("Url")?.ToString()))
-                    {
-                        string recoveredId = YtDlpHelper.ExtractVideoIdFromFileName(dict.GetValueOrDefault("FileName")?.ToString());
-                        string rowId = dict.GetValueOrDefault("Id")?.ToString() ?? "";
-                        if (!string.IsNullOrEmpty(recoveredId) && !string.IsNullOrEmpty(rowId))
-                        {
-                            dict["Url"] = recoveredId;
-                            try
-                            {
-                                DbHelper.Access.ExecuteNonQuery(dbPath,
-                                    $"UPDATE YoutubeSongList SET Url = '{recoveredId}' WHERE Id = '{rowId.Replace("'", "''")}' AND (Url IS NULL OR Url = '')", null);
-                                AppLogger.Log($"DB Write: Recovered YouTube video ID '{recoveredId}' for {rowId} from file name.");
-                            }
-                            catch (Exception ex)
-                            {
-                                AppLogger.Log($"GetYoutubeHistory: Failed to backfill Url for {rowId}: {ex.Message}");
-                            }
-                        }
-                    }
-
-                    // Web orders used to store the duration ("05:11") in Lang; clear it
-                    string lang = dict.GetValueOrDefault("Lang")?.ToString() ?? "";
-                    if (DurationLikeLangRegex.IsMatch(lang))
-                    {
-                        dict["Lang"] = "";
-                        string rowId = dict.GetValueOrDefault("Id")?.ToString() ?? "";
-                        try
-                        {
-                            DbHelper.Access.ExecuteNonQuery(dbPath,
-                                $"UPDATE YoutubeSongList SET Lang = '' WHERE Id = '{rowId.Replace("'", "''")}'", null);
-                            AppLogger.Log($"DB Write: Cleared duration-like Lang '{lang}' for {rowId}.");
-                        }
-                        catch (Exception ex)
-                        {
-                            AppLogger.Log($"GetYoutubeHistory: Failed to clear Lang for {rowId}: {ex.Message}");
-                        }
-                    }
+                    var dict = YoutubeRowToDictionary(dbPath, row);
                     list.Add(dict);
                 }
                 AppLogger.Log($"GetYoutubeHistory: Fetched {list.Count} records successfully.");
@@ -765,6 +752,109 @@ namespace UltimateKtv
                 AppLogger.Log($"GetYoutubeHistory Error: {ex.Message}");
             }
             return list;
+        }
+
+        /// <summary>
+        /// Gets a single YouTube history record by its Id (e.g. "Y0017"); returns null if not found.
+        /// </summary>
+        public static Dictionary<string, object?>? GetYoutubeHistoryById(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+            try
+            {
+                string query = $"SELECT * FROM YoutubeSongList WHERE Id = '{id.Replace("'", "''")}'";
+                var dt = DbHelper.Access.GetDataTable(dbPath, query, null);
+                return dt.Rows.Count > 0 ? YoutubeRowToDictionary(dbPath, dt.Rows[0]) : null;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"GetYoutubeHistoryById Error ({id}): {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Converts a YoutubeSongList row to a dictionary, repairing legacy data (empty Url, duration in Lang) in place.
+        /// </summary>
+        private static Dictionary<string, object?> YoutubeRowToDictionary(string dbPath, System.Data.DataRow row)
+        {
+            var dict = new Dictionary<string, object?>();
+            foreach (System.Data.DataColumn col in row.Table.Columns)
+            {
+                dict[col.ColumnName] = row[col] == DBNull.Value ? null : row[col];
+            }
+
+            // Imported files have an empty Url; recover the video ID from "{title}_{videoId}.mp4" and persist it
+            if (string.IsNullOrEmpty(dict.GetValueOrDefault("Url")?.ToString()))
+            {
+                string recoveredId = YtDlpHelper.ExtractVideoIdFromFileName(dict.GetValueOrDefault("FileName")?.ToString());
+                string rowId = dict.GetValueOrDefault("Id")?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(recoveredId) && !string.IsNullOrEmpty(rowId))
+                {
+                    dict["Url"] = recoveredId;
+                    try
+                    {
+                        DbHelper.Access.ExecuteNonQuery(dbPath,
+                            $"UPDATE YoutubeSongList SET Url = '{recoveredId}' WHERE Id = '{rowId.Replace("'", "''")}' AND (Url IS NULL OR Url = '')", null);
+                        AppLogger.Log($"DB Write: Recovered YouTube video ID '{recoveredId}' for {rowId} from file name.");
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.Log($"GetYoutubeHistory: Failed to backfill Url for {rowId}: {ex.Message}");
+                    }
+                }
+            }
+
+            // Names used to be cut at 40 chars, and imported names kept the "_{videoId}" suffix; restore from the file name
+            string name = dict.GetValueOrDefault("Name")?.ToString() ?? "";
+            string fileTitle = YtDlpHelper.GetTitleFromFileName(dict.GetValueOrDefault("FileName")?.ToString());
+            string fixedName = name;
+            if (fileTitle.Length > 0 && name != fileTitle)
+            {
+                string safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
+                string fileNameOnly = Path.GetFileNameWithoutExtension(dict.GetValueOrDefault("FileName")?.ToString() ?? "");
+                if (name == fileNameOnly)
+                    fixedName = fileTitle; // imported: Name is the whole file name incl. "_{videoId}"
+                else if (name.Length == 40 && (fileTitle.StartsWith(safeName, StringComparison.Ordinal) || fileNameOnly.StartsWith(safeName, StringComparison.Ordinal)))
+                    fixedName = fileTitle; // truncated at 40 chars
+                // Never exceed the real column length (an old 40-char column would make the UPDATE fail on every read)
+                if (fixedName.Length > _youtubeNameMaxLength) fixedName = fixedName.Substring(0, _youtubeNameMaxLength);
+            }
+            if (fixedName != name)
+            {
+                dict["Name"] = fixedName;
+                string rowId = dict.GetValueOrDefault("Id")?.ToString() ?? "";
+                try
+                {
+                    DbHelper.Access.ExecuteNonQuery(dbPath, "UPDATE YoutubeSongList SET Name = ? WHERE Id = ?", null,
+                        new[] { new System.Data.OleDb.OleDbParameter("@Name", fixedName), new System.Data.OleDb.OleDbParameter("@Id", rowId) });
+                    AppLogger.Log($"DB Write: Restored YouTube name for {rowId}: '{fixedName}'.");
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Log($"GetYoutubeHistory: Failed to restore Name for {rowId}: {ex.Message}");
+                }
+            }
+
+            // Web orders used to store the duration ("05:11") in Lang; clear it
+            string lang = dict.GetValueOrDefault("Lang")?.ToString() ?? "";
+            if (DurationLikeLangRegex.IsMatch(lang))
+            {
+                dict["Lang"] = "";
+                string rowId = dict.GetValueOrDefault("Id")?.ToString() ?? "";
+                try
+                {
+                    DbHelper.Access.ExecuteNonQuery(dbPath,
+                        $"UPDATE YoutubeSongList SET Lang = '' WHERE Id = '{rowId.Replace("'", "''")}'", null);
+                    AppLogger.Log($"DB Write: Cleared duration-like Lang '{lang}' for {rowId}.");
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.Log($"GetYoutubeHistory: Failed to clear Lang for {rowId}: {ex.Message}");
+                }
+            }
+            return dict;
         }
 
         public static void DeleteYoutubeHistory(string id)

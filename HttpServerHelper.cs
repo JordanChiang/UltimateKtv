@@ -1172,8 +1172,22 @@ public class HttpServerHelper
 	    {
 	        try
 	        {
-	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
+	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(async () =>
 	            {
+	                // Stop recording and wait for the MP3 off the UI thread: NAudio's RecordingStopped
+	                // dispatches back to the UI thread, so waiting in App_Exit would deadlock until timeout
+	                await Task.Run(() =>
+	                {
+	                    try
+	                    {
+	                        RecordingManager.Instance.StopRecording();
+	                        RecordingManager.Instance.WaitForRecordingToFinish();
+	                    }
+	                    catch (Exception ex)
+	                    {
+	                        AppLogger.LogError("Error stopping recording before quit", ex);
+	                    }
+	                });
 	                System.Windows.Application.Current?.Shutdown();
 	            }));
 	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Quitting") });
@@ -1266,6 +1280,7 @@ public class HttpServerHelper
 	            };
 
 	            bool downloadQueued = false;
+	            bool alreadyQueued = false;
 	            bool isDownloaded = false;
 	            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
 	            {
@@ -1286,10 +1301,7 @@ public class HttpServerHelper
                                 isDownloaded = true;
                             }
 
-                            // Trigger the host-side download using reflection since it's a private method
-	                        var method = mainWindow.GetType().GetMethod("DownloadYoutubeVideo",
-	                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-	                        method?.Invoke(mainWindow, new object[] { songItem });
+                            alreadyQueued = !mainWindow.DownloadYoutubeVideo(songItem);
 	                        System.Diagnostics.Debug.WriteLine($"[OrderYoutubeAsync] Triggered download via UI thread: {songItem.SongName}");
                             downloadQueued = true;
 	                    }
@@ -1303,6 +1315,10 @@ public class HttpServerHelper
                 if (!downloadQueued)
                 {
                     return JsonConvert.SerializeObject(new { success = false, message = Loc.T("Web.Msg.QueueFailed") });
+                }
+                if (alreadyQueued)
+                {
+                    return JsonConvert.SerializeObject(new { success = false, message = Loc.T("Web.AlreadyInPlaylist", songItem.SongName) });
                 }
 
 	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.OrderOk"), isDownloaded = isDownloaded });
@@ -1318,8 +1334,7 @@ public class HttpServerHelper
 	    {
 	        try
 	        {
-	            var history = SongDatas.GetYoutubeHistory();
-	            var item = history.FirstOrDefault(h => h.TryGetValue("Id", out var idObj) && idObj?.ToString() == id);
+	            var item = SongDatas.GetYoutubeHistoryById(id);
 	            if (item == null) return ErrorResult("Not Found", Loc.T("Web.Msg.HistoryNotFound"));
 
 	            string url = item.TryGetValue("Url", out var u) ? u?.ToString() ?? "" : "";
@@ -1354,16 +1369,19 @@ public class HttpServerHelper
 	                return ErrorResult("File Not Found", Loc.T("Web.Msg.NoFileNoLink"));
 	            }
 
+	            bool alreadyQueued = false;
 	            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
 	            {
-	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-	                if (mainWindow != null)
+	                if (System.Windows.Application.Current.MainWindow is UltimateKtv.MainWindow mainWindow)
 	                {
-	                    var method = mainWindow.GetType().GetMethod("DownloadYoutubeVideo",
-	                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-	                    method?.Invoke(mainWindow, new object[] { songItem });
+	                    alreadyQueued = !mainWindow.DownloadYoutubeVideo(songItem);
 	                }
 	            });
+
+	            if (alreadyQueued)
+	            {
+	                return JsonConvert.SerializeObject(new { success = false, message = Loc.T("Web.AlreadyInPlaylist", name) });
+	            }
 
 	            return JsonConvert.SerializeObject(new { success = true, isDownloaded = fileExists, message = Loc.T("Web.Msg.OrderOk") });
 	        }

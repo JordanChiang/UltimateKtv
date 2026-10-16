@@ -355,34 +355,19 @@ namespace UltimateKtv
                 {
                     if (IsPlayingYoutube)
                     {
-                        var songNameForLog = _playingSongData.TryGetValue("Song_SongName", out var nObj) ? nObj?.ToString() ?? "Unknown" : "Unknown";
+                        // PlayCount is incremented in the position timer once PlayCountUpdatePercentage is reached, like local songs
                         long ticks = player.MediaDuration;
                         int lengthSeconds = ticks > 0 ? (int)TimeSpan.FromTicks(ticks).TotalSeconds : 0;
-                        
-                        Task.Run(() =>
+                        if (lengthSeconds > 0)
                         {
-                            // 1. Sequentially update length to avoid OleDb parallel access violations
-                            if (lengthSeconds > 0 && SongDatas.UpdateYoutubeSongLength(songId, lengthSeconds))
+                            Task.Run(() =>
                             {
-                                Dispatcher.BeginInvoke(() => RefreshYoutubeSongLengthInLists(songId, lengthSeconds));
-                            }
-
-                            // 2. Update PlayCount
-                            try
-                            {
-                                string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
-                                string sql = "UPDATE YoutubeSongList SET PlayCount = PlayCount + 1 WHERE Id = ?";
-                                var parameters = new System.Data.OleDb.OleDbParameter[] { new System.Data.OleDb.OleDbParameter("?", songId) };
-                                DbHelper.Access.ExecuteNonQuery(dbPath, sql, null, parameters);
-                                AppLogger.Log($"DB Write: Incremented PlayCount for Youtube '{songNameForLog}'");
-                                DebugLog($"Successfully saved incremented play count for '{songNameForLog}' to the database.");
-                            }
-                            catch (Exception ex)
-                            {
-                                DebugLog($"Failed to save Youtube play count to database: {ex.Message}");
-                                AppLogger.LogError($"DB Write failed: PlayCount update for '{songNameForLog}'", ex);
-                            }
-                        });
+                                if (SongDatas.UpdateYoutubeSongLength(songId, lengthSeconds))
+                                {
+                                    Dispatcher.BeginInvoke(() => RefreshYoutubeSongLengthInLists(songId, lengthSeconds));
+                                }
+                            });
+                        }
                     }
                     else
                     {
@@ -563,6 +548,28 @@ namespace UltimateKtv
                                         }
                                     });
                                 }
+                            }
+                            else if (IsPlayingYoutube && _playingSongData != null && _playingSongData.TryGetValue("Song_Id", out var ytIdObj) && !string.IsNullOrEmpty(ytIdObj?.ToString()))
+                            {
+                                _playCountIncrementedForCurrentSong = true;
+                                string ytSongId = ytIdObj!.ToString()!;
+                                string songNameForLog = _playingSongData.TryGetValue("Song_SongName", out var nObj) ? nObj?.ToString() ?? "Unknown" : "Unknown";
+                                Task.Run(() =>
+                                {
+                                    try
+                                    {
+                                        // Song_Id is the history Id (Y0017) for desktop orders but the video ID for web orders
+                                        string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+                                        string sql = "UPDATE YoutubeSongList SET PlayCount = IIF(PlayCount IS NULL, 0, PlayCount) + 1 WHERE Id = ? OR Url = ?";
+                                        var parameters = new OleDbParameter[] { new OleDbParameter("?", ytSongId), new OleDbParameter("?", ytSongId) };
+                                        int rows = DbHelper.Access.ExecuteNonQuery(dbPath, sql, null, parameters);
+                                        AppLogger.Log($"DB Write: Incremented PlayCount for Youtube '{songNameForLog}' ({ytSongId}), rows affected={rows}");
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        AppLogger.LogError($"DB Write failed: PlayCount update for '{songNameForLog}'", ex);
+                                    }
+                                });
                             }
                             else
                             {
@@ -1129,7 +1136,7 @@ namespace UltimateKtv
                         mediaUriElement.AudioChannel = 1;
 
                     DebugLog($"        1 audio tracks mode. new Track ={mediaUriElement.AudioTrack}, AudioChannel={mediaUriElement.AudioChannel}");
-                    AppLogger.Log($"        1 audio tracks mode. new Track ={mediaUriElement.AudioTrack}, AudioChannel={mediaUriElement.AudioChannel}");
+                    AppLogger.Log($"VocalBtn: tracks=1, track={mediaUriElement.AudioTrack}, channel={mediaUriElement.AudioChannel}");
                 }
                 else if (mediaUriElement.AudioStreams?.Count == 2 && (!isMusicActive))
                 {
@@ -1144,7 +1151,7 @@ namespace UltimateKtv
                     }
 
                     DebugLog($"        new track is {mediaUriElement.AudioTrack}");
-                    AppLogger.Log($"        new track is {mediaUriElement.AudioTrack}");
+                    AppLogger.Log($"VocalBtn: tracks=2, toggled to track={mediaUriElement.AudioTrack}");
                 }
                 else
                 {
@@ -1177,7 +1184,7 @@ namespace UltimateKtv
                     // Set the new audio channel
                     mediaUriElement.AudioTrack = audioTracks[nextIndex];
                     DebugLog($"        Multi-track mode. new tracks is {mediaUriElement.AudioTrack}");
-                    AppLogger.Log($"        Multi-track mode. new tracks is {mediaUriElement.AudioTrack}");
+                    AppLogger.Log($"VocalBtn: tracks={audioTracks.Count}, cycled to track={mediaUriElement.AudioTrack}");
                 }
                 UpdateVocalMusicButtonStates();
             }
@@ -1228,7 +1235,7 @@ namespace UltimateKtv
 
                 int audioStreamsCount = mediaUriElement.AudioStreams?.Count ?? 0;
                 DebugLog($"MusicBtn_Click: AudioTrackList.Count={audioStreamsCount}, AudioChannel={mediaUriElement.AudioChannel}");
-                AppLogger.Log($"MusicBtn_Click: AudioTrackList.Count={audioStreamsCount}, AudioChannel={mediaUriElement.AudioChannel}");
+                AppLogger.Log($"MusicBtn: tracks={audioStreamsCount}, channel={mediaUriElement.AudioChannel}");
 
                 if (isMusicActive)
                     return;

@@ -257,10 +257,9 @@ namespace UltimateKtv
             {
                 foreach (var file in newFiles)
                 {
-                    var nameOnly = System.IO.Path.GetFileNameWithoutExtension(file);
                     var item = new SongDisplayItem
                     {
-                        SongName = nameOnly,
+                        SongName = YtDlpHelper.GetTitleFromFileName(file),
                         FilePath = file,
                         SongId = YtDlpHelper.ExtractVideoIdFromFileName(file), // blank if the name has no "_{videoId}" suffix
                         Language = "",

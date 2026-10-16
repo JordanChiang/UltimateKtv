@@ -12,6 +12,8 @@ namespace UltimateKtv
     public class RecordingManager
     {
         private static readonly object _lock = new object();
+        // MP3 paths whose ffmpeg mixing is still running; their WAVs are in use and must not be treated as orphans
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _convertingMp3Paths = new(StringComparer.OrdinalIgnoreCase);
         private static RecordingManager? _instance;
 
         public static RecordingManager Instance
@@ -239,6 +241,7 @@ namespace UltimateKtv
 
         private static async Task ConvertToMp3Async(string wavPathMic, string wavPathLoopback, string mp3Path)
         {
+            _convertingMp3Paths[mp3Path] = 0;
             try
             {
                 string ffmpegPath = Path.Combine(YtDlpHelper.GetFFmpegDir(), "ffmpeg.exe");
@@ -308,6 +311,10 @@ namespace UltimateKtv
             {
                 AppLogger.LogError("[Recording] Exception during MP3 conversion/mixing", ex);
             }
+            finally
+            {
+                _convertingMp3Paths.TryRemove(mp3Path, out _);
+            }
         }
 
         /// <summary>
@@ -333,7 +340,8 @@ namespace UltimateKtv
                         mp3Path = wavFile.Substring(0, wavFile.Length - ".loopback.wav".Length) + ".mp3";
                     }
 
-                    if (mp3Path != null && File.Exists(mp3Path) && new FileInfo(mp3Path).Length > 0)
+                    if (mp3Path != null && !_convertingMp3Paths.ContainsKey(mp3Path)
+                        && File.Exists(mp3Path) && new FileInfo(mp3Path).Length > 0)
                     {
                         try
                         {

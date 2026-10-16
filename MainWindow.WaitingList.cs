@@ -767,7 +767,9 @@ namespace UltimateKtv
 
             mediaUriElement.Source = new Uri(firstSong.FilePath); // This triggers MediaOpened/MediaFailed where the lock will be released.
             DebugLog($"Main media Source set to: {firstSong.FilePath}");
-            AppLogger.Log($"Playing from waiting list: {firstSong!.WaitingListSongName} by {firstSong.WaitingListSingerName}");
+            AppLogger.Log(firstSong!.IsYoutube
+                ? $"Playing from waiting list: YouTube song {firstSong.WaitingListSongName}"
+                : $"Playing from waiting list: {firstSong.WaitingListSongName} by {firstSong.WaitingListSingerName}");
 
 /*
                 // Start a timeout task. If MediaOpened/Failed doesn't fire within 10s, we assume a hang.
@@ -1003,7 +1005,11 @@ namespace UltimateKtv
                 _waitingList.Add(waitingItem);
             }
 
-            AppLogger.Log($"User action: {(insertFirst ? "Inserted" : "Added")} song '{song.SongName}' by '{song.SingerName}' to waiting list" +
+            // YouTube items carry a duration or channel name in SingerName, not a singer
+            string songDesc = song.IsYoutube
+                ? $"YouTube song '{song.SongName}' ({song.SongId})"
+                : $"song '{song.SongName}' by '{song.SingerName}'";
+            AppLogger.Log($"User action: {(insertFirst ? "Inserted" : "Added")} {songDesc} to waiting list" +
                 (!string.IsNullOrEmpty(song.OrderedBy) ? $" (Ordered by: {song.OrderedBy})" : ""));
             
             // If a random song is currently playing, cut it off so the user's song can play immediately

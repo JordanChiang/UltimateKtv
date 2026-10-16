@@ -17,6 +17,8 @@ namespace UltimateKtv
         private CancellationTokenSource? _youtubePreviewCts;
         private static readonly ConcurrentDictionary<string, string> _youtubeStreamUrlCache = new();
         private ConcurrentQueue<SongDisplayItem> _youtubeDownloadQueue = new();
+        // SongIds accepted but not yet in the waiting list / download queue (during the async file check); UI thread only
+        private readonly HashSet<string> _youtubePendingSongIds = new();
 
         public object GetYoutubeDownloadQueueStatus()
         {
@@ -43,49 +45,70 @@ namespace UltimateKtv
             }
         }
 
-        private async void DownloadYoutubeVideo(SongDisplayItem song)
+        /// <returns>false if the song is already in the waiting list or download queue.</returns>
+        internal bool DownloadYoutubeVideo(SongDisplayItem song)
         {
             // Always prevent adding duplicate Youtube songs to queue or waiting list
-            if (_waitingList.Any(w => w.SongId == song.SongId) || _youtubeDownloadQueue.Any(q => q.SongId == song.SongId))
+            if (_waitingList.Any(w => w.SongId == song.SongId) || _youtubeDownloadQueue.Any(q => q.SongId == song.SongId)
+                || _youtubePendingSongIds.Contains(song.SongId))
             {
-                return; // Skip if already in waiting list or queue
+                AppLogger.Log($"YouTube: '{song.SongName}' is already in the waiting list or download queue, skipped.");
+                return false;
             }
 
-            // Quick check if file already exists in cache directory before queueing
-            string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
-            if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
-            string videoId = YtDlpHelper.ResolveVideoId(song.YoutubeId, song.SongId, song.FilePath);
-            string filePath = song.FilePath;
-            if (string.IsNullOrEmpty(filePath) || filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            _youtubePendingSongIds.Add(song.SongId);
+            _ = QueueYoutubeVideoAsync(song);
+            return true;
+        }
+
+        private async Task QueueYoutubeVideoAsync(SongDisplayItem song)
+        {
+            try
             {
-                string safeName = string.Join("_", song.SongName.Split(Path.GetInvalidFileNameChars()));
-                filePath = Path.Combine(cacheDir, $"{safeName}_{videoId}.mp4");
+                // Quick check if file already exists in cache directory before queueing
+                string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
+                if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
+                string videoId = YtDlpHelper.ResolveVideoId(song.YoutubeId, song.SongId, song.FilePath);
+                string filePath = song.FilePath;
+                if (string.IsNullOrEmpty(filePath) || filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    string safeName = string.Join("_", song.SongName.Split(Path.GetInvalidFileNameChars()));
+                    filePath = Path.Combine(cacheDir, $"{safeName}_{videoId}.mp4");
+                }
+                else if (!Path.IsPathRooted(filePath))
+                {
+                    filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filePath);
+                }
+
+                bool exists = await Task.Run(() =>
+                {
+                    try { return File.Exists(filePath); } catch { return false; }
+                });
+
+                if (exists)
+                {
+                    DebugLog($"YouTube: File already exists in cache: {filePath}");
+                    song.FilePath = filePath;
+                    SongDatas.RecordYoutubeSong(song);
+                    AddSongToWaitingList(song);
+                    return;
+                }
+
+                _youtubeDownloadQueue.Enqueue(song);
+                UpdateYoutubeDownloadQueueUI();
+
+                if (!IsDownloadingYoutube)
+                {
+                    _ = ProcessYoutubeDownloadQueueAsync();
+                }
             }
-            else if (!Path.IsPathRooted(filePath))
+            catch (Exception ex)
             {
-                filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filePath);
+                AppLogger.LogError($"Failed to queue YouTube song '{song.SongName}'", ex);
             }
-
-            bool exists = await Task.Run(() =>
+            finally
             {
-                try { return File.Exists(filePath); } catch { return false; }
-            });
-
-            if (exists)
-            {
-                DebugLog($"YouTube: File already exists in cache: {filePath}");
-                song.FilePath = filePath;
-                SongDatas.RecordYoutubeSong(song);
-                AddSongToWaitingList(song);
-                return;
-            }
-
-            _youtubeDownloadQueue.Enqueue(song);
-            UpdateYoutubeDownloadQueueUI();
-
-            if (!IsDownloadingYoutube)
-            {
-                _ = ProcessYoutubeDownloadQueueAsync();
+                _youtubePendingSongIds.Remove(song.SongId);
             }
         }
 

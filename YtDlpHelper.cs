@@ -38,6 +38,17 @@ namespace UltimateKtv
         }
 
         /// <summary>
+        /// Returns the song title part of a downloaded file name ("{title}_{videoId}.mp4" -> "{title}").
+        /// </summary>
+        public static string GetTitleFromFileName(string? fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return "";
+            string nameOnly = Path.GetFileNameWithoutExtension(fileName);
+            var m = FileNameVideoIdRegex.Match(nameOnly);
+            return m.Success && m.Index > 0 ? nameOnly.Substring(0, m.Index) : nameOnly;
+        }
+
+        /// <summary>
         /// Returns the real YouTube video ID for a song, never the internal history Id (e.g. "Y0017").
         /// </summary>
         public static string ResolveVideoId(string? youtubeId, string? songId, string? filePath = null)
