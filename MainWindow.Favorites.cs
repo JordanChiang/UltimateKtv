@@ -265,11 +265,8 @@ namespace UltimateKtv
         {
             try
             {
-                string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
-
                 // Check if song already exists in user's favorites by querying the database directly
-                string checkQuery = $"SELECT COUNT(*) FROM ktv_Favorite WHERE User_Id = '{userId}' AND Song_Id = '{songId}'";
-                var result = DbHelper.Access.GetDataTable(dbPath, checkQuery, null);
+                var result = Db.GetDataTable("SELECT COUNT(*) FROM ktv_Favorite WHERE User_Id = ? AND Song_Id = ?", userId, songId);
                 bool alreadyExists = result.Rows.Count > 0 && Convert.ToInt32(result.Rows[0][0]) > 0;
 
                 DebugLog($"AddSongToUserFavorites: Checking if Song_Id={songId} exists for User_Id={userId}, alreadyExists={alreadyExists}");
@@ -285,8 +282,7 @@ namespace UltimateKtv
                 }
 
                 // Insert the new favorite
-                string insertQuery = $"INSERT INTO ktv_Favorite (User_Id, Song_Id) VALUES ('{userId}', '{songId}')";
-                int rowsAffected = DbHelper.Access.ExecuteNonQuery(dbPath, insertQuery, null);
+                int rowsAffected = Db.ExecuteNonQuery("INSERT INTO ktv_Favorite (User_Id, Song_Id) VALUES (?, ?)", userId, songId);
 
                 DebugLog($"AddSongToUserFavorites: INSERT executed, rowsAffected={rowsAffected}");
 
@@ -296,7 +292,7 @@ namespace UltimateKtv
                     AppLogger.Log($"Successfully added song {songId} to {userName}'s favorites");
                     
                     // Reload favorite data to refresh in-memory cache
-                    SongDatas.ReloadFavoriteData(dbPath);
+                    SongDatas.ReloadFavoriteData();
                     
                     // Show success feedback to user
                     MarqueeAPI.ShowText(Loc.T("Fav.Added", userName), MarqueeDisplayDevice.ConsoleScreen);

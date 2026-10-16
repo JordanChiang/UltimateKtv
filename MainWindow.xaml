@@ -1033,6 +1033,19 @@
             </Setter>
         </Style>
 
+        <!-- YT 縮圖按鈕:版面同歌星照片格,但 Template 由按鈕自己定義。
+             不沿用 VisualSingerButtonStyle,避免它的 {Binding Name} 觸發器在 SongDisplayItem 上找不到 Name -->
+        <Style x:Key="YoutubeThumbnailButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource BrushSurfaceRaised}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+        </Style>
+
     </Window.Resources>
     <materialDesign:DialogHost x:Name="RootDialog" Identifier="RootDialog" Background="{DynamicResource BrushBgPrimary}">
         <Viewbox Stretch="Fill" StretchDirection="Both">
@@ -1897,7 +1910,7 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Button Click="YoutubeThumbnail_Click" Tag="{Binding}" Style="{StaticResource VisualSingerButtonStyle}"
+                                            <Button Click="YoutubeThumbnail_Click" Tag="{Binding}" Style="{StaticResource YoutubeThumbnailButtonStyle}"
                                                     MouseEnter="YoutubeThumbnail_MouseEnter" MouseLeave="YoutubeThumbnail_MouseLeave">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">

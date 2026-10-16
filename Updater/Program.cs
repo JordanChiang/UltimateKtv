@@ -305,7 +305,8 @@ namespace UltimateKtv.Updater
                 string destFile = Path.Combine(destDir, relativePath);
 
                 // Skip database if it already exists to preserve user data
-                if (fileName.Equals("CrazySong.mdb", StringComparison.OrdinalIgnoreCase) && File.Exists(destFile))
+                if ((fileName.Equals("CrazySong.mdb", StringComparison.OrdinalIgnoreCase) ||
+                     fileName.Equals("CrazySong.db", StringComparison.OrdinalIgnoreCase)) && File.Exists(destFile))
                 {
                     continue;
                 }

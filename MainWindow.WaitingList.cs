@@ -216,6 +216,8 @@ namespace UltimateKtv
         }
 
         private Storyboard? _nowPlayingBreathingStoryboard;
+        // Stop/Pause on a storyboard that was never begun logs a WPF Animation warning
+        private bool _isNowPlayingBreathing;
 
         /// <summary>
         /// Initializes the smooth breathing animation on NowPlayingInfoPanel.
@@ -254,7 +256,11 @@ namespace UltimateKtv
 
             try
             {
-                _nowPlayingBreathingStoryboard?.Begin(this, isControllable: true);
+                if (_nowPlayingBreathingStoryboard != null)
+                {
+                    _nowPlayingBreathingStoryboard.Begin(this, isControllable: true);
+                    _isNowPlayingBreathing = true;
+                }
             }
             catch { }
         }
@@ -266,7 +272,11 @@ namespace UltimateKtv
         {
             try
             {
-                _nowPlayingBreathingStoryboard?.Stop(this);
+                if (_isNowPlayingBreathing)
+                {
+                    _nowPlayingBreathingStoryboard?.Stop(this);
+                    _isNowPlayingBreathing = false;
+                }
             }
             catch { }
 
@@ -283,7 +293,10 @@ namespace UltimateKtv
         {
             try
             {
-                _nowPlayingBreathingStoryboard?.Pause(this);
+                if (_isNowPlayingBreathing)
+                {
+                    _nowPlayingBreathingStoryboard?.Pause(this);
+                }
             }
             catch { }
         }

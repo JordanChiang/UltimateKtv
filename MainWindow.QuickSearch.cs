@@ -363,9 +363,7 @@ namespace UltimateKtv
                 // Delete from DB
                 try
                 {
-                    string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
-                    string sql = "DELETE FROM YoutubeSongList";
-                    DbHelper.Access.ExecuteNonQuery(dbPath, sql, null);
+                    Db.ExecuteNonQuery("DELETE FROM YoutubeSongList");
                     AppLogger.Log("Cleared YoutubeSongList database.");
                     
                     // Clear YoutubeHistory memory cache if any

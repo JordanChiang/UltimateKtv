@@ -213,15 +213,13 @@ namespace UltimateKtv
             AppLogger.Log("Settings loaded and applied.");
 
             // Initialize performance logging early
-            string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+            string dbPath = Db.FilePath;
             try
             {
-                DebugLog("Attempting to initialize database...");
-                // Construct the path to the database file in the application's root directory.
+                DebugLog($"Attempting to initialize database ({Db.Kind})...");
 
-                // Use the existing SongDatas class to initialize and load all data from the Access database.
-                // This will load songs, singers, etc., into memory for fast access.
-                SongDatas.Init("Access", dbPath);
+                // Load songs, singers, etc. from CrazySong.db (SQLite) or CrazySong.mdb (Access) into memory for fast access.
+                SongDatas.Init();
                 // Ensure the server cache is built immediately after loading data, before any requests can come in.
                 HttpServer.PrepareCachedSingerData();
                 

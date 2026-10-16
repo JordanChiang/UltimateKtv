@@ -1,7 +1,6 @@
 using CrazyKTV_MediaKit.DirectShow.Controls;
 using CrazyKTV_MediaKit.DirectShow.MediaPlayers;
 using System;
-using System.Data.OleDb;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -534,10 +533,7 @@ namespace UltimateKtv
                                     {
                                         try
                                         {
-                                            string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
-                                            string sql = "UPDATE ktv_Song SET Song_PlayCount = ? WHERE Song_Id = ?";
-                                            var parameters = new OleDbParameter[] { new OleDbParameter("?", newPlayCount), new OleDbParameter("?", songId) };
-                                            DbHelper.Access.ExecuteNonQuery(dbPath, sql, null, parameters);
+                                            Db.ExecuteNonQuery("UPDATE ktv_Song SET Song_PlayCount = ? WHERE Song_Id = ?", newPlayCount, songId);
                                             AppLogger.Log($"DB Write: Updated Song_PlayCount to {newPlayCount} for Song_Id '{songId}'");
                                             DebugLog($"Successfully saved new play count ({newPlayCount}) for Song_Id '{songId}' to the database.");
                                         }
@@ -559,10 +555,9 @@ namespace UltimateKtv
                                     try
                                     {
                                         // Song_Id is the history Id (Y0017) for desktop orders but the video ID for web orders
-                                        string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
+                                        // IIF exists in both Access and SQLite (3.32+)
                                         string sql = "UPDATE YoutubeSongList SET PlayCount = IIF(PlayCount IS NULL, 0, PlayCount) + 1 WHERE Id = ? OR Url = ?";
-                                        var parameters = new OleDbParameter[] { new OleDbParameter("?", ytSongId), new OleDbParameter("?", ytSongId) };
-                                        int rows = DbHelper.Access.ExecuteNonQuery(dbPath, sql, null, parameters);
+                                        int rows = Db.ExecuteNonQuery(sql, ytSongId, ytSongId);
                                         AppLogger.Log($"DB Write: Incremented PlayCount for Youtube '{songNameForLog}' ({ytSongId}), rows affected={rows}");
                                     }
                                     catch (Exception ex)
@@ -624,13 +619,7 @@ namespace UltimateKtv
                     {
                         try
                         {
-                            string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
-                            string sql = "UPDATE ktv_Song SET Song_Volume = ? WHERE Song_Id = ?";
-                            var parameters = new OleDbParameter[] { 
-                                new OleDbParameter("?", currentVolume), 
-                                new OleDbParameter("?", songId) 
-                            };
-                            DbHelper.Access.ExecuteNonQuery(dbPath, sql, null, parameters);
+                            Db.ExecuteNonQuery("UPDATE ktv_Song SET Song_Volume = ? WHERE Song_Id = ?", currentVolume, songId);
                             DebugLog($"DB Write: Updated Song_Volume to {currentVolume} for Song_Id '{songId}'");
                             AppLogger.Log($"DB Write: Updated Song_Volume to {currentVolume} for Song_Id '{songId}'");
                         }
@@ -823,7 +812,7 @@ namespace UltimateKtv
                 RepeatBtn.SetResourceReference(ContentControl.ContentProperty, Loc.ResourcePrefix + "Player.Loop");
                 RepeatBtn.Background = _fixedButtonBackground ?? ThemeSettingsHandler.PrimaryBrush;
                 RepeatBtn.Foreground = _activeButtonForeground ?? (Brush)FindResource("BrushTextMain");
-                _repeatBtnFlashStoryboard?.Begin(RepeatBtn, true);
+                StartRepeatBtnFlash();
                 MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LoopOn"), 5);
                 AppLogger.Log("User action: Loop play enabled");
                 DebugLog("SetLoopPlay: Loop play enabled");
@@ -831,7 +820,7 @@ namespace UltimateKtv
             else
             {
                 RepeatBtn.SetResourceReference(ContentControl.ContentProperty, Loc.ResourcePrefix + "Player.Replay");
-                _repeatBtnFlashStoryboard?.Stop(RepeatBtn);
+                StopRepeatBtnFlash();
                 RepeatBtn.ClearValue(OpacityProperty);
                 RepeatBtn.ClearValue(Button.BackgroundProperty);
                 RepeatBtn.ClearValue(Button.ForegroundProperty);
@@ -1029,7 +1018,7 @@ namespace UltimateKtv
             }
 
                 // Always stop any flashing animation before reapplying normal styles
-                _vocalBtnFlashStoryboard?.Stop(VocalBtn);
+                StopVocalBtnFlash();
                 VocalBtn.ClearValue(OpacityProperty);
 
                 // If a track is fixed, the Vocal button gets a special "locked" style.
@@ -1044,7 +1033,7 @@ namespace UltimateKtv
                     isMusicActive = false; // Ensure state is correct
 
                     // Start the flashing animation on the button
-                    _vocalBtnFlashStoryboard?.Begin(VocalBtn, true);
+                    StartVocalBtnFlash();
                     return; // Exit early
                 }
 
@@ -1099,7 +1088,7 @@ namespace UltimateKtv
                 _isVocalTrackFixed = false;
                 _fixedAudioTrack = -1;
                 // Stop the flashing animation and reset opacity before updating styles
-                _vocalBtnFlashStoryboard?.Stop(VocalBtn);
+                StopVocalBtnFlash();
                 VocalBtn.ClearValue(OpacityProperty);
                 UpdateVocalMusicButtonStates();
                 MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackUnfixed"), 2);
@@ -1222,7 +1211,7 @@ namespace UltimateKtv
                     _isVocalTrackFixed = false;
                     _fixedAudioTrack = -1;
                     // Stop the flashing animation and reset opacity before updating styles
-                    _vocalBtnFlashStoryboard?.Stop(VocalBtn);
+                    StopVocalBtnFlash();
                     VocalBtn.ClearValue(OpacityProperty);
                     UpdateVocalMusicButtonStates();
                     MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackUnfixed"), 2);
@@ -1506,10 +1495,7 @@ namespace UltimateKtv
                                 {
                                     try
                                     {
-                                        string dbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
-                                        string sql = "UPDATE ktv_Song SET Song_Track = ? WHERE Song_Id = ?";
-                                        var parameters = new OleDbParameter[] { new OleDbParameter("?", newTrack), new OleDbParameter("?", songId) };
-                                        DbHelper.Access.ExecuteNonQuery(dbPath, sql, null, parameters);
+                                        Db.ExecuteNonQuery("UPDATE ktv_Song SET Song_Track = ? WHERE Song_Id = ?", newTrack, songId);
                                         AppLogger.Log($"DB Write: Updated Song_Track to {newTrack} for Song_Id '{songId}'");
                                         DebugLog($"Successfully saved new Song_Track ({newTrack}) for Song_Id '{songId}' to the database.");
                                     }
@@ -1769,6 +1755,38 @@ namespace UltimateKtv
             {
                 _repeatBtnFlashStoryboard = storyboard;
             }
+        }
+
+        // Stopping a storyboard that was never begun logs a WPF Animation warning, so track whether each flash is running
+        private bool _isVocalBtnFlashing;
+        private bool _isRepeatBtnFlashing;
+
+        private void StartVocalBtnFlash()
+        {
+            if (_vocalBtnFlashStoryboard == null) return;
+            _vocalBtnFlashStoryboard.Begin(VocalBtn, true);
+            _isVocalBtnFlashing = true;
+        }
+
+        private void StopVocalBtnFlash()
+        {
+            if (!_isVocalBtnFlashing) return;
+            _vocalBtnFlashStoryboard?.Stop(VocalBtn);
+            _isVocalBtnFlashing = false;
+        }
+
+        private void StartRepeatBtnFlash()
+        {
+            if (_repeatBtnFlashStoryboard == null) return;
+            _repeatBtnFlashStoryboard.Begin(RepeatBtn, true);
+            _isRepeatBtnFlashing = true;
+        }
+
+        private void StopRepeatBtnFlash()
+        {
+            if (!_isRepeatBtnFlashing) return;
+            _repeatBtnFlashStoryboard?.Stop(RepeatBtn);
+            _isRepeatBtnFlashing = false;
         }
 
         // New: centralized, reusable volume mapper for project-wide usage.

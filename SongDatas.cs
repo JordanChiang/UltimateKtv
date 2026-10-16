@@ -223,12 +223,11 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Initializes and loads all data from the specified database file.
+        /// Initializes and loads all data from the song database (see <see cref="Db"/>).
         /// </summary>
-        /// <param name="databaseType">The type of database ("Access" or "SQLite").</param>
-        /// <param name="databaseFile">The full path to the database file.</param>
-        public static void Init(string databaseType, string databaseFile)
+        public static void Init()
         {
+            string databaseFile = Db.FilePath;
             if (!File.Exists(databaseFile))
             {
                 // Throw a specific, user-friendly exception if the database file is missing.
@@ -238,36 +237,16 @@ namespace UltimateKtv
             try
             {
                 // Check and create YoutubeSongList table before proceeding
-                if (databaseType.Equals("Access", StringComparison.OrdinalIgnoreCase))
-                {
-                    CheckAndCreateYoutubeTable(databaseFile);
-                }
-
-                // Use delegates to avoid duplicating database access logic.
-                Func<string, string, string?, List<Dictionary<string, object?>>> getDictionary;
-                Func<string, string, string?, DataTable> getDataTable;
-                string schemaQuerySong, schemaQuerySinger, schemaQueryFavorite;
-
-                if (databaseType.Equals("Access", StringComparison.OrdinalIgnoreCase))
-                {
-                    getDictionary = DbHelper.Access.GetDictionary;
-                    getDataTable = DbHelper.Access.GetDataTable;
-                    schemaQuerySong = "SELECT TOP 1 * FROM ktv_Song WHERE 1=0";
-                    schemaQuerySinger = "SELECT TOP 1 * FROM ktv_Singer WHERE 1=0";
-                    schemaQueryFavorite = "SELECT TOP 1 * FROM ktv_Favorite WHERE 1=0";
-                }
-                else
-                {
-                    throw new ArgumentException("Unsupported database type specified.", nameof(databaseType));
-                }
+                CheckAndCreateYoutubeTable();
 
                 // Load all data tables into static properties
-                SongData = getDictionary(databaseFile, "SELECT * FROM ktv_Song ORDER BY Song_Id", null);
+                SongData = Db.GetDictionary("SELECT * FROM ktv_Song ORDER BY Song_Id");
 
                 // --- Schema Fix: Expand User_Id column if needed ---
-                // Must be done before initializing other data that might depend on it, 
+                // Must be done before initializing other data that might depend on it,
                 // though technically valid at any point before we write to ktv_User.
-                if (databaseType.Equals("Access", StringComparison.OrdinalIgnoreCase))
+                // SQLite does not enforce TEXT lengths, so this only applies to Access.
+                if (Db.IsAccess)
                 {
                     FixUserTableSchema(databaseFile);
                 }
@@ -294,7 +273,7 @@ namespace UltimateKtv
                     //Debug.WriteLine($"Generation data cached in {sw.ElapsedMilliseconds}ms.");
                 }
 
-                SongDataSchema = getDataTable(databaseFile, schemaQuerySong, null);
+                SongDataSchema = Db.GetDataTable("SELECT * FROM ktv_Song WHERE 1=0");
 
                 // Add the FilePath column to the schema, so it's available in DataTables.
                 if (SongDataSchema != null)
@@ -302,13 +281,13 @@ namespace UltimateKtv
                     SongDataSchema.Columns.Add("FilePath", typeof(string));
                 }
 
-                LangData = getDataTable(databaseFile, "SELECT * FROM ktv_Langauage ORDER BY Langauage_Id", null);
-                SingerData = getDictionary(databaseFile, "SELECT * FROM ktv_Singer ORDER BY Singer_Id", null);
-                SingerDataSchema = getDataTable(databaseFile, schemaQuerySinger, null);
-                SingerTypeData = getDataTable(databaseFile, "SELECT * FROM ktv_Swan ORDER BY Swan_Id", null);
-                FavoriteUserData = getDataTable(databaseFile, "SELECT * FROM ktv_User ORDER BY User_Id", null);
-                FavoriteSongData = getDictionary(databaseFile, "SELECT * FROM ktv_Favorite ORDER BY User_Id", null);
-                FavoriteSongDataSchema = getDataTable(databaseFile, schemaQueryFavorite, null);
+                LangData = Db.GetDataTable("SELECT * FROM ktv_Langauage ORDER BY Langauage_Id");
+                SingerData = Db.GetDictionary("SELECT * FROM ktv_Singer ORDER BY Singer_Id");
+                SingerDataSchema = Db.GetDataTable("SELECT * FROM ktv_Singer WHERE 1=0");
+                SingerTypeData = Db.GetDataTable("SELECT * FROM ktv_Swan ORDER BY Swan_Id");
+                FavoriteUserData = Db.GetDataTable("SELECT * FROM ktv_User ORDER BY User_Id");
+                FavoriteSongData = Db.GetDictionary("SELECT * FROM ktv_Favorite ORDER BY User_Id");
+                FavoriteSongDataSchema = Db.GetDataTable("SELECT * FROM ktv_Favorite WHERE 1=0");
 
                 // Populate lists from the newly loaded DataTables
                 if (LangData != null)
@@ -520,20 +499,21 @@ namespace UltimateKtv
         /// <summary>
         /// Checks if the YoutubeSongList table exists in the database and creates it if not.
         /// </summary>
-        /// <param name="databasePath">Path to the Access database file.</param>
-        private static void CheckAndCreateYoutubeTable(string databasePath)
+        private static void CheckAndCreateYoutubeTable()
         {
             try
             {
-                var tables = DbHelper.Access.GetDBTableList(databasePath);
+                var tables = Db.GetTableList();
                 if (!tables.Contains("YoutubeSongList"))
                 {
-                    string createTableSql = @"
+                    // Access needs MEMO for long text; SQLite would give MEMO numeric affinity, so use TEXT there
+                    string urlType = Db.IsAccess ? "MEMO" : "TEXT";
+                    string createTableSql = $@"
                         CREATE TABLE YoutubeSongList (
                             Id TEXT(5) PRIMARY KEY,
                             Name TEXT(255),
                             CreatDate DATETIME,
-                            Url MEMO,
+                            Url {urlType},
                             Singer TEXT(50),
                             Lang TEXT(16),
                             PlayCount INTEGER,
@@ -544,7 +524,7 @@ namespace UltimateKtv
                             Volume INTEGER,
                             WordCount INTEGER
                         )";
-                    DbHelper.Access.ExecuteNonQuery(databasePath, createTableSql, null);
+                    Db.ExecuteNonQuery(createTableSql);
                     AppLogger.Log("DB Write: Created YoutubeSongList table");
                     Debug.WriteLine("Created YoutubeSongList table");
                 }
@@ -554,7 +534,11 @@ namespace UltimateKtv
                 Debug.WriteLine($"Failed to create YoutubeSongList table: {ex.Message}");
             }
 
-            EnsureYoutubeNameColumnLength(databasePath);
+            // SQLite does not enforce TEXT lengths, so only Access needs the column widened
+            if (Db.IsAccess)
+            {
+                EnsureYoutubeNameColumnLength(Db.FilePath);
+            }
         }
 
         // Actual YoutubeSongList.Name length; older databases may still have a shorter column if ALTER failed
@@ -605,7 +589,6 @@ namespace UltimateKtv
         /// </summary>
         public static string RecordYoutubeSong(SongDisplayItem song)
         {
-            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
             try
             {
                 // Url must be the real video ID, never the internal history Id (e.g. "Y0017")
@@ -614,39 +597,32 @@ namespace UltimateKtv
                 // Check if already exists by Url
                 if (!string.IsNullOrEmpty(videoId))
                 {
-                    string safeUrl = videoId.Replace("'", "''");
-                    string query = $"SELECT Id FROM YoutubeSongList WHERE Url = '{safeUrl}'";
-                    var existing = DbHelper.Access.GetDataTable(dbPath, query, null);
+                    var existing = Db.GetDataTable("SELECT Id FROM YoutubeSongList WHERE Url = ?", videoId);
                     if (existing.Rows.Count > 0)
                     {
                         return existing.Rows[0][0].ToString() ?? "";
                     }
                 }
-                
+
                 // Check if already exists by FileName (handles imported files that have empty Urls)
                 string fileName = Path.GetFileName(song.FilePath) ?? "";
                 if (!string.IsNullOrEmpty(fileName))
                 {
-                    string safeFileName = fileName.Replace("'", "''");
-                    string query = $"SELECT Id FROM YoutubeSongList WHERE FileName = '{safeFileName}'";
-                    var existing = DbHelper.Access.GetDataTable(dbPath, query, null);
+                    var existing = Db.GetDataTable("SELECT Id FROM YoutubeSongList WHERE FileName = ?", fileName);
                     if (existing.Rows.Count > 0)
                     {
                         string existingId = existing.Rows[0][0].ToString() ?? "";
                         // If we have a SongId (Video ID) now, update the empty Url in the database
                         if (!string.IsNullOrEmpty(videoId))
                         {
-                            string safeUrl = videoId.Replace("'", "''");
-                            string updateSql = $"UPDATE YoutubeSongList SET Url = '{safeUrl}' WHERE Id = '{existingId}' AND (Url IS NULL OR Url = '')";
-                            DbHelper.Access.ExecuteNonQuery(dbPath, updateSql, null);
+                            Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Url = ? WHERE Id = ? AND (Url IS NULL OR Url = '')", videoId, existingId);
                         }
                         return existingId;
                     }
                 }
 
                 // Generate new Id (Y0001 format)
-                string maxIdQuery = "SELECT MAX(Id) FROM YoutubeSongList";
-                var maxIdTable = DbHelper.Access.GetDataTable(dbPath, maxIdQuery, null);
+                var maxIdTable = Db.GetDataTable("SELECT MAX(Id) FROM YoutubeSongList");
                 string newId = "Y0001";
                 if (maxIdTable.Rows.Count > 0 && maxIdTable.Rows[0][0] != DBNull.Value)
                 {
@@ -664,24 +640,20 @@ namespace UltimateKtv
                     (Id, Name, CreatDate, Url, Singer, Lang, PlayCount, Length, FileName, FileSize, Track, Volume, WordCount) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 
-                var parameters = new List<System.Data.OleDb.OleDbParameter>
-                {
-                    new System.Data.OleDb.OleDbParameter("@Id", newId),
-                    new System.Data.OleDb.OleDbParameter("@Name", name ?? ""),
-                    new System.Data.OleDb.OleDbParameter("@CreatDate", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss")),
-                    new System.Data.OleDb.OleDbParameter("@Url", videoId),
-                    new System.Data.OleDb.OleDbParameter("@Singer", ""),
-                    new System.Data.OleDb.OleDbParameter("@Lang", song.Language ?? ""),
-                    new System.Data.OleDb.OleDbParameter("@PlayCount", System.Data.OleDb.OleDbType.Integer) { Value = 0 }, // counted when actually played
-                    new System.Data.OleDb.OleDbParameter("@Length", System.Data.OleDb.OleDbType.Integer) { Value = 0 },
-                    new System.Data.OleDb.OleDbParameter("@FileName", Path.GetFileName(song.FilePath) ?? ""),
-                    new System.Data.OleDb.OleDbParameter("@FileSize", System.Data.OleDb.OleDbType.Integer) { Value = File.Exists(song.FilePath) ? (int)Math.Min(new FileInfo(song.FilePath).Length, int.MaxValue) : 0 },
-                    new System.Data.OleDb.OleDbParameter("@Track", System.Data.OleDb.OleDbType.Integer) { Value = 3 },
-                    new System.Data.OleDb.OleDbParameter("@Volume", System.Data.OleDb.OleDbType.Integer) { Value = song.Volume },
-                    new System.Data.OleDb.OleDbParameter("@WordCount", System.Data.OleDb.OleDbType.Integer) { Value = 0 }
-                };
-
-                DbHelper.Access.ExecuteNonQuery(dbPath, insertSql, null, parameters);
+                Db.ExecuteNonQuery(insertSql,
+                    newId,
+                    name ?? "",
+                    DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"),
+                    videoId,
+                    "",                     // Singer
+                    song.Language ?? "",
+                    0,                      // PlayCount: counted when actually played
+                    0,                      // Length
+                    Path.GetFileName(song.FilePath) ?? "",
+                    File.Exists(song.FilePath) ? (int)Math.Min(new FileInfo(song.FilePath).Length, int.MaxValue) : 0,
+                    3,                      // Track
+                    song.Volume,
+                    0);                     // WordCount
                 Debug.WriteLine($"Recorded YouTube song: {name} (Id: {newId})");
                 AppLogger.Log($"DB Write: Recorded YouTube song: {name} (Id: {newId})");
 
@@ -701,12 +673,10 @@ namespace UltimateKtv
         public static bool UpdateYoutubeSongLength(string songId, int lengthSeconds)
         {
             if (string.IsNullOrEmpty(songId) || lengthSeconds <= 0) return false;
-            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
             try
             {
-                string safeSongId = songId.Replace("'", "''");
-                string sql = $"UPDATE YoutubeSongList SET Length = {lengthSeconds} WHERE (Id = '{safeSongId}' OR Url = '{safeSongId}') AND (Length IS NULL OR Length = 0)";
-                int rowsAffected = DbHelper.Access.ExecuteNonQuery(dbPath, sql, null);
+                string sql = "UPDATE YoutubeSongList SET Length = ? WHERE (Id = ? OR Url = ?) AND (Length IS NULL OR Length = 0)";
+                int rowsAffected = Db.ExecuteNonQuery(sql, lengthSeconds, songId, songId);
                 if (rowsAffected > 0)
                 {
                     AppLogger.Log($"DB Write: Updated Youtube song {songId} length to {lengthSeconds} seconds.");
@@ -725,7 +695,6 @@ namespace UltimateKtv
         /// </summary>
         public static List<Dictionary<string, object?>> GetYoutubeHistory()
         {
-            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
             var list = new List<Dictionary<string, object?>>();
             try
             {
@@ -737,11 +706,11 @@ namespace UltimateKtv
                     orderBy = "PlayCount DESC, CreatDate DESC";
                 }
                 string query = $"SELECT * FROM YoutubeSongList ORDER BY {orderBy}";
-                var dt = DbHelper.Access.GetDataTable(dbPath, query, null);
-                
+                var dt = Db.GetDataTable(query);
+
                 foreach (System.Data.DataRow row in dt.Rows)
                 {
-                    var dict = YoutubeRowToDictionary(dbPath, row);
+                    var dict = YoutubeRowToDictionary(row);
                     list.Add(dict);
                 }
                 AppLogger.Log($"GetYoutubeHistory: Fetched {list.Count} records successfully.");
@@ -760,12 +729,10 @@ namespace UltimateKtv
         public static Dictionary<string, object?>? GetYoutubeHistoryById(string id)
         {
             if (string.IsNullOrEmpty(id)) return null;
-            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
             try
             {
-                string query = $"SELECT * FROM YoutubeSongList WHERE Id = '{id.Replace("'", "''")}'";
-                var dt = DbHelper.Access.GetDataTable(dbPath, query, null);
-                return dt.Rows.Count > 0 ? YoutubeRowToDictionary(dbPath, dt.Rows[0]) : null;
+                var dt = Db.GetDataTable("SELECT * FROM YoutubeSongList WHERE Id = ?", id);
+                return dt.Rows.Count > 0 ? YoutubeRowToDictionary(dt.Rows[0]) : null;
             }
             catch (Exception ex)
             {
@@ -777,7 +744,7 @@ namespace UltimateKtv
         /// <summary>
         /// Converts a YoutubeSongList row to a dictionary, repairing legacy data (empty Url, duration in Lang) in place.
         /// </summary>
-        private static Dictionary<string, object?> YoutubeRowToDictionary(string dbPath, System.Data.DataRow row)
+        private static Dictionary<string, object?> YoutubeRowToDictionary(System.Data.DataRow row)
         {
             var dict = new Dictionary<string, object?>();
             foreach (System.Data.DataColumn col in row.Table.Columns)
@@ -795,8 +762,7 @@ namespace UltimateKtv
                     dict["Url"] = recoveredId;
                     try
                     {
-                        DbHelper.Access.ExecuteNonQuery(dbPath,
-                            $"UPDATE YoutubeSongList SET Url = '{recoveredId}' WHERE Id = '{rowId.Replace("'", "''")}' AND (Url IS NULL OR Url = '')", null);
+                        Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Url = ? WHERE Id = ? AND (Url IS NULL OR Url = '')", recoveredId, rowId);
                         AppLogger.Log($"DB Write: Recovered YouTube video ID '{recoveredId}' for {rowId} from file name.");
                     }
                     catch (Exception ex)
@@ -827,8 +793,7 @@ namespace UltimateKtv
                 string rowId = dict.GetValueOrDefault("Id")?.ToString() ?? "";
                 try
                 {
-                    DbHelper.Access.ExecuteNonQuery(dbPath, "UPDATE YoutubeSongList SET Name = ? WHERE Id = ?", null,
-                        new[] { new System.Data.OleDb.OleDbParameter("@Name", fixedName), new System.Data.OleDb.OleDbParameter("@Id", rowId) });
+                    Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Name = ? WHERE Id = ?", fixedName, rowId);
                     AppLogger.Log($"DB Write: Restored YouTube name for {rowId}: '{fixedName}'.");
                 }
                 catch (Exception ex)
@@ -845,8 +810,7 @@ namespace UltimateKtv
                 string rowId = dict.GetValueOrDefault("Id")?.ToString() ?? "";
                 try
                 {
-                    DbHelper.Access.ExecuteNonQuery(dbPath,
-                        $"UPDATE YoutubeSongList SET Lang = '' WHERE Id = '{rowId.Replace("'", "''")}'", null);
+                    Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Lang = '' WHERE Id = ?", rowId);
                     AppLogger.Log($"DB Write: Cleared duration-like Lang '{lang}' for {rowId}.");
                 }
                 catch (Exception ex)
@@ -859,14 +823,9 @@ namespace UltimateKtv
 
         public static void DeleteYoutubeHistory(string id)
         {
-            string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CrazySong.mdb");
             try
             {
-                string query = "DELETE FROM YoutubeSongList WHERE Id = @Id";
-                var parameters = new[] {
-                    new System.Data.OleDb.OleDbParameter("@Id", id)
-                };
-                DbHelper.Access.ExecuteNonQuery(dbPath, query, null, parameters);
+                Db.ExecuteNonQuery("DELETE FROM YoutubeSongList WHERE Id = ?", id);
                 AppLogger.Log($"Deleted Youtube History record: {id}");
             }
             catch (Exception ex)
@@ -880,12 +839,11 @@ namespace UltimateKtv
         /// Reloads the favorite song data from the database.
         /// Used after modifying the ktv_Favorite table to keep the in-memory cache in sync.
         /// </summary>
-        /// <param name="databasePath">Path to the database file</param>
-        public static void ReloadFavoriteData(string databasePath)
+        public static void ReloadFavoriteData()
         {
             try
             {
-                FavoriteSongData = DbHelper.Access.GetDictionary(databasePath, "SELECT * FROM ktv_Favorite ORDER BY User_Id", null);
+                FavoriteSongData = Db.GetDictionary("SELECT * FROM ktv_Favorite ORDER BY User_Id");
                 Debug.WriteLine("Favorite data reloaded successfully.");
             }
             catch (Exception ex)
