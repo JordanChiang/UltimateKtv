@@ -13,8 +13,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using CrazyKTV_MediaKit.DirectShow.MediaPlayers;
-using YoutubeExplode;
-using YoutubeExplode.Videos.Streams;
 
 namespace UltimateKtv
 {
