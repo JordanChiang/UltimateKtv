@@ -34,7 +34,7 @@ namespace UltimateKtv.Updater
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("====================================================");
-            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.5 =");
+            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.6 =");
             Console.WriteLine("====================================================");
             Console.ResetColor();
             Console.WriteLine();
@@ -306,7 +306,8 @@ namespace UltimateKtv.Updater
 
                 // Skip database if it already exists to preserve user data
                 if ((fileName.Equals("CrazySong.mdb", StringComparison.OrdinalIgnoreCase) ||
-                     fileName.Equals("CrazySong.db", StringComparison.OrdinalIgnoreCase)) && File.Exists(destFile))
+                     fileName.Equals("CrazySong.db", StringComparison.OrdinalIgnoreCase) ||
+                     relativePath.Replace('/', '\\').Equals(@"SongMgr\CrazySongMgr.mdb", StringComparison.OrdinalIgnoreCase)) && File.Exists(destFile))
                 {
                     continue;
                 }
@@ -350,17 +351,41 @@ namespace UltimateKtv.Updater
             Console.WriteLine("\n正在重新啟動應用程式...");
             await Task.Delay(1000);
 
-            ProcessStartInfo startInfo = new ProcessStartInfo(targetExe)
-            {
-                WorkingDirectory = destDir,
-                UseShellExecute = true
-            };
-            Process.Start(startInfo);
+            StartAppNotElevated(targetExe, destDir);
 
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("\n[成功] 更新已完成，祝您歌唱愉快！");
             Console.ResetColor();
             await Task.Delay(1500);
+        }
+
+        /// <summary>
+        /// 更新程式是以系統管理員身分 (runas) 執行，直接 Process.Start 會讓 KTV 也變成系統管理員權限，
+        /// 這樣看不到使用者對應的網路磁碟 (例如 K: → \\NAS\ktv)，所有歌曲都會被判定為檔案不存在。
+        /// 改由 explorer.exe 啟動，KTV 會以一般使用者權限執行；失敗時才退回直接啟動。
+        /// </summary>
+        private static void StartAppNotElevated(string targetExe, string workingDir)
+        {
+            try
+            {
+                string explorer = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+                Process.Start(new ProcessStartInfo(explorer, $"\"{targetExe}\"")
+                {
+                    WorkingDirectory = workingDir,
+                    UseShellExecute = false
+                });
+                return;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"      [警告] 無法以一般權限啟動，改為直接啟動：{ex.Message}");
+            }
+
+            Process.Start(new ProcessStartInfo(targetExe)
+            {
+                WorkingDirectory = workingDir,
+                UseShellExecute = true
+            });
         }
 
         private static string GetRelativePath(string relativeTo, string path)
