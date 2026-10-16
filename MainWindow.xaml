@@ -97,11 +97,7 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BrushOverlayHover}"/>
-                </Trigger>
-            </Style.Triggers>
+            <!-- 表頭不可排序/點擊，滑鼠移入不變色 -->
         </Style>
 
         <!-- Floating DataGrid Cell Style (預設灰藍色 BrushTextDim，精確 16px 內距與透明背景支援列懸浮發光) -->
@@ -1855,8 +1851,8 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <!-- Margin：上下 6 (排距 12)、左右 14 (按鈕較窄)；8 排 x 74 = 592，鍵盤 11 排 x 74 = 814 -->
-                                            <Button Style="{DynamicResource SingerGridButtonStyle}" FontSize="{StaticResource FontSizeXXL}" MinHeight="0" Height="62" Margin="16,8"
+                                            <!-- Margin：上下 5 (排距 10)、左右 16 (按鈕較窄)；8 排 x 72 = 576 (列表區 594)，鍵盤 11 排 x 72 = 792 (810) -->
+                                            <Button Style="{DynamicResource SingerGridButtonStyle}" FontSize="{StaticResource FontSizeXXL}" MinHeight="0" Height="62" Margin="16,5"
                                                     Click="QuickSingerButton_Click" Tag="{Binding Name}">
                                                 <Viewbox StretchDirection="DownOnly">
                                                     <!-- 文字顏色依歌手類型：男 藍、女 粉、團體 綠、其他 主題色 -->

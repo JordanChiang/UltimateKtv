@@ -41,24 +41,27 @@ namespace UltimateKtv
         // Youtube 搜尋結果用 4x4 縮圖格 (16)；Youtube 點播記錄用 QuickSongListGrid，一頁 12 首
         // 鍵盤與 Youtube 點播記錄沒有 40 字按鈕格，列表加高 (810) 並多顯示幾列
         private bool IsTallQuickList => _currentQuickMethod == QuickMethod.Keyboard || _currentQuickMethod == QuickMethod.YoutubeHistory;
+        // 12 列歌曲列表 (列高 60)：Youtube 點播記錄、鍵盤搜尋歌曲
+        private bool IsTwelveRowQuickSongList => _currentQuickMethod == QuickMethod.YoutubeHistory
+            || (_currentQuickMethod == QuickMethod.Keyboard && _searchMode == SearchMode.Song);
 
         private int QuickSearchPageSize => (_searchMode == SearchMode.Youtube && _currentQuickMethod != QuickMethod.YoutubeHistory)
             ? 16
-            : _currentQuickMethod == QuickMethod.YoutubeHistory ? 12
+            : IsTwelveRowQuickSongList ? 12
             : (IsTallQuickList ? 11 : 8) * (_isSingerSearchMode ? QuickSingerColumns : 1);
 
         /// <summary>
         /// QuickSongListGrid 高度與位置：一般 8 列 (594)、鍵盤 11 列 (810)、
-        /// Youtube 點播記錄 12 列：列高改 60，每列實際約佔 65 (列邊距 3 + 外框 2)，表頭約 58，
+        /// Youtube 點播記錄與鍵盤搜尋歌曲 12 列：列高改 60，每列實際約佔 65 (列邊距 3 + 外框 2)，表頭約 58，
         /// 共約 838，高度 850；上方多留 6 往下移一點，總高 856 (內容區放得下 Margin 8 + 850 的縮圖格)。
         /// </summary>
         private void ApplyQuickSongListLayout()
         {
             if (QuickSongListGrid == null) return;
-            bool isYoutubeHistory = _currentQuickMethod == QuickMethod.YoutubeHistory;
-            QuickSongListGrid.RowHeight = isYoutubeHistory ? 60 : 62;
-            QuickSongListGrid.Height = isYoutubeHistory ? 850 : IsTallQuickList ? 810 : 594;
-            QuickSongListGrid.Margin = isYoutubeHistory ? new Thickness(0, 6, 0, 0) : new Thickness(0);
+            bool isTwelveRows = IsTwelveRowQuickSongList;
+            QuickSongListGrid.RowHeight = isTwelveRows ? 60 : 62;
+            QuickSongListGrid.Height = isTwelveRows ? 850 : IsTallQuickList ? 810 : 594;
+            QuickSongListGrid.Margin = isTwelveRows ? new Thickness(0, 6, 0, 0) : new Thickness(0);
         }
 
         // For async quick search to prevent UI lag
