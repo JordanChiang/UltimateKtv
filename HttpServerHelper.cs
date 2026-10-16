@@ -1242,7 +1242,7 @@ public class HttpServerHelper
 	                Song_Id = v.Id.Value,
 	                Song_SongName = v.Title,
 	                Song_Singer = v.Author.ChannelTitle,
-	                Song_Lang = v.Duration?.ToString(@"mm\:ss") ?? "",
+	                Song_Lang = v.Duration.HasValue ? UltimateKtv.SongDisplayItem.FormatDuration(v.Duration.Value.TotalSeconds) : "",
 	                FilePath = v.Url,
 	                IsYoutube = true,
 	                Song_Volume = 30

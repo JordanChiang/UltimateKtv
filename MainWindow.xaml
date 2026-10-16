@@ -1923,6 +1923,11 @@
                                                                               LoadedBehavior="Manual" 
                                                                               UnloadedBehavior="Stop" 
                                                                               Volume="0" />
+                                                                <!-- 右上角歌曲長度 (H:MM:SS，不到 1 小時為 M:SS)，未知時隱藏 -->
+                                                                <Border x:Name="DurationBadge" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0"
+                                                                        Background="{StaticResource BrushScrim}" CornerRadius="{StaticResource RadiusXSmall}" Padding="6,1">
+                                                                    <TextBlock Text="{Binding Duration}" Foreground="{StaticResource BrushTextMain}" FontSize="{StaticResource FontSizeM}" FontWeight="Bold"/>
+                                                                </Border>
                                                                 <Border x:Name="TitleBorder" Grid.Row="1" Background="{StaticResource BrushScrim}">
                                                                     <TextBlock Text="{Binding SongName}" Foreground="{StaticResource BrushTextMain}" TextAlignment="Center" Padding="2" FontSize="{StaticResource FontSizeS}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
                                                                 </Border>
@@ -1932,6 +1937,12 @@
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter TargetName="border" Property="Background" Value="{StaticResource BrushOverlayHover}"/>
                                                             </Trigger>
+                                                            <DataTrigger Binding="{Binding Duration}" Value="">
+                                                                <Setter TargetName="DurationBadge" Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
+                                                                <Setter TargetName="DurationBadge" Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
                                                 </Button.Template>

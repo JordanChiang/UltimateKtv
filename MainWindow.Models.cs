@@ -58,6 +58,7 @@ namespace UltimateKtv
         private bool _isYoutube = false;
         private string _youtubeId = string.Empty;
         private string? _thumbnailUrl;
+        private string _duration = string.Empty;
 
         public string SongId { get => _songId; set => Set(ref _songId, value); }
         public string SongName { get => _songName; set => Set(ref _songName, value); }
@@ -73,6 +74,18 @@ namespace UltimateKtv
         public bool IsYoutube { get => _isYoutube; set => Set(ref _isYoutube, value); }
         public string YoutubeId { get => _youtubeId; set => Set(ref _youtubeId, value); }
         public string? ThumbnailUrl { get => _thumbnailUrl; set => Set(ref _thumbnailUrl, value); }
+        /// <summary>YouTube 縮圖右上角顯示的歌曲長度 (H:MM:SS 或 M:SS)，未知時為空字串。</summary>
+        public string Duration { get => _duration; set => Set(ref _duration, value); }
+
+        /// <summary>把秒數格式化為 H:MM:SS (不到 1 小時為 M:SS)；0 以下回傳空字串。</summary>
+        public static string FormatDuration(double totalSeconds)
+        {
+            if (totalSeconds <= 0) return string.Empty;
+            var d = TimeSpan.FromSeconds(totalSeconds);
+            return d.TotalHours >= 1
+                ? $"{(int)d.TotalHours}:{d.Minutes:D2}:{d.Seconds:D2}"
+                : $"{d.Minutes}:{d.Seconds:D2}";
+        }
 
         /// <summary>把另一個項目的所有欄位複製到這個項目 (用於分頁列表的固定列)。</summary>
         public void CopyFrom(SongDisplayItem src)
@@ -91,6 +104,7 @@ namespace UltimateKtv
             IsYoutube = src.IsYoutube;
             YoutubeId = src.YoutubeId;
             ThumbnailUrl = src.ThumbnailUrl;
+            Duration = src.Duration;
         }
 
         /// <summary>

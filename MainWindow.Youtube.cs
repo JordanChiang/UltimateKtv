@@ -309,14 +309,15 @@ namespace UltimateKtv
         {
             if (string.IsNullOrEmpty(songId) || lengthSeconds <= 0) return;
             string lengthText = TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss");
+            string durationText = SongDisplayItem.FormatDuration(lengthSeconds);
 
             bool Matches(SongDisplayItem s) => s.IsYoutube && (s.SongId == songId || s.YoutubeId == songId);
 
             if (_quickMethodResultsCache.TryGetValue(QuickMethod.YoutubeHistory, out var cached) && cached != null)
             {
-                foreach (var item in cached.Where(Matches)) item.SingerName = lengthText;
+                foreach (var item in cached.Where(Matches)) { item.SingerName = lengthText; item.Duration = durationText; }
             }
-            foreach (var item in _quickSongListPageItems.Where(Matches)) item.SingerName = lengthText;
+            foreach (var item in _quickSongListPageItems.Where(Matches)) { item.SingerName = lengthText; item.Duration = durationText; }
         }
 
         private void CleanupDownloadUI()

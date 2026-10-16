@@ -26,6 +26,12 @@ namespace UltimateKtv
         private readonly Dictionary<QuickMethod, List<SongDisplayItem>> _quickMethodResultsCache = new();
         private bool _isQuickSearchInitialized = false;
 
+        // 最後一次 YT 搜尋的關鍵字、結果與頁數。YT 搜尋與一般搜尋共用上面的快取，
+        // 切到別頁時那些快取會被清掉，所以另存一份，切回 Youtube 頁時還原 (不用重新搜尋)
+        private string _youtubeSearchKeyword = string.Empty;
+        private List<SongDisplayItem> _youtubeSearchResults = new();
+        private int _youtubeSearchPage = 1;
+
         // Exclusive selector for the 4 search type buttons
         private enum QuickMethod { Bopomofo, EngNum, PenStyle, SongId, Keyboard, Extra5, YoutubeHistory }
         private QuickMethod _currentQuickMethod = QuickMethod.Bopomofo;
@@ -326,11 +332,27 @@ namespace UltimateKtv
             if (_currentQuickMethod == QuickMethod.YoutubeHistory)
             {
                 SetQuickMethod(QuickMethod.Keyboard, KeyboardListBtn);
+                RestoreYoutubeSearchResults();
             }
             else
             {
                 SetQuickMethod(QuickMethod.YoutubeHistory, sender as Button);
             }
+        }
+
+        /// <summary>
+        /// 把上次的 YT 搜尋結果放回目前查詢方式的快取 (含關鍵字與頁數)；沒有結果時回傳 false。
+        /// </summary>
+        private bool RestoreYoutubeSearchResults()
+        {
+            if (_currentQuickMethod == QuickMethod.YoutubeHistory || _youtubeSearchResults.Count == 0) return false;
+
+            var words = _quickMethodSelectedWords[_currentQuickMethod];
+            words.Clear();
+            words.Add(_youtubeSearchKeyword);
+            _quickMethodResultsCache[_currentQuickMethod] = _youtubeSearchResults;
+            _quickMethodCurrentPage[_currentQuickMethod] = _youtubeSearchPage;
+            return true;
         }
 
         private void ClearYoutubeBtn_Click(object sender, RoutedEventArgs e)
@@ -400,9 +422,11 @@ namespace UltimateKtv
             {
                 if (radio == YoutubeRadio)
                 {
-                    // Clear search keywords when entering YouTube mode IMMEDIATELY
+                    // Clear search keywords when entering YouTube mode IMMEDIATELY,
+                    // then bring back the last YouTube search results (if any) instead of searching again
                     if (SearchWords != null) SearchWords.Text = string.Empty;
                     _quickMethodSelectedWords[_currentQuickMethod].Clear();
+                    bool restoredYoutubeSearch = RestoreYoutubeSearchResults();
 
                     if (_currentQuickMethod != QuickMethod.YoutubeHistory)
                     {
@@ -432,8 +456,14 @@ namespace UltimateKtv
                     if (QuickSongListGrid != null) QuickSongListGrid.Visibility = !useYoutubeGrid ? Visibility.Visible : Visibility.Collapsed;
                     if (QuickSingerGrid != null) QuickSingerGrid.Visibility = Visibility.Collapsed;
                     if (SingerSongContentGrid != null) SingerSongContentGrid.Visibility = Visibility.Collapsed;
+
+                    if (restoredYoutubeSearch)
+                    {
+                        UpdateSearchWords(false); // shows the restored keyword and page
+                        return;
+                    }
                 }
-                else 
+                else
                 {
                     var oldMode = _searchMode;
                     if (radio == SingerRadio) _searchMode = SearchMode.Singer;
@@ -720,6 +750,10 @@ namespace UltimateKtv
                     
                     if (_searchMode == SearchMode.Youtube)
                     {
+                        // An empty YouTube search clears the remembered results too
+                        _youtubeSearchKeyword = string.Empty;
+                        _youtubeSearchResults = new List<SongDisplayItem>();
+                        _youtubeSearchPage = 1;
                         RefreshQuickResultsPage();
                     }
                     else
@@ -786,7 +820,8 @@ namespace UltimateKtv
                                 IsYoutube = true,
                                 YoutubeId = url,
                                 Volume = h.TryGetValue("Volume", out var v) && int.TryParse(v?.ToString(), out int iv) ? iv : 30,
-                                ThumbnailUrl = $"https://i.ytimg.com/vi/{url}/hqdefault.jpg"
+                                ThumbnailUrl = $"https://i.ytimg.com/vi/{url}/hqdefault.jpg",
+                                Duration = SongDisplayItem.FormatDuration(lengthSeconds)
                             };
                         }).ToList();
 
@@ -826,12 +861,16 @@ namespace UltimateKtv
                             FilePath = v.Url,
                             IsYoutube = true,
                             Volume = 30,
-                            ThumbnailUrl = v.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url
+                            ThumbnailUrl = v.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url,
+                            Duration = v.Duration.HasValue ? SongDisplayItem.FormatDuration(v.Duration.Value.TotalSeconds) : ""
                         };
                     }).ToList();
 
                     _quickMethodResultsCache[_currentQuickMethod] = results;
-                    
+                    _youtubeSearchKeyword = key;
+                    _youtubeSearchResults = results;
+                    _youtubeSearchPage = 1;
+
                     if (YoutubeStatusText != null) YoutubeStatusText.Visibility = Visibility.Collapsed;
 
                     RefreshQuickResultsPage();
@@ -1046,6 +1085,10 @@ namespace UltimateKtv
                     .ToList();
 
                 bool useYoutubeGrid = (_searchMode == SearchMode.Youtube && _currentQuickMethod != QuickMethod.YoutubeHistory);
+                if (useYoutubeGrid && ReferenceEquals(currentCache, _youtubeSearchResults))
+                {
+                    _youtubeSearchPage = currentPage; // remember the page for when the user comes back
+                }
 
                 if (YoutubeThumbnailGrid != null)
                 {
