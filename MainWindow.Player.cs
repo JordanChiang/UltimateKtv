@@ -1,5 +1,3 @@
-using CrazyKTV_MediaKit.DirectShow.Controls;
-using CrazyKTV_MediaKit.DirectShow.MediaPlayers;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -31,7 +29,7 @@ namespace UltimateKtv
         {
             try
             {
-                var sharedMediaPlayer = MediaHostManager.Instance.Element;
+                var sharedMediaPlayer = MediaHostManager.Instance.Player;
 
                 // Wire up this window's event handlers to the shared media player
                 sharedMediaPlayer.MediaFailed += mediaUriElement_MediaFailed;
@@ -47,7 +45,7 @@ namespace UltimateKtv
             }
         }
 
-        private void mediaUriElement_MediaFailed(object? sender, MediaFailedEventArgs e)
+        private void mediaUriElement_MediaFailed(object? sender, PlayerFailedEventArgs e)
         {
             Debug.WriteLine($"Media failed to load or play. Error: {e.Exception.Message}");
             AppLogger.LogError($"Media failed to load or play", e.Exception);
@@ -94,7 +92,7 @@ namespace UltimateKtv
             PlayNextSongFromWaitingList();
         }
 
-        private void mediaUriElement_MediaOpened(object sender, RoutedEventArgs e)
+        private void mediaUriElement_MediaOpened(object? sender, EventArgs e)
         {
             AppLogger.Log($"mediaUriElement_MediaOpened");
             ThreadPool.QueueUserWorkItem(_ => ResourceMonitor.LogSnapshot("Song started"));
@@ -102,7 +100,7 @@ namespace UltimateKtv
             // This event fires after the media source has been successfully opened and is ready.
             _mediaLoadCts?.Cancel(); // Cancel any pending media load timeout
             // This is the correct and safe place to configure and start playback.
-            if (sender is not MediaUriElement player)
+            if (sender is not UKtvPlayer player)
             {
                 DebugLog($"     incorrect sender={sender} ");
                 return;
@@ -179,7 +177,7 @@ namespace UltimateKtv
 
                 // Apply the global AudioAmplify setting from the options panel
                 player.AudioAmplify = SettingsManager.Instance.CurrentSettings.AudioAmplify;
-                DebugLog($"     AudioAmplify= {player.AudioAmplify}, VideoRendererType: {player.VideoRenderer}");
+                DebugLog($"     AudioAmplify= {player.AudioAmplify}, VideoRendererType: {player.VideoRendererName}");
                 
                 // Check if a vocal track is fixed and apply it if valid for the current media.
                 if (_isVocalTrackFixed && _fixedAudioTrack != -1)
@@ -398,12 +396,12 @@ namespace UltimateKtv
             }
         }
 
-        private void MediaUriElement_MediaClosed(object sender, RoutedEventArgs e)
+        private void MediaUriElement_MediaClosed(object? sender, EventArgs e)
         {
             // This event fires when the media is closed (e.g., by calling Stop()).
         }
 
-        private void MediaUriElement_MediaEnded(object sender, RoutedEventArgs e)
+        private void MediaUriElement_MediaEnded(object? sender, EventArgs e)
         {
             // This event fires when the media finishes playing.
             DebugLog("[MainPlayer] MediaEnded.");
@@ -448,17 +446,17 @@ namespace UltimateKtv
             PlayNextSongFromWaitingList();
         }
 
-        private void MediaUriElement_MediaPositionChanged(object sender, RoutedEventArgs e)
+        private void MediaUriElement_MediaPositionChanged(object? sender, EventArgs e)
         {
             // This event fires repeatedly as the media plays.
-            if (mediaUriElement != null && mediaUriElement.HasVideo)
+            if (ktvPlayer != null && ktvPlayer.HasVideo)
             {
                 try
                 {
                     _isUpdatingProgressSlider = true;
 
-                    var currentPositionTicks = mediaUriElement.MediaPosition;
-                    var totalDurationTicks = mediaUriElement.MediaDuration;
+                    var currentPositionTicks = ktvPlayer.MediaPosition;
+                    var totalDurationTicks = ktvPlayer.MediaDuration;
 
                     // Convert ticks to TimeSpan
                     var currentPosition = TimeSpan.FromTicks(currentPositionTicks);
@@ -636,7 +634,7 @@ namespace UltimateKtv
         /// <summary>
         /// 判斷目前是否有歌曲正在播放或處於載入播放流程中（含暫停中）
         /// </summary>
-        private bool IsSongPlaybackActive => mediaUriElement?.Source != null || _isPlayingFromWaitingList || _isRandomSongPlaying;
+        private bool IsSongPlaybackActive => ktvPlayer?.Source != null || _isPlayingFromWaitingList || _isRandomSongPlaying;
 
         public void SkipSong_Click(object sender, RoutedEventArgs e)
         {
@@ -665,8 +663,8 @@ namespace UltimateKtv
                 }
 
                 SetPauseButtonResume(false);
-                mediaUriElement.Stop();
-                mediaUriElement.Source = null; // Clear source to release resources immediately
+                ktvPlayer.Stop();
+                ktvPlayer.Source = null; // Clear source to release resources immediately
                 _isRandomSongPlaying = false;
                 if (_isLoopPlay)
                 {
@@ -705,10 +703,10 @@ namespace UltimateKtv
                     return;
                 }
 
-                if (mediaUriElement.IsPlaying)
+                if (ktvPlayer.IsPlaying)
                 {
                     AppLogger.Log("User action: Pause button clicked");
-                    mediaUriElement.Pause();
+                    ktvPlayer.Pause();
 
                     // Pause recording in sync with media
                     try { RecordingManager.Instance.PauseRecording(); }
@@ -721,7 +719,7 @@ namespace UltimateKtv
                 else
                 {
                     AppLogger.Log("User action: Resume button clicked");
-                    mediaUriElement.Play();
+                    ktvPlayer.Play();
 
                     // Resume recording in sync with media
                     try { RecordingManager.Instance.ResumeRecording(); }
@@ -782,11 +780,11 @@ namespace UltimateKtv
                     }
 
                     // Stop any current playback and release resources
-                    SafeStop(mediaUriElement, nameof(mediaUriElement));
+                    SafeStop(ktvPlayer, nameof(ktvPlayer));
 
                     // Re-assign the source to trigger a new playback session from the start
                     var uri = new Uri(PlayingFilePath, UriKind.Absolute);
-                    mediaUriElement.Source = uri;
+                    ktvPlayer.Source = uri;
                     _isRandomSongPlaying = false;
                 }
                 else
@@ -835,7 +833,7 @@ namespace UltimateKtv
 
         private void VideoProgressSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (mediaUriElement == null || !mediaUriElement.HasVideo || _isUpdatingProgressSlider)
+            if (ktvPlayer == null || !ktvPlayer.HasVideo || _isUpdatingProgressSlider)
                 return;
 
             // During dragging, update CurrentTimeText to show preview time
@@ -843,7 +841,7 @@ namespace UltimateKtv
             {
                 try
                 {
-                    var totalDurationTicks = mediaUriElement.MediaDuration;
+                    var totalDurationTicks = ktvPlayer.MediaDuration;
                     if (totalDurationTicks > 0)
                     {
                         var previewPositionTicks = (long)(totalDurationTicks * (e.NewValue / 100.0));
@@ -858,11 +856,11 @@ namespace UltimateKtv
                 // Not dragging (i.e., user clicked directly on the track) - seek immediately
                 try
                 {
-                    var totalDurationTicks = mediaUriElement.MediaDuration;
+                    var totalDurationTicks = ktvPlayer.MediaDuration;
                     if (totalDurationTicks > 0)
                     {
                         var newPositionTicks = (long)(totalDurationTicks * (e.NewValue / 100.0));
-                        mediaUriElement.MediaPosition = newPositionTicks;
+                        ktvPlayer.MediaPosition = newPositionTicks;
                     }
                 }
                 catch (Exception ex)
@@ -883,15 +881,15 @@ namespace UltimateKtv
             _isUserDraggingProgressSlider = false;
 
             // Now seek to the final position after the user finished dragging
-            if (mediaUriElement != null && mediaUriElement.HasVideo && !_isUpdatingProgressSlider)
+            if (ktvPlayer != null && ktvPlayer.HasVideo && !_isUpdatingProgressSlider)
             {
                 try
                 {
-                    var totalDurationTicks = mediaUriElement.MediaDuration;
+                    var totalDurationTicks = ktvPlayer.MediaDuration;
                     if (totalDurationTicks > 0)
                     {
                         var newPositionTicks = (long)(totalDurationTicks * (VideoProgressSlider.Value / 100.0));
-                        mediaUriElement.MediaPosition = newPositionTicks;
+                        ktvPlayer.MediaPosition = newPositionTicks;
 //                        DebugLog($"Video position set to {TimeSpan.FromTicks(newPositionTicks):mm\\:ss} after drag completed.");
                     }
                 }
@@ -908,7 +906,7 @@ namespace UltimateKtv
         /// </summary>
         private void MuteButton_Click(object sender, RoutedEventArgs e)
         {
-            if (mediaUriElement == null) return;
+            if (ktvPlayer == null) return;
 
             _isMuted = !_isMuted;
 
@@ -930,7 +928,7 @@ namespace UltimateKtv
 
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (mediaUriElement == null || _isUpdatingProgressSlider)
+            if (ktvPlayer == null || _isUpdatingProgressSlider)
                 return;
 
             var slider = sender as Slider;
@@ -953,7 +951,7 @@ namespace UltimateKtv
                 double sliderValue = snappedValue;
 
                 // Set the player volume and update the UI text.
-                mediaUriElement.Volume = ComputePlayerVolume(sliderValue);
+                ktvPlayer.Volume = ComputePlayerVolume(sliderValue);
                 VolumeText.Text = $"{(int)sliderValue}";
 
                 // Show corner notification
@@ -988,7 +986,7 @@ namespace UltimateKtv
         bool isMusicActive;
         private void UpdateVocalMusicButtonStates()
         {
-            if (mediaUriElement == null || VocalBtn == null || MusicBtn == null)
+            if (ktvPlayer == null || VocalBtn == null || MusicBtn == null)
             {
                 return;
             }
@@ -997,7 +995,7 @@ namespace UltimateKtv
             if (IsPlayingYoutube == true)
             {
                 // toggle 2 states for Youtube
-                if(mediaUriElement.AudioChannel == 0)
+                if(ktvPlayer.AudioChannel == 0)
                 {
                     VocalBtn.Background = _activeButtonBackground;
                     VocalBtn.Foreground = _activeButtonForeground;
@@ -1037,15 +1035,15 @@ namespace UltimateKtv
                     return; // Exit early
                 }
 
-                if (mediaUriElement.AudioStreams?.Count > 1)
+                if (ktvPlayer.AudioStreams?.Count > 1)
                 {
                     // Multi-track: active if current track is the designated music track
-                    isMusicActive = (mediaUriElement.AudioTrack == PlayingFileMusicTrack);
+                    isMusicActive = (ktvPlayer.AudioTrack == PlayingFileMusicTrack);
                 }
                 else
                 {
                     // Single-track: active if current channel is the designated music channel
-                    isMusicActive = (mediaUriElement.AudioChannel == PlayingFileMusicTrack);
+                    isMusicActive = (ktvPlayer.AudioChannel == PlayingFileMusicTrack);
                 }
 
             // Apply styles based on which button is active
@@ -1072,7 +1070,7 @@ namespace UltimateKtv
 
         public void VocalBtn_Click(object sender, RoutedEventArgs e)
         {
-            DebugLog($"VocalBtn_Click: audio track count={mediaUriElement.AudioStreams?.Count ?? 0} _isVocalTrackFixed={_isVocalTrackFixed}");
+            DebugLog($"VocalBtn_Click: audio track count={ktvPlayer.AudioStreams?.Count ?? 0} _isVocalTrackFixed={_isVocalTrackFixed}");
 
             // 只有在歌曲播放（或載入中）時才真正作動（若處於固定聲道狀態則允許點擊解除）
             if (!IsSongPlaybackActive && !_isVocalTrackFixed)
@@ -1096,15 +1094,15 @@ namespace UltimateKtv
             }
 
             // For YouTube songs, simply set AudioChannel to 0
-            // mediaUriElement.AudioChannel=0: Sterao
-            // mediaUriElement.AudioChannel=1: Left 
-            // mediaUriElement.AudioChannel=2: Right
-            // mediaUriElement.AudioChannel=3: Vocal remove
+            // ktvPlayer.AudioChannel=0: Sterao
+            // ktvPlayer.AudioChannel=1: Left 
+            // ktvPlayer.AudioChannel=2: Right
+            // ktvPlayer.AudioChannel=3: Vocal remove
             if (IsPlayingYoutube)
             {
-                if (mediaUriElement != null)
+                if (ktvPlayer != null)
                 {
-                    mediaUriElement.AudioChannel = 0;
+                    ktvPlayer.AudioChannel = 0;
                     DebugLog("YouTube VocalBtn_Click: Forced AudioChannel=0");
                     UpdateVocalMusicButtonStates();
                 }
@@ -1113,39 +1111,39 @@ namespace UltimateKtv
             var sw = Stopwatch.StartNew();
             try
             {
-                if (mediaUriElement == null)
+                if (ktvPlayer == null)
                     return;
 
-                if (mediaUriElement.AudioStreams?.Count == 1)
+                if (ktvPlayer.AudioStreams?.Count == 1)
                 {
                     // Only 1 audio channel, toggle between 1 and 2
                     if (PlayingFileMusicTrack == 1)
-                        mediaUriElement.AudioChannel = 2;
+                        ktvPlayer.AudioChannel = 2;
                     else
-                        mediaUriElement.AudioChannel = 1;
+                        ktvPlayer.AudioChannel = 1;
 
-                    DebugLog($"        1 audio tracks mode. new Track ={mediaUriElement.AudioTrack}, AudioChannel={mediaUriElement.AudioChannel}");
-                    AppLogger.Log($"VocalBtn: tracks=1, track={mediaUriElement.AudioTrack}, channel={mediaUriElement.AudioChannel}");
+                    DebugLog($"        1 audio tracks mode. new Track ={ktvPlayer.AudioTrack}, AudioChannel={ktvPlayer.AudioChannel}");
+                    AppLogger.Log($"VocalBtn: tracks=1, track={ktvPlayer.AudioTrack}, channel={ktvPlayer.AudioChannel}");
                 }
-                else if (mediaUriElement.AudioStreams?.Count == 2 && (!isMusicActive))
+                else if (ktvPlayer.AudioStreams?.Count == 2 && (!isMusicActive))
                 {
-                    DebugLog($"        2 audio tracks mode. current audio track is {mediaUriElement.AudioTrack} ");
+                    DebugLog($"        2 audio tracks mode. current audio track is {ktvPlayer.AudioTrack} ");
 
-                    if (mediaUriElement.AudioTrack == PlayingFileMusicTrack)
+                    if (ktvPlayer.AudioTrack == PlayingFileMusicTrack)
                     {
-                        if (mediaUriElement.AudioStreams[0] == mediaUriElement.AudioTrack)
-                            mediaUriElement.AudioTrack = mediaUriElement.AudioStreams[1];
+                        if (ktvPlayer.AudioStreams[0] == ktvPlayer.AudioTrack)
+                            ktvPlayer.AudioTrack = ktvPlayer.AudioStreams[1];
                         else
-                            mediaUriElement.AudioTrack = mediaUriElement.AudioStreams[0];
+                            ktvPlayer.AudioTrack = ktvPlayer.AudioStreams[0];
                     }
 
-                    DebugLog($"        new track is {mediaUriElement.AudioTrack}");
-                    AppLogger.Log($"VocalBtn: tracks=2, toggled to track={mediaUriElement.AudioTrack}");
+                    DebugLog($"        new track is {ktvPlayer.AudioTrack}");
+                    AppLogger.Log($"VocalBtn: tracks=2, toggled to track={ktvPlayer.AudioTrack}");
                 }
                 else
                 {
                     // Cycle through available audio tracks
-                    var audioTracks = mediaUriElement.AudioStreams;
+                    var audioTracks = ktvPlayer.AudioStreams;
                     if (audioTracks == null || audioTracks.Count < 2) // Need at least 2 tracks to cycle
                     {
                         DebugLog($"        Multi-track mode. Not enough tracks to cycle ({audioTracks?.Count ?? 0}).");
@@ -1153,7 +1151,7 @@ namespace UltimateKtv
                     }
 
                     // Find the index of the current audio channel
-                    var currentIndex = audioTracks.IndexOf(mediaUriElement.AudioTrack);
+                    var currentIndex = audioTracks.IndexOf(ktvPlayer.AudioTrack);
 
                     // If not found, it's the first click, so start from the music track
                     if (currentIndex == -1)
@@ -1171,9 +1169,9 @@ namespace UltimateKtv
                     var nextIndex = (currentIndex + 1) % audioTracks.Count;
 
                     // Set the new audio channel
-                    mediaUriElement.AudioTrack = audioTracks[nextIndex];
-                    DebugLog($"        Multi-track mode. new tracks is {mediaUriElement.AudioTrack}");
-                    AppLogger.Log($"VocalBtn: tracks={audioTracks.Count}, cycled to track={mediaUriElement.AudioTrack}");
+                    ktvPlayer.AudioTrack = audioTracks[nextIndex];
+                    DebugLog($"        Multi-track mode. new tracks is {ktvPlayer.AudioTrack}");
+                    AppLogger.Log($"VocalBtn: tracks={audioTracks.Count}, cycled to track={ktvPlayer.AudioTrack}");
                 }
                 UpdateVocalMusicButtonStates();
             }
@@ -1194,9 +1192,9 @@ namespace UltimateKtv
             }
 
             // For YouTube songs, simply set AudioChannel to 3
-            if (IsPlayingYoutube && mediaUriElement != null)
+            if (IsPlayingYoutube && ktvPlayer != null)
             {
-                mediaUriElement.AudioChannel = 3;
+                ktvPlayer.AudioChannel = 3;
                 DebugLog("YouTube MusicBtn_Click: Forced AudioChannel=3");
                 UpdateVocalMusicButtonStates();
                 return;
@@ -1219,12 +1217,12 @@ namespace UltimateKtv
                     return;
                 }
 
-                if (mediaUriElement == null)
+                if (ktvPlayer == null)
                     return;
 
-                int audioStreamsCount = mediaUriElement.AudioStreams?.Count ?? 0;
-                DebugLog($"MusicBtn_Click: AudioTrackList.Count={audioStreamsCount}, AudioChannel={mediaUriElement.AudioChannel}");
-                AppLogger.Log($"MusicBtn: tracks={audioStreamsCount}, channel={mediaUriElement.AudioChannel}");
+                int audioStreamsCount = ktvPlayer.AudioStreams?.Count ?? 0;
+                DebugLog($"MusicBtn_Click: AudioTrackList.Count={audioStreamsCount}, AudioChannel={ktvPlayer.AudioChannel}");
+                AppLogger.Log($"MusicBtn: tracks={audioStreamsCount}, channel={ktvPlayer.AudioChannel}");
 
                 if (isMusicActive)
                     return;
@@ -1232,13 +1230,13 @@ namespace UltimateKtv
                 if (audioStreamsCount <= 1)
                 {
                     // Single-track: Set the audio channel to the music channel
-                    mediaUriElement.AudioChannel = PlayingFileMusicTrack;
+                    ktvPlayer.AudioChannel = PlayingFileMusicTrack;
                 }
                 else
                 {
                     // Multi-track: Set the audio track to the music track
-                    if (mediaUriElement.AudioTrack != PlayingFileMusicTrack)
-                        mediaUriElement.AudioTrack = PlayingFileMusicTrack;
+                    if (ktvPlayer.AudioTrack != PlayingFileMusicTrack)
+                        ktvPlayer.AudioTrack = PlayingFileMusicTrack;
                 }
                 UpdateVocalMusicButtonStates();
             }
@@ -1326,7 +1324,7 @@ namespace UltimateKtv
             DebugLog("VocalBtn_LongPress triggered");
 
             // Long press action: Show option to set current channel as music track
-            if (mediaUriElement != null)
+            if (ktvPlayer != null)
             {
                 await ShowSetAsMusicTrackDialog();
             }
@@ -1338,7 +1336,7 @@ namespace UltimateKtv
             DebugLog("VocalBtn_RightClick triggered");
 
             // Right click action: Show option to set current channel as music track
-            if (mediaUriElement != null)
+            if (ktvPlayer != null)
             {
                 await ShowSetAsMusicTrackDialog();
             }
@@ -1350,7 +1348,7 @@ namespace UltimateKtv
             {
                 if (VocalBtn == null) return Task.CompletedTask;
 
-                var currentTrack = mediaUriElement.AudioTrack;
+                var currentTrack = ktvPlayer.AudioTrack;
                 DebugLog($"ShowSetAsMusicTrackDialog: Current AudioTrack={currentTrack}, Current PlayingFileMusicTrack={PlayingFileMusicTrack}");
 
                 // 當副選單出現時，原來的按鈕無效 (Disabled)
@@ -1434,8 +1432,8 @@ namespace UltimateKtv
 
                 setFixeTrackButton.Click += (s, e) =>
                 {
-                    var targetTrack = (mediaUriElement.AudioStreams == null || mediaUriElement.AudioStreams.Count <= 1) 
-                        ? mediaUriElement.AudioChannel 
+                    var targetTrack = (ktvPlayer.AudioStreams == null || ktvPlayer.AudioStreams.Count <= 1) 
+                        ? ktvPlayer.AudioChannel 
                         : currentTrack;
                     AppLogger.Log($"User action: Fix audio track to {targetTrack}");
                     // Set the fixed track state and close the popup
@@ -1463,7 +1461,7 @@ namespace UltimateKtv
                         DebugLog($"User confirmed: Setting AudioTrack {currentTrack} as PlayingFileMusicTrack");
 
                         // Set current audio track as the music track
-                        if (mediaUriElement.AudioStreams?.Count <= 1)
+                        if (ktvPlayer.AudioStreams?.Count <= 1)
                         {
                             PlayingFileMusicTrack = (PlayingFileMusicTrack == 1) ? 2 : 1;
                             if(PlayingFileMusicTrack==1)
@@ -1517,7 +1515,7 @@ namespace UltimateKtv
                     else // "Fix Track" was clicked (result is null)
                     {
                         DebugLog($"User confirmed: Fixing AudioTrack to {_fixedAudioTrack}");
-                        if (mediaUriElement.AudioStreams == null || mediaUriElement.AudioStreams.Count <= 1)
+                        if (ktvPlayer.AudioStreams == null || ktvPlayer.AudioStreams.Count <= 1)
                         {
                             if (_fixedAudioTrack == 1)
                                 MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LeftFixed"), 5);
@@ -1554,7 +1552,7 @@ namespace UltimateKtv
             DebugLog("MusicBtn_LongPress triggered");
 
             // Long press action: Show music volume adjustment or advanced music settings
-            if (mediaUriElement != null)
+            if (ktvPlayer != null)
             {
                 // You can add specific long press functionality here
                 // For example: Open music settings dialog, adjust music volume, etc.
@@ -1567,7 +1565,7 @@ namespace UltimateKtv
             DebugLog("MusicBtn_RightClick triggered");
 
             // Right click action: Show music options menu or reset music settings
-            if (mediaUriElement != null)
+            if (ktvPlayer != null)
             {
                 // You can add specific right click functionality here
                 // For example: Show context menu, reset music settings, etc.

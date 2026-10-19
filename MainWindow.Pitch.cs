@@ -198,7 +198,7 @@ namespace UltimateKtv
         /// </summary>
         public void AdjustPitch(int adjustment)
         {
-            if (mediaUriElement == null || !mediaUriElement.IsPlaying)
+            if (ktvPlayer == null || !ktvPlayer.IsPlaying)
             {
                 AppLogger.Log($"User action: Pitch adjust {adjustment:+0;-0} failed - no song playing");
                 MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
@@ -232,7 +232,7 @@ namespace UltimateKtv
         /// </summary>
         public void SetOriginalPitch()
         {
-            if (mediaUriElement == null || !mediaUriElement.IsPlaying)
+            if (ktvPlayer == null || !ktvPlayer.IsPlaying)
             {
                 AppLogger.Log("User action: Set original pitch failed - no song playing");
                 MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
@@ -251,7 +251,7 @@ namespace UltimateKtv
         /// </summary>
         private void SetMalePitch()
         {
-            if (mediaUriElement == null || !mediaUriElement.IsPlaying)
+            if (ktvPlayer == null || !ktvPlayer.IsPlaying)
             {
                 AppLogger.Log("User action: Set male pitch failed - no song playing");
                 MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
@@ -270,7 +270,7 @@ namespace UltimateKtv
         /// </summary>
         private void SetFemalePitch()
         {
-            if (mediaUriElement == null || !mediaUriElement.IsPlaying)
+            if (ktvPlayer == null || !ktvPlayer.IsPlaying)
             {
                 AppLogger.Log("User action: Set female pitch failed - no song playing");
                 MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
@@ -327,7 +327,7 @@ namespace UltimateKtv
         /// </summary>
         private void ApplyPitchChange()
         {
-            if (mediaUriElement == null) return;
+            if (ktvPlayer == null) return;
 
             try
             {
@@ -336,10 +336,10 @@ namespace UltimateKtv
                 // Using 1.06 as an approximation for easier calculation
                 double pitchMultiplier = Math.Pow(1.059463, _currentPitchLevel);
                 
-                mediaUriElement.AudioPitch = Math.Round(pitchMultiplier, 4, MidpointRounding.AwayFromZero);
+                ktvPlayer.AudioPitch = Math.Round(pitchMultiplier, 4, MidpointRounding.AwayFromZero);
                 
-                AppLogger.Log($"Pitch applied: level={_currentPitchLevel}, multiplier={mediaUriElement.AudioPitch:F4}");
-                DebugLog($"Pitch adjusted to level {_currentPitchLevel}, multiplier: {mediaUriElement.AudioPitch}");
+                AppLogger.Log($"Pitch applied: level={_currentPitchLevel}, multiplier={ktvPlayer.AudioPitch:F4}");
+                DebugLog($"Pitch adjusted to level {_currentPitchLevel}, multiplier: {ktvPlayer.AudioPitch}");
             }
             catch (Exception ex)
             {
@@ -357,9 +357,9 @@ namespace UltimateKtv
             if (!_isPitchFixed)
             {
                 _currentPitchLevel = 0;
-                if (mediaUriElement != null)
+                if (ktvPlayer != null)
                 {
-                    mediaUriElement.AudioPitch = 1.0;
+                    ktvPlayer.AudioPitch = 1.0;
                 }
             }
             else

@@ -422,7 +422,7 @@ namespace UltimateKtv
                 DebugLog(">>> ReleaseResourcesBeforeRandomPlay: Releasing media resources");
                 
                 // Stop the media player if it's still playing
-                SafeStop(mediaUriElement, nameof(mediaUriElement));
+                SafeStop(ktvPlayer, nameof(ktvPlayer));
                 
                 // Clear any pending operations
                 _isPlayingFromWaitingList = false;

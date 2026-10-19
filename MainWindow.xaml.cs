@@ -1,4 +1,3 @@
-using CrazyKTV_MediaKit.DirectShow.Controls;
 using System.ComponentModel;
 using System.Diagnostics;
 using System;
@@ -60,9 +59,8 @@ namespace UltimateKtv
         private List<string> _themeKeys = new();
         private int _currentThemeIndex = 0;
 
-        // The 'mediaUriElement' field is initialized by the framework.
-        // We use '= null!' to suppress the compiler warning (CS8618) for this pattern.
-        private MediaUriElement mediaUriElement => MediaHostManager.Instance.Element;
+        // The shared player instance; the engine implementation lives behind UKtvPlayer.
+        private UKtvPlayer ktvPlayer => MediaHostManager.Instance.Player;
 
         // Waiting list management
 
@@ -669,9 +667,9 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Safely stop a MediaUriElement instance with logging.
+        /// Safely stop a player instance with logging.
         /// </summary>
-        private static void SafeStop(MediaUriElement? element, string name)
+        private static void SafeStop(UKtvPlayer? element, string name)
         {
             try
             {
@@ -1011,7 +1009,7 @@ namespace UltimateKtv
             _settingsWindow?.ForceClose();
             _settingsWindow = null;
 
-            mediaUriElement?.Close();
+            ktvPlayer?.Close();
         }
 
         /// <summary>

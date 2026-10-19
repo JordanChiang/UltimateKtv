@@ -161,19 +161,19 @@ namespace UltimateKtv
 
         public void SetMediaStretch(Stretch stretchMode)
         {
-            if (mediaUriElement != null)
+            if (ktvPlayer != null)
             {
-                mediaUriElement.Stretch = stretchMode;
+                ktvPlayer.Stretch = stretchMode;
             }
         }
 
         public void SetAudioAmplify(int value)
         {
-            if (mediaUriElement != null)
+            if (ktvPlayer != null)
             {
                 // Ensure value is within valid range (100-500)
                 int clampedValue = Math.Max(100, Math.Min(500, value));
-                mediaUriElement.AudioAmplify = clampedValue;
+                ktvPlayer.AudioAmplify = clampedValue;
             }
         }
 
@@ -185,7 +185,7 @@ namespace UltimateKtv
 
         public bool IsMediaFullScreen()
         {
-            return mediaUriElement?.Stretch == Stretch.Fill;
+            return ktvPlayer?.Stretch == Stretch.Fill;
         }
 
         private void ThemeSubButton_Click(object sender, RoutedEventArgs e)

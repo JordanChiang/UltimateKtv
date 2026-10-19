@@ -12,7 +12,6 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using CrazyKTV_MediaKit.DirectShow.MediaPlayers;
 
 namespace UltimateKtv
 {
@@ -135,7 +134,7 @@ namespace UltimateKtv
                 bool isPaused = false;
                 if (IsSongPlaybackActive)
                 {
-                    if (mediaUriElement != null && mediaUriElement.IsPlaying)
+                    if (ktvPlayer != null && ktvPlayer.IsPlaying)
                     {
                         if (_pauseBtnShowsResume)
                         {
@@ -630,7 +629,7 @@ namespace UltimateKtv
                     UpdateCurrentPlayingDisplay();
                     
                     // Stop playback first
-                    SafeStop(mediaUriElement, nameof(mediaUriElement));
+                    SafeStop(ktvPlayer, nameof(ktvPlayer));
                     
                     try
                     {
@@ -721,7 +720,7 @@ namespace UltimateKtv
                 UpdateWaitingListDisplay();
 
                 // Stop current playback and start the new one
-                SafeStop(mediaUriElement, nameof(mediaUriElement));
+                SafeStop(ktvPlayer, nameof(ktvPlayer));
 
                 // Cancel any pending media load timeout and create a new one
                 _mediaLoadCts?.Cancel();
@@ -746,39 +745,10 @@ namespace UltimateKtv
 */
             // Apply settings
             var settings = SettingsManager.Instance.CurrentSettings;
-            
-            // Video Renderer
-            mediaUriElement.VideoRenderer = settings.VideoRendererType == 1 
-                ? VideoRendererType.EnhancedVideoRenderer 
-                : VideoRendererType.VideoMixingRenderer9;
+            ktvPlayer.Stretch = settings.IsMediaFullScreen ? Stretch.Fill : Stretch.Uniform;
+            ktvPlayer.ApplySettings(settings); // renderer / audio device / HW accel / codec directory
 
-            // Audio Renderer
-            if (!string.IsNullOrEmpty(settings.AudioRendererDevice) && settings.AudioRendererDevice != "Default DirectSound Device")
-            {
-                mediaUriElement.AudioRenderer = settings.AudioRendererDevice;
-            }
-
-            // HW Acceleration
-            mediaUriElement.EnableHWAccel = settings.EnableHWAccel;
-            if (settings.EnableHWAccel)
-            {
-                // Assuming DefaultHWAccel takes the int value directly or cast to an enum
-                 // 0:"AutoDetect", 1:"NVIDIA CUVID", 2:"Intel® Quick Sync", 3:"DXVA2 (copy-back)", 4:"DXVA2 (native)", 5:"D3D11"
-                 mediaUriElement.DefaultHWAccel = (CrazyKTV_MediaKit.DirectShow.Interfaces.LavVideo.LAVHWAccel)settings.HWAccelMode;
-            }
-
-            mediaUriElement.DeeperColor = !(settings.VideoRendererType == 0);
-            mediaUriElement.Stretch = settings.IsMediaFullScreen ? Stretch.Fill : Stretch.Uniform;
-            mediaUriElement.EnableAudioCompressor = false;
-            mediaUriElement.EnableAudioProcessor = false;
-            //element.EndInit();
-            
-            // Configure codec directory
-            string codecFolderName = Environment.Is64BitProcess ? "Codec" : "Codec_x86";
-            string codecPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, codecFolderName);
-            mediaUriElement.MediaUriPlayer.CodecsDirectory = codecPath;
-
-            mediaUriElement.Source = new Uri(firstSong.FilePath); // This triggers MediaOpened/MediaFailed where the lock will be released.
+            ktvPlayer.Source = new Uri(firstSong.FilePath); // This triggers MediaOpened/MediaFailed where the lock will be released.
             DebugLog($"Main media Source set to: {firstSong.FilePath}");
             AppLogger.Log(firstSong!.IsYoutube
                 ? $"Playing from waiting list: YouTube song {firstSong.WaitingListSongName}"
@@ -817,7 +787,7 @@ namespace UltimateKtv
                             DebugLog("Timeout recovery: Performing full player re-initialization.");
 
                             // 1. Unsubscribe from the old, broken media element's events to prevent memory leaks.
-                            var oldPlayer = mediaUriElement;
+                            var oldPlayer = ktvPlayer;
                             if (oldPlayer != null)
                             {
                                 DebugLog("Timeout recovery: Unsubscribing events from old player instance.");
@@ -1045,7 +1015,7 @@ namespace UltimateKtv
                 // Stop the player. This will trigger MediaEnded/MediaClosed, 
                 // but since _isPlayingFromWaitingList is now false, PlayNextSongFromWaitingList 
                 // in MediaEnded will find the list is NOT empty and play the user's song.
-                SafeStop(mediaUriElement, nameof(mediaUriElement));
+                SafeStop(ktvPlayer, nameof(ktvPlayer));
             }
 
             Debug.WriteLine($"Added to waiting list: {song.SongName} by {song.SingerName}" + 

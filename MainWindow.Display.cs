@@ -59,13 +59,13 @@ namespace UltimateKtv
                     MarqueeManager.Instance.Initialize(this, _videoDisplayWindow);
                     _videoDisplayWindow.Show();
 
-                    // 2. Host the single mediaUriElement in the secondary window
-                    _videoDisplayWindow.SetMediaPlayer(mediaUriElement);
+                    // 2. Host the single ktvPlayer in the secondary window
+                    _videoDisplayWindow.SetMediaPlayer(ktvPlayer.View);
                     DebugLog("Hosted media element in VideoDisplayWindow.");
 
                     // 3. Set up the preview in the main window using a VisualBrush
                     var previewRectangle = new Rectangle();
-                    var visualBrush = new VisualBrush(mediaUriElement)
+                    var visualBrush = new VisualBrush(ktvPlayer.View)
                     {
                         Stretch = Stretch.Uniform,
                         AutoLayoutContent = false
@@ -99,7 +99,7 @@ namespace UltimateKtv
                         _videoDisplayWindow.Show();
                         
                         // Host the media element in the video display window
-                        _videoDisplayWindow.SetMediaPlayer(mediaUriElement);
+                        _videoDisplayWindow.SetMediaPlayer(ktvPlayer.View);
                         DebugLog("Hosted media element in VideoDisplayWindow for single-monitor mode.");
 
                         // Important: Subscribe to mouse events on the video display window to handle cursor hide/show
@@ -109,7 +109,7 @@ namespace UltimateKtv
 
                         // Set up the preview in the main window using a VisualBrush
                         var previewRectangle = new Rectangle();
-                        var visualBrush = new VisualBrush(mediaUriElement)
+                        var visualBrush = new VisualBrush(ktvPlayer.View)
                         {
                             Stretch = Stretch.Uniform,
                             AutoLayoutContent = false
@@ -128,7 +128,7 @@ namespace UltimateKtv
                     {
                         // Multiple monitors but same screen setting - host in main window
                         var containerGrid = new Grid();
-                        containerGrid.Children.Add(mediaUriElement);
+                        containerGrid.Children.Add(ktvPlayer.View);
                         containerGrid.Background = (Brush)FindResource("BrushSurfaceSunken");
 
                         MediaPlayerContainer.Children.Clear();
@@ -144,7 +144,7 @@ namespace UltimateKtv
                 // Fallback on error: try to host in main window
                 AppLogger.LogError("Error during secondary display initialization. Falling back to single display mode.", ex);
                 MediaPlayerContainer.Children.Clear();
-                MediaPlayerContainer.Children.Add(mediaUriElement);
+                MediaPlayerContainer.Children.Add(ktvPlayer.View);
             }
 
             return isSingleMonitorMode;
