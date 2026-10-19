@@ -202,6 +202,46 @@ namespace UltimateKtv
             }
         }
 
+        /// <summary>
+        /// 歌庫磁碟路徑變更後，把已建立的列表項目 (歌曲列表、分頁列、快搜結果、已點歌單) 換成新路徑，
+        /// 不必重啟或重新切換頁面。oldToNew 來自 SongDatas.RebuildSongFilePaths()。
+        /// </summary>
+        public void RemapSongFilePaths(IReadOnlyDictionary<string, string> oldToNew)
+        {
+            if (oldToNew.Count == 0) return;
+
+            string Remap(string path) => !string.IsNullOrEmpty(path) && oldToNew.TryGetValue(path, out var newPath) ? newPath : path;
+
+            int count = 0;
+            void RemapSongs(IEnumerable<SongDisplayItem> items)
+            {
+                foreach (var item in items)
+                {
+                    if (item.IsYoutube) continue;
+                    string newPath = Remap(item.FilePath);
+                    if (!ReferenceEquals(newPath, item.FilePath)) { item.FilePath = newPath; count++; }
+                }
+            }
+            void RemapWaiting(IEnumerable<WaitingListItem> items)
+            {
+                foreach (var item in items)
+                {
+                    string newPath = Remap(item.FilePath);
+                    if (!ReferenceEquals(newPath, item.FilePath)) { item.FilePath = newPath; count++; }
+                }
+            }
+
+            RemapSongs(_allSongs);
+            RemapSongs(_songListPageItems);
+            RemapSongs(_languageSongListPageItems);
+            RemapSongs(_quickSongListPageItems);
+            foreach (var cached in _quickMethodResultsCache.Values) RemapSongs(cached);
+            RemapWaiting(_waitingList);
+            RemapWaiting(_waitingListPageItems);
+
+            AppLogger.Log($"[SongDatas] Remapped {count} displayed/waiting song paths to new library path.");
+        }
+
         #endregion
 
         private void PageUp_Click(object sender, RoutedEventArgs e)

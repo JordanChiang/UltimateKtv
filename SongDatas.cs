@@ -182,10 +182,12 @@ namespace UltimateKtv
         /// <summary>
         /// Rebuilds the FilePath for all songs based on current settings.
         /// Call this when the SongLibraryDrivePath setting changes to apply immediately.
+        /// Returns old FilePath -> new FilePath for paths that changed, so already-built list items can be updated.
         /// </summary>
-        public static void RebuildSongFilePaths()
+        public static Dictionary<string, string> RebuildSongFilePaths()
         {
-            if (SongData == null) return;
+            var changedPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (SongData == null) return changedPaths;
 
             var settings = SettingsManager.Instance.CurrentSettings;
             var songLibraryDrivePath = settings.ChangeSongLibraryDriveEnabled && 
@@ -197,6 +199,7 @@ namespace UltimateKtv
             {
                 string songPath = song["Song_Path"]?.ToString() ?? string.Empty;
                 string songFileName = song["Song_FileName"]?.ToString() ?? string.Empty;
+                string oldFilePath = song.TryGetValue("FilePath", out var oldObj) ? oldObj?.ToString() ?? "" : "";
 
                 if (!string.IsNullOrEmpty(songLibraryDrivePath))
                 {
@@ -216,10 +219,17 @@ namespace UltimateKtv
                 {
                     song["FilePath"] = Path.Combine(songPath, songFileName);
                 }
+
+                string newFilePath = song["FilePath"]?.ToString() ?? "";
+                if (oldFilePath.Length > 0 && !string.Equals(oldFilePath, newFilePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    changedPaths[oldFilePath] = newFilePath;
+                }
             }
 
             AppLogger.Log($"[SongDatas] Rebuilt file paths for {SongData.Count} songs. LibraryPath: '{songLibraryDrivePath}'");
             Debug.WriteLine($"[SongDatas] Rebuilt file paths for {SongData.Count} songs. LibraryPath: '{songLibraryDrivePath}'");
+            return changedPaths;
         }
 
         /// <summary>

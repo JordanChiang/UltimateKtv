@@ -612,7 +612,8 @@ namespace UltimateKtv
             // Rebuild song file paths only when the library path changed (36k songs; skip for unrelated settings)
             if (oldLibraryDriveEnabled != settings.ChangeSongLibraryDriveEnabled || oldLibraryDrivePath != (settings.SongLibraryDrivePath ?? ""))
             {
-                SongDatas.RebuildSongFilePaths();
+                // 已顯示的列表與已點歌單各自持有 FilePath 複本，也要換成新路徑才會立即生效
+                _parentWindow?.RemapSongFilePaths(SongDatas.RebuildSongFilePaths());
             }
 
             // If random play was enabled, trigger delayed check if waiting list is empty and nothing is currently playing
