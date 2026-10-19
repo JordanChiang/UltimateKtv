@@ -90,7 +90,14 @@ namespace UltimateKtv
 
             // 介面語言要在任何訊息/視窗出現前載入 (MainWindow 建構時 DynamicResource 即可直接取得字串)
             SettingsManager.Instance.LoadSettings();
-            Loc.Apply(SettingsManager.Instance.CurrentSettings.UiLanguage);
+            string uiLanguage = SettingsManager.Instance.CurrentSettings.UiLanguage;
+            if (!Loc.Initialize(uiLanguage, out var languageProblems))
+            {
+                // 語言檔有問題 → 維持繁體中文，主視窗出現後再提示
+                string message = Loc.FormatProblems(uiLanguage, languageProblems);
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, new Action(() =>
+                    MessageBox.Show(message, Loc.T("Common.Hint"), MessageBoxButton.OK, MessageBoxImage.Warning)));
+            }
 
             // Perform essential file checks before proceeding
             if (!CheckRequiredFiles())

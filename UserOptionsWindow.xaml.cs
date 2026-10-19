@@ -581,8 +581,16 @@ namespace UltimateKtv
             settings.IsLanguageMultiSelect = LanguageMultiSelectToggle.IsChecked == true;
             if (UiLanguageComboBox.SelectedValue is string uiLanguage && uiLanguage != Loc.CurrentCulture)
             {
-                settings.UiLanguage = uiLanguage;
-                Loc.Apply(uiLanguage);
+                // 語言檔先完整檢查，有問題就維持目前語言 (不存設定)，並列出有問題的項目
+                if (Loc.TryApply(uiLanguage, out var languageProblems))
+                {
+                    settings.UiLanguage = uiLanguage;
+                }
+                else
+                {
+                    MessageBox.Show(Loc.FormatProblems(uiLanguage, languageProblems), Loc.T("Common.Hint"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                    UiLanguageComboBox.SelectedValue = Loc.CurrentCulture;
+                }
             }
 
             // Apply changes to the running application

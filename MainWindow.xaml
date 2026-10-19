@@ -1233,7 +1233,7 @@
                                                     </ContextMenu>
                                                 </DataGrid.ContextMenu>
                                                 <DataGrid.Columns>
-                                                    <DataGridTemplateColumn Header="{DynamicResource Str.Col.SongName}" Width="300" CanUserSort="False">
+                                                    <DataGridTemplateColumn local:Loc.HeaderKey="Col.SongName" Width="300" CanUserSort="False">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel Orientation="Horizontal" Margin="0">
@@ -1291,7 +1291,7 @@
                                                             </DataTemplate>
                                                         </DataGridTemplateColumn.CellTemplate>
                                                     </DataGridTemplateColumn>
-                                                    <DataGridTemplateColumn Header="{DynamicResource Str.Col.Singer}" Width="*" CanUserSort="False">
+                                                    <DataGridTemplateColumn local:Loc.HeaderKey="Col.Singer" Width="*" CanUserSort="False">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0">
@@ -1768,7 +1768,7 @@
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn x:Name="QuickSongNameColumn" Header="{DynamicResource Str.Col.SongName}" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}">
+                                        <DataGridTextColumn x:Name="QuickSongNameColumn" local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="TextAlignment" Value="Left"/>
@@ -1847,7 +1847,7 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn x:Name="QuickLanguageColumn" Header="{DynamicResource Str.Col.Language}" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="{StaticResource SongLanguageColumnWidth}"
+                                        <DataGridTextColumn x:Name="QuickLanguageColumn" local:Loc.HeaderKey="Col.Language" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="{StaticResource SongLanguageColumnWidth}"
                                                             ElementStyle="{StaticResource SongListDimCellTextStyle}"/>
                                         <!-- 歌星搜尋模式 (列出的是歌手) 時由程式隱藏 -->
                                         <DataGridTemplateColumn x:Name="QuickActionsColumn" Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
@@ -2057,10 +2057,10 @@
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="{DynamicResource Str.Col.SongName}" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}"
+                                            <DataGridTextColumn local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
-                                            <DataGridTemplateColumn Header="{DynamicResource Str.Col.Singer}" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
-                                            <DataGridTextColumn Header="{DynamicResource Str.Col.Language}" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="{StaticResource SongLanguageColumnWidth}"
+                                            <DataGridTemplateColumn local:Loc.HeaderKey="Col.Singer" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
+                                            <DataGridTextColumn local:Loc.HeaderKey="Col.Language" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="{StaticResource SongLanguageColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListDimCellTextStyle}"/>
                                             <DataGridTemplateColumn Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
                                         </DataGrid.Columns>
@@ -2100,9 +2100,9 @@
                                         </ContextMenu>
                                     </DataGrid.ContextMenu>
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="{DynamicResource Str.Col.SongName}" Binding="{Binding SongName}" Width="{StaticResource LanguageSongNameColumnWidth}"
+                                            <DataGridTextColumn local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="{StaticResource LanguageSongNameColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
-                                            <DataGridTemplateColumn Header="{DynamicResource Str.Col.Singer}" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
+                                            <DataGridTemplateColumn local:Loc.HeaderKey="Col.Singer" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
                                             <DataGridTemplateColumn Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
                                         </DataGrid.Columns>
                                 </DataGrid>
@@ -2118,9 +2118,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Language}" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="100"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.SongCount}" Binding="{Binding Count}" Width="100"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.PopularSong}" Binding="{Binding PopularSong}" Width="*"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Language" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="100"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.SongCount" Binding="{Binding Count}" Width="100"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.PopularSong" Binding="{Binding PopularSong}" Width="*"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2132,9 +2132,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Number}" Binding="{Binding Number}" Width="100"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.SongName}" Binding="{Binding Title}" Width="*"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding Artist}" Width="200"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Number" Binding="{Binding Number}" Width="100"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.SongName" Binding="{Binding Title}" Width="*"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Singer" Binding="{Binding Artist}" Width="200"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2146,9 +2146,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Number}" Binding="{Binding SongNumber}" Width="100"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.SongName}" Binding="{Binding SongName}" Width="*"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding SingerName}" Width="200"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Number" Binding="{Binding SongNumber}" Width="100"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="*"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Singer" Binding="{Binding SingerName}" Width="200"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2160,9 +2160,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.FavoriteSong}" Binding="{Binding FavoriteSong}" Width="*"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding FavoriteArtist}" Width="200"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.PlayCount}" Binding="{Binding PlayCount}" Width="100"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.FavoriteSong" Binding="{Binding FavoriteSong}" Width="*"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Singer" Binding="{Binding FavoriteArtist}" Width="200"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.PlayCount" Binding="{Binding PlayCount}" Width="100"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2174,9 +2174,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.NewSong}" Binding="{Binding NewSong}" Width="*"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding NewArtist}" Width="200"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.ReleaseDate}" Binding="{Binding ReleaseDate}" Width="150"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.NewSong" Binding="{Binding NewSong}" Width="*"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Singer" Binding="{Binding NewArtist}" Width="200"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.ReleaseDate" Binding="{Binding ReleaseDate}" Width="150"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2188,9 +2188,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Rank}" Binding="{Binding Rank}" Width="80"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Song}" Binding="{Binding RankSong}" Width="*"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Singer}" Binding="{Binding RankArtist}" Width="200"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Rank" Binding="{Binding Rank}" Width="80"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Song" Binding="{Binding RankSong}" Width="*"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Singer" Binding="{Binding RankArtist}" Width="200"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2202,9 +2202,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.DuetSong}" Binding="{Binding DuetSong}" Width="*"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.OriginalSinger}" Binding="{Binding DuetArtist}" Width="200"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Type}" Binding="{Binding DuetType}" Width="100"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.DuetSong" Binding="{Binding DuetSong}" Width="*"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.OriginalSinger" Binding="{Binding DuetArtist}" Width="200"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Type" Binding="{Binding DuetType}" Width="100"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2216,9 +2216,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.ButtonStyle}" Binding="{Binding StyleName}" Width="200"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Description}" Binding="{Binding Description}" Width="*"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Status}" Binding="{Binding Status}" Width="100"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.ButtonStyle" Binding="{Binding StyleName}" Width="200"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Description" Binding="{Binding Description}" Width="*"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Status" Binding="{Binding Status}" Width="100"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 
@@ -2230,9 +2230,9 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.ThemeName}" Binding="{Binding ThemeName}" Width="150"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.Type}" Binding="{Binding ThemeType}" Width="100"/>
-                                        <DataGridTextColumn Header="{DynamicResource Str.Col.ColorScheme}" Binding="{Binding ColorScheme}" Width="*"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.ThemeName" Binding="{Binding ThemeName}" Width="150"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.Type" Binding="{Binding ThemeType}" Width="100"/>
+                                        <DataGridTextColumn local:Loc.HeaderKey="Col.ColorScheme" Binding="{Binding ColorScheme}" Width="*"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
