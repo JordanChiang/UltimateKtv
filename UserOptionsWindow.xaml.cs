@@ -291,6 +291,10 @@ namespace UltimateKtv
             // Set Legacy Audio Channel Definition toggle
             LegacyAudioChannelToggle.IsChecked = settings.IsLegacyAudioChannelDefinitionEnabled;
 
+            // Set Player Engine
+            PlayerEngineComboBox.SelectedIndex = settings.PlayerEngine == 1 ? 1 : 0;
+            UpdatePlayerEngineStatus();
+
             // Set Video Renderer
             VideoRendererComboBox.SelectedIndex = settings.VideoRendererType;
 
@@ -440,6 +444,18 @@ namespace UltimateKtv
             _parentWindow?.HidePreview();
         }
 
+        /// <summary>
+        /// 顯示目前使用中的播放引擎，以及是否找到 libmpv DLL。
+        /// </summary>
+        private void UpdatePlayerEngineStatus()
+        {
+            string current = MediaHostManager.Instance.Player.EngineName;
+            string dll = MpvNative.FindDll() != null
+                ? Loc.T("Options.PlayerEngineMpvFound")
+                : Loc.T("Options.PlayerEngineMpvMissing", Environment.Is64BitProcess ? "Codec" : "Codec_x86");
+            PlayerEngineStatusText.Text = Loc.T("Options.PlayerEngineCurrent", current) + Environment.NewLine + dll;
+        }
+
         private void NewSongDaysTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             e.Handled = !e.Text.All(char.IsDigit);
@@ -511,6 +527,17 @@ namespace UltimateKtv
             }
 
             // Save new options
+            int oldPlayerEngine = settings.PlayerEngine;
+            if (PlayerEngineComboBox.SelectedItem is ComboBoxItem engineItem && int.TryParse(engineItem.Tag.ToString(), out int engine))
+            {
+                settings.PlayerEngine = engine;
+            }
+            bool playerEngineChanged = oldPlayerEngine != settings.PlayerEngine;
+            if (playerEngineChanged)
+            {
+                AppLogger.Log($"User setting changed: PlayerEngine = {settings.PlayerEngine}");
+            }
+
             if (VideoRendererComboBox.SelectedItem is ComboBoxItem videoItem && int.TryParse(videoItem.Tag.ToString(), out int videoType))
             {
                 settings.VideoRendererType = videoType;
@@ -622,7 +649,12 @@ namespace UltimateKtv
                 _parentWindow.StartDelayedRandomPlayWhenEmpty();
             }
 
-            MessageBox.Show(Loc.T("Options.Applied"), Loc.T("Common.Done"), MessageBoxButton.OK, MessageBoxImage.Information);
+            string appliedMessage = Loc.T("Options.Applied");
+            if (playerEngineChanged)
+            {
+                appliedMessage += Environment.NewLine + Environment.NewLine + Loc.T("Options.PlayerEngineRestart");
+            }
+            MessageBox.Show(appliedMessage, Loc.T("Common.Done"), MessageBoxButton.OK, MessageBoxImage.Information);
             Hide();
         }
 

@@ -55,6 +55,9 @@ namespace UltimateKtv
         [Description("APP記錄檔: 啟用或停用應用程式記錄功能。 true=開啟, false=關閉")]
         public bool IsAppLoggerEnabled { get; set; } = true;
 
+        [Description("播放引擎: 0=DirectShow, 1=libmpv (需放置 libmpv-2.dll，找不到時自動改用 DirectShow)。變更後需重新啟動。預設為 0。")]
+        public int PlayerEngine { get; set; } = 0;
+
         [Description("視訊渲染器: 0=VMR9, 1=EVR。預設為 0 (VMR9)。")]
         public int VideoRendererType { get; set; } = 0;
 

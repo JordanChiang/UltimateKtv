@@ -23,7 +23,24 @@ namespace UltimateKtv
         /// </summary>
         private static UKtvPlayer CreateNewPlayer()
         {
-            return new DirectShowPlayer(SettingsManager.Instance.CurrentSettings);
+            var settings = SettingsManager.Instance.CurrentSettings;
+            if (settings.PlayerEngine == 1)
+            {
+                // libmpv 不可用 (找不到 DLL、位元數不符、初始化失敗) 時退回 DirectShow，確保一定能播放
+                try
+                {
+                    if (MpvNative.EnsureLoaded())
+                    {
+                        return new MpvPlayer(settings);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("[Player] libmpv init failed, falling back to DirectShow", ex);
+                }
+                AppLogger.Log("[Player] PlayerEngine=libmpv requested but unavailable; using DirectShow.");
+            }
+            return new DirectShowPlayer(settings);
         }
 
         /// <summary>
