@@ -42,6 +42,24 @@ namespace UltimateKtv
 
         Stretch Stretch { get; set; }
 
+        /// <summary>
+        /// 電視畫面的疊加層合成器。不為 null 時，電視上的跑馬燈/文字/歌詞改交給它合成
+        /// (影片是原生視窗，WPF 元素疊不上去)；DirectShow 為 null，沿用 WPF 疊加。
+        /// </summary>
+        MpvOsd? Osd { get; }
+
+        /// <summary>主視窗預覽用元素；null 表示沿用 VisualBrush(View)。</summary>
+        FrameworkElement? PreviewView { get; }
+
+        /// <summary>主視窗預覽是否顯示 (關閉時預覽實例停止解碼)。</summary>
+        bool PreviewEnabled { get; set; }
+
+        /// <summary>滑鼠在電視畫面上移動 (WPF 收不到原生視窗的滑鼠時由引擎回報)。</summary>
+        event EventHandler? VideoMouseActivity;
+
+        /// <summary>在電視畫面上雙擊。</summary>
+        event EventHandler? VideoDoubleClick;
+
         /// <summary>套用設定檔中的渲染器、音效裝置、硬體加速等播放設定（每首歌開播前呼叫）。</summary>
         void ApplySettings(AppSettings settings);
 

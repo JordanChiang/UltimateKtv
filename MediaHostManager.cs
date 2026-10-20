@@ -16,6 +16,7 @@ namespace UltimateKtv
         {
             // Create the initial player
             Player = CreateNewPlayer();
+            if (MpvNative.Trace) MpvPlayer.StartUiLatencyProbe(System.Windows.Threading.Dispatcher.CurrentDispatcher);
         }
 
         /// <summary>

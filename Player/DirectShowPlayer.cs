@@ -36,6 +36,13 @@ namespace UltimateKtv
         }
 
         public FrameworkElement View => _element;
+        public MpvOsd? Osd => null;
+        public FrameworkElement? PreviewView => null;
+        public bool PreviewEnabled { get; set; } = true;
+
+        // DirectShow 的影片是 WPF 元素，滑鼠事件由 WPF 直接處理
+        public event EventHandler? VideoMouseActivity { add { } remove { } }
+        public event EventHandler? VideoDoubleClick { add { } remove { } }
         public string EngineName => "DirectShow";
         public string VideoRendererName => _element.VideoRenderer.ToString();
 

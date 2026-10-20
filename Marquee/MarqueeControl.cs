@@ -26,6 +26,16 @@ namespace UltimateKtv
         private DateTime _cycleStartTime;
         private TimeSpan _cycleDuration;
 
+        // OSD 模式 (libmpv)：電視影片是原生視窗，WPF 疊不上去，改把文字畫成點陣圖交給 mpv 合成與捲動。
+        // 版面 (位置/大小) 仍由本控制項在 WPF 樹中計算，只是不顯示、也不跑 WPF 動畫。
+        private OsdItem? _osdItem;
+
+        /// <summary>不為 null 時以 mpv OSD 顯示 (由 MarqueeManager 在加入電視視窗時設定)。</summary>
+        public MpvOsd? Osd { get; set; }
+
+        /// <summary>座標基準元素，左上角對齊 mpv OSD 的 (0,0)。</summary>
+        public FrameworkElement? OsdRoot { get; set; }
+
         // Public properties
         public string MarqueeText { get; set; } = string.Empty;
         public Brush TextColor { get; set; } = Brushes.White;
@@ -41,7 +51,7 @@ namespace UltimateKtv
         public int DesiredDisplayDevice { get; set; } = 0;
         public bool IsStaticMode { get; set; } = false;
         public int TimeoutSeconds { get; set; } = 0;
-        public int RemainingRepeatCount => Math.Max(0, RepeatCount - _currentRepeatCount);
+        public int RemainingRepeatCount => Math.Max(0, RepeatCount - (_osdItem != null ? _osdItem.CompletedCycleCount : _currentRepeatCount));
 
         /// <summary>
         /// Gets the scroll progress of the current cycle (0.0 to 1.0).
@@ -52,6 +62,7 @@ namespace UltimateKtv
             get
             {
                 if (!_isAnimating) return 0.0;
+                if (_osdItem != null) return _osdItem.CurrentCycleProgress;
                 if (_holdTimer != null) return 1.0;
                 if (_cycleDuration.TotalMilliseconds <= 0) return 0.0;
                 double elapsed = (DateTime.UtcNow - _cycleStartTime).TotalMilliseconds;
@@ -216,7 +227,76 @@ namespace UltimateKtv
             _currentRepeatCount = 0;
             _isAnimating = true;
 
+            if (Osd != null && StartOsdScroll(canvasWidth, textWidth, startY)) return;
             StartScrollAnimation(canvasWidth, textWidth);
+        }
+
+        /// <summary>
+        /// 計算 WPF 版面對應的 OSD 像素比例與畫布原點；OSD 尚未有影像輸出時回傳 false。
+        /// </summary>
+        private bool TryGetOsdGeometry(out double scale, out Point canvasOrigin)
+        {
+            scale = 0;
+            canvasOrigin = default;
+            if (Osd == null || OsdRoot == null || OsdRoot.ActualWidth <= 0) return false;
+            var osdSize = Osd.OsdSize;
+            if (osdSize.Width <= 0) return false;
+            // OSD 模式不在 WPF 顯示文字，不需要 BitmapCache；而且元素還沒被 WPF 畫過時快取是空的，
+            // 透過 VisualBrush 轉點陣圖會得到空白 (音量等角落提示實測如此)
+            _textBlock.CacheMode = null;
+            UpdateLayout();
+            scale = osdSize.Width / OsdRoot.ActualWidth;
+            canvasOrigin = _canvas.TranslatePoint(new Point(0, 0), OsdRoot);
+            return true;
+        }
+
+        private bool StartOsdScroll(double canvasWidth, double textWidth, double startY)
+        {
+            if (!TryGetOsdGeometry(out double scale, out Point origin)) return false;
+            // 4 個次像素相位 (0, 0.25, 0.5, 0.75 px)：捲動時依位置小數挑選，慢速也能平順
+            const int PhaseCount = 4;
+            var phases = new OsdBitmap[PhaseCount];
+            Rect bounds = default;
+            for (int i = 0; i < PhaseCount; i++)
+            {
+                var b = OsdBitmap.Rasterize(_textBlock, scale, out bounds, (double)i / PhaseCount);
+                if (b == null)
+                {
+                    for (int j = 0; j < i; j++) phases[j].Dispose();
+                    return false;
+                }
+                phases[i] = b;
+            }
+
+            double speed = Math.Max(1.0, Speed);
+            double durationMs = (canvasWidth + textWidth) / speed * 1000.0;
+            _cycleStartTime = DateTime.UtcNow;
+            _cycleDuration = TimeSpan.FromMilliseconds(durationMs);
+
+            _osdItem = Osd!.StartScroll(phases,
+                y: (int)Math.Round((origin.Y + startY + bounds.Y) * scale),
+                startX: (origin.X + canvasWidth + bounds.X) * scale,
+                endX: (origin.X - textWidth + bounds.X) * scale,
+                durationMs: durationMs,
+                clipLeft: (int)Math.Round(origin.X * scale),
+                clipRight: (int)Math.Round((origin.X + canvasWidth) * scale),
+                repeatCount: RepeatCount,
+                holdMs: HoldTimeMs,
+                dispatcher: Dispatcher,
+                onFinished: OnOsdScrollFinished);
+            if (_osdItem == null) return false;
+
+            _textBlock.Visibility = Visibility.Hidden; // 保留版面，但不在 WPF 繪製
+            return true;
+        }
+
+        private void OnOsdScrollFinished()
+        {
+            if (!_isAnimating || _osdItem == null) return;
+            _osdItem = null;
+            _isAnimating = false;
+            _currentRepeatCount = RepeatCount;
+            MarqueeCompleted?.Invoke(this, EventArgs.Empty);
         }
 
         private void StartScrollAnimation(double canvasWidth, double textWidth)
@@ -333,6 +413,21 @@ namespace UltimateKtv
 
             _isAnimating = true;
 
+            if (Osd != null && TryGetOsdGeometry(out double scale, out Point origin))
+            {
+                var bmp = OsdBitmap.Rasterize(_textBlock, scale, out Rect bounds);
+                if (bmp != null)
+                {
+                    bool isCorner = Position is MarqueePosition.TopLeft or MarqueePosition.TopRight
+                                    or MarqueePosition.BottomLeft or MarqueePosition.BottomRight;
+                    _osdItem = Osd.ShowStatic(bmp,
+                        (int)Math.Round((origin.X + textX + bounds.X) * scale),
+                        (int)Math.Round((origin.Y + textY + bounds.Y) * scale),
+                        slot: isCorner ? "corner:" + Position : null);
+                    if (_osdItem != null) _textBlock.Visibility = Visibility.Hidden;
+                }
+            }
+
             if (TimeoutSeconds > 0)
             {
                 _timeoutTimer = new DispatcherTimer
@@ -353,6 +448,12 @@ namespace UltimateKtv
         public void StopMarquee()
         {
             _isAnimating = false;
+            if (_osdItem != null)
+            {
+                Osd?.Remove(_osdItem);
+                _osdItem = null;
+                _textBlock.Visibility = Visibility.Visible;
+            }
             _holdTimer?.Stop();
             _holdTimer = null;
             _timeoutTimer?.Stop();

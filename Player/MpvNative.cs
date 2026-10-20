@@ -51,6 +51,7 @@ namespace UltimateKtv
         {
             public int reason;
             public int error;
+            public long playlist_entry_id;
         }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate IntPtr CreateFn();
@@ -66,6 +67,39 @@ namespace UltimateKtv
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void WakeupFn(IntPtr ctx);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void FreeFn(IntPtr data);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate IntPtr ErrorStringFn(int error);
+
+        // ---- render API (軟體渲染，給主視窗預覽用) ----
+        public const int RENDER_PARAM_INVALID = 0;
+        public const int RENDER_PARAM_API_TYPE = 1;
+        public const int RENDER_PARAM_BLOCK_FOR_TARGET_TIME = 12;
+        public const int RENDER_PARAM_SW_SIZE = 17;
+        public const int RENDER_PARAM_SW_FORMAT = 18;
+        public const int RENDER_PARAM_SW_STRIDE = 19;
+        public const int RENDER_PARAM_SW_POINTER = 20;
+        public const ulong RENDER_UPDATE_FRAME = 1;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct mpv_render_param
+        {
+            public int type;
+            public IntPtr data;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int RenderContextCreateFn(out IntPtr res, IntPtr mpv, IntPtr parameters);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void RenderUpdateCallback(IntPtr cbCtx);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void RenderContextSetUpdateCallbackFn(IntPtr ctx, RenderUpdateCallback? callback, IntPtr cbCtx);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate ulong RenderContextUpdateFn(IntPtr ctx);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int RenderContextRenderFn(IntPtr ctx, IntPtr parameters);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void RenderContextFreeFn(IntPtr ctx);
+
+        public static RenderContextCreateFn? RenderContextCreate;
+        public static RenderContextSetUpdateCallbackFn? RenderContextSetUpdateCallback;
+        public static RenderContextUpdateFn? RenderContextUpdate;
+        public static RenderContextRenderFn? RenderContextRender;
+        public static RenderContextFreeFn? RenderContextFree;
+
+        /// <summary>render API 是否可用 (舊版 libmpv 可能沒有)。</summary>
+        public static bool IsRenderApiAvailable { get; private set; }
 
         public static CreateFn? Create;
         public static InitializeFn? Initialize;
@@ -142,6 +176,20 @@ namespace UltimateKtv
                     LoadedPath = path;
                     IsAvailable = true;
                     AppLogger.Log($"[mpv] Loaded {path}");
+
+                    try
+                    {
+                        RenderContextCreate = Get<RenderContextCreateFn>(lib, "mpv_render_context_create");
+                        RenderContextSetUpdateCallback = Get<RenderContextSetUpdateCallbackFn>(lib, "mpv_render_context_set_update_callback");
+                        RenderContextUpdate = Get<RenderContextUpdateFn>(lib, "mpv_render_context_update");
+                        RenderContextRender = Get<RenderContextRenderFn>(lib, "mpv_render_context_render");
+                        RenderContextFree = Get<RenderContextFreeFn>(lib, "mpv_render_context_free");
+                        IsRenderApiAvailable = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.LogError("[mpv] render API not available; main window preview disabled", ex);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -164,6 +212,66 @@ namespace UltimateKtv
         }
 
         public static string? PtrToUtf8(IntPtr p) => p == IntPtr.Zero ? null : Marshal.PtrToStringUTF8(p);
+
+        // ---------- 共用呼叫包裝 (主播放與預覽實例共用) ----------
+
+        public static int SetOptionUtf8(IntPtr ctx, string name, string value)
+        {
+            IntPtr n = Utf8(name), v = Utf8(value);
+            try { return SetOptionString!(ctx, n, v); }
+            finally { Marshal.FreeCoTaskMem(n); Marshal.FreeCoTaskMem(v); }
+        }
+
+        // ---- 診斷：KTV_MPV_TRACE=1 時記錄超過 15ms 的同步呼叫 ----
+        public static readonly bool Trace = Environment.GetEnvironmentVariable("KTV_MPV_TRACE") == "1";
+        public static void TraceCall(string what, long startTicks)
+        {
+            double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - startTicks) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (ms > 15) AppLogger.Log($"[mpv-trace] {ms:F0}ms {what} thread={System.Threading.Thread.CurrentThread.Name ?? System.Threading.Thread.CurrentThread.ManagedThreadId.ToString()}");
+        }
+
+        public static int SetPropertyUtf8(IntPtr ctx, string name, string value)
+        {
+            long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+            IntPtr n = Utf8(name), v = Utf8(value);
+            try { return SetPropertyString!(ctx, n, v); }
+            finally { Marshal.FreeCoTaskMem(n); Marshal.FreeCoTaskMem(v); if (Trace) TraceCall("set " + name, t0); }
+        }
+
+        public static string? GetPropertyUtf8(IntPtr ctx, string name)
+        {
+            long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+            IntPtr n = Utf8(name);
+            try
+            {
+                IntPtr p = GetPropertyString!(ctx, n);
+                if (p == IntPtr.Zero) return null;
+                string? s = PtrToUtf8(p);
+                Free!(p);
+                return s;
+            }
+            finally { Marshal.FreeCoTaskMem(n); if (Trace) TraceCall("get " + name, t0); }
+        }
+
+        public static int CommandUtf8(IntPtr ctx, params string[] args)
+        {
+            long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
+            var ptrs = new IntPtr[args.Length + 1];
+            IntPtr arr = IntPtr.Zero;
+            try
+            {
+                for (int i = 0; i < args.Length; i++) ptrs[i] = Utf8(args[i]);
+                arr = Marshal.AllocCoTaskMem(IntPtr.Size * ptrs.Length);
+                Marshal.Copy(ptrs, 0, arr, ptrs.Length);
+                return Command!(ctx, arr);
+            }
+            finally
+            {
+                foreach (var p in ptrs) if (p != IntPtr.Zero) Marshal.FreeCoTaskMem(p);
+                if (arr != IntPtr.Zero) Marshal.FreeCoTaskMem(arr);
+                if (Trace && args.Length > 0 && args[0] != "overlay-add") TraceCall("cmd " + args[0], t0);
+            }
+        }
 
         /// <summary>配置 UTF-8 字串，呼叫端負責 Marshal.FreeCoTaskMem。</summary>
         public static IntPtr Utf8(string s)

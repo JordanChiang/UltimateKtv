@@ -144,19 +144,13 @@ namespace UltimateKtv
         public void ShowPreview()
         {
             _showPreviewInMainWindow = true;
-            if (MediaPlayerContainer.Children.Count > 0 && MediaPlayerContainer.Children[0] is Rectangle preview)
-            {
-                preview.Visibility = Visibility.Visible;
-            }
+            ApplyPreviewVisibility();
         }
 
         public void HidePreview()
         {
             _showPreviewInMainWindow = false;
-            if (MediaPlayerContainer.Children.Count > 0 && MediaPlayerContainer.Children[0] is Rectangle preview)
-            {
-                preview.Visibility = Visibility.Collapsed;
-            }
+            ApplyPreviewVisibility();
         }
 
         public void SetMediaStretch(Stretch stretchMode)
@@ -217,11 +211,7 @@ namespace UltimateKtv
         {
             _showPreviewInMainWindow = !_showPreviewInMainWindow;
 
-            // This only has an effect if we are in dual-display mode and have a preview rectangle.
-            if (MediaPlayerContainer.Children.Count > 0 && MediaPlayerContainer.Children[0] is Rectangle preview)
-            {
-                preview.Visibility = _showPreviewInMainWindow ? Visibility.Visible : Visibility.Collapsed;
-            }
+            ApplyPreviewVisibility();
 
             // Update button text to give user feedback
             if (sender is Button btn)

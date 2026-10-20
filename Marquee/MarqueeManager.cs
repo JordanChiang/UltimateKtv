@@ -229,23 +229,14 @@ namespace UltimateKtv
 
         private void HandleCornerItem(DeviceMarqueeState state, MarqueeItem item)
         {
-            if (state.ActiveCornerControls.TryGetValue(item.Position, out var existing))
-            {
-                existing.StopMarquee();
-                RemoveMarqueeFromWindow(existing, state.DeviceId);
-                state.ActiveCornerControls.Remove(item.Position);
-            }
+            // 先顯示新的、再移除舊的：連續調音量時角落提示不會出現空白的一瞬間 (mpv 上看起來像閃爍)
+            state.ActiveCornerControls.TryGetValue(item.Position, out var existing);
 
             var marquee = new MarqueeControl();
             if (item.IsStatic)
             {
                 marquee.UpdateStaticText(item.Text, item.Color, item.FontFamily, item.FontSize, item.Position, item.TimeoutSeconds, state.DeviceId, item.FontWeight, item.StrokeColor, item.StrokeThickness);
-                marquee.MarqueeCompleted += (s, e) =>
-                {
-                    marquee.StopMarquee();
-                    RemoveMarqueeFromWindow(marquee, state.DeviceId);
-                    state.ActiveCornerControls.Remove(item.Position);
-                };
+                marquee.MarqueeCompleted += (s, e) => OnCornerCompleted(state, marquee, item.Position);
                 if (state.DeviceId == 0) AddMarqueeToMainWindow(marquee, item.Position);
                 else AddMarqueeToVideoWindow(marquee, item.Position);
                 state.ActiveCornerControls[item.Position] = marquee;
@@ -254,16 +245,28 @@ namespace UltimateKtv
             else
             {
                 marquee.UpdateMarquee(item.Text, item.Color, item.FontFamily, item.FontSize, item.RepeatCount, item.Position, item.Speed, state.DeviceId, item.FontWeight, item.StrokeColor, item.StrokeThickness, item.HoldTimeMs);
-                marquee.MarqueeCompleted += (s, e) =>
-                {
-                    marquee.StopMarquee();
-                    RemoveMarqueeFromWindow(marquee, state.DeviceId);
-                    state.ActiveCornerControls.Remove(item.Position);
-                };
+                marquee.MarqueeCompleted += (s, e) => OnCornerCompleted(state, marquee, item.Position);
                 if (state.DeviceId == 0) AddMarqueeToMainWindow(marquee, item.Position);
                 else AddMarqueeToVideoWindow(marquee, item.Position);
                 state.ActiveCornerControls[item.Position] = marquee;
                 marquee.StartMarquee();
+            }
+
+            if (existing != null)
+            {
+                existing.StopMarquee();
+                RemoveMarqueeFromWindow(existing, state.DeviceId);
+            }
+        }
+
+        private void OnCornerCompleted(DeviceMarqueeState state, MarqueeControl marquee, MarqueePosition position)
+        {
+            marquee.StopMarquee();
+            RemoveMarqueeFromWindow(marquee, state.DeviceId);
+            // 只移除自己：這個角落可能已經換成新的提示
+            if (state.ActiveCornerControls.TryGetValue(position, out var current) && current == marquee)
+            {
+                state.ActiveCornerControls.Remove(position);
             }
         }
 
@@ -621,6 +624,14 @@ namespace UltimateKtv
             marquee.IsHitTestVisible = false;
             container.Children.Add(marquee);
             marquee.EnsureVisible();
+
+            // libmpv：影片是原生視窗，改由 mpv 合成 (版面仍在這裡計算)
+            var osd = MediaHostManager.Instance.Player.Osd;
+            if (osd != null && _videoDisplayWindow != null)
+            {
+                marquee.Osd = osd;
+                marquee.OsdRoot = _videoDisplayWindow.VideoContainer;
+            }
         }
 
         private void RemoveMarqueeFromWindow(MarqueeControl marquee, int displayDevice)

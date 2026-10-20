@@ -37,11 +37,29 @@ namespace UltimateKtv
                 sharedMediaPlayer.MediaClosed += MediaUriElement_MediaClosed;
                 sharedMediaPlayer.MediaEnded += MediaUriElement_MediaEnded;
                 sharedMediaPlayer.MediaPositionChanged += MediaUriElement_MediaPositionChanged;
+                // libmpv：電視畫面是原生視窗，滑鼠移動/雙擊由引擎回報 (DirectShow 不會觸發)
+                sharedMediaPlayer.VideoMouseActivity += Player_VideoMouseActivity;
+                sharedMediaPlayer.VideoDoubleClick += Player_VideoDoubleClick;
                 DebugLog("Media player event handlers wired up.");
             }
             catch (Exception ex)
             {
                 DebugLog($"Error initializing media player: {ex.Message}\n{ex}");
+            }
+        }
+
+        private void Player_VideoMouseActivity(object? sender, EventArgs e)
+        {
+            ResetCursorIdleTimer();
+        }
+
+        private void Player_VideoDoubleClick(object? sender, EventArgs e)
+        {
+            // 與 VideoDisplayWindow 雙擊相同：單螢幕模式回到主控台
+            if (IsSingleMonitorMode && _videoDisplayWindow != null)
+            {
+                System.Windows.Input.Mouse.OverrideCursor = null;
+                ShowFromVideoWindow();
             }
         }
 

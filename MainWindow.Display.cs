@@ -63,22 +63,8 @@ namespace UltimateKtv
                     _videoDisplayWindow.SetMediaPlayer(ktvPlayer.View);
                     DebugLog("Hosted media element in VideoDisplayWindow.");
 
-                    // 3. Set up the preview in the main window using a VisualBrush
-                    var previewRectangle = new Rectangle();
-                    var visualBrush = new VisualBrush(ktvPlayer.View)
-                    {
-                        Stretch = Stretch.Uniform,
-                        AutoLayoutContent = false
-                    };
-                    previewRectangle.Fill = visualBrush;
-
-                    // 4. Add the preview rectangle to the main window's container
-                    MediaPlayerContainer.Children.Clear();
-                    MediaPlayerContainer.Children.Add(previewRectangle);
-                    DebugLog("Set up VisualBrush preview in MainWindow.");
-
-                    // 5. Set initial visibility of the preview based on the control flag
-                    previewRectangle.Visibility = _showPreviewInMainWindow ? Visibility.Visible : Visibility.Collapsed;
+                    // 3. Set up the preview in the main window (VisualBrush, or the engine's own preview view)
+                    SetupMainWindowPreview();
                 }
                 else
                 {
@@ -107,28 +93,19 @@ namespace UltimateKtv
                         _videoDisplayWindow.PreviewMouseMove += MainWindow_MouseMove;
 
 
-                        // Set up the preview in the main window using a VisualBrush
-                        var previewRectangle = new Rectangle();
-                        var visualBrush = new VisualBrush(ktvPlayer.View)
-                        {
-                            Stretch = Stretch.Uniform,
-                            AutoLayoutContent = false
-                        };
-                        previewRectangle.Fill = visualBrush;
-
-                        // Add the preview rectangle to the main window's container
-                        MediaPlayerContainer.Children.Clear();
-                        MediaPlayerContainer.Children.Add(previewRectangle);
-                        DebugLog("Set up VisualBrush preview in MainWindow for single-monitor mode.");
-
-                        // Set initial visibility of the preview based on the control flag
-                        previewRectangle.Visibility = _showPreviewInMainWindow ? Visibility.Visible : Visibility.Collapsed;
+                        // Set up the preview in the main window (VisualBrush, or the engine's own preview view)
+                        SetupMainWindowPreview();
                     }
                     else
                     {
-                        // Multiple monitors but same screen setting - host in main window
+                        // Multiple monitors but same screen setting - host in main window.
+                        // libmpv 的影片是原生視窗，放在主視窗會蓋住跑馬燈與對話框，改用預覽實例的畫面。
                         var containerGrid = new Grid();
-                        containerGrid.Children.Add(ktvPlayer.View);
+                        var previewView = ktvPlayer.PreviewView;
+                        if (previewView != null) ktvPlayer.PreviewEnabled = true;
+                        var hosted = previewView ?? ktvPlayer.View;
+                        (hosted.Parent as Panel)?.Children.Remove(hosted);
+                        containerGrid.Children.Add(hosted);
                         containerGrid.Background = (Brush)FindResource("BrushSurfaceSunken");
 
                         MediaPlayerContainer.Children.Clear();
@@ -405,6 +382,49 @@ namespace UltimateKtv
         /// <summary>
         /// Handles mouse movement to show the cursor and reset the idle timer.
         /// </summary>
+        private FrameworkElement? _previewElement;
+
+        /// <summary>
+        /// 建立主視窗預覽：DirectShow 用 VisualBrush 複製影片元素；libmpv 的影片是原生視窗 (VisualBrush 抓不到)，
+        /// 改用第二個 mpv 實例軟體渲染的畫面。
+        /// </summary>
+        private void SetupMainWindowPreview()
+        {
+            FrameworkElement preview;
+            var engineView = ktvPlayer.PreviewView;
+            if (engineView != null)
+            {
+                (engineView.Parent as Panel)?.Children.Remove(engineView);
+                preview = engineView;
+            }
+            else
+            {
+                preview = new Rectangle
+                {
+                    Fill = new VisualBrush(ktvPlayer.View)
+                    {
+                        Stretch = Stretch.Uniform,
+                        AutoLayoutContent = false
+                    }
+                };
+            }
+
+            MediaPlayerContainer.Children.Clear();
+            MediaPlayerContainer.Children.Add(preview);
+            _previewElement = preview;
+            ApplyPreviewVisibility();
+            DebugLog($"Set up main window preview ({(engineView != null ? ktvPlayer.EngineName : "VisualBrush")}).");
+        }
+
+        /// <summary>依 _showPreviewInMainWindow 顯示/隱藏預覽；隱藏時通知引擎停止預覽解碼。</summary>
+        private void ApplyPreviewVisibility()
+        {
+            // 沒有預覽元素 (影片直接放在主視窗的模式) 時不動引擎的預覽，否則會把主畫面關掉
+            if (_previewElement == null) return;
+            _previewElement.Visibility = _showPreviewInMainWindow ? Visibility.Visible : Visibility.Collapsed;
+            ktvPlayer.PreviewEnabled = _showPreviewInMainWindow;
+        }
+
         private void MainWindow_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             ResetCursorIdleTimer();

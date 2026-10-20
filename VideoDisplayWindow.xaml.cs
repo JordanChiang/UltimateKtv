@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows;
+using System.Windows.Media;
 using System.Runtime.InteropServices;
 
 namespace UltimateKtv
@@ -101,6 +102,7 @@ namespace UltimateKtv
             {
                 LrcTextBlock.Text = text;
                 LrcTextBlock.Visibility = visibility;
+                UpdateOsdLyrics();
                 System.Diagnostics.Debug.WriteLine($"[LRC Window] Updating: Text='{text}', Vis={visibility}");
                 if (!string.IsNullOrEmpty(text))
                 {
@@ -111,6 +113,48 @@ namespace UltimateKtv
             {
                 System.Diagnostics.Debug.WriteLine("[LRC Window] LrcTextBlock is NULL!");
             }
+        }
+
+        private OsdItem? _osdLyrics;
+
+        /// <summary>
+        /// libmpv：歌詞在原生影片視窗底下看不到，改把 LrcTextBlock (含陰影) 畫成點陣圖交給 mpv 合成。
+        /// </summary>
+        private void UpdateOsdLyrics()
+        {
+            var osd = MediaHostManager.Instance.Player.Osd;
+            if (osd == null) return;
+
+            osd.Remove(_osdLyrics);
+            _osdLyrics = null;
+            if (LrcTextBlock.Visibility != Visibility.Visible || string.IsNullOrEmpty(LrcTextBlock.Text)) return;
+
+            var osdSize = osd.OsdSize;
+            if (osdSize.Width <= 0 || VideoContainer.ActualWidth <= 0) return;
+            double scale = osdSize.Width / VideoContainer.ActualWidth;
+
+            // 位置沿用 LrcTextBlock 在電視視窗的版面；用同樣屬性的複本 (外加留白容納陰影) 畫成點陣圖
+            const double pad = 16;
+            LrcTextBlock.UpdateLayout();
+            var copy = new TextBlock
+            {
+                Text = LrcTextBlock.Text,
+                Foreground = LrcTextBlock.Foreground,
+                FontFamily = LrcTextBlock.FontFamily,
+                FontSize = LrcTextBlock.FontSize,
+                FontWeight = LrcTextBlock.FontWeight,
+                TextWrapping = LrcTextBlock.TextWrapping,
+                TextAlignment = LrcTextBlock.TextAlignment,
+                Effect = LrcTextBlock.Effect?.CloneCurrentValue(),
+                Width = LrcTextBlock.ActualWidth
+            };
+            var host = new Border { Padding = new Thickness(pad), Child = copy };
+            var bmp = OsdBitmap.RasterizeDetached(host, LrcTextBlock.ActualWidth + pad * 2, scale);
+            if (bmp == null) return;
+            var origin = LrcTextBlock.TranslatePoint(new Point(0, 0), VideoContainer);
+            _osdLyrics = osd.ShowStatic(bmp,
+                (int)Math.Round((origin.X - pad) * scale),
+                (int)Math.Round((origin.Y - pad) * scale));
         }
 
         /// <summary>
