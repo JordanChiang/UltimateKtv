@@ -133,6 +133,19 @@
     </Compile>
   </ItemGroup>
 
+  <!-- libmpv-2.dll 超過 GitHub 單檔 100MB 限制，不放進 repo；缺少時從 GitHub Release 下載 (見 Tools\Get-Libmpv.ps1) -->
+  <Target Name="FetchLibmpv" BeforeTargets="BeforeBuild" Condition="'$(CodecDir)' != '' And !Exists('$(ProjectDir)$(CodecDir)\libmpv-2.dll')">
+    <PropertyGroup>
+      <LibmpvArch Condition="'$(CodecDir)' == 'Codec'">x64</LibmpvArch>
+      <LibmpvArch Condition="'$(CodecDir)' != 'Codec'">x86</LibmpvArch>
+    </PropertyGroup>
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)Tools\Get-Libmpv.ps1&quot; -Arch $(LibmpvArch) -CodecDir &quot;$(ProjectDir)$(CodecDir)&quot;" ContinueOnError="true" />
+    <!-- Codec 的 Content 項目在評估時就決定了，這次才下載的檔案要補進去，publish 才會帶上 -->
+    <ItemGroup Condition="Exists('$(ProjectDir)$(CodecDir)\libmpv-2.dll')">
+      <Content Include="$(CodecDir)\libmpv-2.dll" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(PublishProtocol)' == ''">
     <!-- Ensure Codec and Images files are copied during build -->
     <Exec Command="if not &quot;$(CodecDir)&quot; == &quot;&quot; xcopy &quot;$(ProjectDir)$(CodecDir)&quot; &quot;$(TargetDir)$(CodecDir)\&quot; /E /I /Y /D" />
