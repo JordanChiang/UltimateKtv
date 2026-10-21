@@ -635,7 +635,7 @@
                                 <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.PlayerEngine}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
                                           VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
                                 <ComboBox x:Name="PlayerEngineComboBox" Grid.Column="1"
-                                         Width="150" Height="40"
+                                         Width="180" Height="40"
                                          FontSize="{StaticResource OptionsItemButtonFontSize}"
                                          Foreground="{DynamicResource MaterialDesignBody}"
                                          VerticalAlignment="Center"
@@ -650,38 +650,6 @@
                                 Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
                             <Grid Height="50">
                                 <TextBlock x:Name="PlayerEngineStatusText" FontSize="{StaticResource OptionsSmallFontSize}"
-                                           VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}"/>
-                            </Grid>
-                        </Border>
-                    </Grid>
-
-                    <!-- Row 8.6: libmpv smooth motion (60fps interpolation) -->
-                    <Grid Margin="0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="5"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
-                            <Grid Height="50">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="{DynamicResource Str.Options.MpvSmoothMotion}" FontSize="{StaticResource OptionsItemLabelFontSize}" FontWeight="SemiBold"
-                                          VerticalAlignment="Center" Foreground="{DynamicResource MaterialDesignBody}"/>
-                                <ToggleButton Name="MpvSmoothMotionToggle" Grid.Column="1"
-                                             Style="{StaticResource ThemedSwitchToggleButton}"
-                                             VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
-
-                        <Border Grid.Column="2" Background="{DynamicResource MaterialDesignCardBackground}"
-                                Padding="8" CornerRadius="{StaticResource RadiusXSmall}" Effect="{DynamicResource MaterialDesignShadowDepth1}">
-                            <Grid Height="50">
-                                <TextBlock Text="{DynamicResource Str.Options.MpvSmoothMotionHint}" FontSize="{StaticResource OptionsSmallFontSize}"
                                            VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource MaterialDesignBody}"/>
                             </Grid>
                         </Border>

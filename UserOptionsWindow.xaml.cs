@@ -294,7 +294,6 @@ namespace UltimateKtv
             // Set Player Engine
             PlayerEngineComboBox.SelectedIndex = settings.PlayerEngine == 1 ? 1 : 0;
             UpdatePlayerEngineStatus();
-            MpvSmoothMotionToggle.IsChecked = settings.MpvSmoothMotion;
 
             // Set Video Renderer
             VideoRendererComboBox.SelectedIndex = settings.VideoRendererType;
@@ -533,14 +532,8 @@ namespace UltimateKtv
             {
                 settings.PlayerEngine = engine;
             }
-            bool oldSmoothMotion = settings.MpvSmoothMotion;
-            settings.MpvSmoothMotion = MpvSmoothMotionToggle.IsChecked == true;
-            if (oldSmoothMotion != settings.MpvSmoothMotion)
-            {
-                AppLogger.Log($"User setting changed: MpvSmoothMotion = {settings.MpvSmoothMotion}");
-            }
-            // 播放引擎與電視畫面平滑都在建立播放器時套用，變更後需重新啟動
-            bool playerEngineChanged = oldPlayerEngine != settings.PlayerEngine || oldSmoothMotion != settings.MpvSmoothMotion;
+            // 播放引擎在建立播放器時套用，變更後需重新啟動
+            bool playerEngineChanged = oldPlayerEngine != settings.PlayerEngine;
             if (playerEngineChanged)
             {
                 AppLogger.Log($"User setting changed: PlayerEngine = {settings.PlayerEngine}");

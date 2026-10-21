@@ -113,15 +113,13 @@ namespace UltimateKtv
                 // 32 位元 libmpv 的 gpu-next (libplacebo + d3d11) 一開始播放就存取違規當掉；vo=gpu 正常
                 SetOption("vo", "gpu");
             }
-            _smoothMotion = settings.MpvSmoothMotion;
-            if (_smoothMotion)
-            {
-                // display-resample：mpv 依螢幕更新率每次 vsync 都重畫，OSD 跑馬燈因此能以 60fps 捲動
-                // (預設 video-sync=audio 只在影片換格時重畫 → 30fps 影片上跑馬燈只有 30 次/秒、每次跳兩步)。
-                // 不需要插幀：實測不插幀一樣 60 次/秒、CPU 相同，且影片畫格維持原樣
-                SetOption("video-sync", "display-resample");
-                SetOption("interpolation", "no");
-            }
+            // display-resample：mpv 依螢幕更新率每次 vsync 都重畫，OSD 跑馬燈因此能以 60fps 捲動
+            // (預設 video-sync=audio 只在影片換格時重畫 → 30fps 影片上跑馬燈只有 30 次/秒、每次跳兩步)。
+            // 不需要插幀：實測不插幀一樣 60 次/秒、CPU 相同，且影片畫格維持原樣。
+            // 固定開啟 (原本的設定選項已拿掉)；GPU 跟不上時 CheckSmoothMotion 會自動改回 audio
+            _smoothMotion = true;
+            SetOption("video-sync", "display-resample");
+            SetOption("interpolation", "no");
 
             int err = MpvNative.Initialize!(_ctx);
             if (err < 0) throw new InvalidOperationException($"mpv_initialize failed: {MpvNative.Error(err)}");

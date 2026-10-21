@@ -58,9 +58,6 @@ namespace UltimateKtv
         [Description("播放引擎: 0=DirectShow, 1=libmpv (需放置 libmpv-2.dll，找不到時自動改用 DirectShow)。變更後需重新啟動。預設為 0。")]
         public int PlayerEngine { get; set; } = 0;
 
-        [Description("電視畫面平滑 (libmpv): 每次螢幕更新都重畫，跑馬燈以 60fps 捲動 (關閉時只隨 30fps 影片更新)。偵測到掉格會自動暫停。變更後需重新啟動。預設為 true。")]
-        public bool MpvSmoothMotion { get; set; } = true;
-
         [Description("視訊渲染器: 0=VMR9, 1=EVR。預設為 0 (VMR9)。")]
         public int VideoRendererType { get; set; } = 0;
 
