@@ -13,7 +13,7 @@
     <EnableNETAnalyzers>False</EnableNETAnalyzers>
     
     <!-- Exclude the Updater, MarqueeSimulator, and StyleSimulator project folders from the main project's compilation -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);Updater\**;MarqueeSimulator\**;StyleSimulator\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Updater\**;MarqueeSimulator\**;StyleSimulator\**;Tests\**</DefaultItemExcludes>
 
     <!-- Exclude all satellite resource language DLLs (e.g., de, fr, es folders) from publish output -->
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
