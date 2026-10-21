@@ -133,7 +133,7 @@ namespace UltimateKtv
             Observe(ObsIdle, "idle-active", MpvNative.FORMAT_FLAG);
             Command("keybind", "MBTN_LEFT_DBL", "script-message " + DoubleClickMessage);
 
-            Osd = new MpvOsd(args => Command(args), name => GetString(name));
+            Osd = new MpvOsd(args => Command(args), name => GetString(name), () => _host.VideoHwnd);
             Osd.ScrollingChanged += OnOsdScrollingChanged;
             WarmUpOsd();
             _preview = MpvPreview.TryCreate(_dispatcher, settings.EnableHWAccel ? "auto-copy-safe" : "no");
@@ -478,6 +478,9 @@ namespace UltimateKtv
             // 只在播黑畫面時切換重畫方式；播歌時不動 (歌曲有自己的 video-sync 設定)
             if (GetString("path") != IdleSource) return;
             SetProperty("speed", IdleSpeed(scrolling));
+            // 0.01 倍速時 mpv 已排好的那一格要 ~1.67 秒後才換下一格；只改速度的話要等它播完才回到每次 vsync 重畫，
+            // 這段期間 (0.3~1.5 秒，看切換落在哪) OSD 重畫只有 ~30 次/秒，跑馬燈剛出現會頓。原地 seek 讓 mpv 立刻以新速度重排 (實測)
+            if (scrolling) Command("seek", "0", "relative+exact");
         }
 
         // 沒有捲動時以極慢速播放 (每秒不到一格新畫面 → 幾乎不重畫)；捲動時恢復 60fps。播放不中斷，只改速度

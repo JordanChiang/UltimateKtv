@@ -166,7 +166,7 @@ namespace UltimateKtv
 
     /// <summary>
     /// 把電視螢幕上的跑馬燈、文字、歌詞交給 mpv 合成 (overlay-add)。
-    /// 捲動由背景執行緒以 DwmFlush 對齊螢幕更新來推動，完全不經過 WPF 的 UI 與渲染執行緒，
+    /// 捲動由背景執行緒對齊電視螢幕的 vblank 來推動，完全不經過 WPF 的 UI 與渲染執行緒，
     /// 因此主控台忙碌 (換頁、開設定) 時電視上的跑馬燈不會停。
     /// </summary>
     public sealed class MpvOsd : IDisposable
@@ -180,6 +180,7 @@ namespace UltimateKtv
         private readonly List<(OsdBitmap Bitmap, long Ticks)> _pendingFree = new();
         private readonly Thread _thread;
         private readonly AutoResetEvent _wake = new(false);
+        private readonly VBlankWaiter _vblank;
         private volatile bool _disposed;
         private int _scrollingCount;
 
@@ -192,10 +193,11 @@ namespace UltimateKtv
         [DllImport("dwmapi.dll")]
         private static extern int DwmFlush();
 
-        internal MpvOsd(Func<string[], int> command, Func<string, string?> getProperty)
+        internal MpvOsd(Func<string[], int> command, Func<string, string?> getProperty, Func<IntPtr> videoHwnd)
         {
             _command = command;
             _getProperty = getProperty;
+            _vblank = new VBlankWaiter(videoHwnd);
             _thread = new Thread(AnimationLoop) { IsBackground = true, Name = "mpv-osd", Priority = ThreadPriority.AboveNormal };
             _thread.Start();
         }
@@ -372,8 +374,10 @@ namespace UltimateKtv
                     continue;
                 }
 
-                // 等下一次螢幕合成 (vsync)，讓位置更新與 mpv 的 display-resample 重畫節奏一致
-                if (DwmFlush() != 0) Thread.Sleep(15);
+                // 每格更新一次位置，時間點對齊電視螢幕的 vblank 再延後半格：
+                // - 不用 DwmFlush：主控台開著分層視窗 (AllowsTransparency 的設定視窗) 時它常要等兩格才返回，跑馬燈只剩 ~40 次/秒 (實測)
+                // - 延後半格：mpv 在 vblank 剛過就取用 OSD 畫下一格，更新若也在 vblank 附近，偶爾一格收到兩次、下一格沒收到 → 跳格 (實測)
+                if (!_vblank.WaitMidFrame() && DwmFlush() != 0) Thread.Sleep(15);
 
                 long now = Stopwatch.GetTimestamp();
                 foreach (var it in active)
@@ -466,7 +470,8 @@ namespace UltimateKtv
             if (_traceStart == 0) _traceStart = now;
             if (now - _traceStart > 5 * Stopwatch.Frequency)
             {
-                AppLogger.Log($"[mpv-trace] osd 5s: updates={_traceFrames} maxGap={_traceMaxGap:F0}ms gaps>25ms={_traceSlow} maxOverlayAddTime={_traceMaxWork:F1}ms gc0/1/2={GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)}");
+                AppLogger.Log($"[mpv-trace] osd 5s: updates={_traceFrames} maxGap={_traceMaxGap:F0}ms gaps>25ms={_traceSlow} maxOverlayAddTime={_traceMaxWork:F1}ms gc0/1/2={GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} " +
+                    $"mpv: est-fps={_getProperty("estimated-display-fps")} jitter={_getProperty("vsync-jitter")} delayed={_getProperty("vo-delayed-frame-count")} mistimed={_getProperty("mistimed-frame-count")} sync={_getProperty("display-sync-active")} vsync={_getProperty("video-sync")}");
                 _traceFrames = 0; _traceMaxGap = 0; _traceMaxWork = 0; _traceSlow = 0; _traceStart = now;
             }
         }
@@ -493,11 +498,138 @@ namespace UltimateKtv
             _disposed = true;
             _wake.Set();
             _thread.Join(1000);
+            _vblank.Dispose();
             lock (_pendingFree)
             {
                 foreach (var (b, _) in _pendingFree) b.Dispose();
                 _pendingFree.Clear();
             }
         }
+    }
+
+    /// <summary>
+    /// 等某個視窗所在螢幕的下一次 vblank (D3DKMTWaitForVerticalBlankEvent)。
+    /// 每次等待前確認視窗目前在哪個螢幕，視窗被移到別的螢幕時自動改等那個螢幕。只由動畫執行緒呼叫。
+    /// </summary>
+    internal sealed class VBlankWaiter : IDisposable
+    {
+        private readonly Func<IntPtr> _hwnd;
+        private IntPtr _monitor;
+        private uint _adapter;
+        private uint _vidPnSourceId;
+        private bool _failed;
+
+        private readonly IntPtr _timer = CreateWaitableTimerEx(IntPtr.Zero, null, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+        private long _lastVBlank;
+        private double _periodMs = 1000.0 / 60;
+
+        public VBlankWaiter(Func<IntPtr> hwnd) { _hwnd = hwnd; }
+
+        /// <summary>等下一次 vblank 後再等半個更新週期。false = 無法等 vblank (呼叫端改用其他方式)。</summary>
+        public bool WaitMidFrame()
+        {
+            if (!Wait()) return false;
+            long now = Stopwatch.GetTimestamp();
+            double sinceLast = (now - _lastVBlank) * 1000.0 / Stopwatch.Frequency;
+            if (sinceLast > 4 && sinceLast < 50) _periodMs += (sinceLast - _periodMs) * 0.05; // 估計螢幕更新週期 (多數為 16.7ms)
+            _lastVBlank = now;
+            if (_timer == IntPtr.Zero) return true;
+            long due = -(long)(_periodMs * 0.5 * 10000); // 相對時間，100ns 為單位
+            if (SetWaitableTimer(_timer, ref due, 0, IntPtr.Zero, IntPtr.Zero, false)) WaitForSingleObject(_timer, 100);
+            return true;
+        }
+
+        private bool Wait()
+        {
+            IntPtr monitor = MonitorFromWindow(_hwnd(), MONITOR_DEFAULTTONEAREST);
+            if (monitor != _monitor)
+            {
+                Close();
+                _monitor = monitor;
+                _failed = !Open(monitor);
+            }
+            if (_failed) return false;
+            var w = new D3DKMT_WAITFORVERTICALBLANKEVENT { hAdapter = _adapter, hDevice = 0, VidPnSourceId = _vidPnSourceId };
+            if (D3DKMTWaitForVerticalBlankEvent(ref w) == 0) return true;
+            // 驅動重設等情況：下次重新開啟
+            Close();
+            _monitor = IntPtr.Zero;
+            return false;
+        }
+
+        private bool Open(IntPtr monitor)
+        {
+            var info = new MONITORINFOEX { cbSize = Marshal.SizeOf<MONITORINFOEX>() };
+            if (monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref info)) return false;
+            IntPtr hdc = CreateDC(null, info.szDevice, null, IntPtr.Zero);
+            if (hdc == IntPtr.Zero) return false;
+            try
+            {
+                var open = new D3DKMT_OPENADAPTERFROMHDC { hDc = hdc };
+                if (D3DKMTOpenAdapterFromHdc(ref open) != 0) return false;
+                _adapter = open.hAdapter;
+                _vidPnSourceId = open.VidPnSourceId;
+                AppLogger.Log($"[mpv-osd] vsync source: vblank of {info.szDevice}");
+                return true;
+            }
+            finally { DeleteDC(hdc); }
+        }
+
+        private void Close()
+        {
+            if (_adapter == 0) return;
+            var c = new D3DKMT_CLOSEADAPTER { hAdapter = _adapter };
+            D3DKMTCloseAdapter(ref c);
+            _adapter = 0;
+        }
+
+        public void Dispose()
+        {
+            Close();
+            if (_timer != IntPtr.Zero) CloseHandle(_timer);
+        }
+
+        private const uint MONITOR_DEFAULTTONEAREST = 2;
+        private const uint CREATE_WAITABLE_TIMER_HIGH_RESOLUTION = 0x2, TIMER_ALL_ACCESS = 0x1F0003;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct MONITORINFOEX
+        {
+            public int cbSize;
+            public RECT rcMonitor, rcWork;
+            public uint dwFlags;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string szDevice;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT { public int Left, Top, Right, Bottom; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct D3DKMT_OPENADAPTERFROMHDC
+        {
+            public IntPtr hDc;
+            public uint hAdapter;
+            public uint AdapterLuidLow;
+            public int AdapterLuidHigh;
+            public uint VidPnSourceId;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct D3DKMT_WAITFORVERTICALBLANKEVENT { public uint hAdapter, hDevice, VidPnSourceId; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct D3DKMT_CLOSEADAPTER { public uint hAdapter; }
+
+        [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX info);
+        [DllImport("gdi32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr CreateDC(string? driver, string device, string? output, IntPtr initData);
+        [DllImport("gdi32.dll")] private static extern bool DeleteDC(IntPtr hdc);
+        [DllImport("gdi32.dll")] private static extern int D3DKMTOpenAdapterFromHdc(ref D3DKMT_OPENADAPTERFROMHDC p);
+        [DllImport("gdi32.dll")] private static extern int D3DKMTWaitForVerticalBlankEvent(ref D3DKMT_WAITFORVERTICALBLANKEVENT p);
+        [DllImport("gdi32.dll")] private static extern int D3DKMTCloseAdapter(ref D3DKMT_CLOSEADAPTER p);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr CreateWaitableTimerEx(IntPtr attributes, string? name, uint flags, uint access);
+        [DllImport("kernel32.dll")] private static extern bool SetWaitableTimer(IntPtr timer, ref long dueTime, int period, IntPtr completion, IntPtr arg, bool resume);
+        [DllImport("kernel32.dll")] private static extern uint WaitForSingleObject(IntPtr handle, uint ms);
+        [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr handle);
     }
 }

@@ -917,7 +917,7 @@ namespace UltimateKtv
                 // Display startup welcome marquee on player screen if configured.
                 // If the HTTP server is still starting (port may change), defer until it is done.
                 if (_httpServerStartupDone)
-                    MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+                    ShowStartupMarqueeWhenSettled();
                 else
                     _pendingStartupMarquee = true;
             }
@@ -948,8 +948,27 @@ namespace UltimateKtv
             if (_pendingStartupMarquee)
             {
                 _pendingStartupMarquee = false;
-                MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+                ShowStartupMarqueeWhenSettled();
             }
+        }
+
+        /// <summary>
+        /// libmpv：開機頭幾秒 (主視窗第一次繪製、載入歌星相片) 電視上的 mpv 偶爾會有一格延遲上屏，
+        /// 之後 1~2 秒只剩 ~30fps；跑馬燈若剛好這時開始捲動就會頓 (實測)。等 UI 閒置後再多等一下才開始，文字本來就從畫面外進來，看不出差別。
+        /// DirectShow 維持原本立即顯示。
+        /// </summary>
+        private void ShowStartupMarqueeWhenSettled()
+        {
+            if (ktvPlayer?.Osd == null)
+            {
+                MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+                return;
+            }
+            Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(async () =>
+            {
+                await System.Threading.Tasks.Task.Delay(1500);
+                MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
+            }));
         }
 
         public void ShowFromVideoWindow()
