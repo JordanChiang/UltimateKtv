@@ -10,7 +10,7 @@ namespace UltimateKtv
         private static readonly Lazy<MediaHostManager> _instance = new Lazy<MediaHostManager>(() => new MediaHostManager());
         public static MediaHostManager Instance => _instance.Value;
 
-        public UKtvPlayer Player { get; private set; }
+        public UKtvPlayer Player { get; }
 
         private MediaHostManager()
         {
@@ -42,14 +42,6 @@ namespace UltimateKtv
                 AppLogger.Log("[Player] PlayerEngine=libmpv requested but unavailable; using DirectShow.");
             }
             return new DirectShowPlayer(settings);
-        }
-
-        /// <summary>
-        /// Discards the current player and creates a new one to recover from a hung state.
-        /// </summary>
-        public void ResetInstance()
-        {
-            Player = CreateNewPlayer();
         }
     }
 }
