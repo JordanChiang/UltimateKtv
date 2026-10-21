@@ -305,6 +305,7 @@ namespace UltimateKtv
                 LoadCurrentSource(); // Stop() 之後再 Play()：重新載入 (同 DirectShow 從頭播放)
                 return;
             }
+            SetProperty("display-fps-override", "0");
             SetProperty("pause", "no");
             if (_previewEnabled) _preview?.SetPaused(false);
         }
@@ -312,6 +313,10 @@ namespace UltimateKtv
         public void Pause()
         {
             SetProperty("pause", "yes");
+            // 暫停時 mpv 只在 OSD 變動時重畫，且限制「兩次重畫至少相隔一個螢幕週期」(vo.c: manual redraws at most at display fps)。
+            // 它估的週期 (例如 59.82fps = 16.72ms) 只要比實際長一點，每格送來的跑馬燈更新就被判定太早、延到下一格 → 只剩 ~40fps (實測)。
+            // 暫停期間把假定的螢幕更新率調高讓這個限制失效 (更新本來就由 MpvOsd 對齊 vblank 每格一次)；恢復播放/換歌/閒置時改回 0 (自動)
+            SetProperty("display-fps-override", "1000");
             if (_previewEnabled) _preview?.SetPaused(true);
         }
 
@@ -353,6 +358,7 @@ namespace UltimateKtv
             string target = _source.IsFile ? _source.LocalPath : _source.AbsoluteUri;
             _currentTarget = target;
             if (_previewEnabled) _preview?.Load(target, paused: true);
+            SetProperty("display-fps-override", "0"); // 暫停中換歌：取消 Pause() 的設定
             // 先暫停載入：等 MediaOpened 處理完音軌/聲道/音量後才開始播放，避免開頭漏出錯誤聲道
             // (不用 loadfile 的 per-file 選項參數，因為 mpv 0.38 前後參數位置不同)
             SetProperty("pause", "yes");
@@ -436,6 +442,9 @@ namespace UltimateKtv
                     {
                         if (_closing) return;
                         _fileLoaded = true;
+                        // 同 MediaKit (MediaElementBase 開檔時 AudioChannel = 0)：每首新歌先回到立體聲，
+                        // 單音軌歌曲再由 MediaOpened 的處理者改成左/右聲道。否則多音軌歌曲會沿用上一首的左/右聲道
+                        AudioChannel = 0;
                         MediaOpened?.Invoke(this, EventArgs.Empty);
                         SetProperty("pause", "no"); // 設定都套用後才開始播放
                         if (_previewEnabled) _preview?.SetPaused(false);
@@ -487,6 +496,7 @@ namespace UltimateKtv
         private void ShowIdleSource()
         {
             if (_closing) return;
+            SetProperty("display-fps-override", "0"); // 暫停中停止播放：取消 Pause() 的設定
             SetProperty("pause", "no");
             // 黑畫面沒有聲音，display-resample 無法對齊螢幕節奏；display-desync = 每次 vsync 都畫、不管影片時間
             SetProperty("video-sync", "display-desync");
