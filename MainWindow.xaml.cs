@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System;
+using UltimateKtv.Playback;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -64,7 +65,6 @@ namespace UltimateKtv
 
         // Waiting list management
 
-        private bool _isPlayingFromWaitingList = false;
         // Stores the item clicked for context menu actions (we avoid relying on DataGrid.SelectedItem)
         private WaitingListItem? _waitingListContextItem;
 
@@ -80,7 +80,6 @@ namespace UltimateKtv
         // Media control flags
         private bool _isUpdatingProgressSlider = false;
         // Lock to prevent race conditions when transitioning between songs (e.g., Skip vs. MediaEnded)
-        private bool _isTransitioningSong = false;
         // Flag to ensure play count is incremented only once per song playback
         private bool _playCountIncrementedForCurrentSong = false;
         // Flag to track if this is the first song played in the session
@@ -91,7 +90,6 @@ namespace UltimateKtv
         private SongDisplayItem? _longPressSongItem;
 
         private bool _showPreviewInMainWindow = true;
-        private CancellationTokenSource? _mediaLoadCts;
 
         // Mute state management
         private bool _isMuted = false;
@@ -278,8 +276,9 @@ namespace UltimateKtv
 
             // Initialize the singer grid button style property with the default from XAML resources
 
-            // Initialize the media player
+            // Initialize the media player and the playback session (待播清單)
             InitializeMediaPlayer();
+            InitializePlaybackSession();
             AppLogger.Log("Media player initialized.");
 
             // Initialize the waiting list with 5 empty rows
@@ -1403,7 +1402,7 @@ namespace UltimateKtv
                     }
                     else
                     {
-                        AddSongToWaitingList(_longPressSongItem);
+                        _ = OrderSongAsync(_longPressSongItem);
                     }
                     _longPressSongItem = null;
                 }

@@ -1,4 +1,5 @@
 using System;
+using UltimateKtv.Playback;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
@@ -222,22 +223,13 @@ namespace UltimateKtv
                     if (!ReferenceEquals(newPath, item.FilePath)) { item.FilePath = newPath; count++; }
                 }
             }
-            void RemapWaiting(IEnumerable<WaitingListItem> items)
-            {
-                foreach (var item in items)
-                {
-                    string newPath = Remap(item.FilePath);
-                    if (!ReferenceEquals(newPath, item.FilePath)) { item.FilePath = newPath; count++; }
-                }
-            }
 
             RemapSongs(_allSongs);
             RemapSongs(_songListPageItems);
             RemapSongs(_languageSongListPageItems);
             RemapSongs(_quickSongListPageItems);
             foreach (var cached in _quickMethodResultsCache.Values) RemapSongs(cached);
-            RemapWaiting(_waitingList);
-            RemapWaiting(_waitingListPageItems);
+            count += _playback.RemapFilePaths(Remap);
 
             AppLogger.Log($"[SongDatas] Remapped {count} displayed/waiting song paths to new library path.");
         }

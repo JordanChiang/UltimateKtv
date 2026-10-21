@@ -443,6 +443,20 @@ namespace UltimateKtv.Tests
         }
 
         [Fact]
+        public void Remap_rewrites_queued_paths_and_keeps_ids()
+        {
+            PlayNow(Song("A"));
+            var b = Song("B");
+            Order(b);
+
+            int count = _session.RemapFilePaths(p => p.Replace(@"D:\Songs", @"E:\KTV"));
+
+            Assert.Equal(1, count);
+            Assert.Equal(@"E:\KTV\B.mpg", _session.Snapshot[0].FilePath);
+            Assert.Equal(b.Id, _session.Snapshot[0].Id);
+        }
+
+        [Fact]
         public void Removing_does_not_affect_the_playing_song()
         {
             var a = PlayNow(Song("A"));

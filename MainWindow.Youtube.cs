@@ -1,4 +1,5 @@
 using System;
+using UltimateKtv.Playback;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
@@ -49,7 +50,7 @@ namespace UltimateKtv
         internal bool DownloadYoutubeVideo(SongDisplayItem song)
         {
             // Always prevent adding duplicate Youtube songs to queue or waiting list
-            if (_waitingList.Any(w => w.SongId == song.SongId) || _youtubeDownloadQueue.Any(q => q.SongId == song.SongId)
+            if (_playback.Snapshot.Any(w => w.SongId == song.SongId) || _youtubeDownloadQueue.Any(q => q.SongId == song.SongId)
                 || _youtubePendingSongIds.Contains(song.SongId))
             {
                 AppLogger.Log($"YouTube: '{song.SongName}' is already in the waiting list or download queue, skipped.");
@@ -90,7 +91,7 @@ namespace UltimateKtv
                     DebugLog($"YouTube: File already exists in cache: {filePath}");
                     song.FilePath = filePath;
                     SongDatas.RecordYoutubeSong(song);
-                    AddSongToWaitingList(song);
+                    _ = OrderSongAsync(song, OrderSource.YouTube);
                     return;
                 }
 
@@ -157,7 +158,7 @@ namespace UltimateKtv
                         DebugLog($"YouTube: File already exists in cache: {filePath}");
                         song.FilePath = filePath;
                         SongDatas.RecordYoutubeSong(song);
-                        AddSongToWaitingList(song);
+                        _ = OrderSongAsync(song, OrderSource.YouTube);
                         continue;
                     }
 
@@ -257,7 +258,7 @@ namespace UltimateKtv
                         RefreshYoutubeSongLengthInLists(song.SongId, lengthSeconds);
                     }
 
-                    AddSongToWaitingList(song);
+                    _ = OrderSongAsync(song, OrderSource.YouTube);
 
                     if (_currentQuickMethod == QuickMethod.YoutubeHistory)
                     {

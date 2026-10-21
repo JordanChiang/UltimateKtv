@@ -10,6 +10,7 @@ using System.Windows;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UltimateKtv;
+using UltimateKtv.Playback;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 
@@ -545,6 +546,21 @@ public class HttpServerHelper
 		}
 	}
 
+	/// <summary>
+	/// 在 UI 執行緒執行非同步動作並等待結果 (HTTP 請求在 Kestrel 執行緒上，不會卡住 UI)。
+	/// </summary>
+	private static T RunOnUiThread<T>(Func<UltimateKtv.MainWindow, Task<T>> action)
+	{
+		var dispatcher = System.Windows.Application.Current?.Dispatcher
+			?? throw new InvalidOperationException("Application is shutting down");
+		return dispatcher.InvokeAsync(() =>
+		{
+			var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow
+				?? throw new InvalidOperationException("MainWindow is not available");
+			return action(mainWindow);
+		}).Task.Unwrap().GetAwaiter().GetResult();
+	}
+
 	public static string OrderSong(string value, string userName, object playListData, object songData, object mainDataContext)
 	{
 		if (string.IsNullOrEmpty(value) || SongDatas.PlayListData == null || SongDatas.SongData == null)
@@ -613,31 +629,19 @@ public class HttpServerHelper
 				return JsonConvert.SerializeObject(new { success = false, message = Loc.T("Web.Msg.SongFileNotFound"), songId = value });
 			}
 
-			// Add to waiting list on UI thread
-			System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-			{
-				try
-				{
-					// Find MainWindow and call AddSongToWaitingList
-					var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-					if (mainWindow != null)
-					{
-						// Use reflection to call the private method
-						var method = mainWindow.GetType().GetMethod("AddSongToWaitingList",
-							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-						// 第二個參數 insertFirst (反射呼叫不會套用預設值，必須明確傳入)
-						method?.Invoke(mainWindow, new object[] { songItem, false });
-						System.Diagnostics.Debug.WriteLine($"[OrderSong] Song added to waiting list via UI thread: {songItem.SongName}");
-					}
-				}
-				catch (Exception ex)
-				{
-					System.Diagnostics.Debug.WriteLine($"[OrderSong] Failed to add to waiting list: {ex.Message}");
-				}
-			}));
+			// 在 UI 執行緒點歌，等待真實結果 (重複、找不到檔案時回報失敗)
+			var result = RunOnUiThread(mainWindow => mainWindow.OrderSongAsync(songItem, OrderSource.Remote));
+			System.Diagnostics.Debug.WriteLine($"[OrderSong] {songItem.SongName}: {result}");
 
-			System.Diagnostics.Debug.WriteLine($"[OrderSong] Song queued successfully: {primaryKey}");
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.OrderOk"), songId = primaryKey });
+			return result switch
+			{
+				EnqueueResult.Added or EnqueueResult.MovedToFirst =>
+					JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.OrderOk"), songId = primaryKey }),
+				EnqueueResult.Duplicate =>
+					JsonConvert.SerializeObject(new { success = false, message = Loc.T("Wait.DuplicateMessage", songItem.SongName, songItem.SingerName), songId = value }),
+				_ =>
+					JsonConvert.SerializeObject(new { success = false, message = Loc.T("Web.Msg.SongFileNotFound"), songId = value }),
+			};
 		}
 		catch (Exception ex)
 		{
@@ -814,7 +818,7 @@ public class HttpServerHelper
 			System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
 			{
 				var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-				mainWindow?.SkipSong_Click(null!, null!);
+				mainWindow?.SkipSong_Click(null!, null!); // 與主畫面切歌鈕相同 (含解除單曲循環)
 			}));
 
 			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.SkipSent") });

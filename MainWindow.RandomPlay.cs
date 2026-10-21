@@ -1,4 +1,5 @@
 using System;
+using UltimateKtv.Playback;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -11,7 +12,6 @@ namespace UltimateKtv
     public partial class MainWindow
     {
         private readonly Random _random = new Random();
-        private bool _isRandomSongPlaying = false; // Tracks if the current song is from random play
         private const int RecentRandomWindow = 20;
         private readonly Queue<string> _recentRandomSongIds = new(); // Most recent random picks, oldest first
 
@@ -82,64 +82,44 @@ namespace UltimateKtv
                 return false;
             }
 
-            // Set audio track based on RandomPlayAudioChannel setting
-            // 0 = 人聲 (vocal/default), 1 = 伴唱 (music track)
-            int audioTrack = randomSong.AudioTrack;
-            if (settings.RandomPlayAudioChannel == 1)
-            {
-                // Set to music track - the actual music track value will be applied when song plays
-                // We store a marker value that will be used in mediaUriElement_MediaOpened
-                audioTrack = -1; // Marker for "use music track"
-            }
-
-            // Create waiting list item
-            var waitingItem = new WaitingListItem
+            // 隨機歌開播時套用的聲道 (0 = 人聲, 1 = 伴唱)，在 SongOpened 時套用
+            var queued = new QueuedSong
             {
                 SongId = randomSong.SongId,
-                WaitingListSongName = randomSong.SongName,
-                WaitingListSingerName = randomSong.SingerName,
+                SongName = randomSong.SongName,
+                SingerName = randomSong.SingerName,
                 FilePath = randomSong.FilePath,
                 Volume = randomSong.Volume,
-                AudioTrack = audioTrack,
-                OrderedBy = Loc.OrderedByRandom
+                AudioTrack = randomSong.AudioTrack,
+                OrderedBy = Loc.OrderedByRandom,
+                IsRandom = true,
+                RandomAudioChannel = settings.RandomPlayAudioChannel
             };
 
-            // Add to waiting list
-            _waitingList?.Add(waitingItem);
-            
-            AppLogger.Log($"Random play: Added '{randomSong.SongName}' by '{randomSong.SingerName}'");
             _recentRandomSongIds.Enqueue(randomSong.SongId);
             while (_recentRandomSongIds.Count > RecentRandomWindow) _recentRandomSongIds.Dequeue();
-            DebugLog($"Random play: Added '{randomSong.SongName}' by '{randomSong.SingerName}'");
+            DebugLog($"Random play: Adding '{randomSong.SongName}' by '{randomSong.SingerName}'");
 
-            // Apply the audio channel after the song starts playing
-            // Store the setting for use in MediaOpened event
-            _pendingRandomPlayAudioChannel = settings.RandomPlayAudioChannel;
-
-            // Update display and continue playback
-            UpdateWaitingListDisplay();
+            _ = _playback.EnqueueAsync(queued, OrderSource.Random);
             return true;
         }
 
-        // Stores pending audio channel setting for random play
-        private int _pendingRandomPlayAudioChannel = -1;
-
         /// <summary>
-        /// Applies the audio channel setting for random play after song starts
+        /// Applies the random-play audio channel setting once a random song has opened.
         /// </summary>
-        private void ApplyRandomPlayAudioChannel()
+        private void ApplyRandomPlayAudioChannel(QueuedSong song)
         {
-            if (_pendingRandomPlayAudioChannel < 0) return;
+            if (!song.IsRandom || song.RandomAudioChannel < 0) return;
 
             try
             {
-                if (_pendingRandomPlayAudioChannel == 0)
+                if (song.RandomAudioChannel == 0)
                 {
                     // 人聲 - call VocalBtn_Click behavior
                     VocalBtn_Click(null!, null!);
                     AppLogger.Log("Random play: Set audio to vocal track");
                 }
-                else if (_pendingRandomPlayAudioChannel == 1)
+                else if (song.RandomAudioChannel == 1)
                 {
                     // 伴唱 - call MusicBtn_Click behavior
                     MusicBtn_Click(null!, null!);
@@ -149,10 +129,6 @@ namespace UltimateKtv
             catch (Exception ex)
             {
                 AppLogger.LogError("Random play: Error setting audio channel", ex);
-            }
-            finally
-            {
-                _pendingRandomPlayAudioChannel = -1;
             }
         }
 
@@ -400,52 +376,12 @@ namespace UltimateKtv
                 _randomPlayDelayTimer = null;
                 
                 // Check if waiting list is still empty
-                var nonEmptySongs = _waitingList?.Where(item => !string.IsNullOrEmpty(item.WaitingListSongName)).ToList();
-                
-                if (nonEmptySongs == null || nonEmptySongs.Count == 0)
+                if (_playback.Snapshot.Count == 0)
                 {
                     TryPlayRandomSong();
                 }
             };
             _randomPlayDelayTimer.Start();
-        }
-
-        /// <summary>
-        /// Releases media resources before starting random play.
-        /// Should be called when a song ends to ensure clean state.
-        /// </summary>
-        private void ReleaseResourcesBeforeRandomPlay()
-        {
-            DebugLog(">>> ReleaseResourcesBeforeRandomPlay: ENTER");
-            try
-            {
-                DebugLog(">>> ReleaseResourcesBeforeRandomPlay: Releasing media resources");
-                
-                // Stop the media player if it's still playing
-                SafeStop(ktvPlayer, nameof(ktvPlayer));
-                
-                // Clear any pending operations
-                _isPlayingFromWaitingList = false;
-                _isTransitioningSong = false;
-                ProcessPendingSongs(); // Retry pending adds
-                
-                // Force a small delay to allow resources to be released
-                DebugLog(">>> ReleaseResourcesBeforeRandomPlay: Queueing PlayNextSongFromWaitingList via Dispatcher");
-                System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(
-                    System.Windows.Threading.DispatcherPriority.Background,
-                    new Action(() =>
-                    {
-                        DebugLog(">>> ReleaseResourcesBeforeRandomPlay: Dispatcher callback - calling PlayNextSongFromWaitingList");
-                        // Continue with the next song after resources are released
-                        PlayNextSongFromWaitingList();
-                    }));
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError("ReleaseResourcesBeforeRandomPlay: Error releasing resources", ex);
-                // Fallback to direct call
-                PlayNextSongFromWaitingList();
-            }
         }
     }
 }

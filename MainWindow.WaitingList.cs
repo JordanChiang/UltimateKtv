@@ -1,5 +1,6 @@
 using MaterialDesignThemes.Wpf;
 using System;
+using UltimateKtv.Playback;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -17,80 +18,51 @@ namespace UltimateKtv
 {
     public partial class MainWindow
     {
-        private List<WaitingListItem> _waitingList = new List<WaitingListItem>();
         private int _currentWaitingListPage = 1;
         private int _totalWaitingListPages = 1;
-        private string _currentSongOrderedBy = string.Empty;
-        private string _currentPlayingSongName = string.Empty;
-        private string _currentPlayingSingerName = string.Empty;
-        private string _currentPlayingSongId = string.Empty;
 
         /// <summary>
         /// Gets information about the currently playing song for HTTP/Web services.
         /// </summary>
         public (bool IsPlaying, string SongName, string SingerName, string SongId, string OrderedBy) GetCurrentPlayingSongInfo()
         {
-            if (!_isPlayingFromWaitingList)
+            var current = _playback.Current;
+            if (current == null)
             {
                 return (false, string.Empty, string.Empty, string.Empty, string.Empty);
             }
 
-            string songName = _currentPlayingSongName;
-            string singerName = _currentPlayingSingerName;
-
-            if (string.IsNullOrEmpty(songName) && _playingSongData != null)
-            {
-                songName = _playingSongData.TryGetValue("Song_SongName", out var n) ? n?.ToString() ?? "" : "";
-            }
-            if (string.IsNullOrEmpty(singerName) && _playingSongData != null)
-            {
-                singerName = _playingSongData.TryGetValue("Song_Singer", out var s) ? s?.ToString() ?? "" : "";
-            }
-
-            return (true, songName, singerName, _currentPlayingSongId, _currentSongOrderedBy);
+            return (true, current.SongName, current.SingerName, current.SongId, current.OrderedBy);
         }
 
         public int GetWaitingListCount()
         {
-            return _waitingList?.Count ?? 0;
+            return _playback.Snapshot.Count;
         }
 
         public List<WaitingListItem> GetWaitingListItems()
         {
-            return _waitingList?.ToList() ?? new List<WaitingListItem>();
+            return _playback.Snapshot.Select(ToWaitingListItem).ToList();
         }
 
-        // Queue for songs added during a transition
-        private Queue<(SongDisplayItem Song, bool InsertFirst)> _pendingSongs = new Queue<(SongDisplayItem Song, bool InsertFirst)>();
-
-        /// <summary>
-        /// Processes any songs that were queued during a transition.
-        /// Should be called whenever _isTransitioningSong becomes false.
-        /// </summary>
-        private void ProcessPendingSongs()
+        private static WaitingListItem ToWaitingListItem(QueuedSong song) => new WaitingListItem
         {
-            if (_pendingSongs != null && _pendingSongs.Count > 0)
-            {
-                DebugLog($"ProcessPendingSongs: Processing {_pendingSongs.Count} pending songs");
-                
-                int maxLoop = _pendingSongs.Count + 5; // Safety break
-                int current = 0;
-                
-                while (_pendingSongs.Count > 0 && current < maxLoop)
-                {
-                    var (song, insertFirst) = _pendingSongs.Dequeue();
-                    AddSongToWaitingList(song, insertFirst);
-                    current++;
-                }
-            }
-        }
+            Id = song.Id,
+            SongId = song.SongId,
+            WaitingListSongName = song.SongName,
+            WaitingListSingerName = song.SingerName,
+            FilePath = song.FilePath,
+            Volume = song.Volume,
+            AudioTrack = song.AudioTrack,
+            OrderedBy = song.OrderedBy,
+            IsYoutube = song.IsYoutube
+        };
 
         /// <summary>
         /// Initializes the waiting list with empty rows
         /// </summary>
         private void InitializeWaitingList()
         {
-            _waitingList.Clear(); // Clear the ObservableCollection
             _currentWaitingListPage = 1;
             UpdateWaitingListDisplay();
             UpdateCurrentPlayingDisplay();
@@ -114,17 +86,8 @@ namespace UltimateKtv
 
             if (string.IsNullOrEmpty(songName))
             {
-                songName = _currentPlayingSongName;
-                singerName = _currentPlayingSingerName;
-
-                if (string.IsNullOrEmpty(songName) && _playingSongData != null)
-                {
-                    songName = _playingSongData.TryGetValue("Song_SongName", out var n) ? n?.ToString() ?? "" : "";
-                }
-                if (string.IsNullOrEmpty(singerName) && _playingSongData != null)
-                {
-                    singerName = _playingSongData.TryGetValue("Song_Singer", out var s) ? s?.ToString() ?? "" : "";
-                }
+                songName = _playback.Current?.SongName ?? string.Empty;
+                singerName = _playback.Current?.SingerName ?? string.Empty;
             }
 
             bool isPlaying = !string.IsNullOrEmpty(songName);
@@ -157,7 +120,7 @@ namespace UltimateKtv
                     NowPlayingBadgeBorder.SetResourceReference(FrameworkElement.ToolTipProperty, Loc.ResourcePrefix + "NowPlaying.Paused");
                     PauseNowPlayingBreathing();
                 }
-                else if (_isRandomSongPlaying)
+                else if (_playback.Current?.IsRandom == true)
                 {
                     NowPlayingIcon.Kind = PackIconKind.ShuffleVariant;
                     NowPlayingIcon.SetResourceReference(PackIcon.ForegroundProperty, "PrimaryLightBrush");
@@ -301,12 +264,12 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Updates the WaitingListGrid display and handles auto-play logic
+        /// Updates the WaitingListGrid display (自動播放由 PlaybackSession 決定)
         /// </summary>
         private void UpdateWaitingListDisplay()
         {
             // Calculate pagination
-            var nonEmptySongs = _waitingList.Where(item => !string.IsNullOrEmpty(item.WaitingListSongName)).ToList();
+            var nonEmptySongs = _playback.Snapshot.Select(ToWaitingListItem).ToList();
             _totalWaitingListPages = Math.Max(1, (int)Math.Ceiling((double)nonEmptySongs.Count / WaitingListPageSize));
 
             // Ensure current page is valid
@@ -418,12 +381,6 @@ namespace UltimateKtv
                     GC.WaitForPendingFinalizers();
                     AppLogger.Log("Pre-loading: Cleared cache (waiting list empty)");
                 });
-            }
-
-            // Auto-play logic: if list is not empty and nothing is currently playing
-            if (nonEmptySongs.Any() && !_isPlayingFromWaitingList)
-            {
-                PlayNextSongFromWaitingList();
             }
         }
 
@@ -577,7 +534,7 @@ namespace UltimateKtv
         {
             var selected = _waitingListContextItem ?? (WaitingListGrid?.SelectedItem as WaitingListItem);
             if (selected == null || string.IsNullOrEmpty(selected.WaitingListSongName)) return;
-            MoveSongToFirst(selected.Id, isRemoteCall: false);
+            MoveSongToFirst(selected.Id, OrderSource.User);
         }
 
         /// <summary>
@@ -587,7 +544,7 @@ namespace UltimateKtv
         {
             var selected = _waitingListContextItem ?? (WaitingListGrid?.SelectedItem as WaitingListItem);
             if (selected == null || string.IsNullOrEmpty(selected.WaitingListSongName)) return;
-            RemoveSongFromList(selected.Id, isRemoteCall: false);
+            RemoveSongFromList(selected.Id, OrderSource.User);
         }
 
         /// <summary>
@@ -597,251 +554,7 @@ namespace UltimateKtv
         {
             var selected = _waitingListContextItem ?? (WaitingListGrid?.SelectedItem as WaitingListItem);
             if (selected == null || string.IsNullOrEmpty(selected.WaitingListSongName)) return;
-            MoveSongToNext(selected.Id, isRemoteCall: false);
-        }
-
-        /// <summary>
-        /// Plays the first song from waiting list and removes it
-        /// </summary>
-        private void PlayNextSongFromWaitingList() // Note: Not async void, timeout is handled in a background task.
-        {
-            // If a transition is already in progress, do nothing. This is the main lock.
-            if (_isTransitioningSong)
-            {
-                DebugLog("PlayNextSongFromWaitingList: Aborted, a transition is already in progress.");
-                return;
-            }
-
-            try
-            {
-                // Check if there are any playable songs in the list.
-                var firstSong = _waitingList?.FirstOrDefault(item => !string.IsNullOrEmpty(item.WaitingListSongName));
-
-                if (firstSong == null)
-                {
-                    DebugLog("PlayNextSongFromWaitingList: No songs in waiting list.");
-                    _isPlayingFromWaitingList = false;
-                    _currentPlayingSongName = string.Empty;
-                    _currentPlayingSingerName = string.Empty;
-                    _currentPlayingSongId = string.Empty;
-                    _currentSongOrderedBy = string.Empty;
-                    _playingSongData = null;
-                    UpdateCurrentPlayingDisplay();
-                    
-                    // Stop playback first
-                    SafeStop(ktvPlayer, nameof(ktvPlayer));
-                    
-                    try
-                    {
-                        RecordingManager.Instance.StopRecording();
-                    }
-                    catch (Exception ex)
-                    {
-                        AppLogger.LogError("Error stopping recording in PlayNextSongFromWaitingList (idle)", ex);
-                    }
-
-                    SetPlayerControlsEnabled(true); // Keep controls interactive when idle
-                    SetPauseButtonResume(false); // Reset pause button text
-                    
-                    // Clear pre-loaded cache when list is empty
-                    ClearPreLoadingCache();
-                    
-                    // Start a 1-second delayed random play check if enabled
-                    StartDelayedRandomPlayWhenEmpty();
-                    return; // No songs to play.
-                }
-
-                // Lock: We are now officially starting a transition.
-                _isTransitioningSong = true;
-                DebugLog("PlayNextSongFromWaitingList: Lock acquired (_isTransitioningSong = true).");
-                SetPlayerControlsEnabled(false); // Disable controls during transition
-
-                if (!File.Exists(firstSong!.FilePath))
-                {
-                    DebugLog($"Video file not found: {firstSong.FilePath}. Removing and trying next.");
-                    AppLogger.Log($"Video file not found: {firstSong.FilePath}. Removing and trying next.");
-                    _waitingList!.Remove(firstSong);
-                    _isTransitioningSong = false; // Release lock before letting Update trigger a new attempt.
-                    SetPlayerControlsEnabled(true);
-                    ProcessPendingSongs(); // Check if any songs were added while we were trying this one
-                    UpdateWaitingListDisplay(); // This will re-trigger this method if more songs exist.
-                    return;
-                }
-
-                // Set playing state flag
-                _isPlayingFromWaitingList = true;
-                _isRandomSongPlaying = (firstSong.OrderedBy == Loc.OrderedByRandom);
-                _currentSongOrderedBy = firstSong.OrderedBy ?? string.Empty;
-                _currentPlayingSongName = firstSong.WaitingListSongName ?? string.Empty;
-                _currentPlayingSingerName = firstSong.WaitingListSingerName ?? string.Empty;
-                _currentPlayingSongId = firstSong.SongId ?? string.Empty;
-                IsPlayingYoutube = firstSong.IsYoutube;
-                SetPauseButtonResume(false);
-                UpdateCurrentPlayingDisplay();
-
-
-                PlayingFilePath = firstSong.FilePath;
-                
-                if (firstSong.IsYoutube)
-                {
-                    // For YouTube, create a dummy _playingSongData dictionary
-                    _playingSongData = new Dictionary<string, object?>
-                    {
-                        { "Song_Id", firstSong.SongId },
-                        { "Song_SongName", firstSong.WaitingListSongName },
-                        { "Song_Singer", firstSong.WaitingListSingerName },
-                        { "Song_Lang", "Youtube" },
-                        { "FilePath", firstSong.FilePath },
-                        { "Song_Volume", firstSong.Volume },
-                        { "Song_Track", firstSong.AudioTrack },
-                        { "IsYoutube", true }
-                    };
-                    DebugLog($"Created dummy _playingSongData for YouTube: {firstSong.WaitingListSongName}");
-                }
-                else
-                {
-                    // Get song metadata from database cache
-                    _playingSongData = SongDatas.SongData?.FirstOrDefault(s =>
-                        s != null && (s.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "") == firstSong.FilePath
-                    );
-                }
-                // Log if using pre-loaded file content
-                if (SettingsManager.Instance.CurrentSettings.EnablePreLoading && 
-                    _preLoadedSongPath == firstSong.FilePath && _preLoadedFileContent != null)
-                {
-                    AppLogger.Log($"Pre-loading: Using cached file ({FormatBytes(_preLoadedMemoryUsage)})");
-                }
-
-                DebugLog($"Playing from waiting list: {firstSong!.WaitingListSongName} by {firstSong.WaitingListSingerName}");
-
-                _waitingList!.Remove(firstSong);
-
-                // Update display immediately after removing the song
-                UpdateWaitingListDisplay();
-
-                // Stop current playback and start the new one
-                SafeStop(ktvPlayer, nameof(ktvPlayer));
-
-                // Cancel any pending media load timeout and create a new one
-                _mediaLoadCts?.Cancel();
-                _mediaLoadCts = new CancellationTokenSource();
-                var cancellationToken = _mediaLoadCts.Token;
-
-                // Track the current playing file and its properties
-                // Set the volume slider and player volume to the song's specific setting
-                if (VolumeLockToggle.IsChecked != true)
-                {
-                    VolumeSlider.Value = firstSong.Volume;
-                }
-                else
-                {
-                    // Volume lock is active: use the locked volume value
-                    VolumeSlider.Value = _lockedVolume;
-                }
-/*
-		GC.Collect();
-		GC.WaitForPendingFinalizers();
-		GC.Collect();
-*/
-            // Apply settings
-            var settings = SettingsManager.Instance.CurrentSettings;
-            ktvPlayer.Stretch = settings.IsMediaFullScreen ? Stretch.Fill : Stretch.Uniform;
-            ktvPlayer.ApplySettings(settings); // renderer / audio device / HW accel / codec directory
-
-            ktvPlayer.Source = new Uri(firstSong.FilePath); // This triggers MediaOpened/MediaFailed where the lock will be released.
-            DebugLog($"Main media Source set to: {firstSong.FilePath}");
-            AppLogger.Log(firstSong!.IsYoutube
-                ? $"Playing from waiting list: YouTube song {firstSong.WaitingListSongName}"
-                : $"Playing from waiting list: {firstSong.WaitingListSongName} by {firstSong.WaitingListSingerName}");
-
-/*
-                // Start a timeout task. If MediaOpened/Failed doesn't fire within 10s, we assume a hang.
-                Task.Run(async () =>
-                {
-                    // Use Task.WhenAny to avoid TaskCanceledException from Task.Delay
-                    var tcs = new TaskCompletionSource<bool>();
-                    using (cancellationToken.Register(() => tcs.TrySetResult(true)))
-                    {
-                        var delayTask = Task.Delay(TimeSpan.FromSeconds(5));
-                        var completedTask = await Task.WhenAny(delayTask, tcs.Task);
-
-                        if (completedTask == tcs.Task)
-                        {
-                            // Cancelled (MediaOpened/Failed called)
-                            DebugLog("Media load timeout task cancelled (operation was successful).");
-                            return;
-                        }
-                    }
-
-                    // TIMEOUT
-                    DebugLog($"!!! MEDIA LOAD TIMEOUT for '{firstSong.FilePath}'. The player appears to be hung.");
-
-                    // Dispatch back to the UI thread to perform a full player reset.
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        // Show message on UI thread
-                        MessageBox.Show(Loc.T("Player.LoadTimeout"), Loc.T("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-
-                        if (_isTransitioningSong) // Check lock again on UI thread
-                        {
-                            DebugLog("Timeout recovery: Performing full player re-initialization.");
-
-                            // 1. Unsubscribe from the old, broken media element's events to prevent memory leaks.
-                            var oldPlayer = ktvPlayer;
-                            if (oldPlayer != null)
-                            {
-                                DebugLog("Timeout recovery: Unsubscribing events from old player instance.");
-                                oldPlayer.MediaFailed -= mediaUriElement_MediaFailed;
-                                oldPlayer.MediaOpened -= mediaUriElement_MediaOpened;
-                                oldPlayer.MediaClosed -= MediaUriElement_MediaClosed;
-                                oldPlayer.MediaEnded -= MediaUriElement_MediaEnded;
-                                oldPlayer.MediaPositionChanged -= MediaUriElement_MediaPositionChanged;
-                                oldPlayer.Close();
-                            }
-
-                            // 2. Force-close the secondary display window if it exists.
-                            _videoDisplayWindow?.ForceClose();
-                            _videoDisplayWindow = null;
-
-                            // 3. Tell the MediaHostManager to create a NEW MediaUriElement instance.
-                            MediaHostManager.Instance.ResetInstance();
-                            DebugLog("Timeout recovery: A new MediaUriElement instance has been created.");
-
-                            // 4. Re-wire all event handlers to the NEW instance.
-                            InitializeMediaPlayer();
-
-                            // 5. Clear the main window's media container.
-                            MediaPlayerContainer.Children.Clear();
-
-                            // 6. Re-initialize the display with the NEW media element.
-                            InitializeDisplayConfiguration();
-
-                            // 7. Release the lock, re-enable controls, and try the next song.
-                            _isTransitioningSong = false;
-                            SetPlayerControlsEnabled(true);
-                            PlayNextSongFromWaitingList();
-                        }
-                    });
-                });
-*/
-            }
-
-            catch (Exception ex)
-            {
-                DebugLog($"Error playing from waiting list: {ex.Message}\n{ex}");
-                AppLogger.LogError("Error playing from waiting list", ex);
-                _isPlayingFromWaitingList = false;
-                _currentPlayingSongName = string.Empty;
-                _currentPlayingSingerName = string.Empty;
-                _currentPlayingSongId = string.Empty;
-                _currentSongOrderedBy = string.Empty;
-                _playingSongData = null;
-                UpdateCurrentPlayingDisplay();
-                _isTransitioningSong = false; // Release lock on any unexpected error.
-                ProcessPendingSongs(); // Retry pending adds even on error
-                SetPlayerControlsEnabled(true); // Also re-enable controls on error
-            }
-
+            MoveSongToNext(selected.Id, OrderSource.User);
         }
 
         /// <summary>
@@ -850,32 +563,32 @@ namespace UltimateKtv
         /// </summary>
         private void RefreshCurrentPlaybackMarquee(bool onlyIfActiveOrPending = false)
         {
-            if (_isPlayingFromWaitingList && _videoDisplayWindow != null && _playingSongData != null)
+            var current = _playback.Current;
+            if (current != null && _videoDisplayWindow != null)
             {
                 if (onlyIfActiveOrPending && !MarqueeAPI.IsSongPlaybackMarqueeActiveOrPending(Enums.MarqueeDisplayDevice.PlayerScreen))
                 {
                     return;
                 }
 
-                var nextSongItem = _waitingList?.FirstOrDefault(item => !string.IsNullOrEmpty(item.WaitingListSongName));
-                string? nextSong = nextSongItem?.WaitingListSongName;
-                string? nextSinger = nextSongItem?.WaitingListSingerName;
-                string? nextOrderedBy = nextSongItem?.OrderedBy;
-
-                var songName = _playingSongData.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? Loc.T("Song.Unknown") : Loc.T("Song.Unknown");
-                var singerName = _playingSongData.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? Loc.T("Singer.Unknown") : Loc.T("Singer.Unknown");
-
-                MarqueeAPI.ShowSongPlaybackMarquee(
-                    songName,
-                    singerName,
-                    nextSong,
-                    nextSinger,
-                    _isRandomSongPlaying,
-                    _currentSongOrderedBy,
-                    nextOrderedBy,
-                    Enums.MarqueeDisplayDevice.PlayerScreen
-                );
+                ShowSongPlaybackMarquee(current);
             }
+        }
+
+        /// <summary>電視上的播放中跑馬燈：目前歌曲 + 待播清單下一首。</summary>
+        private void ShowSongPlaybackMarquee(QueuedSong current)
+        {
+            var next = _playback.Snapshot.FirstOrDefault();
+            MarqueeAPI.ShowSongPlaybackMarquee(
+                string.IsNullOrEmpty(current.SongName) ? Loc.T("Song.Unknown") : current.SongName,
+                current.SingerName,
+                next?.SongName,
+                next?.SingerName,
+                current.IsRandom,
+                current.OrderedBy,
+                next?.OrderedBy,
+                Enums.MarqueeDisplayDevice.PlayerScreen
+            );
         }
 
         /// <summary>
@@ -886,89 +599,64 @@ namespace UltimateKtv
             if ((sender as FrameworkElement)?.DataContext is not SongDisplayItem song || song.IsYoutube) return;
             AppLogger.Log($"User action: Insert button clicked for song '{song.SongName}'");
             // Clone: 列表使用固定列，換頁時列的內容會被改掉
-            AddSongToWaitingList(song.Clone(), insertFirst: true);
+            _ = OrderSongAsync(song.Clone(), insertFirst: true);
             ClearSongGridsSelection();
         }
 
         /// <summary>
-        /// Adds a song to the waiting list with duplicate checking
+        /// 點歌：加入待播清單 (重複檢查、隨機歌切斷由 PlaybackSession 處理)，並依結果顯示提示/跑馬燈。
         /// </summary>
         /// <param name="song">The song to add</param>
         /// <param name="insertFirst">插播：放到已點歌單第一首</param>
-        private async void AddSongToWaitingList(SongDisplayItem song, bool insertFirst = false)
+        internal async Task<EnqueueResult> OrderSongAsync(SongDisplayItem song, OrderSource source = OrderSource.User, bool insertFirst = false)
         {
-            // Check if file path is valid
-            bool isYoutube = song.IsYoutube;
-            if (!isYoutube && string.IsNullOrEmpty(song.FilePath))
+            // PlaybackSession 只能在 UI 執行緒使用；呼叫端多為 fire-and-forget，在這裡轉回 UI 執行緒以免點歌被吞掉
+            if (!Dispatcher.CheckAccess())
             {
-                DebugLog($"Invalid file path for song '{song.SongName}': (empty)");
-                AppLogger.Log($"Invalid file path for song '{song.SongName}': (empty)");
-                return;
+                AppLogger.Log($"OrderSongAsync called off the UI thread ({source}): '{song.SongName}'");
+                return await Dispatcher.InvokeAsync(() => OrderSongAsync(song, source, insertFirst)).Task.Unwrap();
             }
 
-            // Perform file existence check on background thread to prevent UI/Marquee freeze (e.g. NAS/HDD latency)
-            if (!isYoutube)
+            var queued = new QueuedSong
             {
-                bool exists = await Task.Run(() =>
-                {
-                    try
-                    {
-                        return File.Exists(song.FilePath);
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                });
-
-                if (!exists)
-                {
-                    DebugLog($"Invalid file path for song '{song.SongName}': {song.FilePath ?? "(empty)"}");
-                    AppLogger.Log($"Invalid file path for song '{song.SongName}': {song.FilePath ?? "(empty)"}");
-                    return;
-                }
-            }
-
-            if(_isTransitioningSong)
-            {
-                DebugLog($"AddSongToWaitingList, _isTransitioningSong = true, queueing '{song.SongName}'");
-                AppLogger.Log($"AddSongToWaitingList, _isTransitioningSong = true, queueing '{song.SongName}'");
-                _pendingSongs.Enqueue((song, insertFirst));
-                return;
-            }
-
-            // Check for duplicates (either file path matches, or both song name and singer match)
-            var duplicateItem = _waitingList.FirstOrDefault(item =>
-                (!string.IsNullOrEmpty(item.FilePath) && item.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(item.WaitingListSongName) &&
-                 item.WaitingListSongName.Equals(song.SongName, StringComparison.OrdinalIgnoreCase) &&
-                 item.WaitingListSingerName.Equals(song.SingerName, StringComparison.OrdinalIgnoreCase)));
-
-            if (duplicateItem != null && insertFirst)
-            {
-                // 插播已在歌單中的歌：直接移到第一首
-                MoveSongToFirst(duplicateItem.Id, isRemoteCall: false);
-                return;
-            }
-
-            if (duplicateItem != null)
-            {
-                Debug.WriteLine($"Song already exists in waiting list: {song.SongName} by {song.SingerName}");
-                ShowDuplicateSongMessage(song.SongName, song.SingerName);
-                return;
-            }
-
-            var waitingItem = new WaitingListItem
-            {
-                WaitingListSongName = song.SongName,
-                SongId = song.SongId, // Pass the SongId
-                WaitingListSingerName = song.IsYoutube ? string.Empty : song.SingerName,
+                SongId = song.SongId,
+                SongName = song.SongName,
+                // YouTube 的 SingerName 存的是頻道名/歌曲時間，不是歌手
+                SingerName = song.IsYoutube ? string.Empty : song.SingerName,
                 FilePath = song.FilePath,
                 Volume = song.Volume,
                 AudioTrack = song.AudioTrack,
                 OrderedBy = song.OrderedBy,
                 IsYoutube = song.IsYoutube
             };
+
+            // 點歌時若正在播隨機歌，PlaybackSession 會切掉它，此時不顯示「已點歌」跑馬燈
+            bool cutsOffRandom = source != OrderSource.Random && _playback.Current?.IsRandom == true;
+            // 「已點歌」通知會把播放中跑馬燈移到 pending，先記下原本是否在播
+            bool wasPlaybackActive = MarqueeAPI.IsSongPlaybackMarqueeActiveOrPending(Enums.MarqueeDisplayDevice.PlayerScreen);
+
+            var result = await _playback.EnqueueAsync(queued, source, insertFirst);
+
+            switch (result)
+            {
+                case EnqueueResult.Duplicate:
+                    Debug.WriteLine($"Song already exists in waiting list: {song.SongName} by {song.SingerName}");
+                    if (source is OrderSource.User or OrderSource.YouTube)
+                    {
+                        ShowDuplicateSongMessage(song.SongName, song.SingerName);
+                    }
+                    return result;
+
+                case EnqueueResult.MovedToFirst:
+                    RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
+                    return result;
+
+                case EnqueueResult.Added when source != OrderSource.Random:
+                    break;
+
+                default:
+                    return result;
+            }
 
             // Dismiss web host info marquee on first song order (single-monitor mode)
             if (_isWebHostMarqueeDisplayed)
@@ -978,55 +666,9 @@ namespace UltimateKtv
                 AppLogger.Log("Web host info marquee dismissed on first song order");
             }
 
-            // Add to the end of the list (插播則放到第一首)
-            if (insertFirst)
-            {
-                _waitingList.Insert(0, waitingItem);
-            }
-            else
-            {
-                _waitingList.Add(waitingItem);
-            }
-
-            // YouTube items carry a duration or channel name in SingerName, not a singer
-            string songDesc = song.IsYoutube
-                ? $"YouTube song '{song.SongName}' ({song.SongId})"
-                : $"song '{song.SongName}' by '{song.SingerName}'";
-            AppLogger.Log($"User action: {(insertFirst ? "Inserted" : "Added")} {songDesc} to waiting list" +
-                (!string.IsNullOrEmpty(song.OrderedBy) ? $" (Ordered by: {song.OrderedBy})" : ""));
-            
-            // If a random song is currently playing, cut it off so the user's song can play immediately
-            bool wasRandomSongPlaying = _isRandomSongPlaying && _isPlayingFromWaitingList;
-            if (wasRandomSongPlaying)
-            {
-                DebugLog("AddSongToWaitingList: User ordered a song while random song is playing. Cutting off random song.");
-                AppLogger.Log("Random play cutoff: User ordered a song, stopping random playback.");
-                
-                // Reset flags first to avoid race conditions with MediaEnded
-                _isRandomSongPlaying = false;
-                _isPlayingFromWaitingList = false;
-                _currentPlayingSongName = string.Empty;
-                _currentPlayingSingerName = string.Empty;
-                _currentPlayingSongId = string.Empty;
-                _currentSongOrderedBy = string.Empty;
-                _playingSongData = null;
-                UpdateCurrentPlayingDisplay();
-                
-                // Stop the player. This will trigger MediaEnded/MediaClosed, 
-                // but since _isPlayingFromWaitingList is now false, PlayNextSongFromWaitingList 
-                // in MediaEnded will find the list is NOT empty and play the user's song.
-                SafeStop(ktvPlayer, nameof(ktvPlayer));
-            }
-
-            Debug.WriteLine($"Added to waiting list: {song.SongName} by {song.SingerName}" + 
-                (!string.IsNullOrEmpty(song.OrderedBy) ? $" (Ordered by: {song.OrderedBy})" : ""));
-
             // Show marquee on player screen using customizable settings ONLY if not cutting off a random song
-            if (!wasRandomSongPlaying)
+            if (!cutsOffRandom)
             {
-                // Check if playback marquee is active before showing notification (which moves it to pending)
-                bool wasPlaybackActive = MarqueeAPI.IsSongPlaybackMarqueeActiveOrPending(Enums.MarqueeDisplayDevice.PlayerScreen);
-
                 MarqueeAPI.ShowSongAddedNotification(
                     song.SongName,
                     song.IsYoutube ? string.Empty : song.SingerName, // YT 的 SingerName 存的是頻道名/歌曲時間
@@ -1041,7 +683,7 @@ namespace UltimateKtv
                 }
             }
 
-            UpdateWaitingListDisplay();
+            return result;
         }
 
         /// <summary>
@@ -1131,90 +773,28 @@ namespace UltimateKtv
         /// Moves a song to the first position in the waiting list.
         /// Called by both UI context menu and remote web API.
         /// </summary>
-        /// <param name="id">The unique ID of the waiting list item</param>
-        /// <param name="isRemoteCall">True if called from web API, false if from UI</param>
-        public void MoveSongToFirst(Guid id, bool isRemoteCall = true)
+        public void MoveSongToFirst(Guid id, OrderSource source = OrderSource.Remote)
         {
-            try
+            if (_playback.MoveToFirst(id, source))
             {
-                int idx = _waitingList.FindIndex(w => w.Id == id);
-                if (idx <= 0)
-                {
-                    UpdateWaitingListDisplay();
-                    return;
-                }
-
-                var item = _waitingList[idx];
-                var source = isRemoteCall ? "Remote" : "User";
-                AppLogger.Log($"{source} action: Move song '{item.WaitingListSongName}' to first in waiting list");
-                _waitingList.RemoveAt(idx);
-                _waitingList.Insert(0, item);
-                UpdateWaitingListDisplay();
                 RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
             }
-            catch (Exception ex)
+        }
+
+        public void RemoveSongFromList(Guid id, OrderSource source = OrderSource.Remote)
+        {
+            if (_playback.Remove(id, source))
             {
-                var source = isRemoteCall ? "Remote" : "User";
-                AppLogger.LogError($"Error moving song to first in waiting list ({source})", ex);
+                RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
             }
         }
 
-        /// <summary>
-        /// Removes a song from the waiting list.
-        /// Called by both UI context menu and remote web API.
-        /// </summary>
-        /// <param name="id">The unique ID of the waiting list item</param>
-        /// <param name="isRemoteCall">True if called from web API, false if from UI</param>
-        public void RemoveSongFromList(Guid id, bool isRemoteCall = true)
+        /// <summary>與下一首交換位置。</summary>
+        public void MoveSongToNext(Guid id, OrderSource source = OrderSource.Remote)
         {
-            try
+            if (_playback.MoveDown(id, source))
             {
-                int idx = _waitingList.FindIndex(w => w.Id == id);
-                if (idx >= 0)
-                {
-                    var item = _waitingList[idx];
-                    var source = isRemoteCall ? "Remote" : "User";
-                    AppLogger.Log($"{source} action: Remove song '{item.WaitingListSongName}' from waiting list");
-                    _waitingList.RemoveAt(idx);
-                    UpdateWaitingListDisplay();
-                    RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
-                }
-            }
-            catch (Exception ex)
-            {
-                var source = isRemoteCall ? "Remote" : "User";
-                AppLogger.LogError($"Error removing song from waiting list ({source})", ex);
-            }
-        }
-
-        /// <summary>
-        /// Moves a song down by one position in the waiting list.
-        /// Called by both UI context menu and remote web API.
-        /// </summary>
-        /// <param name="id">The unique ID of the waiting list item</param>
-        /// <param name="isRemoteCall">True if called from web API, false if from UI</param>
-        public void MoveSongToNext(Guid id, bool isRemoteCall = true)
-        {
-            try
-            {
-                int idx = _waitingList.FindIndex(w => w.Id == id);
-                // If found and not already the last item, swap with the next item
-                if (idx >= 0 && idx < _waitingList.Count - 1)
-                {
-                    var item = _waitingList[idx];
-                    var source = isRemoteCall ? "Remote" : "User";
-                    AppLogger.Log($"{source} action: Move song '{item.WaitingListSongName}' down in waiting list");
-                    var temp = _waitingList[idx + 1];
-                    _waitingList[idx + 1] = _waitingList[idx];
-                    _waitingList[idx] = temp;
-                    UpdateWaitingListDisplay();
-                    RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
-                }
-            }
-            catch (Exception ex)
-            {
-                var source = isRemoteCall ? "Remote" : "User";
-                AppLogger.LogError($"Error moving song down in waiting list ({source})", ex);
+                RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
             }
         }
 

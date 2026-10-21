@@ -179,6 +179,23 @@ namespace UltimateKtv.Playback
             return true;
         }
 
+        /// <summary>歌庫磁碟路徑變更時，改寫待播清單中的檔案路徑。</summary>
+        /// <returns>改寫的首數。</returns>
+        public int RemapFilePaths(Func<string, string> remap)
+        {
+            VerifyAccess();
+            int count = 0;
+            for (int i = 0; i < _queue.Count; i++)
+            {
+                string newPath = remap(_queue[i].FilePath);
+                if (string.Equals(newPath, _queue[i].FilePath, StringComparison.Ordinal)) continue;
+                _queue[i] = _queue[i] with { FilePath = newPath };
+                count++;
+            }
+            if (count > 0) QueueChanged?.Invoke(this, EventArgs.Empty);
+            return count;
+        }
+
         /// <summary>切歌：結束正在播放的歌並播下一首。開檔中則等開檔完成再切。</summary>
         public void Skip()
         {

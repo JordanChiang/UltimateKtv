@@ -1,4 +1,5 @@
 using System;
+using UltimateKtv.Playback;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -31,11 +32,7 @@ namespace UltimateKtv
             {
                 var sharedMediaPlayer = MediaHostManager.Instance.Player;
 
-                // Wire up this window's event handlers to the shared media player
-                sharedMediaPlayer.MediaFailed += mediaUriElement_MediaFailed;
-                sharedMediaPlayer.MediaOpened += mediaUriElement_MediaOpened;
-                sharedMediaPlayer.MediaClosed += MediaUriElement_MediaClosed;
-                sharedMediaPlayer.MediaEnded += MediaUriElement_MediaEnded;
+                // 開檔/播完/失敗交給 PlaybackSession；其餘事件由主視窗直接處理
                 sharedMediaPlayer.MediaPositionChanged += MediaUriElement_MediaPositionChanged;
                 // libmpv：電視畫面是原生視窗，滑鼠移動/雙擊由引擎回報 (DirectShow 不會觸發)
                 sharedMediaPlayer.VideoMouseActivity += Player_VideoMouseActivity;
@@ -63,70 +60,215 @@ namespace UltimateKtv
             }
         }
 
-        private void mediaUriElement_MediaFailed(object? sender, PlayerFailedEventArgs e)
-        {
-            Debug.WriteLine($"Media failed to load or play. Error: {e.Exception.Message}");
-            AppLogger.LogError($"Media failed to load or play", e.Exception);
+        // 播放場次：待播清單、正在播放的歌、何時播下一首都由它決定
+        private PlaybackSession _playback = null!;
 
-            // Ensure we are on the UI thread as this event may come from a background thread
-            if (!Dispatcher.CheckAccess())
+        /// <summary>建立播放場次並接上主視窗的反應；必須在 UI 執行緒、使用待播清單之前呼叫。</summary>
+        private void InitializePlaybackSession()
+        {
+            _playback = new PlaybackSession(
+                new PlayerTarget(this),
+                path => Task.Run(() =>
+                {
+                    try { return File.Exists(path); }
+                    catch { return false; }
+                }));
+
+            _playback.QueueChanged += (_, _) => UpdateWaitingListDisplay();
+            _playback.SongStarting += Playback_SongStarting;
+            _playback.SongOpened += Playback_SongOpened;
+            _playback.SongEnded += Playback_SongEnded;
+            _playback.BecameIdle += Playback_BecameIdle;
+        }
+
+        /// <summary>
+        /// PlaybackSession 與 UKtvPlayer 之間的 adapter：開檔前套用設定/音量，並把 player 事件帶回 UI 執行緒。
+        /// </summary>
+        private sealed class PlayerTarget : IPlaybackTarget
+        {
+            private readonly MainWindow _window;
+            // libmpv 在 MediaOpened 回呼結束後才取消暫停；回呼中 (開檔中被切歌) 若立刻換歌，
+            // 新歌會在套用聲道/音量前就開始播，所以延後到回呼結束後再開檔/停止
+            private bool _raisingOpened;
+
+            public PlayerTarget(MainWindow window)
             {
-                Dispatcher.Invoke(() => mediaUriElement_MediaFailed(sender, e));
-                return;
+                _window = window;
+                var player = MediaHostManager.Instance.Player;
+                player.MediaOpened += (_, _) => OnUiThread(() =>
+                {
+                    _raisingOpened = true;
+                    try { Opened?.Invoke(this, EventArgs.Empty); }
+                    finally { _raisingOpened = false; }
+                });
+                player.MediaEnded += (_, _) => OnUiThread(() => Ended?.Invoke(this, EventArgs.Empty));
+                // libmpv 的 MediaFailed 可能從背景執行緒觸發
+                player.MediaFailed += (_, e) => OnUiThread(() => Failed?.Invoke(this, e.Exception));
             }
 
-            _mediaLoadCts?.Cancel(); // Cancel any pending media load timeout
+            public event EventHandler? Opened;
+            public event EventHandler? Ended;
+            public event EventHandler<Exception?>? Failed;
 
-            // Failure: Release the transition lock so the next operation can proceed.
-            _isTransitioningSong = false;
-            ProcessPendingSongs(); // Retry pending adds
-            _isPlayingFromWaitingList = false;
-            _isRandomSongPlaying = false;
-            IsPlayingYoutube = false;
-            _currentPlayingSongName = string.Empty;
-            _currentPlayingSingerName = string.Empty;
-            _currentPlayingSongId = string.Empty;
-            _currentSongOrderedBy = string.Empty;
-            _playingSongData = null;
+            public void Open(QueuedSong song)
+            {
+                if (_raisingOpened)
+                {
+                    _window.Dispatcher.BeginInvoke(() => Open(song));
+                    return;
+                }
+
+                var w = _window;
+
+                // Stop current playback and start the new one
+                SafeStop(w.ktvPlayer, "ktvPlayer");
+
+                // Set the volume slider to the song's specific setting (volume lock: keep the locked value)
+                w.VolumeSlider.Value = w.VolumeLockToggle.IsChecked != true ? song.Volume : w._lockedVolume;
+
+                // Log if using pre-loaded file content
+                if (SettingsManager.Instance.CurrentSettings.EnablePreLoading &&
+                    w._preLoadedSongPath == song.FilePath && w._preLoadedFileContent != null)
+                {
+                    AppLogger.Log($"Pre-loading: Using cached file ({w.FormatBytes(w._preLoadedMemoryUsage)})");
+                }
+
+                var settings = SettingsManager.Instance.CurrentSettings;
+                w.ktvPlayer.Stretch = settings.IsMediaFullScreen ? Stretch.Fill : Stretch.Uniform;
+                w.ktvPlayer.ApplySettings(settings); // renderer / audio device / HW accel / codec directory
+
+                w.ktvPlayer.Source = new Uri(song.FilePath); // This triggers MediaOpened/MediaFailed.
+                DebugLog($"Main media Source set to: {song.FilePath}");
+            }
+
+            public void Stop()
+            {
+                if (_raisingOpened)
+                {
+                    _window.Dispatcher.BeginInvoke(Stop);
+                    return;
+                }
+                SafeStop(_window.ktvPlayer, "ktvPlayer");
+            }
+
+            private void OnUiThread(Action action)
+            {
+                if (_window.Dispatcher.CheckAccess()) action();
+                else _window.Dispatcher.BeginInvoke(action);
+            }
+        }
+
+        private void Playback_SongStarting(object? sender, QueuedSong song)
+        {
+            SetPlayerControlsEnabled(false); // Disable controls during transition
+            IsPlayingYoutube = song.IsYoutube;
+            PlayingFilePath = song.FilePath;
+            SetPauseButtonResume(false);
+
+            if (song.IsYoutube)
+            {
+                // For YouTube, create a dummy _playingSongData dictionary
+                _playingSongData = new Dictionary<string, object?>
+                {
+                    { "Song_Id", song.SongId },
+                    { "Song_SongName", song.SongName },
+                    { "Song_Singer", song.SingerName },
+                    { "Song_Lang", "Youtube" },
+                    { "FilePath", song.FilePath },
+                    { "Song_Volume", song.Volume },
+                    { "Song_Track", song.AudioTrack },
+                    { "IsYoutube", true }
+                };
+            }
+            else
+            {
+                // Get song metadata from database cache
+                _playingSongData = SongDatas.SongData?.FirstOrDefault(s =>
+                    s != null && (s.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "") == song.FilePath
+                );
+            }
+
             UpdateCurrentPlayingDisplay();
-            
-            // Clear Lyrics
-            _currentLyrics = null;
-            _currentLyricIndex = -1;
-            _videoDisplayWindow?.UpdateLyrics("", Visibility.Collapsed);
-            
+        }
+
+        private void Playback_SongEnded(object? sender, SongEndedEventArgs e)
+        {
+            DebugLog($"[MainPlayer] Song ended ({e.Reason}): {e.Song.SongName}");
+
+            // 播完/切歌/循環時保存使用者調整的音量 (失敗、被切掉的隨機歌不存)
+            if (e.Reason is SongEndReason.Finished or SongEndReason.Skipped or SongEndReason.Replayed)
+            {
+                SaveCurrentSongVolume();
+            }
+
             try
             {
                 RecordingManager.Instance.StopRecording();
             }
             catch (Exception ex)
             {
-                AppLogger.LogError("Error stopping recording in mediaUriElement_MediaFailed", ex);
+                AppLogger.LogError("Error stopping recording on song end", ex);
             }
-            
-            DebugLog("mediaUriElement_MediaFailed: Lock released (_isTransitioningSong = false).");
+
+            if (e.Reason is SongEndReason.Finished or SongEndReason.Skipped or SongEndReason.Replayed)
+            {
+                // Stop all marquees when media ends
+                MarqueeAPI.StopAll();
+            }
+
+            // Clear Lyrics
+            _currentLyrics = null;
+            _currentLyricIndex = -1;
+            _videoDisplayWindow?.UpdateLyrics("", Visibility.Collapsed);
+
+            if (e.Reason != SongEndReason.Replayed)
+            {
+                IsPlayingYoutube = false;
+                _playingSongData = null;
+            }
+
+            UpdateCurrentPlayingDisplay();
             SetPlayerControlsEnabled(true); // Re-enable controls so the user can try another action
-            // Optionally, try to play the next song in the list automatically on failure.
-            PlayNextSongFromWaitingList();
         }
 
-        private void mediaUriElement_MediaOpened(object? sender, EventArgs e)
+        private void Playback_BecameIdle(object? sender, EventArgs e)
+        {
+            DebugLog("PlaybackSession: No songs in waiting list.");
+            IsPlayingYoutube = false;
+            _playingSongData = null;
+            UpdateCurrentPlayingDisplay();
+
+            try
+            {
+                RecordingManager.Instance.StopRecording();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError("Error stopping recording when playback became idle", ex);
+            }
+
+            SetPlayerControlsEnabled(true); // Keep controls interactive when idle
+            SetPauseButtonResume(false); // Reset pause button text
+
+            // Clear pre-loaded cache when list is empty
+            ClearPreLoadingCache();
+
+            // Start a delayed random play check if enabled
+            StartDelayedRandomPlayWhenEmpty();
+        }
+
+        private void Playback_SongOpened(object? sender, QueuedSong song)
         {
             AppLogger.Log($"mediaUriElement_MediaOpened");
             ThreadPool.QueueUserWorkItem(_ => ResourceMonitor.LogSnapshot("Song started"));
             DebugLog($"mediaUriElement_MediaOpened");
-            // This event fires after the media source has been successfully opened and is ready.
-            _mediaLoadCts?.Cancel(); // Cancel any pending media load timeout
             // This is the correct and safe place to configure and start playback.
-            if (sender is not UKtvPlayer player)
-            {
-                DebugLog($"     incorrect sender={sender} ");
-                return;
-            }
+            var player = ktvPlayer;
 
             if (_playingSongData == null)
             {
                 DebugLog($"     but _playingSongData = null");
+                SetPlayerControlsEnabled(true);
                 return;
             }
 
@@ -302,7 +444,7 @@ namespace UltimateKtv
                 
                 try
                 {
-                    RecordingManager.Instance.StartRecording(songName, singerName, _isRandomSongPlaying);
+                    RecordingManager.Instance.StartRecording(songName, singerName, song.IsRandom);
                 }
                 catch (Exception ex)
                 {
@@ -317,11 +459,8 @@ namespace UltimateKtv
                 // Display marquee on player display device
                 if (_videoDisplayWindow != null)
                 {
-                    var nextSongItem = _waitingList?.FirstOrDefault(item => !string.IsNullOrEmpty(item.WaitingListSongName));
-                    string? nextSong = nextSongItem?.WaitingListSongName;
-                    string? nextSinger = nextSongItem?.WaitingListSingerName;
-                    string? nextOrderedBy = nextSongItem?.OrderedBy;
-                    MarqueeAPI.ShowSongPlaybackMarquee(songName, singerName, nextSong, nextSinger, _isRandomSongPlaying, _currentSongOrderedBy, nextOrderedBy, MarqueeDisplayDevice.PlayerScreen);
+                    var next = _playback.Snapshot.FirstOrDefault();
+                    MarqueeAPI.ShowSongPlaybackMarquee(songName, singerName, next?.SongName, next?.SingerName, song.IsRandom, song.OrderedBy, next?.OrderedBy, MarqueeDisplayDevice.PlayerScreen);
 
                         // Ensure player window is on top in single monitor mode when song starts
                         if (IsSingleMonitorMode)
@@ -361,12 +500,12 @@ namespace UltimateKtv
                 ResetPitchForNewSong();
 
                 // Apply audio channel for random play songs (if applicable)
-                ApplyRandomPlayAudioChannel();
+                ApplyRandomPlayAudioChannel(song);
 
                 // Clear today's play list on first song, then record this song play
                 // no needed for random play
                 var songId = _playingSongData.TryGetValue("Song_Id", out var idObj) ? idObj?.ToString() ?? "" : "";
-                if (!string.IsNullOrEmpty(songId) && (!_isRandomSongPlaying))
+                if (!string.IsNullOrEmpty(songId) && (!song.IsRandom))
                 {
                     if (IsPlayingYoutube)
                     {
@@ -402,66 +541,12 @@ namespace UltimateKtv
             }
             finally
             {
-                // Success: The new media is open and playing. Release the transition lock.
-                _isTransitioningSong = false;
-                ProcessPendingSongs(); // Retry pending adds
-                DebugLog("mediaUriElement_MediaOpened: Lock released (_isTransitioningSong = false).");
                 // Reset the play count increment flag for the new song.
                 _playCountIncrementedForCurrentSong = false;
                 DebugLog("Play count increment flag reset for new song.");
                 SetPlayerControlsEnabled(true);
                 SetPauseButtonResume(false); // Ensure pause button text is correct for new song
             }
-        }
-
-        private void MediaUriElement_MediaClosed(object? sender, EventArgs e)
-        {
-            // This event fires when the media is closed (e.g., by calling Stop()).
-        }
-
-        private void MediaUriElement_MediaEnded(object? sender, EventArgs e)
-        {
-            // This event fires when the media finishes playing.
-            DebugLog("[MainPlayer] MediaEnded.");
-
-            SaveCurrentSongVolume();
-
-            try
-            {
-                RecordingManager.Instance.StopRecording();
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError("Error stopping recording in MediaUriElement_MediaEnded", ex);
-            }
-
-            // Stop all marquees when media ends
-            MarqueeAPI.StopAll();
-            DebugLog("All marquees stopped on media end.");
-
-            if (_isLoopPlay && !string.IsNullOrEmpty(PlayingFilePath))
-            {
-                DebugLog($"MediaEnded: Loop play is enabled for '{PlayingFilePath}'. Replaying song.");
-                // Reset lyrics
-                _currentLyrics = null;
-                _currentLyricIndex = -1;
-                _videoDisplayWindow?.UpdateLyrics("", Visibility.Collapsed);
-
-                ReplayCurrentSong();
-                return;
-            }
-
-            _isPlayingFromWaitingList = false;
-            _isRandomSongPlaying = false;
-            IsPlayingYoutube = false;
-            
-            // Clear Lyrics
-            _currentLyrics = null;
-            _currentLyricIndex = -1;
-            _videoDisplayWindow?.UpdateLyrics("", Visibility.Collapsed);
-            
-            // PlayNextSongFromWaitingList will handle random play with 2-second delay if playlist is empty
-            PlayNextSongFromWaitingList();
         }
 
         private void MediaUriElement_MediaPositionChanged(object? sender, EventArgs e)
@@ -532,7 +617,7 @@ namespace UltimateKtv
 
                         // Increment play count if position more than user criteria and not already incremented
                         // no needed for random play
-                        if (!_playCountIncrementedForCurrentSong && progressPercentage > PlayCountUpdatePercentage && (!_isRandomSongPlaying))
+                        if (!_playCountIncrementedForCurrentSong && progressPercentage > PlayCountUpdatePercentage && (_playback.Current?.IsRandom != true))
                         {
                             if (!IsPlayingYoutube && _playingSongData != null && _playingSongData.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int playCount))
                             {
@@ -652,12 +737,10 @@ namespace UltimateKtv
         /// <summary>
         /// 判斷目前是否有歌曲正在播放或處於載入播放流程中（含暫停中）
         /// </summary>
-        private bool IsSongPlaybackActive => ktvPlayer?.Source != null || _isPlayingFromWaitingList || _isRandomSongPlaying;
+        private bool IsSongPlaybackActive => ktvPlayer?.Source != null || _playback.Current != null;
 
         public void SkipSong_Click(object sender, RoutedEventArgs e)
         {
-            // The button's IsEnabled state, controlled by the transition lock,
-            // now serves as the primary guard against spamming.
             try
             {
                 // 只有在歌曲播放（或載入中）時才真正作動
@@ -667,29 +750,25 @@ namespace UltimateKtv
                     return;
                 }
 
-                SaveCurrentSongVolume();
                 AppLogger.Log("User action: Skip song button clicked");
                 DebugLog("SkipSong_Click: Skip song button clicked");
 
-                try
-                {
-                    RecordingManager.Instance.StopRecording();
-                }
-                catch (Exception ex)
-                {
-                    AppLogger.LogError("Error stopping recording in SkipSong_Click", ex);
-                }
-
                 SetPauseButtonResume(false);
-                ktvPlayer.Stop();
-                ktvPlayer.Source = null; // Clear source to release resources immediately
-                _isRandomSongPlaying = false;
                 if (_isLoopPlay)
                 {
                     SetLoopPlay(false);
                 }
-                MarqueeAPI.StopAll();
-                PlayNextSongFromWaitingList();
+
+                if (_playback.Current != null)
+                {
+                    // 存音量、停錄音、停跑馬燈在 SongEnded 處理；開檔中則等開檔完成再切
+                    _playback.Skip();
+                }
+                else
+                {
+                    // 不是從待播清單播放的影片：直接停止
+                    SafeStop(ktvPlayer, nameof(ktvPlayer));
+                }
             }
             catch (Exception ex)
             {
@@ -775,40 +854,11 @@ namespace UltimateKtv
 
         public void ReplayCurrentSong()
         {
-            // Replay current song
+            // Replay current song (閒置時重唱最後一首)。PlaybackSession 會停止並重新指定 Source，
+            // 而不是 MediaPosition = 0：graph 已拆除時設定位置會卡住。
             try
             {
-                if (!string.IsNullOrEmpty(PlayingFilePath))
-                {
-                    AppLogger.Log($"User action: Replaying '{PlayingFilePath}'");
-                    // To safely repeat, we must stop the current playback and
-                    // re-assign the Source. This forces the media graph to be
-                    // rebuilt correctly, avoiding hangs when the player is in a
-                    // stopped or closed state.
-                    // Simply setting MediaPosition = 0 is not safe if the graph is torn down.
-                    DebugLog($"ReplayCurrentSong: Re-playing '{PlayingFilePath}'");
-
-                    try
-                    {
-                        RecordingManager.Instance.StopRecording();
-                    }
-                    catch (Exception ex)
-                    {
-                        AppLogger.LogError("Error stopping recording in ReplayCurrentSong", ex);
-                    }
-
-                    // Stop any current playback and release resources
-                    SafeStop(ktvPlayer, nameof(ktvPlayer));
-
-                    // Re-assign the source to trigger a new playback session from the start
-                    var uri = new Uri(PlayingFilePath, UriKind.Absolute);
-                    ktvPlayer.Source = uri;
-                    _isRandomSongPlaying = false;
-                }
-                else
-                {
-                    DebugLog("ReplayCurrentSong: No song is currently playing (PlayingFilePath is empty).");
-                }
+                _playback.Replay();
             }
             catch (Exception ex)
             {
@@ -820,6 +870,7 @@ namespace UltimateKtv
         public void SetLoopPlay(bool enable)
         {
             _isLoopPlay = enable;
+            _playback.LoopCurrent = enable;
 
             if (RepeatBtn == null) return;
 
