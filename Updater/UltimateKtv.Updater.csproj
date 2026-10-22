@@ -27,13 +27,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="6.0.0">
+    <PackageReference Include="Costura.Fody" Version="6.2.0">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Fody" Version="6.8.2">
+    <PackageReference Include="Fody" Version="6.9.3">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="System.Text.Json" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
