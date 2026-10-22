@@ -26,7 +26,7 @@
     <PackageReference Include="System.Data.OleDb" Version="10.0.2" />
     <PackageReference Include="System.Data.SQLite" Version="2.0.2" />
     <!-- System.Data.SQLite 2.x 不附原生 e_sqlite3，測試用 SQLite 歌庫時另外帶入 -->
-    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.10" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
   </ItemGroup>
 
 </Project>
