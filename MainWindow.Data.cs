@@ -444,7 +444,7 @@ namespace UltimateKtv
                 .Where(fav => fav.TryGetValue("User_Id", out var uid) && uid?.ToString() == userId)
                 .ToList();
 
-            var songs = new List<SongDisplayItem>();
+            var songs = new List<Song>();
 
             foreach (var favorite in favoriteSongs)
             {
@@ -454,18 +454,12 @@ namespace UltimateKtv
 
                 // Find the corresponding song in SongData
                 var song = SongDatas.FindSongById(songId);
-                if (song == null) continue;
-
-                var songItem = SongDisplayItem.FromSong(song);
-
-                if (!string.IsNullOrEmpty(songItem.SongName))
-                {
-                    songs.Add(songItem);
-                }
+                if (song != null && !string.IsNullOrEmpty(song.Name)) songs.Add(song);
             }
 
             // Sort songs based on the selected sort method
-            _allSongs = SongDatas.ApplySongSorting(songs);
+            var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
+            _allSongs = SongQuery.Sort(songs, options).Select(SongDisplayItem.FromSong).ToList();
 
             // Calculate pagination for songs
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;

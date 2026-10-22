@@ -207,7 +207,6 @@ namespace UltimateKtv
 
             // Apply settings to MainWindow properties
             _showPreviewInMainWindow = settings.ShowPreviewInMainWindow;
-            NewSongDays = settings.NewSongDays;
             PlayCountUpdatePercentage = settings.PlayCountUpdatePercentage;
 
             // Re-initialize photo cache to reflect any path changes

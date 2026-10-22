@@ -8,7 +8,6 @@ using System.Linq;
 using System.Windows;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
 
 namespace UltimateKtv
 {
@@ -49,38 +48,6 @@ namespace UltimateKtv
         public static DataTable? PlayListData { get; private set; }
 
         /// <summary>
-        /// A comparer that utilizes the native Windows NLS string sort for accurate stroke counting.
-        /// This flawlessly handles non-standard, simplified, and Kanji characters missing in Big5 definitions.
-        /// </summary>
-        private class NativeStrokeComparer : IComparer<string>
-        {
-            public static readonly NativeStrokeComparer Instance = new NativeStrokeComparer();
-            private const uint SORT_STROKE = 0x00040000;
-
-            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
-            private static extern int CompareStringEx(
-                string lpLocaleName,
-                uint dwCmpFlags,
-                string lpString1,
-                int cchCount1,
-                string lpString2,
-                int cchCount2,
-                IntPtr lpVersionInformation,
-                IntPtr lpReserved,
-                IntPtr lParam);
-
-            public int Compare(string? x, string? y)
-            {
-                if (x == y) return 0;
-                if (x == null) return -1;
-                if (y == null) return 1;
-
-                int result = CompareStringEx("zh-TW_stroke", 0, x, x.Length, y, y.Length, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
-                return result == 0 ? string.Compare(x, y, StringComparison.Ordinal) : result - 2;
-            }
-        }
-
-        /// <summary>
         /// Removes text within parentheses or brackets from a song title to normalize it for matching.
         /// Example: "My Song (Remix)" becomes "My Song".
         /// </summary>
@@ -92,97 +59,6 @@ namespace UltimateKtv
             // This regex removes content within () or [], along with surrounding whitespace.
             return Regex.Replace(title, @"\s*[\(\[].*?[\)\]]\s*", " ").Trim();
         }
-
-		/// <summary>
-		/// Checks if a singer field contains the specified singer name.
-		/// Handles multiple singers separated by common delimiters like &, /, ,, etc.
-		/// This version handles cases where both songSinger and targetSinger can be multi-valued.
-		/// It returns true only if ALL singers in targetSinger are found in songSinger.
-		/// </summary>
-		/// <param name="songSinger">The singer field from the song data</param>
-		/// <param name="targetSinger">The singer name(s) to search for (e.g., "Artist B & Artist A")</param>
-		/// <returns>True if all singers in targetSinger are present in songSinger.</returns>
-		public static bool ContainsSinger(string songSinger, string targetSinger)
-		{
-			if (string.IsNullOrEmpty(songSinger) || string.IsNullOrEmpty(targetSinger))
-				return false;
-
-			// Common delimiters used to separate multiple singers
-			char[] delimiters = { '&', '/', ',', '、', '；', ';', '|' };
-
-			// Create a HashSet of singers from the song data for efficient, case-insensitive lookups.
-			var songSingers = new HashSet<string>(
-				songSinger.Split(delimiters, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()),
-				StringComparer.OrdinalIgnoreCase
-			);
-
-			// If the song has no singers listed, it cannot be a match.
-			if (songSingers.Count == 0) return false;
-
-			// Get the list of target singers from the search query.
-			var targetSingers = targetSinger.Split(delimiters, StringSplitOptions.RemoveEmptyEntries)
-											.Select(s => s.Trim())
-											.ToList();
-
-			// If the search query is empty after trimming, it's not a valid search.
-			if (targetSingers.Count == 0) return false;
-
-			// Use LINQ's All() to ensure every target singer exists in the song's list of singers.
-			return targetSingers.All(t => songSingers.Contains(t));
-		}
-
-		/// <summary>
-		/// Applies the user-defined sorting to a list of songs. This is a centralized method
-		/// to ensure consistent sorting across the main UI and web services.
-		/// </summary>
-		public static List<SongDisplayItem> ApplySongSorting(IEnumerable<SongDisplayItem> songs) =>
-			ApplySongSorting(songs, s => s.Song_PlayCount, s => s.Song_CreatDate ?? DateTime.MinValue, s => s.Song_WordCount, s => s.SongName);
-
-		/// <summary>依使用者設定排序歌庫的歌。</summary>
-		public static List<Song> ApplySongSorting(IEnumerable<Song> songs) =>
-			ApplySongSorting(songs, s => s.PlayCount, s => s.CreatDate ?? DateTime.MinValue, s => s.WordCount, s => s.Name);
-
-		private static List<T> ApplySongSorting<T>(IEnumerable<T> songs, Func<T, int> getPlayCount, Func<T, DateTime> getCreateDate,
-			Func<T, int> getWordCount, Func<T, string> getSongName)
-		{
-			var settings = SettingsManager.Instance.CurrentSettings;
-            var strokeComparer = NativeStrokeComparer.Instance;
-
-			switch (settings.SongSortMethod)
-			{
-				case 1: // 點播次數 (Play Count)
-					return songs.OrderByDescending(getPlayCount)
-                                .ThenBy(s =>
-					            {
-					                var name = getSongName(s);
-					                // Sort English names (ASCII) first (return 0), then others (return 1)
-					                return string.IsNullOrEmpty(name) || name[0] > 127 ? 1 : 0;
-					            })
-					            .ThenBy(getSongName, strokeComparer).ToList();
-
-				case 2: // 加歌日期 (Date Added)
-					return songs.OrderByDescending(getCreateDate)
-					            .ThenBy(s =>
-					            {
-					                var name = getSongName(s);
-					                // Sort English names (ASCII) first (return 0), then others (return 1)
-					                return string.IsNullOrEmpty(name) || name[0] > 127 ? 1 : 0;
-					            })
-					            .ThenBy(getSongName, strokeComparer).ToList();
-
-				case 3: // 字數 (Word Count)
-				default:			
-
-					return songs.OrderBy(getWordCount)
-					            .ThenBy(s =>
-					            {
-					                var name = getSongName(s);
-					                // Sort English names (ASCII) first (return 0), then others (return 1)
-					                return string.IsNullOrEmpty(name) || name[0] > 127 ? 1 : 0;
-					            })
-					            .ThenBy(getSongName, strokeComparer).ToList();
-			}
-		}
 
         /// <summary>
         /// Rebuilds the FilePath for all songs based on current settings.

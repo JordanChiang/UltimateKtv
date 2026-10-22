@@ -949,21 +949,21 @@ namespace UltimateKtv
                         FilePath = "", // Not playable
                         SongId = s.TryGetValue("Singer_Id", out var id) ? id?.ToString() ?? "" : "",
                         // Other fields default
-                    }).ToList();
+                    }).OrderBy(s => s.SongName, SongQuery.NameOrder).ToList();
                 }
                 else
                 {
-                    // === SONG SEARCH MODE (Existing Logic) ===
-                    var songs = SongDatas.SongData ?? new List<Song>();
-                    Func<Song, string> getField = _currentQuickMethod switch
+                    // === SONG SEARCH MODE ===
+                    var field = _currentQuickMethod switch
                     {
-                        QuickMethod.Bopomofo => song => song.Spell,
-                        QuickMethod.PenStyle => song => song.PenStyle,
-                        QuickMethod.SongId => song => song.Id,
+                        QuickMethod.Bopomofo => SongTextField.Spell,
+                        QuickMethod.PenStyle => SongTextField.PenStyle,
+                        QuickMethod.SongId => SongTextField.Id,
                         // EngNum: fallback to name contains for now
-                        _ => song => song.Name,
+                        _ => SongTextField.Name,
                     };
-                    search = () => Match(songs, getField).Select(SongDisplayItem.FromSong).ToList();
+                    var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
+                    search = () => SongQuery.QuickMatch(SongDatas.SongData, field, key, useContains, options).Select(SongDisplayItem.FromSong).ToList();
                 }
 
                 // Perform the expensive filtering and mapping on a background thread.
@@ -971,10 +971,8 @@ namespace UltimateKtv
                 {
                     if (cancellationToken.IsCancellationRequested) return new List<SongDisplayItem>();
 
-                    var results = search();
-
-                    // Apply sorting based on settings (using centralized method)
-                    return SongDatas.ApplySongSorting(results);
+                    // 歌曲依使用者設定的歌曲排序，歌星依名稱排列
+                    return search();
                 }, cancellationToken);
 
                 // Cache and compute paging (8 per grid page, 16 per youtube page)

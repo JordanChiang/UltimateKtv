@@ -73,34 +73,10 @@ namespace UltimateKtv
         private async void NewSongFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             var lang = (sender as Button)?.Tag as string ?? "國語";
-            var cutoffDate = DateTime.Today.AddDays(-NewSongDays);
+            var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
 
             var newSongs = await Task.Run(() =>
-            {
-                var songs = SongDatas.SongData?
-                    .Where(s =>
-                    {
-                        bool isNew = false;
-                        if (s.CreatDate is DateTime createDate)
-                        {
-                            isNew = createDate >= cutoffDate;
-                        }
-
-                        if (!isNew) return false;
-
-                        var songLang = s.Lang;
-                        if (lang == "其它")
-                        {
-                            return songLang != "國語" && songLang != "台語";
-                        }
-                        return songLang == lang;
-                    })
-                    .Select(SongDisplayItem.FromSong)
-                    .ToList() ?? new List<SongDisplayItem>();
-
-                // Fast direct property getter instead of reflection
-                return SongDatas.ApplySongSorting(songs);
-            });
+                SongQuery.NewSongs(SongDatas.SongData, lang, options).Select(SongDisplayItem.FromSong).ToList());
 
             DisplaySongsInGrid(newSongs, Loc.T("Title.NewSongs", Loc.SongLang(lang)));
         }
@@ -108,45 +84,9 @@ namespace UltimateKtv
         private async void RankingFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             var filterTag = (sender as Button)?.Tag as string ?? "國語-單曲";
-            string[] parts = filterTag.Split('-');
-            string langFilter = parts[0];
-            string typeFilter = parts.Length > 1 ? parts[1] : "";
 
             var rankedSongs = await Task.Run(() =>
-            {
-                return SongDatas.SongData?
-                    .Where(s =>
-                    {
-                        // Skip songs that have never been played
-                        if (s.PlayCount == 0) return false;
-
-                        var songLang = s.Lang;
-                        bool langMatch;
-                        if (langFilter == "其它")
-                        {
-                            langMatch = songLang != "國語" && songLang != "台語";
-                        }
-                        else
-                        {
-                            langMatch = songLang == langFilter;
-                        }
-
-                        if (!langMatch) return false;
-
-                        var songSingerType = s.SingerType;
-                        bool isDuet = songSingerType == 3;
-
-                        if (typeFilter == "合唱") return isDuet;
-                        if (typeFilter == "單曲") return !isDuet;
-
-                        if (langFilter == "國語" || langFilter == "台語") return !isDuet;
-
-                        return true;
-                    })
-                    .Select(SongDisplayItem.FromSong)
-                    .OrderByDescending(s => s.Song_PlayCount)
-                    .ToList() ?? new List<SongDisplayItem>();
-            });
+                SongQuery.Ranking(SongDatas.SongData, filterTag).Select(SongDisplayItem.FromSong).ToList());
 
             DisplaySongsInGrid(rankedSongs, Loc.T("Title.Ranking", Loc.SongFilter(filterTag)));
         }
@@ -164,13 +104,9 @@ namespace UltimateKtv
                 return;
             }
 
+            var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
             var genSongs = await Task.Run(() =>
-            {
-                var songs = cachedSongs.Select(SongDisplayItem.FromSong).ToList();
-
-                // Fast direct property getter instead of reflection
-                return SongDatas.ApplySongSorting(songs);
-            });
+                SongQuery.Sort(cachedSongs, options).Select(SongDisplayItem.FromSong).ToList());
 
             DisplaySongsInGrid(genSongs, Loc.T("Title.Generation", periodName));
         }
@@ -282,91 +218,11 @@ namespace UltimateKtv
             string selectedSingerType = _selectedSingerType;
             string selectedWcRange = _selectedWordCountRange;
 
+            var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
+
             var filteredSongs = await Task.Run(() =>
-            {
-                var songs = SongDatas.SongData?
-                    .Where(s =>
-                    {
-                        // 1. Language Filter
-                        if (selectedLangs.Any())
-                        {
-                            var songLang = s.Lang;
-                            if (!selectedLangs.Contains(songLang))
-                            {
-                                // Special case for "其他" (Other) if it's in the selection
-                                if (selectedLangs.Contains("其他") || selectedLangs.Contains("其它"))
-                                {
-                                    // If "其他" is selected, we include anything not in the standard list
-                                    var standardLangs = new HashSet<string> { "國語", "台語", "英語", "日語", "粵語", "兒歌" };
-                                    if (standardLangs.Contains(songLang ?? "")) return false;
-                                }
-                                else
-                                {
-                                    return false;
-                                }
-                            }
-                        }
-
-                        // 2. Duet Toggle (獨唱)
-                        var songSingerType = s.SingerType;
-                        bool isDuet = songSingerType == 3;
-                        if (isDuetOnly)
-                        {
-                            if (!isDuet) return false;
-                        }
-                        else
-                        {
-                            if (isDuet) return false;
-                        }
-
-                        // 3. Singer Type Filter (男, 女, 團體, 其他)
-                        if (!string.IsNullOrEmpty(selectedSingerType))
-                        {
-                            var sTypeVal = songSingerType;
-                            
-                            if (sTypeVal != -1)
-                            {
-                                if (selectedSingerType == "99") // Other
-                                {
-                                    if (sTypeVal == 0 || sTypeVal == 1 || sTypeVal == 2 || sTypeVal == 3) return false;
-                                }
-                                else if (int.TryParse(selectedSingerType, out int targetType))
-                                {
-                                    if (sTypeVal != targetType) return false;
-                                }
-                            }
-                            else if (selectedSingerType != "99")
-                            {
-                                return false;
-                            }
-                        }
-
-                        // 4. Word Count Filter
-                        if (!string.IsNullOrEmpty(selectedWcRange))
-                        {
-                            int wc = s.WordCount;
-
-                            var parts = selectedWcRange.Split('-');
-                            if (parts.Length == 2)
-                            {
-                                int min = int.Parse(parts[0]);
-                                int max = int.Parse(parts[1]);
-                                if (wc < min || wc > max) return false;
-                            }
-                            else if (int.TryParse(selectedWcRange, out int targetWc))
-                            {
-                                if (wc != targetWc) return false;
-                            }
-                        }
-
-                        return true;
-                    })
-                    .Select(SongDisplayItem.FromSong)
-                    .ToList() ?? new List<SongDisplayItem>();
-
-                // Fast direct property getter instead of reflection
-                return SongDatas.ApplySongSorting(songs);
-            });
+                SongQuery.ByLanguage(SongDatas.SongData, selectedLangs, isDuetOnly, selectedSingerType, selectedWcRange, options)
+                    .Select(SongDisplayItem.FromSong).ToList());
 
             string title = Loc.T("Title.LanguageSongs");
             if (_selectedLanguages.Any()) title += $" - {string.Join(",", _selectedLanguages.Select(Loc.SongLang))}";

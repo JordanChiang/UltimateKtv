@@ -145,16 +145,8 @@ namespace UltimateKtv
 
             try
             {
-                // Filter songs by language and order by play count
-                var rankedSongs = SongDatas.SongData
-                    .Where(s =>
-                    {
-                        if (s.PlayCount == 0) return false;
-                        return string.IsNullOrEmpty(language) || s.Lang == language;
-                    })
-                    .OrderByDescending(s => s.PlayCount)
-                    .Take(100) // Top 100 songs to random select from
-                    .ToList();
+                // 排行前 100 名 (單曲與合唱都含)
+                var rankedSongs = SongQuery.Ranking(SongDatas.SongData, language).Take(100).ToList();
 
                 if (rankedSongs.Count == 0)
                 {
@@ -185,19 +177,8 @@ namespace UltimateKtv
 
             try
             {
-                var cutoffDate = DateTime.Today.AddDays(-NewSongDays);
-
-                // Filter songs created within NewSongDays
-                var newSongs = SongDatas.SongData
-                    .Where(s =>
-                    {
-                        if (s.CreatDate is DateTime createDate)
-                        {
-                            return createDate >= cutoffDate;
-                        }
-                        return false;
-                    })
-                    .ToList();
+                var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
+                var newSongs = SongQuery.NewSongs(SongDatas.SongData, null, options);
 
                 if (newSongs.Count == 0) return null;
 

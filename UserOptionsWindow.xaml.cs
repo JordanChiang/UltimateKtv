@@ -626,7 +626,6 @@ namespace UltimateKtv
             }
 
             // Apply changes to the running application
-            _parentWindow.NewSongDays = settings.NewSongDays;
 
             // Apply or remove cursor limiting based on setting
             if (settings.LimitCursorOnMain)

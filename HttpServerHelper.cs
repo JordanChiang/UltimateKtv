@@ -168,7 +168,7 @@ public class HttpServerHelper
 
 			// Without a custom sort, apply the default user-defined sorting; the DataView keeps this row order
 			if (string.IsNullOrEmpty(sort))
-				filteredSongs = SongDatas.ApplySongSorting(filteredSongs);
+				filteredSongs = SongQuery.Sort(filteredSongs, SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings));
 
 			using DataTable dataTable = CreateSongDataTable(filteredSongs, SongDatas.SongDataSchema.Columns.Cast<DataColumn>().Select(c => c.ColumnName).ToArray());
 
@@ -971,46 +971,10 @@ public class HttpServerHelper
 				{
 					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] lang={lang}, page={page}, rows={rows}");
 	
-					var settings = SettingsManager.Instance.CurrentSettings;
-					var cutoffDate = DateTime.Today.AddDays(-settings.NewSongDays);
-	
-					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] Total songs to filter: {SongDatas.SongData.Count}");
-					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] Filtering songs newer than: {cutoffDate:yyyy-MM-dd}");
-	
-					var newSongs = SongDatas.SongData
-						.Where(s =>
-						{
-							if (s == null) return false;
-	
-							// Filter by date
-							bool isNew = false;
-							if (s.CreatDate is DateTime createDate)
-							{
-								isNew = createDate >= cutoffDate;
-							}
-							if (!isNew) return false;
-	
-							return true; // Keep the song if it's new, language filter will be applied next
-						})
-						.ToList();
-	
-					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] Songs after date filter: {newSongs.Count}");
-	
-					// Apply language filter after date filter
-					if (!string.IsNullOrEmpty(lang))
-					{
-						newSongs = newSongs.Where(s =>
-						{
-							var songLang = s.Lang;
-							if (lang == "其它") return songLang != "國語" && songLang != "台語";
-							return songLang == lang;
-						}).ToList();
-					}
-	
-					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] Songs after language filter ('{lang}'): {newSongs.Count}");
-	
-					// Sort by creation date (newest first)
-					var sortedSongs = SongDatas.ApplySongSorting(newSongs);
+					var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
+					var sortedSongs = SongQuery.NewSongs(SongDatas.SongData, lang, options);
+
+					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] lang={lang}: {sortedSongs.Count} songs");
 	
 					if (sortedSongs.Count == 0)
 						return EmptyResult;

@@ -360,7 +360,7 @@ namespace UltimateKtv
                     if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = Visibility.Visible;
                     if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = Visibility.Visible;
 
-                    var langList = new[] { "國語", "台語", "英語", "日語", "粵語", "兒歌", "其他" };
+                    var langList = new[] { "國語", "台語", "英語", "日語", "粵語", "兒歌", "其它" };
                     
                     for (int i = 0; i < langList.Length && i < _filterButtons.Count; i++)
                     {

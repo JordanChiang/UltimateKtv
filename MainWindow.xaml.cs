@@ -150,7 +150,6 @@ namespace UltimateKtv
         private bool _isFirstLanguageVisit = true;
 
         // Configurable number of days for the "New Song" filter
-        public int NewSongDays { get; set; } // Loaded from settings
 
         // Configurable percentage for when to increment the play count
         public int PlayCountUpdatePercentage { get; set; } // Loaded from settings
@@ -1207,33 +1206,8 @@ namespace UltimateKtv
                 return;
             }
 
-            var songs = new List<SongDisplayItem>();
-
-            char[] delimiters = { '&', '/', ',', '、', '；', ';', '|' };
-            var primarySinger = singerName.Split(delimiters, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim() ?? singerName;
-
-            foreach (var song in SongDatas.SongData)
-            {
-                if (song == null) continue;
-
-                // Get the singer field from the song data
-                var songSinger = song.Singer;
-
-                // Check if the singer name matches (match full target, or primary singer)
-                if (SongDatas.ContainsSinger(songSinger, singerName) || (!string.IsNullOrEmpty(primarySinger) && SongDatas.ContainsSinger(songSinger, primarySinger)))
-                {
-                    var songItem = SongDisplayItem.FromSong(song);
-
-                    // Only add if song name is not empty
-                    if (!string.IsNullOrEmpty(songItem.SongName))
-                    {
-                        songs.Add(songItem);
-                    }
-                }
-            }
-
-            // Sort songs based on the selected sort method
-            _allSongs = SongDatas.ApplySongSorting(songs);
+            var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
+            _allSongs = SongQuery.BySinger(SongDatas.SongData, singerName, options).Select(SongDisplayItem.FromSong).ToList();
 
             // Calculate pagination for songs
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;
