@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -81,44 +81,25 @@ namespace UltimateKtv
                     .Where(s =>
                     {
                         bool isNew = false;
-                        if (s.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime createDate)
+                        if (s.CreatDate is DateTime createDate)
                         {
                             isNew = createDate >= cutoffDate;
                         }
 
                         if (!isNew) return false;
 
-                        var songLang = s.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() : "";
+                        var songLang = s.Lang;
                         if (lang == "其它")
                         {
                             return songLang != "國語" && songLang != "台語";
                         }
                         return songLang == lang;
                     })
-                    .Select(s => new SongDisplayItem
-                    {
-                        SongId = s.TryGetValue("Song_Id", out var id) ? id?.ToString() ?? "" : "",
-                        SongName = s.TryGetValue("Song_SongName", out var n) ? n?.ToString() ?? "" : "",
-                        SingerName = s.TryGetValue("Song_Singer", out var sn) ? sn?.ToString() ?? "" : "",
-                        Language = s.TryGetValue("Song_Lang", out var lg) ? lg?.ToString() ?? "" : "",
-                        FilePath = s.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "",
-                        Song_WordCount = s.TryGetValue("Song_WordCount", out var wcObj) && int.TryParse(wcObj?.ToString(), out int wc) ? wc : 0,
-                        Song_PlayCount = s.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int pc) ? pc : 0,
-                        Song_CreatDate = s.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime dt ? dt : (DateTime?)null,
-                        Volume = s.TryGetValue("Song_Volume", out var vol) && int.TryParse(vol?.ToString(), out var iv) ? iv : 90,
-                        AudioTrack = s.TryGetValue("Song_Track", out var tr) && int.TryParse(tr?.ToString(), out var it) ? it : 0,
-                    })
+                    .Select(SongDisplayItem.FromSong)
                     .ToList() ?? new List<SongDisplayItem>();
 
                 // Fast direct property getter instead of reflection
-                return SongDatas.ApplySongSorting(songs, (s, key) => key switch
-                {
-                    "Song_PlayCount" or "PlayCount" => s.Song_PlayCount,
-                    "Song_CreatDate" => s.Song_CreatDate,
-                    "Song_WordCount" => s.Song_WordCount,
-                    "Song_SongName" or "SongName" => s.SongName,
-                    _ => null
-                });
+                return SongDatas.ApplySongSorting(songs);
             });
 
             DisplaySongsInGrid(newSongs, Loc.T("Title.NewSongs", Loc.SongLang(lang)));
@@ -137,10 +118,9 @@ namespace UltimateKtv
                     .Where(s =>
                     {
                         // Skip songs that have never been played
-                        var playCount = s.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int pc) ? pc : 0;
-                        if (playCount == 0) return false;
+                        if (s.PlayCount == 0) return false;
 
-                        var songLang = s.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() : "";
+                        var songLang = s.Lang;
                         bool langMatch;
                         if (langFilter == "其它")
                         {
@@ -153,7 +133,7 @@ namespace UltimateKtv
 
                         if (!langMatch) return false;
 
-                        var songSingerType = s.TryGetValue("Song_SingerType", out var typeObj) && int.TryParse(typeObj?.ToString(), out int typeVal) ? typeVal : -1;
+                        var songSingerType = s.SingerType;
                         bool isDuet = songSingerType == 3;
 
                         if (typeFilter == "合唱") return isDuet;
@@ -163,18 +143,7 @@ namespace UltimateKtv
 
                         return true;
                     })
-                    .Select(s => new SongDisplayItem
-                    {
-                        SongId = s.TryGetValue("Song_Id", out var id) ? id?.ToString() ?? "" : "",
-                        SongName = s.TryGetValue("Song_SongName", out var n) ? n?.ToString() ?? "" : "",
-                        SingerName = s.TryGetValue("Song_Singer", out var sn) ? sn?.ToString() ?? "" : "",
-                        Language = s.TryGetValue("Song_Lang", out var lg) ? lg?.ToString() ?? "" : "",
-                        FilePath = s.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "",
-                        Song_WordCount = s.TryGetValue("Song_WordCount", out var wcObj) && int.TryParse(wcObj?.ToString(), out int wc) ? wc : 0,
-                        Song_PlayCount = s.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int pc) ? pc : 0,
-                        Volume = s.TryGetValue("Song_Volume", out var vol) && int.TryParse(vol?.ToString(), out var iv) ? iv : 90,
-                        AudioTrack = s.TryGetValue("Song_Track", out var tr) && int.TryParse(tr?.ToString(), out var it) ? it : 0,
-                    })
+                    .Select(SongDisplayItem.FromSong)
                     .OrderByDescending(s => s.Song_PlayCount)
                     .ToList() ?? new List<SongDisplayItem>();
             });
@@ -188,7 +157,7 @@ namespace UltimateKtv
 
             // Retrieve the pre-cached name and song list.
             var periodName = SongDatas.GenerationNames?.GetValueOrDefault(genKey, Loc.T("Title.GenerationN", genKey));
-            var cachedSongs = SongDatas.GenerationSongs?.GetValueOrDefault(genKey, new List<Dictionary<string, object?>>());
+            var cachedSongs = SongDatas.GenerationSongs?.GetValueOrDefault(genKey, new List<Song>());
 
             if (cachedSongs == null || periodName == null)
             {
@@ -197,29 +166,10 @@ namespace UltimateKtv
 
             var genSongs = await Task.Run(() =>
             {
-                var songs = cachedSongs.Select(s => new SongDisplayItem
-                {
-                    SongId = s.TryGetValue("Song_Id", out var idObj) ? idObj?.ToString() ?? "" : "",
-                    SongName = s.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? "" : "",
-                    SingerName = s.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? "" : "",
-                    Language = s.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() ?? "" : "",
-                    FilePath = s.TryGetValue("FilePath", out var pathObj) ? pathObj?.ToString() ?? "" : "",
-                    Song_WordCount = s.TryGetValue("Song_WordCount", out var wcObj) && int.TryParse(wcObj?.ToString(), out int wc) ? wc : 0,
-                    Song_PlayCount = s.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int pc) ? pc : 0,
-                    Song_CreatDate = s.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime dt ? dt : (DateTime?)null,
-                    Volume = s.TryGetValue("Song_Volume", out var volObj) && int.TryParse(volObj?.ToString(), out int vol) ? vol : 90,
-                    AudioTrack = s.TryGetValue("Song_Track", out var trackObj) && int.TryParse(trackObj?.ToString(), out int track) ? track : 0
-                }).ToList();
+                var songs = cachedSongs.Select(SongDisplayItem.FromSong).ToList();
 
                 // Fast direct property getter instead of reflection
-                return SongDatas.ApplySongSorting(songs, (s, key) => key switch
-                {
-                    "Song_PlayCount" or "PlayCount" => s.Song_PlayCount,
-                    "Song_CreatDate" => s.Song_CreatDate,
-                    "Song_WordCount" => s.Song_WordCount,
-                    "Song_SongName" or "SongName" => s.SongName,
-                    _ => null
-                });
+                return SongDatas.ApplySongSorting(songs);
             });
 
             DisplaySongsInGrid(genSongs, Loc.T("Title.Generation", periodName));
@@ -340,7 +290,7 @@ namespace UltimateKtv
                         // 1. Language Filter
                         if (selectedLangs.Any())
                         {
-                            var songLang = s.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() ?? "" : "";
+                            var songLang = s.Lang;
                             if (!selectedLangs.Contains(songLang))
                             {
                                 // Special case for "其他" (Other) if it's in the selection
@@ -358,7 +308,7 @@ namespace UltimateKtv
                         }
 
                         // 2. Duet Toggle (獨唱)
-                        var songSingerType = s.TryGetValue("Song_SingerType", out var typeObj) && int.TryParse(typeObj?.ToString(), out int typeVal) ? typeVal : -1;
+                        var songSingerType = s.SingerType;
                         bool isDuet = songSingerType == 3;
                         if (isDuetOnly)
                         {
@@ -394,12 +344,7 @@ namespace UltimateKtv
                         // 4. Word Count Filter
                         if (!string.IsNullOrEmpty(selectedWcRange))
                         {
-                            var wcObj = s.TryGetValue("Song_WordCount", out var wco) ? wco : null;
-                            int wc = 0;
-                            if (wcObj != null && int.TryParse(wcObj.ToString(), out int wcv))
-                            {
-                                wc = wcv;
-                            }
+                            int wc = s.WordCount;
 
                             var parts = selectedWcRange.Split('-');
                             if (parts.Length == 2)
@@ -416,30 +361,11 @@ namespace UltimateKtv
 
                         return true;
                     })
-                    .Select(s => new SongDisplayItem
-                    {
-                        SongId = s.TryGetValue("Song_Id", out var id) ? id?.ToString() ?? "" : "",
-                        SongName = s.TryGetValue("Song_SongName", out var n) ? n?.ToString() ?? "" : "",
-                        SingerName = s.TryGetValue("Song_Singer", out var sn) ? sn?.ToString() ?? "" : "",
-                        Language = s.TryGetValue("Song_Lang", out var lg) ? lg?.ToString() ?? "" : "",
-                        FilePath = s.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "",
-                        Song_WordCount = s.TryGetValue("Song_WordCount", out var wcObj) && int.TryParse(wcObj?.ToString(), out int wc) ? wc : 0,
-                        Song_PlayCount = s.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int pc) ? pc : 0,
-                        Song_CreatDate = s.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime dt ? dt : (DateTime?)null,
-                        Volume = s.TryGetValue("Song_Volume", out var vol) && int.TryParse(vol?.ToString(), out var iv) ? iv : 90,
-                        AudioTrack = s.TryGetValue("Song_Track", out var tr) && int.TryParse(tr?.ToString(), out var it) ? it : 0,
-                    })
+                    .Select(SongDisplayItem.FromSong)
                     .ToList() ?? new List<SongDisplayItem>();
 
                 // Fast direct property getter instead of reflection
-                return SongDatas.ApplySongSorting(songs, (s, key) => key switch
-                {
-                    "Song_PlayCount" or "PlayCount" => s.Song_PlayCount,
-                    "Song_CreatDate" => s.Song_CreatDate,
-                    "Song_WordCount" => s.Song_WordCount,
-                    "Song_SongName" or "SongName" => s.SongName,
-                    _ => null
-                });
+                return SongDatas.ApplySongSorting(songs);
             });
 
             string title = Loc.T("Title.LanguageSongs");

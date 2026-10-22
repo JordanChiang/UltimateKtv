@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -786,8 +786,22 @@ namespace UltimateKtv
                     return;
                 }
 
-                IEnumerable<Dictionary<string, object?>> query;
-                Func<Dictionary<string, object?>, string> getField;
+                // Determine matching strategy based on method
+                bool useContains = _currentQuickMethod == QuickMethod.EngNum || _currentQuickMethod == QuickMethod.Keyboard;
+                IEnumerable<T> Match<T>(IEnumerable<T> source, Func<T, string> getField) => source.Where(s =>
+                {
+                    try
+                    {
+                        var f = getField(s);
+                        if (string.IsNullOrEmpty(f)) return false;
+                        return useContains
+                            ? f.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0
+                            : f.StartsWith(key, StringComparison.OrdinalIgnoreCase);
+                    }
+                    catch { return false; }
+                });
+
+                Func<List<SongDisplayItem>> search;
 
                 if (_searchMode == SearchMode.Youtube)
                 {
@@ -884,9 +898,9 @@ namespace UltimateKtv
                         return;
                     }
 
-                    query = SongDatas.SingerData;
+                    var singers = SongDatas.SingerData;
                     // Default fallback
-                    getField = s => s.TryGetValue("Singer_Name", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
+                    Func<Dictionary<string, object?>, string> getField = s => s.TryGetValue("Singer_Name", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
 
                     switch (_currentQuickMethod)
                     {
@@ -911,108 +925,46 @@ namespace UltimateKtv
                              getField = s => s.TryGetValue("Singer_Name", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
                              break;
                     }
+
+                    // Map Singer Data to SongDisplayItem for display
+                    // SongName column -> Singer Name
+                    // SingerName column -> "歌手" (Static text or count if available?)
+                    // We'll put "歌手" for now to indicate it represents a singer object
+                    search = () => Match(singers, getField).Select(s => new SongDisplayItem
+                    {
+                        SongName = s.TryGetValue("Singer_Name", out var n) ? n?.ToString() ?? string.Empty : string.Empty,
+                        SingerName = Loc.T("Col.Singer"), // Indicator
+                        // 歌星模式沒有語言，借用此欄存放 Singer_Type (歌星按鈕格依類型上色)
+                        Language = s.TryGetValue("Singer_Type", out var t) ? t?.ToString() ?? "" : "",
+                        FilePath = "", // Not playable
+                        SongId = s.TryGetValue("Singer_Id", out var id) ? id?.ToString() ?? "" : "",
+                        // Other fields default
+                    }).ToList();
                 }
                 else
                 {
                     // === SONG SEARCH MODE (Existing Logic) ===
-                    query = SongDatas.SongData;
-                    getField = song => song.TryGetValue("Song_SongName", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                    switch (_currentQuickMethod)
+                    var songs = SongDatas.SongData ?? new List<Song>();
+                    Func<Song, string> getField = _currentQuickMethod switch
                     {
-                        case QuickMethod.Bopomofo:
-                            getField = song => song.TryGetValue("Song_Spell", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                            break;
-                        case QuickMethod.PenStyle:
-                            getField = song => song.TryGetValue("Song_PenStyle", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                            break;
-                        case QuickMethod.EngNum:
-                            // fallback to name contains for now
-                            getField = song => song.TryGetValue("Song_SongName", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                            break;
-                        case QuickMethod.SongId:
-                            getField = song => song.TryGetValue("Song_Id", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                            break;
-                        case QuickMethod.Keyboard:
-                            getField = song => song.TryGetValue("Song_SongName", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                            break;
-                    }
+                        QuickMethod.Bopomofo => song => song.Spell,
+                        QuickMethod.PenStyle => song => song.PenStyle,
+                        QuickMethod.SongId => song => song.Id,
+                        // EngNum: fallback to name contains for now
+                        _ => song => song.Name,
+                    };
+                    search = () => Match(songs, getField).Select(SongDisplayItem.FromSong).ToList();
                 }
-
-                // Determine matching strategy based on method
-                bool useContains = _currentQuickMethod == QuickMethod.EngNum || _currentQuickMethod == QuickMethod.Keyboard;
 
                 // Perform the expensive filtering and mapping on a background thread.
                 var matched = await Task.Run(() =>
                 {
                     if (cancellationToken.IsCancellationRequested) return new List<SongDisplayItem>();
 
-                    var results = query
-                        .Where(s =>
-                        {
-                            try 
-                            { 
-                                var f = getField(s); 
-                                if (string.IsNullOrEmpty(f)) return false;
-                                return useContains 
-                                    ? f.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0 
-                                    : f.StartsWith(key, StringComparison.OrdinalIgnoreCase);
-                            }
-                            catch { return false; }
-                        })
+                    var results = search();
 
-                        .Select(s => 
-                        {
-                            if (_searchMode == SearchMode.Singer)
-                            {
-                                // Map Singer Data to SongDisplayItem for display
-                                // SongName column -> Singer Name
-                                // SingerName column -> "歌手" (Static text or count if available?)
-                                // We'll put "歌手" for now to indicate it represents a singer object
-                                return new SongDisplayItem
-                                {
-                                    SongName = s.TryGetValue("Singer_Name", out var n) ? n?.ToString() ?? string.Empty : string.Empty,
-                                    SingerName = Loc.T("Col.Singer"), // Indicator
-                                    // 歌星模式沒有語言，借用此欄存放 Singer_Type (歌星按鈕格依類型上色)
-                                    Language = s.TryGetValue("Singer_Type", out var t) ? t?.ToString() ?? "" : "",
-                                    FilePath = "", // Not playable
-                                    SongId = s.TryGetValue("Singer_Id", out var id) ? id?.ToString() ?? "" : "",
-                                    // Other fields default
-                                };
-                            }
-                            else
-                            {
-                                // Normal Song Mapping
-                                return new SongDisplayItem
-                                {
-                                    SongId = s.TryGetValue("Song_Id", out var id) ? id?.ToString() ?? string.Empty : string.Empty,
-                                    SongName = s.TryGetValue("Song_SongName", out var n) ? n?.ToString() ?? string.Empty : string.Empty,
-                                    SingerName = s.TryGetValue("Song_Singer", out var sn) ? sn?.ToString() ?? string.Empty : string.Empty,
-                                    Language = s.TryGetValue("Song_Lang", out var lg) ? lg?.ToString() ?? string.Empty : string.Empty,
-                                    FilePath = s.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "",
-                                    Song_WordCount = s.TryGetValue("Song_WordCount", out var wcObj) && int.TryParse(wcObj?.ToString(), out int wc) ? wc : 0,
-                                    Song_PlayCount = s.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int pc) ? pc : 0,
-                                    Song_CreatDate = s.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime dt ? dt : (DateTime?)null,
-                                    Volume = s.TryGetValue("Song_Volume", out var vol)
-                                              && int.TryParse(vol?.ToString(), out var iv)
-                                              ? iv
-                                              : (s.TryGetValue("Song_Volume", out var vol2) && double.TryParse(vol2?.ToString(), out var dv)
-                                                    ? (int)Math.Round(dv)
-                                                    : 0),
-                                    AudioTrack = s.TryGetValue("Song_Track", out var tr) && int.TryParse(tr?.ToString(), out var it) ? it : 0,
-                                };
-                            }
-                        })
-                        .ToList();
-                    
                     // Apply sorting based on settings (using centralized method)
-                    return SongDatas.ApplySongSorting(results, (s, key) => key switch
-                    {
-                        "Song_PlayCount" or "PlayCount" => s.Song_PlayCount,
-                        "Song_CreatDate" => s.Song_CreatDate,
-                        "Song_WordCount" => s.Song_WordCount,
-                        "Song_SongName" or "SongName" => s.SongName,
-                        _ => null
-                    });
+                    return SongDatas.ApplySongSorting(results);
                 }, cancellationToken);
 
                 // Cache and compute paging (8 per grid page, 16 per youtube page)

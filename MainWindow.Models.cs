@@ -77,6 +77,21 @@ namespace UltimateKtv
         /// <summary>YouTube 縮圖右上角顯示的歌曲長度 (H:MM:SS 或 M:SS)，未知時為空字串。</summary>
         public string Duration { get => _duration; set => Set(ref _duration, value); }
 
+        /// <summary>從歌庫的歌建立列表項目；歌庫未設定音量時用 90、伴唱位置用 0。</summary>
+        public static SongDisplayItem FromSong(Song song) => new SongDisplayItem
+        {
+            SongId = song.Id,
+            SongName = song.Name,
+            SingerName = song.Singer,
+            Language = song.Lang,
+            FilePath = song.FilePath,
+            Song_WordCount = song.WordCount,
+            Song_PlayCount = song.PlayCount,
+            Song_CreatDate = song.CreatDate,
+            Volume = song.Volume ?? 90,
+            AudioTrack = song.Track ?? 0,
+        };
+
         /// <summary>把秒數格式化為 H:MM:SS (不到 1 小時為 M:SS)；0 以下回傳空字串。</summary>
         public static string FormatDuration(double totalSeconds)
         {

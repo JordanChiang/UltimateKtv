@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System;
 using UltimateKtv.Playback;
@@ -50,7 +50,7 @@ namespace UltimateKtv
         private int PlayingFileVolume = 30;
         // Store the full song data dictionary for the currently playing song
         // This is needed for properties like ReplayGain
-        private Dictionary<string, object?>? _playingSongData = null;
+        private Song? _playingSongData = null;
         private const int SongPageSize = 13; // Adjust based on DataGrid display capacity (RowHeight 62，SongListGrid Height 937)
         private const int LanguageSongPageSize = 11; // 語系結果列表 11 筆 (-1 for card style height)
         private int CurrentSongPageSize => _isLanguageMode ? LanguageSongPageSize : SongPageSize;
@@ -1217,24 +1217,12 @@ namespace UltimateKtv
                 if (song == null) continue;
 
                 // Get the singer field from the song data
-                var songSinger = song.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? "" : "";
+                var songSinger = song.Singer;
 
                 // Check if the singer name matches (match full target, or primary singer)
                 if (SongDatas.ContainsSinger(songSinger, singerName) || (!string.IsNullOrEmpty(primarySinger) && SongDatas.ContainsSinger(songSinger, primarySinger)))
                 {
-                    var songItem = new SongDisplayItem
-                    {
-                        SongId = song.TryGetValue("Song_Id", out var idObj) ? idObj?.ToString() ?? "" : "",
-                        SongName = song.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? "" : "",
-                        SingerName = songSinger,
-                        Language = song.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() ?? "" : "",
-                        FilePath = song.TryGetValue("FilePath", out var pathObj) ? pathObj?.ToString() ?? "" : "",
-                        Song_WordCount = song.TryGetValue("Song_WordCount", out var wcObj) && int.TryParse(wcObj?.ToString(), out int wc) ? wc : 0,
-                        Song_PlayCount = song.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int pc) ? pc : 0,
-                        Song_CreatDate = song.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime dt ? dt : (DateTime?)null,
-                        Volume = song.TryGetValue("Song_Volume", out var volObj) && int.TryParse(volObj?.ToString(), out int vol) ? vol : 90,
-                        AudioTrack = song.TryGetValue("Song_Track", out var trackObj) && int.TryParse(trackObj?.ToString(), out int track) ? track : 0
-                    };
+                    var songItem = SongDisplayItem.FromSong(song);
 
                     // Only add if song name is not empty
                     if (!string.IsNullOrEmpty(songItem.SongName))
@@ -1245,14 +1233,7 @@ namespace UltimateKtv
             }
 
             // Sort songs based on the selected sort method
-            _allSongs = SongDatas.ApplySongSorting(songs, (s, key) => key switch
-            {
-                "Song_PlayCount" or "PlayCount" => s.Song_PlayCount,
-                "Song_CreatDate" => s.Song_CreatDate,
-                "Song_WordCount" => s.Song_WordCount,
-                "Song_SongName" or "SongName" => s.SongName,
-                _ => null
-            });
+            _allSongs = SongDatas.ApplySongSorting(songs);
 
             // Calculate pagination for songs
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;
