@@ -43,10 +43,10 @@ namespace UltimateKtv
         Stretch Stretch { get; set; }
 
         /// <summary>
-        /// 電視畫面的疊加層合成器。不為 null 時，電視上的跑馬燈/文字/歌詞改交給它合成
-        /// (影片是原生視窗，WPF 元素疊不上去)；DirectShow 為 null，沿用 WPF 疊加。
+        /// 建立電視畫面的疊加層 (跑馬燈/歌詞)。videoRoot 是電視視窗中與影片同大小、左上角對齊的元素。
+        /// libmpv 的影片是原生視窗，WPF 元素疊不上去，由 mpv 合成；DirectShow 直接沿用 WPF 疊加。
         /// </summary>
-        MpvOsd? Osd { get; }
+        ITvOverlay CreateTvOverlay(FrameworkElement videoRoot);
 
         /// <summary>主視窗預覽用元素；null 表示沿用 VisualBrush(View)。</summary>
         FrameworkElement? PreviewView { get; }

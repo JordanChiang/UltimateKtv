@@ -955,7 +955,7 @@ namespace UltimateKtv
         /// </summary>
         private void ShowStartupMarqueeWhenSettled()
         {
-            if (ktvPlayer?.Osd == null)
+            if (_videoDisplayWindow?.TvOverlay.IsComposited != true)
             {
                 MarqueeAPI.ShowStartupMarquee(MarqueeDisplayDevice.PlayerScreen);
                 return;

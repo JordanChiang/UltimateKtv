@@ -36,7 +36,7 @@ namespace UltimateKtv
         }
 
         public FrameworkElement View => _element;
-        public MpvOsd? Osd => null;
+        public ITvOverlay CreateTvOverlay(FrameworkElement videoRoot) => WpfTvOverlay.Instance;
         public FrameworkElement? PreviewView => null;
         public bool PreviewEnabled { get; set; } = true;
 

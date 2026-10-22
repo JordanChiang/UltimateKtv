@@ -115,23 +115,22 @@ namespace UltimateKtv
             }
         }
 
-        private OsdItem? _osdLyrics;
+        private ITvOverlay? _tvOverlay;
+        private TvOverlayItem? _overlayLyrics;
+
+        /// <summary>電視畫面的疊加層 (跑馬燈/歌詞)，座標以 VideoContainer 為準。</summary>
+        public ITvOverlay TvOverlay => _tvOverlay ??= MediaHostManager.Instance.Player.CreateTvOverlay(VideoContainer);
 
         /// <summary>
-        /// libmpv：歌詞在原生影片視窗底下看不到，改把 LrcTextBlock (含陰影) 畫成點陣圖交給 mpv 合成。
+        /// libmpv：歌詞在原生影片視窗底下看不到，改把 LrcTextBlock (含陰影) 交給電視疊加層合成。
         /// </summary>
         private void UpdateOsdLyrics()
         {
-            var osd = MediaHostManager.Instance.Player.Osd;
-            if (osd == null) return;
+            if (!TvOverlay.IsComposited) return;
 
-            osd.Remove(_osdLyrics);
-            _osdLyrics = null;
+            TvOverlay.Remove(_overlayLyrics);
+            _overlayLyrics = null;
             if (LrcTextBlock.Visibility != Visibility.Visible || string.IsNullOrEmpty(LrcTextBlock.Text)) return;
-
-            var osdSize = osd.OsdSize;
-            if (osdSize.Width <= 0 || VideoContainer.ActualWidth <= 0) return;
-            double scale = osdSize.Width / VideoContainer.ActualWidth;
 
             // 位置沿用 LrcTextBlock 在電視視窗的版面；用同樣屬性的複本 (外加留白容納陰影) 畫成點陣圖
             const double pad = 16;
@@ -149,12 +148,7 @@ namespace UltimateKtv
                 Width = LrcTextBlock.ActualWidth
             };
             var host = new Border { Padding = new Thickness(pad), Child = copy };
-            var bmp = OsdBitmap.RasterizeDetached(host, LrcTextBlock.ActualWidth + pad * 2, scale);
-            if (bmp == null) return;
-            var origin = LrcTextBlock.TranslatePoint(new Point(0, 0), VideoContainer);
-            _osdLyrics = osd.ShowStatic(bmp,
-                (int)Math.Round((origin.X - pad) * scale),
-                (int)Math.Round((origin.Y - pad) * scale));
+            _overlayLyrics = TvOverlay.ShowDetached(host, LrcTextBlock.ActualWidth + pad * 2, LrcTextBlock, new Vector(-pad, -pad));
         }
 
         /// <summary>

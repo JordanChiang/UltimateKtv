@@ -625,12 +625,10 @@ namespace UltimateKtv
             container.Children.Add(marquee);
             marquee.EnsureVisible();
 
-            // libmpv：影片是原生視窗，改由 mpv 合成 (版面仍在這裡計算)
-            var osd = MediaHostManager.Instance.Player.Osd;
-            if (osd != null && _videoDisplayWindow != null)
+            // 電視視窗：交給電視疊加層 (libmpv 由 mpv 合成，版面仍在這裡計算)
+            if (_videoDisplayWindow != null)
             {
-                marquee.Osd = osd;
-                marquee.OsdRoot = _videoDisplayWindow.VideoContainer;
+                marquee.Overlay = _videoDisplayWindow.TvOverlay;
             }
         }
 
