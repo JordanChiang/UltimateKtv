@@ -28,6 +28,10 @@ namespace UltimateKtv
         {
             InitializeComponent();
             _parentWindow = parentWindow;
+
+            // 版本取自 UltimateKtv.csproj 的 <Version> (組件版本，例如 1.3.1)
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            VersionText.Text = version != null ? $"v{version.ToString(3)}" : string.Empty;
             
             // Apply theme colors to this window
             ThemeSettingsHandler.ApplyToResources(this);

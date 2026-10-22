@@ -76,6 +76,14 @@
                     <TextBlock Text="{DynamicResource Str.Options.Title}" FontSize="{StaticResource OptionsHeaderFontSize}" FontWeight="Bold"
                               VerticalAlignment="Center"
                               Foreground="{DynamicResource MaterialDesignBody}"/>
+                    <!-- 版本：取自 UltimateKtv.csproj 的 <Version> -->
+                    <Border VerticalAlignment="Center" Margin="16,0,0,0" Padding="12,2,12,2"
+                            CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1.5"
+                            BorderBrush="{DynamicResource PrimaryBrush}">
+                        <TextBlock x:Name="VersionText" FontSize="{StaticResource FontSizeL}" FontWeight="SemiBold"
+                                  VerticalAlignment="Center"
+                                  Foreground="{DynamicResource PrimaryLightBrush}"/>
+                    </Border>
                 </StackPanel>
             </Grid>
 
