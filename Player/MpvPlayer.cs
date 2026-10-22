@@ -54,10 +54,11 @@ namespace UltimateKtv
         private Stretch _stretch = Stretch.Uniform;
         private string _hwdec = "no";
 
-        // 60fps 平滑 (display-resample)；掉格時自動降級
+        // 60fps 平滑 (display-resample)；持續掉格時當首歌降級，下一首歌重新嘗試
         private bool _smoothMotion;
         private int _smoothCheckTicks;
         private long _lastBadFrames = -1;
+        private int _smoothBadWindows; // 連續超標的檢查次數
 
         // 主視窗預覽 (第二個 libmpv 實例)
         private readonly MpvPreview? _preview;
@@ -365,7 +366,12 @@ namespace UltimateKtv
             // 先暫停載入：等 MediaOpened 處理完音軌/聲道/音量後才開始播放，避免開頭漏出錯誤聲道
             // (不用 loadfile 的 per-file 選項參數，因為 mpv 0.38 前後參數位置不同)
             SetProperty("pause", "yes");
-            SetProperty("video-sync", _smoothMotion ? "display-resample" : "audio"); // 黑畫面期間改成 display-desync，載入歌曲時還原
+            // 每首歌重新嘗試平滑捲動，掉格計數也從頭算 (前一首被降級多半是當時的負載尖峰，例如 YouTube 下載)
+            _smoothMotion = true;
+            _smoothCheckTicks = 0;
+            _lastBadFrames = -1;
+            _smoothBadWindows = 0;
+            SetProperty("video-sync", "display-resample"); // 黑畫面期間改成 display-desync，載入歌曲時還原
             SetProperty("speed", "1"); // 黑畫面閒置時會調成極慢速
             // aid 在 mpv 是跨檔案保留的選項；每首歌重新自動選預設音軌 (同 DirectShow 重建 graph)
             SetProperty("aid", "auto");
@@ -603,7 +609,11 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// display-resample 會讓 mpv 每次螢幕更新都重畫；顯示卡較弱的機台跟不上時，影片優先：自動改回依影片換格。
+        /// display-resample 會讓 mpv 每次螢幕更新都重畫；顯示卡較弱的機台跟不上時，影片優先：改回依影片換格。
+        /// <para>
+        /// 開歌後第一個 5 秒只取基準 (載入時的掉格不算)；連續兩次 5 秒都超標才降級，避免短暫負載尖峰
+        /// (例如同時下載 YouTube) 就讓跑馬燈變成 25~30fps。降級只到這首歌結束，下一首歌重新嘗試。
+        /// </para>
         /// </summary>
         private void CheckSmoothMotion()
         {
@@ -614,15 +624,25 @@ namespace UltimateKtv
             foreach (var name in new[] { "frame-drop-count", "vo-delayed-frame-count", "mistimed-frame-count" })
                 if (long.TryParse(GetString(name), out long n)) bad += n;
 
-            if (_lastBadFrames < 0 || bad < _lastBadFrames) { _lastBadFrames = bad; return; } // 新歌計數會歸零
+            if (_lastBadFrames < 0 || bad < _lastBadFrames) { _lastBadFrames = bad; return; } // 開歌後的基準 / 計數被 mpv 歸零
             long delta = bad - _lastBadFrames;
             _lastBadFrames = bad;
-            if (delta <= 15) return;
+
+            if (delta <= 15)
+            {
+                _smoothBadWindows = 0;
+                return;
+            }
+            if (++_smoothBadWindows < 2)
+            {
+                AppLogger.Log($"[mpv] {delta} dropped/delayed frames in 5s with display-resample; watching (1st time).");
+                return;
+            }
 
             _smoothMotion = false;
             SetProperty("video-sync", "audio");
             SetProperty("interpolation", "no");
-            AppLogger.Log($"[mpv] {delta} dropped/delayed frames in 5s with display-resample; smooth motion disabled until restart (vo={GetString("current-vo")}, display-fps={GetString("display-fps")}).");
+            AppLogger.Log($"[mpv] {delta} dropped/delayed frames in 5s with display-resample (2nd time in a row); smooth motion disabled for this song (vo={GetString("current-vo")}, display-fps={GetString("display-fps")}).");
         }
 
         private void ApplyVolume()
