@@ -17,6 +17,7 @@
     <Compile Include="..\..\DbHelper.cs" Link="Linked\DbHelper.cs" />
     <Compile Include="..\..\DataTableExtension.cs" Link="Linked\DataTableExtension.cs" />
     <Compile Include="..\..\SongLibrary.cs" Link="Linked\SongLibrary.cs" />
+    <Compile Include="..\..\Song.cs" Link="Linked\Song.cs" />
   </ItemGroup>
 
   <ItemGroup>

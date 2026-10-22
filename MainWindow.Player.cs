@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UltimateKtv.Playback;
 using System.Diagnostics;
 using System.IO;
@@ -177,25 +177,22 @@ namespace UltimateKtv
 
             if (song.IsYoutube)
             {
-                // For YouTube, create a dummy _playingSongData dictionary
-                _playingSongData = new Dictionary<string, object?>
+                // For YouTube, create a stand-in Song (not part of the song library)
+                _playingSongData = new Song
                 {
-                    { "Song_Id", song.SongId },
-                    { "Song_SongName", song.SongName },
-                    { "Song_Singer", song.SingerName },
-                    { "Song_Lang", "Youtube" },
-                    { "FilePath", song.FilePath },
-                    { "Song_Volume", song.Volume },
-                    { "Song_Track", song.AudioTrack },
-                    { "IsYoutube", true }
+                    Id = song.SongId,
+                    Name = song.SongName,
+                    Singer = song.SingerName,
+                    Lang = "Youtube",
+                    FilePath = song.FilePath,
+                    Volume = song.Volume,
+                    Track = song.AudioTrack,
                 };
             }
             else
             {
                 // Get song metadata from database cache
-                _playingSongData = SongDatas.SongData?.FirstOrDefault(s =>
-                    s != null && (s.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "") == song.FilePath
-                );
+                _playingSongData = SongDatas.SongData?.FirstOrDefault(s => s.FilePath == song.FilePath);
             }
 
             UpdateCurrentPlayingDisplay();
@@ -287,9 +284,7 @@ namespace UltimateKtv
                 // Only update the volume from the song's data if the volume lock is NOT active.
                 if (VolumeLockToggle.IsChecked != true)
                 {
-                    if (_playingSongData.TryGetValue("Song_Volume", out var volumeObj) &&
-                        volumeObj != null &&
-                        int.TryParse(volumeObj.ToString(), out int dbVolume))
+                    if (_playingSongData.Volume is int dbVolume)
                     {
                         PlayingFileVolume = dbVolume;
                     }
@@ -325,8 +320,7 @@ namespace UltimateKtv
                 DebugLog($"     AudioAmplify= {player.AudioAmplify}, VideoRendererType: {player.VideoRendererName}");
 
                 // 伴唱位置、預設伴唱、固定人聲：由 VocalSwitch 依歌庫的 Song_Track 決定
-                int? songTrack = _playingSongData.TryGetValue("Song_Track", out var trackObj) &&
-                    trackObj != null && int.TryParse(trackObj.ToString(), out int dbTrack) ? dbTrack : null;
+                int? songTrack = _playingSongData.Track;
                 _vocal.ApplyForNewSong(
                     songTrack,
                     SettingsManager.Instance.CurrentSettings.IsLegacyAudioChannelDefinitionEnabled,
@@ -369,8 +363,8 @@ namespace UltimateKtv
                 Debug.WriteLine($"        IsPlayingYoutube: {IsPlayingYoutube}");
                 AppLogger.Log($"    vol={PlayingFileVolume}, track={player.AudioTrack}, channel={player.AudioChannel} ");
                 // Show marquee with song name and singer name before playing
-                var songName = _playingSongData.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? Loc.T("Song.Unknown") : Loc.T("Song.Unknown");
-                var singerName = _playingSongData.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? Loc.T("Singer.Unknown") : Loc.T("Singer.Unknown");
+                var songName = _playingSongData.Name;
+                var singerName = _playingSongData.Singer;
                 
                 try
                 {
@@ -381,7 +375,6 @@ namespace UltimateKtv
                     AppLogger.LogError("Error starting recording in mediaUriElement_MediaOpened", ex);
                 }
 
-                var songCount = _playingSongData.TryGetValue("Song_PlayCount", out var pcObj);
                 // Stop any leftover marquee/static text on console screen since NowPlayingBorder displays current song info
                 MarqueeAPI.Stop(MarqueeDisplayDevice.ConsoleScreen);
                 SetPauseButtonResume(false);
@@ -434,7 +427,7 @@ namespace UltimateKtv
 
                 // Clear today's play list on first song, then record this song play
                 // no needed for random play
-                var songId = _playingSongData.TryGetValue("Song_Id", out var idObj) ? idObj?.ToString() ?? "" : "";
+                var songId = _playingSongData.Id;
                 if (!string.IsNullOrEmpty(songId) && (!song.IsRandom))
                 {
                     if (IsPlayingYoutube)
@@ -549,17 +542,17 @@ namespace UltimateKtv
                         // no needed for random play
                         if (!_playCountIncrementedForCurrentSong && progressPercentage > PlayCountUpdatePercentage && (_playback.Current?.IsRandom != true))
                         {
-                            if (!IsPlayingYoutube && _playingSongData != null && _playingSongData.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int playCount))
+                            if (!IsPlayingYoutube && _playingSongData != null)
                             {
-                                int newPlayCount = playCount + 1;
-                                _playingSongData["Song_PlayCount"] = newPlayCount;
+                                int newPlayCount = _playingSongData.PlayCount + 1;
+                                _playingSongData.PlayCount = newPlayCount;
                                 _playCountIncrementedForCurrentSong = true;
-                                DebugLog($"In-memory play count for '{_playingSongData["Song_SongName"]}' incremented to {newPlayCount}.");
+                                DebugLog($"In-memory play count for '{_playingSongData.Name}' incremented to {newPlayCount}.");
 
                                 // Persist the change to the database asynchronously
-                                if (_playingSongData.TryGetValue("Song_Id", out var idObj) && idObj != null)
+                                if (!string.IsNullOrEmpty(_playingSongData.Id))
                                 {
-                                    string songId = idObj.ToString()!;
+                                    string songId = _playingSongData.Id;
                                     Task.Run(() =>
                                     {
                                         try
@@ -576,11 +569,11 @@ namespace UltimateKtv
                                     });
                                 }
                             }
-                            else if (IsPlayingYoutube && _playingSongData != null && _playingSongData.TryGetValue("Song_Id", out var ytIdObj) && !string.IsNullOrEmpty(ytIdObj?.ToString()))
+                            else if (IsPlayingYoutube && _playingSongData != null && !string.IsNullOrEmpty(_playingSongData.Id))
                             {
                                 _playCountIncrementedForCurrentSong = true;
-                                string ytSongId = ytIdObj!.ToString()!;
-                                string songNameForLog = _playingSongData.TryGetValue("Song_SongName", out var nObj) ? nObj?.ToString() ?? "Unknown" : "Unknown";
+                                string ytSongId = _playingSongData.Id;
+                                string songNameForLog = _playingSongData.Name.Length > 0 ? _playingSongData.Name : "Unknown";
                                 Task.Run(() =>
                                 {
                                     try
@@ -599,7 +592,7 @@ namespace UltimateKtv
                             {
                                 // Still set flag to true to avoid repeated attempts on invalid data
                                 _playCountIncrementedForCurrentSong = true;
-                                DebugLog("Could not increment play count: _playingSongData is null or Song_PlayCount is invalid.");
+                                DebugLog("Could not increment play count: _playingSongData is null or has no Song_Id.");
                             }
                         }
                     }
@@ -626,9 +619,9 @@ namespace UltimateKtv
             
             if (_playingSongData == null || IsPlayingYoutube) return;
 
-            if (_playingSongData.TryGetValue("Song_Id", out var idObj) && idObj != null)
+            if (!string.IsNullOrEmpty(_playingSongData.Id))
             {
-                string songId = idObj.ToString()!;
+                string songId = _playingSongData.Id;
                 int currentVolume = (int)VolumeSlider.Value;
                 
                 // Compare with original PlayingFileVolume
@@ -637,10 +630,10 @@ namespace UltimateKtv
                     DebugLog($"User changed volume from {PlayingFileVolume} to {currentVolume}. Saving to DB for Song_Id '{songId}'.");
                     
                     // update in memory DB
-                    var memorySong = SongDatas.SongData?.FirstOrDefault(s => s != null && s.TryGetValue("Song_Id", out var obj) && obj?.ToString() == songId);
+                    var memorySong = SongDatas.FindSongById(songId);
                     if (memorySong != null)
                     {
-                        memorySong["Song_Volume"] = currentVolume;
+                        memorySong.Volume = currentVolume;
                     }                    
 
                     // Update DB asynchronously
@@ -1300,12 +1293,12 @@ namespace UltimateKtv
                         // If sync is enabled, update the database
                         if (_playingSongData != null)
                         {
-                            if (_playingSongData.TryGetValue("Song_Id", out var idObj) && idObj != null)
+                            if (!string.IsNullOrEmpty(_playingSongData.Id))
                             {
-                                string songId = idObj.ToString()!;
+                                string songId = _playingSongData.Id;
 
                                 // Update in-memory data
-                                _playingSongData["Song_Track"] = newTrack;
+                                _playingSongData.Track = newTrack;
 
                                 // Persist change to database asynchronously
                                 Task.Run(() =>

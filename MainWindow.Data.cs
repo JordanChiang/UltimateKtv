@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UltimateKtv.Playback;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -451,24 +451,10 @@ namespace UltimateKtv
                 if (string.IsNullOrEmpty(songId)) continue;
 
                 // Find the corresponding song in SongData
-                var song = SongDatas.SongData.FirstOrDefault(s =>
-                    s.TryGetValue("Song_Id", out var id) && id?.ToString() == songId);
-
+                var song = SongDatas.FindSongById(songId);
                 if (song == null) continue;
 
-                var songItem = new SongDisplayItem
-                {
-                    SongId = songId,
-                    SongName = song.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? "" : "",
-                    SingerName = song.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? "" : "",
-                    Language = song.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() ?? "" : "",
-                    FilePath = song.TryGetValue("FilePath", out var pathObj) ? pathObj?.ToString() ?? "" : "",
-                    Song_WordCount = song.TryGetValue("Song_WordCount", out var wcObj) && int.TryParse(wcObj?.ToString(), out int wc) ? wc : 0,
-                    Song_PlayCount = song.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int pc) ? pc : 0,
-                    Song_CreatDate = song.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime dt ? dt : (DateTime?)null,
-                    Volume = song.TryGetValue("Song_Volume", out var volObj) && int.TryParse(volObj?.ToString(), out int vol) ? vol : 90,
-                    AudioTrack = song.TryGetValue("Song_Track", out var trackObj) && int.TryParse(trackObj?.ToString(), out int track) ? track : 0
-                };
+                var songItem = SongDisplayItem.FromSong(song);
 
                 if (!string.IsNullOrEmpty(songItem.SongName))
                 {
@@ -477,14 +463,7 @@ namespace UltimateKtv
             }
 
             // Sort songs based on the selected sort method
-            _allSongs = SongDatas.ApplySongSorting(songs, (s, key) => key switch
-            {
-                "Song_PlayCount" or "PlayCount" => s.Song_PlayCount,
-                "Song_CreatDate" => s.Song_CreatDate,
-                "Song_WordCount" => s.Song_WordCount,
-                "Song_SongName" or "SongName" => s.SongName,
-                _ => null
-            });
+            _allSongs = SongDatas.ApplySongSorting(songs);
 
             // Calculate pagination for songs
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;

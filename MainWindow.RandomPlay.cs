@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UltimateKtv.Playback;
 using System.Collections.Generic;
 using System.Data;
@@ -149,13 +149,10 @@ namespace UltimateKtv
                 var rankedSongs = SongDatas.SongData
                     .Where(s =>
                     {
-                        var playCount = s.TryGetValue("Song_PlayCount", out var pcObj) && int.TryParse(pcObj?.ToString(), out int pc) ? pc : 0;
-                        if (playCount == 0) return false;
-
-                        var songLang = s.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() : "";
-                        return string.IsNullOrEmpty(language) || songLang == language;
+                        if (s.PlayCount == 0) return false;
+                        return string.IsNullOrEmpty(language) || s.Lang == language;
                     })
-                    .OrderByDescending(s => s.TryGetValue("Song_PlayCount", out var pc) && int.TryParse(pc?.ToString(), out int count) ? count : 0)
+                    .OrderByDescending(s => s.PlayCount)
                     .Take(100) // Top 100 songs to random select from
                     .ToList();
 
@@ -166,18 +163,11 @@ namespace UltimateKtv
                 }
 
                 // Random select one
-                var song = PickRandomAvoidingRecent(rankedSongs, s => s.TryGetValue("Song_Id", out var sid) ? sid?.ToString() ?? "" : "");
+                var song = PickRandomAvoidingRecent(rankedSongs, s => s.Id);
 
-                return new SongDisplayItem
-                {
-                    SongId = song.TryGetValue("Song_Id", out var id) ? id?.ToString() ?? "" : "",
-                    SongName = song.TryGetValue("Song_SongName", out var name) ? name?.ToString() ?? "" : "",
-                    SingerName = song.TryGetValue("Song_Singer", out var singer) ? singer?.ToString() ?? "" : "",
-                    Language = language ?? (song.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() ?? "" : ""),
-                    FilePath = song.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "",
-                    Volume = song.TryGetValue("Song_Volume", out var vol) && int.TryParse(vol?.ToString(), out int v) ? v : 90,
-                    AudioTrack = song.TryGetValue("Song_Track", out var tr) && int.TryParse(tr?.ToString(), out int t) ? t : 0
-                };
+                var item = SongDisplayItem.FromSong(song);
+                item.Language = language ?? song.Lang;
+                return item;
             }
             catch (Exception ex)
             {
@@ -201,7 +191,7 @@ namespace UltimateKtv
                 var newSongs = SongDatas.SongData
                     .Where(s =>
                     {
-                        if (s.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime createDate)
+                        if (s.CreatDate is DateTime createDate)
                         {
                             return createDate >= cutoffDate;
                         }
@@ -212,18 +202,9 @@ namespace UltimateKtv
                 if (newSongs.Count == 0) return null;
 
                 // Random select one
-                var song = PickRandomAvoidingRecent(newSongs, s => s.TryGetValue("Song_Id", out var sid) ? sid?.ToString() ?? "" : "");
+                var song = PickRandomAvoidingRecent(newSongs, s => s.Id);
 
-                return new SongDisplayItem
-                {
-                    SongId = song.TryGetValue("Song_Id", out var id) ? id?.ToString() ?? "" : "",
-                    SongName = song.TryGetValue("Song_SongName", out var name) ? name?.ToString() ?? "" : "",
-                    SingerName = song.TryGetValue("Song_Singer", out var singer) ? singer?.ToString() ?? "" : "",
-                    Language = song.TryGetValue("Song_Lang", out var lang) ? lang?.ToString() ?? "" : "",
-                    FilePath = song.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "",
-                    Volume = song.TryGetValue("Song_Volume", out var vol) && int.TryParse(vol?.ToString(), out int v) ? v : 90,
-                    AudioTrack = song.TryGetValue("Song_Track", out var tr) && int.TryParse(tr?.ToString(), out int t) ? t : 0
-                };
+                return SongDisplayItem.FromSong(song);
             }
             catch (Exception ex)
             {
@@ -288,8 +269,7 @@ namespace UltimateKtv
                 }
 
                 // Find the corresponding song in SongData
-                var song = SongDatas.SongData.FirstOrDefault(s =>
-                    s.TryGetValue("Song_Id", out var id) && id?.ToString() == songId);
+                var song = SongDatas.FindSongById(songId);
 
                 if (song == null)
                 {
@@ -297,16 +277,7 @@ namespace UltimateKtv
                     return null;
                 }
 
-                return new SongDisplayItem
-                {
-                    SongId = songId,
-                    SongName = song.TryGetValue("Song_SongName", out var name) ? name?.ToString() ?? "" : "",
-                    SingerName = song.TryGetValue("Song_Singer", out var singer) ? singer?.ToString() ?? "" : "",
-                    Language = song.TryGetValue("Song_Lang", out var lang) ? lang?.ToString() ?? "" : "",
-                    FilePath = song.TryGetValue("FilePath", out var fp) ? fp?.ToString() ?? "" : "",
-                    Volume = song.TryGetValue("Song_Volume", out var vol) && int.TryParse(vol?.ToString(), out int v) ? v : 90,
-                    AudioTrack = song.TryGetValue("Song_Track", out var tr) && int.TryParse(tr?.ToString(), out int t) ? t : 0
-                };
+                return SongDisplayItem.FromSong(song);
             }
             catch (Exception ex)
             {

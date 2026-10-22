@@ -26,10 +26,16 @@ namespace UltimateKtv
     {
         // Static properties to hold the loaded data.
         // Using nullable types (e.g., List<...>? ) is good practice.
-        public static ILookup<string, Dictionary<string, object?>>? SongsByCleanedTitle { get; private set; }
-        public static Dictionary<string, List<Dictionary<string, object?>>>? GenerationSongs { get; private set; }
+        public static ILookup<string, Song>? SongsByCleanedTitle { get; private set; }
+        public static Dictionary<string, List<Song>>? GenerationSongs { get; private set; }
         public static Dictionary<string, string>? GenerationNames { get; private set; }
-        public static List<Dictionary<string, object?>>? SongData { get; private set; }
+        public static List<Song>? SongData { get; private set; }
+        private static Dictionary<string, Song> _songsById = new();
+
+        /// <summary>依 Song_Id 找歌庫中的歌；找不到回傳 null。</summary>
+        public static Song? FindSongById(string? songId) =>
+            !string.IsNullOrEmpty(songId) && _songsById.TryGetValue(songId, out var song) ? song : null;
+
         public static DataTable? SongDataSchema { get; private set; }
         public static DataTable? LangData { get; private set; }
         public static List<string>? SongLangList { get; private set; }
@@ -129,19 +135,18 @@ namespace UltimateKtv
 		/// Applies the user-defined sorting to a list of songs. This is a centralized method
 		/// to ensure consistent sorting across the main UI and web services.
 		/// </summary>
-		/// <typeparam name="T">The type of the song object (e.g., SongDisplayItem or Dictionary<string, object?>).</typeparam>
-		/// <param name="songs">The list of songs to sort.</param>
-		/// <param name="getter">A function to retrieve a property value from a song object by name.</param>
-		/// <returns>A sorted list of songs.</returns>
-		public static List<T> ApplySongSorting<T>(IEnumerable<T> songs, Func<T, string, object?> getter)
+		public static List<SongDisplayItem> ApplySongSorting(IEnumerable<SongDisplayItem> songs) =>
+			ApplySongSorting(songs, s => s.Song_PlayCount, s => s.Song_CreatDate ?? DateTime.MinValue, s => s.Song_WordCount, s => s.SongName);
+
+		/// <summary>依使用者設定排序歌庫的歌。</summary>
+		public static List<Song> ApplySongSorting(IEnumerable<Song> songs) =>
+			ApplySongSorting(songs, s => s.PlayCount, s => s.CreatDate ?? DateTime.MinValue, s => s.WordCount, s => s.Name);
+
+		private static List<T> ApplySongSorting<T>(IEnumerable<T> songs, Func<T, int> getPlayCount, Func<T, DateTime> getCreateDate,
+			Func<T, int> getWordCount, Func<T, string> getSongName)
 		{
 			var settings = SettingsManager.Instance.CurrentSettings;
             var strokeComparer = NativeStrokeComparer.Instance;
-
-			Func<T, int> getPlayCount = s => int.TryParse((getter(s, "Song_PlayCount") ?? getter(s, "PlayCount"))?.ToString(), out int val) ? val : 0;
-			Func<T, DateTime> getCreateDate = s => (getter(s, "Song_CreatDate") ?? getter(s, "Song_CreatDate")) is DateTime dt ? dt : DateTime.MinValue;
-			Func<T, int> getWordCount = s => int.TryParse(getter(s, "Song_WordCount")?.ToString(), out int val) ? val : 0;
-			Func<T, string> getSongName = s => (getter(s, "Song_SongName") ?? getter(s, "SongName"))?.ToString() ?? "";
 
 			switch (settings.SongSortMethod)
 			{
@@ -197,9 +202,9 @@ namespace UltimateKtv
 
             foreach (var song in SongData)
             {
-                string songPath = song["Song_Path"]?.ToString() ?? string.Empty;
-                string songFileName = song["Song_FileName"]?.ToString() ?? string.Empty;
-                string oldFilePath = song.TryGetValue("FilePath", out var oldObj) ? oldObj?.ToString() ?? "" : "";
+                string songPath = song.Path;
+                string songFileName = song.FileName;
+                string oldFilePath = song.FilePath;
 
                 if (!string.IsNullOrEmpty(songLibraryDrivePath))
                 {
@@ -213,14 +218,14 @@ namespace UltimateKtv
                             relativePath = songPath.Substring(pathRoot.Length);
                         }
                     }
-                    song["FilePath"] = Path.Combine(songLibraryDrivePath, relativePath, songFileName);
+                    song.FilePath = Path.Combine(songLibraryDrivePath, relativePath, songFileName);
                 }
                 else
                 {
-                    song["FilePath"] = Path.Combine(songPath, songFileName);
+                    song.FilePath = Path.Combine(songPath, songFileName);
                 }
 
-                string newFilePath = song["FilePath"]?.ToString() ?? "";
+                string newFilePath = song.FilePath;
                 if (oldFilePath.Length > 0 && !string.Equals(oldFilePath, newFilePath, StringComparison.OrdinalIgnoreCase))
                 {
                     changedPaths[oldFilePath] = newFilePath;
@@ -250,7 +255,7 @@ namespace UltimateKtv
                 CheckAndCreateYoutubeTable();
 
                 // Load all data tables into static properties
-                SongData = Db.GetDictionary("SELECT * FROM ktv_Song ORDER BY Song_Id");
+                SongData = Db.GetDataTable("SELECT * FROM ktv_Song ORDER BY Song_Id").AsEnumerable().Select(Song.FromDataRow).ToList();
 
                 // --- Schema Fix: Expand User_Id column if needed ---
                 // Must be done before initializing other data that might depend on it,
@@ -265,13 +270,15 @@ namespace UltimateKtv
                 // After loading song data, construct the full FilePath for each song.
                 if (SongData != null)
                 {
+                    _songsById = SongData.Where(x => x.Id.Length > 0).GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First());
+
                     // Build FilePath for each song using the centralized method
                     RebuildSongFilePaths();
 
                     // Create a lookup for fast searching by a "cleaned" song title (case-insensitive).
                     // This is a one-time operation that dramatically speeds up searches later.
                     SongsByCleanedTitle = SongData.ToLookup(
-                        s => CleanSongTitle(s.TryGetValue("Song_SongName", out var nameObj) ? nameObj?.ToString() ?? "" : ""),
+                        s => CleanSongTitle(s.Name),
                         StringComparer.OrdinalIgnoreCase
                     );
 
@@ -329,9 +336,9 @@ namespace UltimateKtv
                             char[] delimiters = { '&', '/', ',', '、', '；', ';', '|' };
                             foreach (var song in SongData)
                             {
-                                if (song.TryGetValue("Song_Singer", out var singerObj) && singerObj is string songSinger)
+                                if (song.Singer.Length > 0)
                                 {
-                                    var singers = songSinger.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
+                                    var singers = song.Singer.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
                                     foreach (var s in singers)
                                     {
                                         var trimmed = s.Trim();
@@ -402,7 +409,7 @@ namespace UltimateKtv
                 return;
             }
 
-            GenerationSongs = new Dictionary<string, List<Dictionary<string, object?>>>();
+            GenerationSongs = new Dictionary<string, List<Song>>();
             GenerationNames = new Dictionary<string, string>();
             var notFoundSongs = new List<string>();
 
@@ -411,7 +418,7 @@ namespace UltimateKtv
                 var genKey = genNum.ToString();
                 var genFilePath = $"gen{genNum}.json";
                 var periodName = Loc.T("Title.GenerationN", genNum);
-                var genSongList = new List<Dictionary<string, object?>>();
+                var genSongList = new List<Song>();
 
                 // Initialize with default values
                 GenerationNames[genKey] = periodName;
@@ -475,7 +482,7 @@ namespace UltimateKtv
                             var foundSong = potentialMatches.FirstOrDefault(s =>
                             {
                                 if (s == null) return false;
-                                var singerName = s.TryGetValue("Song_Singer", out var singerObj) ? singerObj?.ToString() ?? "" : "";
+                                var singerName = s.Singer;
 
                                 // Split the singer name from the database and check for any overlap with the artists from the JSON.
                                 var dbSingers = singerName.Split(delimiters, StringSplitOptions.RemoveEmptyEntries).Select(a => a.Trim());

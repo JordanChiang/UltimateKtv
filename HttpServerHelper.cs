@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -104,9 +104,9 @@ public class HttpServerHelper
 	}
 
 	/// <summary>
-	/// Creates a DataTable from a list of song dictionaries, including only the specified columns.
+	/// Creates a DataTable from a list of songs, including only the specified ktv_Song columns.
 	/// </summary>
-	private static DataTable CreateSongDataTable(List<Dictionary<string, object?>> songs, string[] columnsToInclude)
+	private static DataTable CreateSongDataTable(IEnumerable<Song> songs, string[] columnsToInclude)
 	{
 		DataTable dataTable = new DataTable();
 
@@ -126,7 +126,7 @@ public class HttpServerHelper
 			var newRow = dataTable.NewRow();
 			foreach (DataColumn col in dataTable.Columns)
 			{
-				if (song.TryGetValue(col.ColumnName, out var value)) { newRow[col.ColumnName] = value ?? DBNull.Value; }
+				newRow[col.ColumnName] = song.GetColumnValue(col.ColumnName) ?? DBNull.Value;
 			}
 			dataTable.Rows.Add(newRow);
 		}
@@ -149,23 +149,26 @@ public class HttpServerHelper
 			var filteredSongs = SongDatas.SongData.Where(x =>
 			{
 				if (lang != string.Empty)
-					return Convert.ToString(x["Song_Lang"]) == lang;
+					return x.Lang == lang;
 
-				string songId = Convert.ToString(x["Song_Id"]) ?? string.Empty;
-				if (songId == string.Empty)
+				if (x.Id == string.Empty)
 					return false;
 
 				if (singer != string.Empty)
-					return Convert.ToString(x["Song_Singer"]) == singer;
+					return x.Singer == singer;
 
 				if (words != string.Empty)
-					return Convert.ToString(x["Song_WordCount"]) == words;
+					return x.WordCount.ToString() == words;
 
 				return true;
 			}).ToList();
 
 			if (filteredSongs.Count == 0)
 				return EmptyResult;
+
+			// Without a custom sort, apply the default user-defined sorting; the DataView keeps this row order
+			if (string.IsNullOrEmpty(sort))
+				filteredSongs = SongDatas.ApplySongSorting(filteredSongs);
 
 			using DataTable dataTable = CreateSongDataTable(filteredSongs, SongDatas.SongDataSchema.Columns.Cast<DataColumn>().Select(c => c.ColumnName).ToArray());
 
@@ -217,22 +220,8 @@ public class HttpServerHelper
 			if (resultTable.Rows.Count == 0)
 				return EmptyResult;
 
-			// Get the data as a list of dictionaries
-			var songsList = resultTable.ToDictionary();
-
-			// If a custom sort parameter is provided, use the DataView's sorted order (already applied above).
-			// Otherwise, apply the default user-defined sorting.
-			List<Dictionary<string, object?>> sortedSongs;
-			if (!string.IsNullOrEmpty(sort))
-			{
-				// Custom sort was already applied to dataTable.DefaultView, so use the order from resultTable
-				sortedSongs = songsList;
-			}
-			else
-			{
-				// No custom sort, apply the default user-defined sorting
-				sortedSongs = SongDatas.ApplySongSorting(songsList, (s, key) => s.GetValueOrDefault(key));
-			}
+			// Get the data as a list of dictionaries, already in the requested (or default) order
+			var sortedSongs = resultTable.ToDictionary();
 
 			// Apply pagination
 			if (string.IsNullOrEmpty(rows) || !IsNumeric(rows))
@@ -467,11 +456,11 @@ public class HttpServerHelper
 
 			// Get songs that match the favorite IDs
 			var favoriteSongs = SongDatas.SongData?
-				.Where(x => favSongIds.Contains(Convert.ToString(x["Song_Id"])))
-				.OrderBy(x => x["Song_WordCount"])
-				.ThenBy(x => x["Song_SongStroke"])
-				.ThenBy(x => x["Song_SongName"])
-				.ThenBy(x => x["Song_Singer"])
+				.Where(x => favSongIds.Contains(x.Id))
+				.OrderBy(x => x.WordCount)
+				.ThenBy(x => x.SongStroke)
+				.ThenBy(x => x.Name)
+				.ThenBy(x => x.Singer)
 				.ToList();
 
 			if (favoriteSongs == null || favoriteSongs.Count == 0)
@@ -491,8 +480,7 @@ public class HttpServerHelper
 				var row = dataTable.NewRow();
 				foreach (var colName in columnsToInclude)
 				{
-					if (song.ContainsKey(colName))
-						row[colName] = song[colName] ?? DBNull.Value;
+					row[colName] = song.GetColumnValue(colName) ?? DBNull.Value;
 				}
 				dataTable.Rows.Add(row);
 			}
@@ -571,7 +559,7 @@ public class HttpServerHelper
 			System.Diagnostics.Debug.WriteLine($"[OrderSong] Ordering song: {value}, User: {userName}");
 
 			// Find the song in SongData
-			var song = SongDatas.SongData.FirstOrDefault(x => Convert.ToString(x["Song_Id"]) == value);
+			var song = SongDatas.FindSongById(value);
 			if (song == null)
 			{
 				System.Diagnostics.Debug.WriteLine($"[OrderSong] Song not found: {value}");
@@ -601,26 +589,9 @@ public class HttpServerHelper
 				}
 			}
 
-			// Add to playlist
-			var newRow = SongDatas.PlayListData.NewRow();
-			foreach (DataColumn col in SongDatas.PlayListData.Columns)
-			{
-				if (song.ContainsKey(col.ColumnName))
-					newRow[col.ColumnName] = song[col.ColumnName] ?? DBNull.Value;
-			}
-			// Instead of adding to PlayListData, we need to add to the waiting list via the UI thread
-			// Create a SongDisplayItem from the song data
-			var songItem = new UltimateKtv.SongDisplayItem
-			{
-				SongId = song.ContainsKey("Song_Id") ? Convert.ToString(song["Song_Id"]) ?? "" : "",
-				SongName = song.ContainsKey("Song_SongName") ? Convert.ToString(song["Song_SongName"]) ?? "" : "",
-				SingerName = song.ContainsKey("Song_Singer") ? Convert.ToString(song["Song_Singer"]) ?? "" : "",
-				Language = song.ContainsKey("Song_Lang") ? Convert.ToString(song["Song_Lang"]) ?? "" : "",
-				FilePath = song.ContainsKey("FilePath") ? Convert.ToString(song["FilePath"]) ?? "" : "",
-				Volume = song.ContainsKey("Song_Volume") && int.TryParse(Convert.ToString(song["Song_Volume"]), out int vol) ? vol : 90,
-				AudioTrack = song.ContainsKey("Song_Track") && int.TryParse(Convert.ToString(song["Song_Track"]), out int track) ? track : 0,
-				OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb
-			};
+			// Add to the waiting list via the UI thread
+			var songItem = UltimateKtv.SongDisplayItem.FromSong(song);
+			songItem.OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb;
 
 			// Validate FilePath
 			if (string.IsNullOrEmpty(songItem.FilePath) || !File.Exists(songItem.FilePath))
@@ -969,10 +940,9 @@ public class HttpServerHelper
 			foreach (var song in cachedSongs)
 			{
 				var row = dataTable.NewRow();
-				foreach (var colName in columnsToInclude)
+				foreach (DataColumn col in dataTable.Columns)
 				{
-					if (song.ContainsKey(colName) && dataTable.Columns.Contains(colName))
-						row[colName] = song[colName] ?? DBNull.Value;
+					row[col] = song.GetColumnValue(col.ColumnName) ?? DBNull.Value;
 				}
 				dataTable.Rows.Add(row);
 			}
@@ -1014,7 +984,7 @@ public class HttpServerHelper
 	
 							// Filter by date
 							bool isNew = false;
-							if (s.TryGetValue("Song_CreatDate", out var dateObj) && dateObj is DateTime createDate)
+							if (s.CreatDate is DateTime createDate)
 							{
 								isNew = createDate >= cutoffDate;
 							}
@@ -1031,7 +1001,7 @@ public class HttpServerHelper
 					{
 						newSongs = newSongs.Where(s =>
 						{
-							var songLang = s.TryGetValue("Song_Lang", out var langObj) ? langObj?.ToString() : "";
+							var songLang = s.Lang;
 							if (lang == "其它") return songLang != "國語" && songLang != "台語";
 							return songLang == lang;
 						}).ToList();
@@ -1040,7 +1010,7 @@ public class HttpServerHelper
 					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] Songs after language filter ('{lang}'): {newSongs.Count}");
 	
 					// Sort by creation date (newest first)
-					var sortedSongs = SongDatas.ApplySongSorting(newSongs, (s, key) => s.GetValueOrDefault(key));
+					var sortedSongs = SongDatas.ApplySongSorting(newSongs);
 	
 					if (sortedSongs.Count == 0)
 						return EmptyResult;
