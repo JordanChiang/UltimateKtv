@@ -66,19 +66,43 @@ namespace UltimateKtv
                 try
                 {
                     string json = File.ReadAllText(_settingsFilePath);
-                    var options = new JsonSerializerOptions
+
+                    // 容錯載入：寫錯的項目只退回該項預設值，其他設定保留
+                    var result = SettingsJson.Load<ThemeSettings>(json);
+                    _settings = result.Value;
+
+                    if (result.SyntaxError)
                     {
-                        ReadCommentHandling = JsonCommentHandling.Skip,
-                        AllowTrailingCommas = true
-                    };
-                    _settings = JsonSerializer.Deserialize<ThemeSettings>(json, options) ?? new ThemeSettings();
+                        AppLogger.Log("themesettings.json cannot be parsed (syntax error or empty). All theme settings fall back to defaults.");
+                    }
+                    if (result.InvalidItems.Count > 0)
+                    {
+                        AppLogger.Log($"themesettings.json invalid items reset to defaults: {string.Join(", ", result.InvalidItems)}");
+                    }
+
+                    // 字級 0 或負數會讓 WPF 丟出例外，拉回可用範圍
+                    var corrected = _settings.Normalize();
+                    if (corrected.Count > 0)
+                    {
+                        AppLogger.Log($"themesettings.json font sizes out of range corrected: {string.Join(", ", corrected)}");
+                    }
+
+                    if (result.HasProblems || corrected.Count > 0)
+                    {
+                        // 存檔會覆蓋原本寫錯的內容，先留一份備份
+                        string? backup = SettingsJson.Backup(_settingsFilePath);
+                        if (backup != null) AppLogger.Log($"Original themesettings.json backed up to {backup}");
+                    }
+
                     SaveSettings(); // Update the physical file to inject comments and missing schema keys
                     AppLogger.Log("Theme settings loaded successfully.");
                 }
                 catch (Exception ex)
                 {
-                    AppLogger.LogError("Failed to load themesettings.json. Using defaults.", ex);
+                    // 讀檔失敗 (例如檔案被鎖住)：本次使用預設值；存檔前先備份原檔
+                    AppLogger.LogError("Failed to read themesettings.json. Using defaults.", ex);
                     _settings = new ThemeSettings();
+                    SettingsJson.Backup(_settingsFilePath);
                     SaveSettings();
                 }
             }

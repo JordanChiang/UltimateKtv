@@ -104,5 +104,32 @@ namespace UltimateKtv
 
         #endregion
 
+        #region Validation
+
+        /// <summary>
+        /// 把超出範圍的字級拉回可用範圍 (與 StyleSimulator 的滑桿範圍相同)。
+        /// 字級 0 或負數會讓 WPF 丟出例外而無法啟動。
+        /// </summary>
+        /// <returns>被修正的項目名稱。</returns>
+        public List<string> Normalize()
+        {
+            var corrected = new List<string>();
+            FuncBtnFontSize = ClampFontSize(nameof(FuncBtnFontSize), FuncBtnFontSize, 14, 64, corrected);
+            BottomButtonFontSize = ClampFontSize(nameof(BottomButtonFontSize), BottomButtonFontSize, 14, 64, corrected);
+            WaitingListFontSize = ClampFontSize(nameof(WaitingListFontSize), WaitingListFontSize, 12, 60, corrected);
+            SongListFontSize = ClampFontSize(nameof(SongListFontSize), SongListFontSize, 16, 72, corrected);
+            WebHostInfoFontSize = ClampFontSize(nameof(WebHostInfoFontSize), WebHostInfoFontSize, 12, 60, corrected);
+            return corrected;
+        }
+
+        private static double ClampFontSize(string name, double value, double min, double max, List<string> corrected)
+        {
+            double clamped = Math.Clamp(value, min, max);
+            if (clamped != value) corrected.Add(name);
+            return clamped;
+        }
+
+        #endregion
+
     }
 }

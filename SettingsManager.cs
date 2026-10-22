@@ -37,41 +37,33 @@ namespace UltimateKtv
                 try
                 {
                     string json = File.ReadAllText(_settingsFilePath);
-                    var options = new JsonSerializerOptions
-                    {
-                        ReadCommentHandling = JsonCommentHandling.Skip,
-                        AllowTrailingCommas = true
-                    };
-                    CurrentSettings = JsonSerializer.Deserialize<AppSettings>(json, options) ?? new AppSettings();
-                    
-                    bool needsForceSave = false;
 
-                    // Check for missing properties to handle new items in old files
-                    try
+                    // 容錯載入：寫錯的項目只退回該項預設值，其他設定保留
+                    var result = SettingsJson.Load<AppSettings>(json);
+                    CurrentSettings = result.Value;
+                    bool needsForceSave = result.NeedsSave;
+
+                    if (result.SyntaxError)
                     {
-                        var docOptions = new JsonDocumentOptions
-                        {
-                            CommentHandling = JsonCommentHandling.Skip,
-                            AllowTrailingCommas = true
-                        };
-                        using (JsonDocument doc = JsonDocument.Parse(json, docOptions))
-                        {
-                            var root = doc.RootElement;
-                            PropertyInfo[] properties = typeof(AppSettings).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-                            foreach (var prop in properties)
-                            {
-                                if (!root.TryGetProperty(prop.Name, out _))
-                                {
-                                    AppLogger.Log($"New setting item found: {prop.Name}. Updating settings file to include default values.");
-                                    needsForceSave = true;
-                                    break;
-                                }
-                            }
-                        }
+                        AppLogger.Log("settings.json cannot be parsed (syntax error or empty). All settings fall back to defaults.");
                     }
-                    catch (Exception ex)
+                    if (result.InvalidItems.Count > 0)
                     {
-                        AppLogger.LogError("Error checking for missing properties in settings.json.", ex);
+                        AppLogger.Log($"settings.json invalid items reset to defaults: {string.Join(", ", result.InvalidItems)}");
+                    }
+                    if (result.MisnamedItems.Count > 0)
+                    {
+                        AppLogger.Log($"settings.json item names corrected (case): {string.Join(", ", result.MisnamedItems)}");
+                    }
+                    if (!result.SyntaxError && result.MissingItems.Count > 0)
+                    {
+                        AppLogger.Log($"New setting items found: {string.Join(", ", result.MissingItems)}. Updating settings file to include default values.");
+                    }
+                    if (result.HasProblems)
+                    {
+                        // 存檔會覆蓋原本寫錯的內容，先留一份備份
+                        string? backup = SettingsJson.Backup(_settingsFilePath);
+                        if (backup != null) AppLogger.Log($"Original settings.json backed up to {backup}");
                     }
 
                     // Validate and correct AudioAmplify range (100-500)
@@ -166,9 +158,10 @@ namespace UltimateKtv
                 }
                 catch (Exception ex)
                 {
-                    AppLogger.LogError("Failed to deserialize settings.json. Falling back to defaults.", ex);
-                    // If deserialization fails, fall back to default settings and save them.
+                    // 讀檔失敗 (例如檔案被鎖住)：本次使用預設值；存檔前先備份原檔
+                    AppLogger.LogError("Failed to read settings.json. Falling back to defaults.", ex);
                     CurrentSettings = new AppSettings();
+                    SettingsJson.Backup(_settingsFilePath);
                     SaveSettings();
                 }
             }

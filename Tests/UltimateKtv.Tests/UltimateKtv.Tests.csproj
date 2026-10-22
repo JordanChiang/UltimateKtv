@@ -18,6 +18,9 @@
     <Compile Include="..\..\DataTableExtension.cs" Link="Linked\DataTableExtension.cs" />
     <Compile Include="..\..\SongLibrary.cs" Link="Linked\SongLibrary.cs" />
     <Compile Include="..\..\Song.cs" Link="Linked\Song.cs" />
+    <Compile Include="..\..\AppSettings.cs" Link="Linked\AppSettings.cs" />
+    <Compile Include="..\..\ThemeSettings.cs" Link="Linked\ThemeSettings.cs" />
+    <Compile Include="..\..\SettingsJson.cs" Link="Linked\SettingsJson.cs" />
   </ItemGroup>
 
   <ItemGroup>
