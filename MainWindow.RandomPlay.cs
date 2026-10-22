@@ -321,30 +321,13 @@ namespace UltimateKtv
         /// </summary>
         private void ShowRandomPlayMarquee(string message)
         {
-            var settings = SettingsManager.Instance.CurrentSettings;
             // Always display on PlayerScreen so users can see random play status/errors on the TV/Player screen
-            MarqueeAPI.ShowCustomStaticText(
-                message,
-                ThemeSettingsHandler.StaticTextForeground,
-                new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(settings.MarqueeBroadcastFontFamily) ? settings.MarqueeBroadcastFontFamily : "微軟正黑體"),
-                settings.MarqueeBroadcastFontSize,
-                MarqueePosition.Top,
-                0,
-                MarqueeDisplayDevice.PlayerScreen
-            );
+            MarqueeAPI.ShowNotice(message, MarqueeDisplayDevice.PlayerScreen);
 
             // In multi-monitor mode, also display on ConsoleScreen
             if (!IsSingleMonitorMode)
             {
-                MarqueeAPI.ShowCustomStaticText(
-                    message,
-                    ThemeSettingsHandler.StaticTextForeground,
-                    new System.Windows.Media.FontFamily(!string.IsNullOrWhiteSpace(settings.MarqueeBroadcastFontFamily) ? settings.MarqueeBroadcastFontFamily : "微軟正黑體"),
-                    settings.MarqueeBroadcastFontSize,
-                    MarqueePosition.Top,
-                    0,
-                    MarqueeDisplayDevice.ConsoleScreen
-                );
+                MarqueeAPI.ShowNotice(message, MarqueeDisplayDevice.ConsoleScreen);
             }
         }
 

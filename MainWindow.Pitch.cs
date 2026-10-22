@@ -201,7 +201,7 @@ namespace UltimateKtv
             if (ktvPlayer == null || !ktvPlayer.IsPlaying)
             {
                 AppLogger.Log($"User action: Pitch adjust {adjustment:+0;-0} failed - no song playing");
-                MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                ShowPitchMarquee(Loc.T("Pitch.PlayFirst"));
                 return;
             }
 
@@ -221,7 +221,7 @@ namespace UltimateKtv
             ApplyPitchChange();
             
             // Show notification
-            MarqueeAPI.ShowCornerText(Loc.T("Pitch.Marquee", GetPitchDisplayText()), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+            ShowPitchMarquee(Loc.T("Pitch.Marquee", GetPitchDisplayText()));
             
             // Update the dialog display without closing
             UpdatePitchDialogDisplay();
@@ -235,14 +235,14 @@ namespace UltimateKtv
             if (ktvPlayer == null || !ktvPlayer.IsPlaying)
             {
                 AppLogger.Log("User action: Set original pitch failed - no song playing");
-                MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                ShowPitchMarquee(Loc.T("Pitch.PlayFirst"));
                 return;
             }
 
             AppLogger.Log($"User action: Set pitch to original (from {_currentPitchLevel} to 0)");
             _currentPitchLevel = 0;
             ApplyPitchChange();
-            MarqueeAPI.ShowCornerText(Loc.T("Pitch.MarqueeOriginal"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+            ShowPitchMarquee(Loc.T("Pitch.MarqueeOriginal"));
             UpdatePitchDialogDisplay();
         }
 
@@ -254,14 +254,14 @@ namespace UltimateKtv
             if (ktvPlayer == null || !ktvPlayer.IsPlaying)
             {
                 AppLogger.Log("User action: Set male pitch failed - no song playing");
-                MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                ShowPitchMarquee(Loc.T("Pitch.PlayFirst"));
                 return;
             }
 
             AppLogger.Log($"User action: Set pitch to male voice (from {_currentPitchLevel} to -4)");
             _currentPitchLevel = -4;
             ApplyPitchChange();
-            MarqueeAPI.ShowCornerText(Loc.T("Pitch.MarqueeMale"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+            ShowPitchMarquee(Loc.T("Pitch.MarqueeMale"));
             UpdatePitchDialogDisplay();
         }
 
@@ -273,14 +273,14 @@ namespace UltimateKtv
             if (ktvPlayer == null || !ktvPlayer.IsPlaying)
             {
                 AppLogger.Log("User action: Set female pitch failed - no song playing");
-                MarqueeAPI.ShowCornerText(Loc.T("Pitch.PlayFirst"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                ShowPitchMarquee(Loc.T("Pitch.PlayFirst"));
                 return;
             }
 
             AppLogger.Log($"User action: Set pitch to female voice (from {_currentPitchLevel} to +4)");
             _currentPitchLevel = 4;
             ApplyPitchChange();
-            MarqueeAPI.ShowCornerText(Loc.T("Pitch.MarqueeFemale"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+            ShowPitchMarquee(Loc.T("Pitch.MarqueeFemale"));
             UpdatePitchDialogDisplay();
         }
         
@@ -313,11 +313,11 @@ namespace UltimateKtv
             
             if (_isPitchFixed)
             {
-                MarqueeAPI.ShowCornerText(Loc.T("Pitch.Fixed", _currentPitchLevel), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                ShowPitchMarquee(Loc.T("Pitch.Fixed", _currentPitchLevel));
             }
             else
             {
-                MarqueeAPI.ShowCornerText(Loc.T("Pitch.Unfixed"), 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
+                ShowPitchMarquee(Loc.T("Pitch.Unfixed"));
             }
         }
 
@@ -369,5 +369,9 @@ namespace UltimateKtv
                 ApplyPitchChange();
             }
         }
+
+        /// <summary>升降 Key 提示：電視右下角 3 秒。</summary>
+        private static void ShowPitchMarquee(string text) =>
+            MarqueeAPI.ShowCornerText(text, 3, MarqueePosition.BottomRight, 38, MarqueeDisplayDevice.PlayerScreen);
     }
 }

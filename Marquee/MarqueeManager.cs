@@ -142,70 +142,10 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Shows a marquee with the specified parameters
+        /// 顯示一則跑馬燈：依優先權立即顯示、排隊，或 (播放中跑馬燈) 暫存到高優先訊息結束後恢復。
+        /// 樣式由 MarqueeAPI 依設定解析好放在 item 裡。
         /// </summary>
-        public void ShowMarquee(string text, Brush color, FontFamily fontFamily, double fontSize,
-            int repeatCount, MarqueePosition position, double speed, int displayDevice)
-        {
-            ShowMarquee(text, color, fontFamily, fontSize, repeatCount, position, speed, displayDevice,
-                FontWeights.Normal, null, 0, 500, MarqueePriority.Normal, false);
-        }
-
-        /// <summary>
-        /// Shows a marquee with custom stroke, weight, and hold time parameters
-        /// </summary>
-        public void ShowMarquee(string text, Brush color, FontFamily fontFamily, double fontSize,
-            int repeatCount, MarqueePosition position, double speed, int displayDevice,
-            FontWeight fontWeight, Brush? strokeColor, double strokeThickness, int holdTimeMs,
-            MarqueePriority priority = MarqueePriority.Normal, bool isSongPlayback = false)
-        {
-            var item = new MarqueeItem
-            {
-                Text = text,
-                Color = color,
-                FontFamily = fontFamily,
-                FontSize = fontSize,
-                RepeatCount = repeatCount,
-                Position = position,
-                Speed = speed,
-                DisplayDevice = displayDevice,
-                FontWeight = fontWeight,
-                StrokeColor = strokeColor,
-                StrokeThickness = strokeThickness,
-                HoldTimeMs = holdTimeMs,
-                IsStatic = false,
-                Priority = priority,
-                IsSongPlayback = isSongPlayback
-            };
-
-            EnqueueOrDisplayItem(item);
-        }
-
-        /// <summary>
-        /// Shows static text with countdown timer (no scrolling animation)
-        /// </summary>
-        public void ShowStaticText(string text, Brush color, FontFamily fontFamily, double fontSize,
-            MarqueePosition position, int timeoutSeconds, int displayDevice,
-            MarqueePriority? priority = null)
-        {
-            MarqueePriority effectivePriority = priority ?? (timeoutSeconds > 0 ? MarqueePriority.High : MarqueePriority.Normal);
-
-            var item = new MarqueeItem
-            {
-                Text = text,
-                Color = color,
-                FontFamily = fontFamily,
-                FontSize = fontSize,
-                Position = position,
-                TimeoutSeconds = timeoutSeconds,
-                DisplayDevice = displayDevice,
-                IsStatic = true,
-                Priority = effectivePriority,
-                IsSongPlayback = false
-            };
-
-            EnqueueOrDisplayItem(item);
-        }
+        public void Show(MarqueeItem item) => EnqueueOrDisplayItem(item);
 
         private void EnqueueOrDisplayItem(MarqueeItem item)
         {
@@ -450,18 +390,6 @@ namespace UltimateKtv
             {
                 StopMarquee(deviceId);
             }
-        }
-
-        /// <summary>
-        /// Checks if a marquee is currently active on the specified device
-        /// </summary>
-        public bool IsMarqueeActive(int displayDevice)
-        {
-            if (_deviceStates.TryGetValue(displayDevice, out var state))
-            {
-                return state.ActiveMainControl != null || state.ActiveCornerControls.Count > 0;
-            }
-            return false;
         }
 
         /// <summary>

@@ -346,15 +346,7 @@ namespace UltimateKtv
                 AppLogger.Log($"Marquee display device: {displayDevice} (SingleMonitorMode: {isSingleMonitorMode})");
                 
                 // Show the marquee indefinitely until a song is ordered (timeoutSeconds: 0)
-                MarqueeManager.Instance.ShowStaticText(
-                    marqueeText,
-                    ThemeSettingsHandler.WebHostInfoForeground,
-                    ThemeSettingsHandler.FontFamily,
-                    fontSize: ThemeSettingsHandler.Settings.WebHostInfoFontSize,
-                    position: UltimateKtv.Enums.MarqueePosition.Top,
-                    timeoutSeconds: 0,
-                    displayDevice: displayDevice
-                );
+                MarqueeAPI.ShowWebHostInfo(marqueeText, displayDevice);
 
                 // Set flag so marquee can be dismissed when a song is ordered
                 _isWebHostMarqueeDisplayed = true;
