@@ -1010,19 +1010,7 @@ namespace UltimateKtv
         /// <summary>
         /// Checks if a User_Id string represents a timestamp in the format "MM/dd HH:mm".
         /// </summary>
-        public static bool IsTimestampUserId(string userId)
-        {
-            if (string.IsNullOrEmpty(userId)) return false;
-            // Match pattern: MM/dd HH:mm (11 characters)
-            return userId.Length == 11 &&
-                   char.IsDigit(userId[0]) && char.IsDigit(userId[1]) &&
-                   userId[2] == '/' &&
-                   char.IsDigit(userId[3]) && char.IsDigit(userId[4]) &&
-                   userId[5] == ' ' &&
-                   char.IsDigit(userId[6]) && char.IsDigit(userId[7]) &&
-                   userId[8] == ':' &&
-                   char.IsDigit(userId[9]) && char.IsDigit(userId[10]);
-        }
+        public static bool IsTimestampUserId(string userId) => SongLibrary.IsSessionUserId(userId);
 
         /// <summary>
         /// Determines the sort weight for a favorite user based on their User_Id.

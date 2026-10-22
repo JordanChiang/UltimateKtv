@@ -564,7 +564,7 @@ namespace UltimateKtv
                                     {
                                         try
                                         {
-                                            Db.ExecuteNonQuery("UPDATE ktv_Song SET Song_PlayCount = ? WHERE Song_Id = ?", newPlayCount, songId);
+                                            SongLibrary.SetPlayCount(songId, newPlayCount);
                                             AppLogger.Log($"DB Write: Updated Song_PlayCount to {newPlayCount} for Song_Id '{songId}'");
                                             DebugLog($"Successfully saved new play count ({newPlayCount}) for Song_Id '{songId}' to the database.");
                                         }
@@ -586,9 +586,7 @@ namespace UltimateKtv
                                     try
                                     {
                                         // Song_Id is the history Id (Y0017) for desktop orders but the video ID for web orders
-                                        // IIF exists in both Access and SQLite (3.32+)
-                                        string sql = "UPDATE YoutubeSongList SET PlayCount = IIF(PlayCount IS NULL, 0, PlayCount) + 1 WHERE Id = ? OR Url = ?";
-                                        int rows = Db.ExecuteNonQuery(sql, ytSongId, ytSongId);
+                                        int rows = SongLibrary.IncrementYoutubePlayCount(ytSongId);
                                         AppLogger.Log($"DB Write: Incremented PlayCount for Youtube '{songNameForLog}' ({ytSongId}), rows affected={rows}");
                                     }
                                     catch (Exception ex)
@@ -650,7 +648,7 @@ namespace UltimateKtv
                     {
                         try
                         {
-                            Db.ExecuteNonQuery("UPDATE ktv_Song SET Song_Volume = ? WHERE Song_Id = ?", currentVolume, songId);
+                            SongLibrary.SetVolume(songId, currentVolume);
                             DebugLog($"DB Write: Updated Song_Volume to {currentVolume} for Song_Id '{songId}'");
                             AppLogger.Log($"DB Write: Updated Song_Volume to {currentVolume} for Song_Id '{songId}'");
                         }
@@ -1314,7 +1312,7 @@ namespace UltimateKtv
                                 {
                                     try
                                     {
-                                        Db.ExecuteNonQuery("UPDATE ktv_Song SET Song_Track = ? WHERE Song_Id = ?", newTrack, songId);
+                                        SongLibrary.SetMusicTrack(songId, newTrack);
                                         AppLogger.Log($"DB Write: Updated Song_Track to {newTrack} for Song_Id '{songId}'");
                                         DebugLog($"Successfully saved new Song_Track ({newTrack}) for Song_Id '{songId}' to the database.");
                                     }

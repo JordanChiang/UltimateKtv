@@ -502,11 +502,7 @@ namespace UltimateKtv
         {
             try
             {
-                string userId = "****";
-
-                // Delete all records for User_Id "****"
-                Db.ExecuteNonQuery("DELETE FROM ktv_Favorite WHERE User_Id = ?", userId);
-                AppLogger.Log("DB Write: Cleared today's play list (User_Id = ****)");
+                SongLibrary.ClearTodayList();
                 DebugLog("Cleared today's play list (User_Id = ****)");
 
                 // Reload the favorite data to keep it in sync
@@ -531,118 +527,12 @@ namespace UltimateKtv
 
             try
             {
-                var settings = SettingsManager.Instance.CurrentSettings;
-                int maxRecords = settings.PlayHistoryCount;
-
-                DebugLog($"RecordSongPlay called for Song_Id={songId}, maxRecords={maxRecords}");
-
-                // 1. Add to User_Id "****" (today's play list)
-                string todayUserId = "****";
-                var todayRecords = SongDatas.FavoriteSongData?
-                    .Where(fav => fav.TryGetValue("User_Id", out var uid) && uid?.ToString() == todayUserId)
-                    .ToList() ?? new List<Dictionary<string, object?>>();
-
-                DebugLog($"Current today's play list has {todayRecords.Count} songs");
-
-                // Check if song already exists in today's list
-                bool existsInToday = todayRecords.Any(fav =>
-                    fav.TryGetValue("Song_Id", out var sid) && sid?.ToString() == songId);
-
-                if (!existsInToday)
-                {
-                    int rowsAffected = Db.ExecuteNonQuery("INSERT INTO ktv_Favorite (User_Id, Song_Id) VALUES (?, ?)", todayUserId, songId);
-                    AppLogger.Log($"DB Write: Added Song_Id={songId} to today's play list, rows affected={rowsAffected}");
-                    DebugLog($"Added to today's play list: Song_Id={songId}, rows affected={rowsAffected}");
-                }
-                else
-                {
-                    DebugLog($"Song {songId} already in today's play list, skipping");
-                }
-
-                // 2. Add to timestamped User_Id (MM/dd HH:mm format) - using session timestamp
-                string timestampUserId = _sessionTimestampUserId;
-                DebugLog($"Using session timestamped entry: User_Id={timestampUserId}");
-                
-                // Get all timestamped records (User_Id that match MM/dd HH:mm pattern)
-                var timestampedRecords = SongDatas.FavoriteSongData?
-                    .Where(fav => 
-                    {
-                        if (!fav.TryGetValue("User_Id", out var uid)) return false;
-                        return SongDatas.IsTimestampUserId(uid?.ToString() ?? "");
-                    })
-                    .OrderBy(fav => fav.TryGetValue("User_Id", out var uid) ? uid?.ToString() ?? "" : "")
-                    .ToList() ?? new List<Dictionary<string, object?>>();
-
-                // Count unique User_Id entries (not individual songs)
-                var uniqueTimestamps = timestampedRecords
-                    .Select(fav => fav.TryGetValue("User_Id", out var uid) ? uid?.ToString() ?? "" : "")
-                    .Distinct()
-                    .OrderBy(uid => uid)
-                    .ToList();
-
-                DebugLog($"Found {uniqueTimestamps.Count} unique timestamps, limit is {maxRecords}");
-
-                // If we've reached the limit, delete all records for the oldest timestamp
-                if (uniqueTimestamps.Count >= maxRecords)
-                {
-                    string oldestTimestamp = uniqueTimestamps.First();
-                    int deletedRows = Db.ExecuteNonQuery("DELETE FROM ktv_Favorite WHERE User_Id = ?", oldestTimestamp);
-                    AppLogger.Log($"DB Write: Deleted oldest timestamp records: User_Id={oldestTimestamp}, rows deleted={deletedRows}");
-                    DebugLog($"Deleted oldest timestamp records: User_Id={oldestTimestamp}, rows deleted={deletedRows}");
-                    
-                    // Also delete from ktv_User if it exists
-                    try
-                    {
-                        Db.ExecuteNonQuery("DELETE FROM ktv_User WHERE User_Id = ?", oldestTimestamp);
-                        AppLogger.Log($"DB Write: Deleted User_Id from ktv_User: {oldestTimestamp}");
-                        DebugLog($"Deleted User_Id from ktv_User: {oldestTimestamp}");
-                    }
-                    catch (Exception userEx)
-                    {
-                        DebugLog($"Note: Could not delete from ktv_User (may not exist): {userEx.Message}");
-                        AppLogger.LogError("Could not delete from ktv_User", userEx);
-                    }
-                }
-
-                // Ensure User_Id exists in ktv_User table (may be required for foreign key)
-                try
-                {
-                    var userExists = Db.GetDataTable("SELECT COUNT(*) FROM ktv_User WHERE User_Id = ?", timestampUserId);
-                    if (userExists.Rows.Count > 0 && Convert.ToInt32(userExists.Rows[0][0]) == 0)
-                    {
-                        // User doesn't exist, create it
-                        Db.ExecuteNonQuery("INSERT INTO ktv_User (User_Id, User_Name) VALUES (?, ?)", timestampUserId, timestampUserId);
-                        AppLogger.Log($"DB Write: Created User_Id in ktv_User: {timestampUserId}");
-                        DebugLog($"Created User_Id in ktv_User: {timestampUserId}");
-                    }
-                }
-                catch (Exception userEx)
-                {
-                    DebugLog($"Note: Could not check/create User_Id in ktv_User: {userEx.Message}");
-                    AppLogger.LogError("Could not check/create User_Id in ktv_User", userEx);
-                }
-
-                // Check if this exact record already exists (same timestamp + song)
-                bool existsInTimestamp = SongDatas.FavoriteSongData?
-                    .Any(fav => 
-                        fav.TryGetValue("User_Id", out var uid) && uid?.ToString() == timestampUserId &&
-                        fav.TryGetValue("Song_Id", out var sid) && sid?.ToString() == songId) ?? false;
-
-                if (!existsInTimestamp)
-                {
-                    // Insert the new timestamped record
-                    int timestampRows = Db.ExecuteNonQuery("INSERT INTO ktv_Favorite (User_Id, Song_Id) VALUES (?, ?)", timestampUserId, songId);
-                    AppLogger.Log($"DB Write: Recorded play history: User_Id={timestampUserId}, Song_Id={songId}, rows affected={timestampRows}");
-                    DebugLog($"Recorded play history: User_Id={timestampUserId}, Song_Id={songId}, rows affected={timestampRows}");
-                }
-                else
-                {
-                    DebugLog($"Play history already exists for User_Id={timestampUserId}, Song_Id={songId}, skipping");
-                }
+                int maxRecords = SettingsManager.Instance.CurrentSettings.PlayHistoryCount;
+                DebugLog($"RecordSongPlay called for Song_Id={songId}, session={_sessionTimestampUserId}, maxRecords={maxRecords}");
+                SongLibrary.RecordPlay(songId, _sessionTimestampUserId, maxRecords);
 
                 // Reload the favorite data to keep it in sync
                 SongDatas.ReloadFavoriteData();
-                DebugLog("Favorite data reloaded from database");
             }
             catch (Exception ex)
             {

@@ -266,8 +266,7 @@ namespace UltimateKtv
             try
             {
                 // Check if song already exists in user's favorites by querying the database directly
-                var result = Db.GetDataTable("SELECT COUNT(*) FROM ktv_Favorite WHERE User_Id = ? AND Song_Id = ?", userId, songId);
-                bool alreadyExists = result.Rows.Count > 0 && Convert.ToInt32(result.Rows[0][0]) > 0;
+                bool alreadyExists = SongLibrary.IsFavorite(userId, songId);
 
                 DebugLog($"AddSongToUserFavorites: Checking if Song_Id={songId} exists for User_Id={userId}, alreadyExists={alreadyExists}");
 
@@ -282,11 +281,11 @@ namespace UltimateKtv
                 }
 
                 // Insert the new favorite
-                int rowsAffected = Db.ExecuteNonQuery("INSERT INTO ktv_Favorite (User_Id, Song_Id) VALUES (?, ?)", userId, songId);
+                bool added = SongLibrary.AddFavorite(userId, songId);
 
-                DebugLog($"AddSongToUserFavorites: INSERT executed, rowsAffected={rowsAffected}");
+                DebugLog($"AddSongToUserFavorites: added={added}");
 
-                if (rowsAffected > 0)
+                if (added)
                 {
                     DebugLog($"Added song {songId} to user {userId} ({userName}) favorites");
                     AppLogger.Log($"Successfully added song {songId} to {userName}'s favorites");

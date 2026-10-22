@@ -363,7 +363,7 @@ namespace UltimateKtv
                 // Delete from DB
                 try
                 {
-                    Db.ExecuteNonQuery("DELETE FROM YoutubeSongList");
+                    SongLibrary.ClearYoutubeHistory();
                     AppLogger.Log("Cleared YoutubeSongList database.");
                     
                     // Clear YoutubeHistory memory cache if any
