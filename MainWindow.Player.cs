@@ -20,7 +20,16 @@ namespace UltimateKtv
 {
     public partial class MainWindow
     {
-        private bool LegacyAudioChannelDefinition;
+        // 人聲/伴唱切換 (伴唱位置、固定人聲)
+        private VocalSwitch _vocal = null!;
+
+        /// <summary>VocalSwitch 眼中的 player 音軌/聲道。</summary>
+        private sealed class PlayerAudioTracks : IAudioTracks
+        {
+            public IReadOnlyList<int> Streams => MediaHostManager.Instance.Player.AudioStreams;
+            public int Track { get => MediaHostManager.Instance.Player.AudioTrack; set => MediaHostManager.Instance.Player.AudioTrack = value; }
+            public int Channel { get => MediaHostManager.Instance.Player.AudioChannel; set => MediaHostManager.Instance.Player.AudioChannel = value; }
+        }
         
         // LRC fields
         private List<LrcLine>? _currentLyrics;
@@ -66,6 +75,7 @@ namespace UltimateKtv
         /// <summary>建立播放場次並接上主視窗的反應；必須在 UI 執行緒、使用待播清單之前呼叫。</summary>
         private void InitializePlaybackSession()
         {
+            _vocal = new VocalSwitch(new PlayerAudioTracks());
             _playback = new PlaybackSession(
                 new PlayerTarget(this),
                 path => Task.Run(() =>
@@ -310,100 +320,20 @@ namespace UltimateKtv
                     DebugLog($"     failed to set player.Volume={PlayingFileVolume} ");
                 }
 
-                LegacyAudioChannelDefinition = SettingsManager.Instance.CurrentSettings.IsLegacyAudioChannelDefinitionEnabled;
-
-                //player.Volume = MediaPlayerContainer.ActualVolume;
-                
-                // Retrieve and set the audio track for the current song
-                if (_playingSongData.TryGetValue("Song_Track", out var trackObj) &&
-                    trackObj != null &&
-                    int.TryParse(trackObj.ToString(), out int dbTrack))
-                {
-                    if(LegacyAudioChannelDefinition || player.AudioStreams.Count >= 3) 
-                    {
-                        PlayingFileMusicTrack = dbTrack;
-                    }
-                    else
-                    {
-                        // LegacyAudioChannelDefinition is false and only 1 or 2 audio tracks
-                        PlayingFileMusicTrack = dbTrack == 1 ? 2 : 1;                     
-                    }
-                }
-                else
-                {
-                    // Fallback to a default track if not found or invalid
-                    PlayingFileMusicTrack = 0;
-                }
-
                 // Apply the global AudioAmplify setting from the options panel
                 player.AudioAmplify = SettingsManager.Instance.CurrentSettings.AudioAmplify;
                 DebugLog($"     AudioAmplify= {player.AudioAmplify}, VideoRendererType: {player.VideoRendererName}");
-                
-                // Check if a vocal track is fixed and apply it if valid for the current media.
-                if (_isVocalTrackFixed && _fixedAudioTrack != -1)
-                {
-                    int streamCount = player.AudioStreams?.Count ?? 0;
 
-                    if (streamCount <= 1)
-                    {
-                        // Single audio track: Switch between Left (1) and Right (2) channels
-                        if (player.AudioStreams != null && player.AudioStreams.Count > 0)
-                            player.AudioTrack = player.AudioStreams[0];
+                // 伴唱位置、預設伴唱、固定人聲：由 VocalSwitch 依歌庫的 Song_Track 決定
+                int? songTrack = _playingSongData.TryGetValue("Song_Track", out var trackObj) &&
+                    trackObj != null && int.TryParse(trackObj.ToString(), out int dbTrack) ? dbTrack : null;
+                _vocal.ApplyForNewSong(
+                    songTrack,
+                    SettingsManager.Instance.CurrentSettings.IsLegacyAudioChannelDefinitionEnabled,
+                    IsPlayingYoutube,
+                    SettingsManager.Instance.CurrentSettings.YoutubeDefaultNoVocal);
+                DebugLog($"     Audio: music={_vocal.MusicTrack}, fixed={_vocal.FixedTrack}, track={player.AudioTrack}, channel={player.AudioChannel}, streams={player.AudioStreams.Count}");
 
-                        // Select the vocal channel (opposite of PlayingFileMusicTrack)
-                        player.AudioChannel = (PlayingFileMusicTrack == 1) ? 2 : 1;
-                    }
-                    else
-                    {
-                        // Multi audio tracks (2 or more)
-                        player.AudioChannel = 0; // Stereo
-
-                        if (streamCount >= 3 && player.AudioStreams != null && player.AudioStreams.Contains(_fixedAudioTrack))
-                        {
-                            // 3+ tracks and exact fixed track exists -> select exact track
-                            player.AudioTrack = _fixedAudioTrack;
-                        }
-                        else
-                        {
-                            // Dual-track or track count insufficient -> pick the first non-music track (vocal track)
-                            int vocalTrack = player.AudioStreams?.FirstOrDefault(t => t != PlayingFileMusicTrack) ?? 0;
-                            if (vocalTrack == 0 && player.AudioStreams != null && player.AudioStreams.Count > 0)
-                                vocalTrack = player.AudioStreams[0];
-
-                            player.AudioTrack = vocalTrack;
-                        }
-                    }
-
-                    DebugLog($"     Applying fixed vocal track: Fixed={_fixedAudioTrack} -> Target Track={player.AudioTrack}, Channel={player.AudioChannel} (Streams.Count={streamCount}, PlayingFileMusicTrack={PlayingFileMusicTrack})");
-                }
-                else if (player.AudioStreams.Count == 1)
-                {
-                    // Only 1 audio channel
-                    player.AudioChannel = PlayingFileMusicTrack;
-                    player.AudioTrack = player.AudioStreams[0];
-                }
-                else
-                {
-                    // Multiple audio channels: Fallback to the designated music track
-                    if (player.AudioStreams.Contains(PlayingFileMusicTrack))
-                    {
-                        player.AudioTrack = PlayingFileMusicTrack;
-                    }
-                    else if (player.AudioStreams.Count > 0)
-                    {
-                        // If the designated music track is not available in this file,
-                        // default to the first available track.
-                        player.AudioTrack = player.AudioStreams[0];
-                    }
-                }
-
-                if(IsPlayingYoutube)
-                {
-                    player.AudioChannel = 3;
-                    if(SettingsManager.Instance.CurrentSettings.YoutubeDefaultNoVocal == false)
-                        player.AudioChannel = 1;
-                }
-                
                 // Attempt to load LRC file
                 _currentLyrics = null;
                 _currentLyricIndex = -1;
@@ -1051,8 +981,6 @@ namespace UltimateKtv
         /// <summary>
         /// Updates the visual state of the Vocal and Music buttons to show which is active.
         /// </summary>
-
-        bool isMusicActive;
         private void UpdateVocalMusicButtonStates()
         {
             if (ktvPlayer == null || VocalBtn == null || MusicBtn == null)
@@ -1060,64 +988,33 @@ namespace UltimateKtv
                 return;
             }
 
-            // For YouTube songs
-            if (IsPlayingYoutube == true)
+            var mode = _vocal.Mode;
+
+            if (!_vocal.IsYoutube)
             {
-                // toggle 2 states for Youtube
-                if(ktvPlayer.AudioChannel == 0)
-                {
-                    VocalBtn.Background = _activeButtonBackground;
-                    VocalBtn.Foreground = _activeButtonForeground;
-
-                    MusicBtn.ClearValue(Button.BackgroundProperty);
-                    MusicBtn.ClearValue(Button.ForegroundProperty);
-                }
-                else
-                {
-                    // Vocal is active, Music is inactive
-                    MusicBtn.Background = _activeButtonBackground;
-                    MusicBtn.Foreground = _activeButtonForeground;
-
-                    VocalBtn.ClearValue(Button.BackgroundProperty);
-                    VocalBtn.ClearValue(Button.ForegroundProperty);
-                }
-                return;
-            }
-
                 // Always stop any flashing animation before reapplying normal styles
                 StopVocalBtnFlash();
                 VocalBtn.ClearValue(OpacityProperty);
+            }
 
-                // If a track is fixed, the Vocal button gets a special "locked" style.
-                if (_isVocalTrackFixed)
-                {
-                    VocalBtn.Background = _fixedButtonBackground;
-                    VocalBtn.Foreground = _activeButtonForeground;
+            // If a track is fixed, the Vocal button gets a special "locked" style.
+            if (mode == VocalMode.Fixed)
+            {
+                VocalBtn.Background = _fixedButtonBackground;
+                VocalBtn.Foreground = _activeButtonForeground;
 
-                    // Music button is always inactive in this mode
-                    MusicBtn.ClearValue(Button.BackgroundProperty);
-                    MusicBtn.ClearValue(Button.ForegroundProperty);
-                    isMusicActive = false; // Ensure state is correct
+                // Music button is always inactive in this mode
+                MusicBtn.ClearValue(Button.BackgroundProperty);
+                MusicBtn.ClearValue(Button.ForegroundProperty);
 
-                    // Start the flashing animation on the button
-                    StartVocalBtnFlash();
-                    return; // Exit early
-                }
-
-                if (ktvPlayer.AudioStreams?.Count > 1)
-                {
-                    // Multi-track: active if current track is the designated music track
-                    isMusicActive = (ktvPlayer.AudioTrack == PlayingFileMusicTrack);
-                }
-                else
-                {
-                    // Single-track: active if current channel is the designated music channel
-                    isMusicActive = (ktvPlayer.AudioChannel == PlayingFileMusicTrack);
-                }
+                // Start the flashing animation on the button
+                StartVocalBtnFlash();
+                return;
+            }
 
             // Apply styles based on which button is active
             // Use cached brushes for performance to avoid UI thread stalls.
-            if (isMusicActive)
+            if (mode == VocalMode.Music)
             {
                 // Music is active, Vocal is inactive
                 MusicBtn.Background = _activeButtonBackground;
@@ -1137,183 +1034,52 @@ namespace UltimateKtv
             }
         }
 
-        public void VocalBtn_Click(object sender, RoutedEventArgs e)
-        {
-            DebugLog($"VocalBtn_Click: audio track count={ktvPlayer.AudioStreams?.Count ?? 0} _isVocalTrackFixed={_isVocalTrackFixed}");
+        public void VocalBtn_Click(object sender, RoutedEventArgs e) => SwitchToVocal();
 
+        public void MusicBtn_Click(object sender, RoutedEventArgs e) => SwitchToMusic();
+
+        /// <summary>切到人聲 (人聲鈕、手機、隨機播放共用)。固定人聲時只解除固定。</summary>
+        public void SwitchToVocal()
+        {
             // 只有在歌曲播放（或載入中）時才真正作動（若處於固定聲道狀態則允許點擊解除）
-            if (!IsSongPlaybackActive && !_isVocalTrackFixed)
+            if (!IsSongPlaybackActive && !_vocal.IsFixed)
             {
-                DebugLog("VocalBtn_Click: No song is currently playing, ignoring.");
+                DebugLog("SwitchToVocal: No song is currently playing, ignoring.");
                 return;
             }
 
-            // If track is fixed, a normal click on the vocal button will disable the fixed state.
-            if (_isVocalTrackFixed)
+            var result = _vocal.SwitchToVocal();
+            AppLogger.Log($"VocalBtn: {result}, tracks={ktvPlayer.AudioStreams.Count}, track={ktvPlayer.AudioTrack}, channel={ktvPlayer.AudioChannel}");
+            AfterVocalSwitch(result);
+        }
+
+        /// <summary>切到伴唱 (伴唱鈕、手機、隨機播放共用)。固定人聲時只解除固定。</summary>
+        public void SwitchToMusic()
+        {
+            if (!IsSongPlaybackActive && !_vocal.IsFixed)
+            {
+                DebugLog("SwitchToMusic: No song is currently playing, ignoring.");
+                return;
+            }
+
+            var result = _vocal.SwitchToMusic();
+            AppLogger.Log($"MusicBtn: {result}, tracks={ktvPlayer.AudioStreams.Count}, track={ktvPlayer.AudioTrack}, channel={ktvPlayer.AudioChannel}");
+            AfterVocalSwitch(result);
+        }
+
+        private void AfterVocalSwitch(VocalSwitchResult result)
+        {
+            if (result == VocalSwitchResult.Ignored) return;
+
+            if (result == VocalSwitchResult.Unfixed)
             {
                 AppLogger.Log("User action: Disabled fixed vocal track");
-                _isVocalTrackFixed = false;
-                _fixedAudioTrack = -1;
                 // Stop the flashing animation and reset opacity before updating styles
                 StopVocalBtnFlash();
                 VocalBtn.ClearValue(OpacityProperty);
-                UpdateVocalMusicButtonStates();
                 MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackUnfixed"), 2);
-                return;
             }
-
-            // For YouTube songs, simply set AudioChannel to 0
-            // ktvPlayer.AudioChannel=0: Sterao
-            // ktvPlayer.AudioChannel=1: Left 
-            // ktvPlayer.AudioChannel=2: Right
-            // ktvPlayer.AudioChannel=3: Vocal remove
-            if (IsPlayingYoutube)
-            {
-                if (ktvPlayer != null)
-                {
-                    ktvPlayer.AudioChannel = 0;
-                    DebugLog("YouTube VocalBtn_Click: Forced AudioChannel=0");
-                    UpdateVocalMusicButtonStates();
-                }
-                return;
-            }
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                if (ktvPlayer == null)
-                    return;
-
-                if (ktvPlayer.AudioStreams?.Count == 1)
-                {
-                    // Only 1 audio channel, toggle between 1 and 2
-                    if (PlayingFileMusicTrack == 1)
-                        ktvPlayer.AudioChannel = 2;
-                    else
-                        ktvPlayer.AudioChannel = 1;
-
-                    DebugLog($"        1 audio tracks mode. new Track ={ktvPlayer.AudioTrack}, AudioChannel={ktvPlayer.AudioChannel}");
-                    AppLogger.Log($"VocalBtn: tracks=1, track={ktvPlayer.AudioTrack}, channel={ktvPlayer.AudioChannel}");
-                }
-                else if (ktvPlayer.AudioStreams?.Count == 2 && (!isMusicActive))
-                {
-                    DebugLog($"        2 audio tracks mode. current audio track is {ktvPlayer.AudioTrack} ");
-
-                    if (ktvPlayer.AudioTrack == PlayingFileMusicTrack)
-                    {
-                        if (ktvPlayer.AudioStreams[0] == ktvPlayer.AudioTrack)
-                            ktvPlayer.AudioTrack = ktvPlayer.AudioStreams[1];
-                        else
-                            ktvPlayer.AudioTrack = ktvPlayer.AudioStreams[0];
-                    }
-
-                    DebugLog($"        new track is {ktvPlayer.AudioTrack}");
-                    AppLogger.Log($"VocalBtn: tracks=2, toggled to track={ktvPlayer.AudioTrack}");
-                }
-                else
-                {
-                    // Cycle through available audio tracks
-                    var audioTracks = ktvPlayer.AudioStreams;
-                    if (audioTracks == null || audioTracks.Count < 2) // Need at least 2 tracks to cycle
-                    {
-                        DebugLog($"        Multi-track mode. Not enough tracks to cycle ({audioTracks?.Count ?? 0}).");
-                        return;
-                    }
-
-                    // Find the index of the current audio channel
-                    var currentIndex = audioTracks.IndexOf(ktvPlayer.AudioTrack);
-
-                    // If not found, it's the first click, so start from the music track
-                    if (currentIndex == -1)
-                    {
-                        currentIndex = audioTracks.IndexOf(PlayingFileMusicTrack);
-                    }
-
-                    // This should not happen if the list is correct, but as a fallback
-                    if (currentIndex == -1)
-                    {
-                        currentIndex = 0;
-                    }
-
-                    // Get the next index, wrapping around
-                    var nextIndex = (currentIndex + 1) % audioTracks.Count;
-
-                    // Set the new audio channel
-                    ktvPlayer.AudioTrack = audioTracks[nextIndex];
-                    DebugLog($"        Multi-track mode. new tracks is {ktvPlayer.AudioTrack}");
-                    AppLogger.Log($"VocalBtn: tracks={audioTracks.Count}, cycled to track={ktvPlayer.AudioTrack}");
-                }
-                UpdateVocalMusicButtonStates();
-            }
-            finally
-            {
-                sw.Stop();
-                DebugLog($"VocalBtn_Click completed in {sw.ElapsedMilliseconds}ms");
-            }
-        }
-
-        public void MusicBtn_Click(object sender, RoutedEventArgs e)
-        {
-            // 只有在歌曲播放（或載入中）時才真正作動（若處於固定聲道狀態則允許點擊解除）
-            if (!IsSongPlaybackActive && !_isVocalTrackFixed)
-            {
-                DebugLog("MusicBtn_Click: No song is currently playing, ignoring.");
-                return;
-            }
-
-            // For YouTube songs, simply set AudioChannel to 3
-            if (IsPlayingYoutube && ktvPlayer != null)
-            {
-                ktvPlayer.AudioChannel = 3;
-                DebugLog("YouTube MusicBtn_Click: Forced AudioChannel=3");
-                UpdateVocalMusicButtonStates();
-                return;
-            }
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                // If track is fixed, a click on the music button will also disable the fixed state.
-                if (_isVocalTrackFixed)
-                {
-                    AppLogger.Log("User action: Disabled fixed vocal track via music button");
-                    _isVocalTrackFixed = false;
-                    _fixedAudioTrack = -1;
-                    // Stop the flashing animation and reset opacity before updating styles
-                    StopVocalBtnFlash();
-                    VocalBtn.ClearValue(OpacityProperty);
-                    UpdateVocalMusicButtonStates();
-                    MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackUnfixed"), 2);
-                    // Do not proceed to change the track, just disable the mode.
-                    return;
-                }
-
-                if (ktvPlayer == null)
-                    return;
-
-                int audioStreamsCount = ktvPlayer.AudioStreams?.Count ?? 0;
-                DebugLog($"MusicBtn_Click: AudioTrackList.Count={audioStreamsCount}, AudioChannel={ktvPlayer.AudioChannel}");
-                AppLogger.Log($"MusicBtn: tracks={audioStreamsCount}, channel={ktvPlayer.AudioChannel}");
-
-                if (isMusicActive)
-                    return;
-
-                if (audioStreamsCount <= 1)
-                {
-                    // Single-track: Set the audio channel to the music channel
-                    ktvPlayer.AudioChannel = PlayingFileMusicTrack;
-                }
-                else
-                {
-                    // Multi-track: Set the audio track to the music track
-                    if (ktvPlayer.AudioTrack != PlayingFileMusicTrack)
-                        ktvPlayer.AudioTrack = PlayingFileMusicTrack;
-                }
-                UpdateVocalMusicButtonStates();
-            }
-            finally
-            {
-                sw.Stop();
-                DebugLog($"MusicBtn_Click completed in {sw.ElapsedMilliseconds}ms");
-            }
+            UpdateVocalMusicButtonStates();
         }
 
         #region VocalBtn and MusicBtn Long Press and Right Click Handlers
@@ -1418,7 +1184,7 @@ namespace UltimateKtv
                 if (VocalBtn == null) return Task.CompletedTask;
 
                 var currentTrack = ktvPlayer.AudioTrack;
-                DebugLog($"ShowSetAsMusicTrackDialog: Current AudioTrack={currentTrack}, Current PlayingFileMusicTrack={PlayingFileMusicTrack}");
+                DebugLog($"ShowSetAsMusicTrackDialog: Current AudioTrack={currentTrack}, Current MusicTrack={_vocal.MusicTrack}");
 
                 // 當副選單出現時，原來的按鈕無效 (Disabled)
                 if (VocalBtn != null) VocalBtn.IsEnabled = false;
@@ -1501,13 +1267,8 @@ namespace UltimateKtv
 
                 setFixeTrackButton.Click += (s, e) =>
                 {
-                    var targetTrack = (ktvPlayer.AudioStreams == null || ktvPlayer.AudioStreams.Count <= 1) 
-                        ? ktvPlayer.AudioChannel 
-                        : currentTrack;
+                    var targetTrack = _vocal.Fix(currentTrack);
                     AppLogger.Log($"User action: Fix audio track to {targetTrack}");
-                    // Set the fixed track state and close the popup
-                    _isVocalTrackFixed = true;
-                    _fixedAudioTrack = targetTrack;
                     result = null; // Indicate a different action from 'set as music'
                     popup.IsOpen = false;
                 };
@@ -1527,24 +1288,16 @@ namespace UltimateKtv
                     // Process result after popup closes
                     if (result == true) // "Set as Music" was clicked
                     {
-                        DebugLog($"User confirmed: Setting AudioTrack {currentTrack} as PlayingFileMusicTrack");
+                        DebugLog($"User confirmed: Setting AudioTrack {currentTrack} as music track");
 
-                        // Set current audio track as the music track
-                        if (ktvPlayer.AudioStreams?.Count <= 1)
-                        {
-                            PlayingFileMusicTrack = (PlayingFileMusicTrack == 1) ? 2 : 1;
-                            if(PlayingFileMusicTrack==1)
-                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LeftAsMusic"), 5);
-                            else
-                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.RightAsMusic"), 5);
-                        }
+                        // Set current audio track as the music track and switch to music
+                        bool singleStream = ktvPlayer.AudioStreams.Count <= 1;
+                        int newTrack = _vocal.SetAsMusic(currentTrack);
+                        if (singleStream)
+                            MarqueeAPI.ShowStaticAnnouncement(Loc.T(newTrack == 1 ? "Player.LeftAsMusic" : "Player.RightAsMusic"), 5);
                         else
-                        {
-                            PlayingFileMusicTrack = currentTrack;
-                            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackAsMusic", currentTrack), 5);
-                        }
-                        // Call MusicBtn_Click to switch as music mode      
-                        MusicBtn_Click(this, new RoutedEventArgs());
+                            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackAsMusic", newTrack), 5);
+                        UpdateVocalMusicButtonStates();
 
                         // If sync is enabled, update the database
                         if (_playingSongData != null)
@@ -1552,7 +1305,6 @@ namespace UltimateKtv
                             if (_playingSongData.TryGetValue("Song_Id", out var idObj) && idObj != null)
                             {
                                 string songId = idObj.ToString()!;
-                                int newTrack = PlayingFileMusicTrack;
 
                                 // Update in-memory data
                                 _playingSongData["Song_Track"] = newTrack;
@@ -1575,7 +1327,7 @@ namespace UltimateKtv
                             }
                         }
 
-                        DebugLog($"PlayingFileMusicTrack updated to: {PlayingFileMusicTrack}");
+                        DebugLog($"Music track updated to: {newTrack}");
                     }
                     else if (result == false) // "Cancel" was clicked
                     {
@@ -1583,20 +1335,14 @@ namespace UltimateKtv
                     }
                     else // "Fix Track" was clicked (result is null)
                     {
-                        DebugLog($"User confirmed: Fixing AudioTrack to {_fixedAudioTrack}");
-                        if (ktvPlayer.AudioStreams == null || ktvPlayer.AudioStreams.Count <= 1)
-                        {
-                            if (_fixedAudioTrack == 1)
-                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LeftFixed"), 5);
-                            else if (_fixedAudioTrack == 2)
-                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.RightFixed"), 5);
-                            else
-                                MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackFixed", _fixedAudioTrack), 5);
-                        }
+                        int fixedTrack = _vocal.FixedTrack;
+                        DebugLog($"User confirmed: Fixing AudioTrack to {fixedTrack}");
+                        if (ktvPlayer.AudioStreams.Count <= 1 && fixedTrack == 1)
+                            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.LeftFixed"), 5);
+                        else if (ktvPlayer.AudioStreams.Count <= 1 && fixedTrack == 2)
+                            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.RightFixed"), 5);
                         else
-                        {
-                            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackFixed", _fixedAudioTrack), 5);
-                        }
+                            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.TrackFixed", fixedTrack), 5);
 
                         // Update button visuals to reflect the new "fixed" state
                         UpdateVocalMusicButtonStates();

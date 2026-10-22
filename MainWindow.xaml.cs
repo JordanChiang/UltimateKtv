@@ -48,7 +48,6 @@ namespace UltimateKtv
         // Current playing song file path and properties for database lookup
         private string PlayingFilePath = string.Empty;
         private int PlayingFileVolume = 30;
-        private int PlayingFileMusicTrack = 0;
         // Store the full song data dictionary for the currently playing song
         // This is needed for properties like ReplayGain
         private Dictionary<string, object?>? _playingSongData = null;
@@ -135,9 +134,7 @@ namespace UltimateKtv
         private Brush? _activeButtonForeground;
 
         // For fixed vocal track feature
-        private bool _isVocalTrackFixed = false; // Player logic
         private Brush? _fixedButtonBackground; // Player logic
-        private int _fixedAudioTrack = -1; // Player logic
         private Storyboard? _vocalBtnFlashStoryboard; // Player logic
         private Storyboard? _repeatBtnFlashStoryboard; // Player logic for loop play
 

@@ -115,14 +115,14 @@ namespace UltimateKtv
             {
                 if (song.RandomAudioChannel == 0)
                 {
-                    // 人聲 - call VocalBtn_Click behavior
-                    VocalBtn_Click(null!, null!);
+                    // 人聲
+                    SwitchToVocal();
                     AppLogger.Log("Random play: Set audio to vocal track");
                 }
                 else if (song.RandomAudioChannel == 1)
                 {
-                    // 伴唱 - call MusicBtn_Click behavior
-                    MusicBtn_Click(null!, null!);
+                    // 伴唱
+                    SwitchToMusic();
                     AppLogger.Log("Random play: Set audio to music track");
                 }
             }

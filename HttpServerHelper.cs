@@ -838,7 +838,7 @@ public class HttpServerHelper
 			System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
 			{
 				var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-				mainWindow?.VocalBtn_Click(null!, null!);
+				mainWindow?.SwitchToVocal();
 			}));
 
 			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Vocal") });
@@ -858,7 +858,7 @@ public class HttpServerHelper
 			System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
 			{
 				var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-				mainWindow?.MusicBtn_Click(null!, null!);
+				mainWindow?.SwitchToMusic();
 			}));
 
 			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Music") });
