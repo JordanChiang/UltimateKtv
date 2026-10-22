@@ -64,6 +64,7 @@ namespace UltimateKtv.Tests
             Assert.Empty(SongQuery.ByLanguage(null, new[] { "國語" }, false, null, null, Options()));
             Assert.Empty(SongQuery.QuickMatch(null, SongTextField.Name, "a", true, Options()));
             Assert.Empty(SongQuery.BySinger(null, "甲", Options()));
+            Assert.Empty(SongQuery.Search(null, "甲", null, Options()));
         }
 
         // ---- 新歌 ----
@@ -194,6 +195,64 @@ namespace UltimateKtv.Tests
         public void Quick_match_with_empty_key_finds_nothing()
         {
             Assert.Empty(SongQuery.QuickMatch(new[] { S("1") }, SongTextField.Id, "", true, Options()));
+        }
+
+        // ---- 搜尋框 ----
+
+        [Fact]
+        public void Search_matches_song_name_or_singer_anywhere_ignoring_case()
+        {
+            var songs = new[] { S("byName", name: "林中小屋"), S("bySinger", name: "Song", singer: "林志炫"), S("en", name: "Hello", singer: "adele"), S("none", name: "雨", singer: "王傑") };
+            Assert.Equal(new[] { "byName", "bySinger" }, Ids(SongQuery.Search(songs, "林", null, Options())).Order().ToArray());
+            Assert.Equal(new[] { "en" }, Ids(SongQuery.Search(songs, "ADE", "", Options())));
+        }
+
+        [Fact]
+        public void Search_ignores_full_and_half_width()
+        {
+            var songs = new[] { S("full", name: "Boom！", singer: "袁小迪＆曾心梅"), S("half", name: "Ｈｅｌｌｏ") };
+            Assert.Equal(new[] { "full" }, Ids(SongQuery.Search(songs, "!", null, Options())));
+            Assert.Equal(new[] { "full" }, Ids(SongQuery.Search(songs, "&", null, Options())));
+            Assert.Equal(new[] { "half" }, Ids(SongQuery.Search(songs, "hello", null, Options())));
+        }
+
+        [Fact]
+        public void Search_without_text_lists_the_whole_language()
+        {
+            var songs = new[] { S("m", lang: "國語"), S("t", lang: "台語") };
+            Assert.Equal(new[] { "t" }, Ids(SongQuery.Search(songs, "", "台語", Options())));
+            Assert.Equal(2, SongQuery.Search(songs, null, null, Options()).Count);
+        }
+
+        // ---- 分頁 ----
+
+        [Fact]
+        public void Page_takes_the_requested_slice_and_counts_pages()
+        {
+            var items = Enumerable.Range(1, 7).ToList();
+            var page = Page<int>.Of(items, 2, 3);
+            Assert.Equal(new[] { 4, 5, 6 }, page.Items);
+            Assert.Equal(7, page.TotalCount);
+            Assert.Equal(3, page.TotalPages);
+            Assert.Equal(new[] { 7 }, Page<int>.Of(items, 3, 3).Items);
+        }
+
+        [Fact]
+        public void Page_beyond_the_end_is_empty_and_below_one_is_the_first()
+        {
+            var items = Enumerable.Range(1, 7).ToList();
+            Assert.Empty(Page<int>.Of(items, 4, 3).Items);
+            Assert.Equal(new[] { 1, 2, 3 }, Page<int>.Of(items, 0, 3).Items);
+        }
+
+        [Fact]
+        public void Page_size_below_one_means_no_paging()
+        {
+            var items = Enumerable.Range(1, 7).ToList();
+            var page = Page<int>.Of(items, 5, 0);
+            Assert.Equal(items, page.Items);
+            Assert.Equal(1, page.TotalPages);
+            Assert.Equal(1, Page<int>.Of(new List<int>(), 1, 10).TotalPages);
         }
 
         // ---- 歌星的歌 ----

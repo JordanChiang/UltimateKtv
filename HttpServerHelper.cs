@@ -134,111 +134,75 @@ public class HttpServerHelper
 		return dataTable;
 	}
 
-	public static string QuerySong(string lang, string singer, string words, string condition, string page, string rows, string sort)
-	{
-		if (SongDatas.SongData == null || SongDatas.SongData.Count == 0 || SongDatas.SongDataSchema == null)
-			return EmptyResult;
+	/// <summary>手機歌曲列表輸出的欄位。</summary>
+	private static readonly string[] SongListColumns = {
+		"Song_Id", "Song_SongName", "Song_Singer", "Song_WordCount", "Song_Lang",
+		"Song_PlayCount", "Song_CreatDate", "Song_SingerType", "Song_SongType",
+		"Song_SongStroke", "Song_CashboxId"
+	};
 
+	/// <summary>
+	/// 取歌曲清單的一頁輸出成 JSON。page 從 0 開始；rows 不是數字時用 defaultRows (0 = 不分頁)。
+	/// </summary>
+	private static string SongPageToJson(List<Song> songs, string page, string rows, int defaultRows, string[]? columns = null)
+	{
+		if (songs.Count == 0) return EmptyResult;
+		int number = IsNumeric(page) ? Convert.ToInt32(page) + 1 : 1;
+		int size = IsNumeric(rows) ? Convert.ToInt32(rows) : defaultRows;
+		var paged = Page<Song>.Of(songs, number, size);
+		using DataTable dataTable = CreateSongDataTable(paged.Items, columns ?? SongListColumns);
+		return JsonConvert.SerializeObject(dataTable.ToDictionary());
+	}
+
+	private static SongQueryOptions CurrentQueryOptions() => SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
+
+	/// <summary>舊版網頁以 RowFilter 字串查詢 (querysong)；已改為有型別的查詢，提示重新整理頁面。</summary>
+	public static string OutdatedPage() => ErrorResult("Outdated page", "Please reload this page.");
+
+	/// <summary>手機搜尋框：歌名或歌星包含 text，lang 空白 = 全部語系。</summary>
+	public static string SearchSongs(string text, string lang, string page, string rows)
+	{
 		try
 		{
-			System.Diagnostics.Debug.WriteLine($"[QuerySong] lang={lang}, singer={singer}, words={words}, condition={condition}, page={page}, rows={rows}, sort={sort}");
-
-			string rowFilter = !string.IsNullOrEmpty(condition) ? condition : string.Empty;
-
-			// Filter songs based on criteria
-			var filteredSongs = SongDatas.SongData.Where(x =>
-			{
-				if (lang != string.Empty)
-					return x.Lang == lang;
-
-				if (x.Id == string.Empty)
-					return false;
-
-				if (singer != string.Empty)
-					return x.Singer == singer;
-
-				if (words != string.Empty)
-					return x.WordCount.ToString() == words;
-
-				return true;
-			}).ToList();
-
-			if (filteredSongs.Count == 0)
-				return EmptyResult;
-
-			// Without a custom sort, apply the default user-defined sorting; the DataView keeps this row order
-			if (string.IsNullOrEmpty(sort))
-				filteredSongs = SongQuery.Sort(filteredSongs, SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings));
-
-			using DataTable dataTable = CreateSongDataTable(filteredSongs, SongDatas.SongDataSchema.Columns.Cast<DataColumn>().Select(c => c.ColumnName).ToArray());
-
-			// Apply row filter
-			if (!string.IsNullOrEmpty(rowFilter))
-			{
-				try
-				{
-					System.Diagnostics.Debug.WriteLine($"[QuerySong] Applying rowFilter: {rowFilter}");
-					dataTable.DefaultView.RowFilter = rowFilter;
-				}
-				catch (Exception ex)
-				{
-					System.Diagnostics.Debug.WriteLine($"[QuerySong] RowFilter error: {ex.Message}");
-					return ErrorResult("RowFilter Error", ex.Message);
-				}
-			}
-
-			// Apply sort
-			if (!string.IsNullOrEmpty(sort))
-			{
-				try
-				{
-					System.Diagnostics.Debug.WriteLine($"[QuerySong] Applying sort: {sort}");
-					dataTable.DefaultView.Sort = sort;
-				}
-				catch (Exception ex)
-				{
-					System.Diagnostics.Debug.WriteLine($"[QuerySong] Sort error: {ex.Message}");
-					return ErrorResult("Sort Error", ex.Message);
-				}
-			}
-
-			// Select specific columns that exist
-			var desiredColumns = new[] {
-				"Song_Id", "Song_SongName", "Song_Singer", "Song_WordCount", "Song_Lang",
-				"Song_PlayCount", "Song_CreatDate", "Song_SingerType", "Song_SongType",
-				"Song_SongStroke", "Song_CashboxId"
-			};
-
-			// Only select columns that actually exist in the DataTable
-			var existingColumns = desiredColumns.Where(col => dataTable.Columns.Contains(col)).ToArray();
-
-			System.Diagnostics.Debug.WriteLine($"[QuerySong] Available columns: {string.Join(", ", dataTable.Columns.Cast<DataColumn>().Select(c => c.ColumnName))}");
-			System.Diagnostics.Debug.WriteLine($"[QuerySong] Selecting columns: {string.Join(", ", existingColumns)}");
-
-			using DataTable resultTable = dataTable.DefaultView.ToTable(false, existingColumns);
-
-			if (resultTable.Rows.Count == 0)
-				return EmptyResult;
-
-			// Get the data as a list of dictionaries, already in the requested (or default) order
-			var sortedSongs = resultTable.ToDictionary();
-
-			// Apply pagination
-			if (string.IsNullOrEmpty(rows) || !IsNumeric(rows))
-				return JsonConvert.SerializeObject(sortedSongs);
-
-			int pageIndex = (string.IsNullOrEmpty(page) || !IsNumeric(page)) ? 1 : Convert.ToInt32(page) + 1;
-			int pageSize = Convert.ToInt32(rows);
-			var pagedSongs = sortedSongs.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
-
-			return JsonConvert.SerializeObject(pagedSongs);
+			return SongPageToJson(SongQuery.Search(SongDatas.SongData, text, lang, CurrentQueryOptions()), page, rows, 0);
 		}
 		catch (Exception ex)
 		{
-			System.Diagnostics.Debug.WriteLine($"[QuerySong] Exception: {ex.Message}");
-			System.Diagnostics.Debug.WriteLine($"[QuerySong] StackTrace: {ex.StackTrace}");
 			return ErrorResult("Query Error", ex.Message);
 		}
+	}
+
+	/// <summary>手機排行：filter 為按鈕的寫法 (例如「國語-單曲」「其它」)。</summary>
+	public static string QueryRanking(string filter, string page, string rows)
+	{
+		try
+		{
+			return SongPageToJson(SongQuery.Ranking(SongDatas.SongData, filter), page, rows, 0);
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("Query Error", ex.Message);
+		}
+	}
+
+	/// <summary>手機點歌星：該歌星的歌 (精確比對歌星名，含合唱)。</summary>
+	public static string QuerySingerSongs(string singer, string page, string rows)
+	{
+		try
+		{
+			return SongPageToJson(SongQuery.BySinger(SongDatas.SongData, singer, CurrentQueryOptions()), page, rows, 0);
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("Query Error", ex.Message);
+		}
+	}
+
+	/// <summary>手機輸入歌曲編號：找不到回傳空清單。</summary>
+	public static string QuerySongById(string id)
+	{
+		var song = SongDatas.FindSongById(id);
+		return song == null ? EmptyResult : SongPageToJson(new List<Song> { song }, "", "", 0);
 	}
 
 	private static string GetSingerTypeIndex(string singerTypeName)
@@ -971,27 +935,8 @@ public class HttpServerHelper
 				{
 					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] lang={lang}, page={page}, rows={rows}");
 	
-					var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
-					var sortedSongs = SongQuery.NewSongs(SongDatas.SongData, lang, options);
-
-					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] lang={lang}: {sortedSongs.Count} songs");
-	
-					if (sortedSongs.Count == 0)
-						return EmptyResult;
-	
-					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] Schema available: {SongDatas.SongDataSchema != null}");
-	
-	
-					string[] columnsToInclude = { "Song_Id", "Song_SongName", "Song_Singer", "Song_Lang", "Song_CreatDate" };
-					using DataTable dataTable = CreateSongDataTable(sortedSongs, columnsToInclude);
-	
-					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] DataTable rows imported: {dataTable.Rows.Count}");
-	
-					int pageIndex = (string.IsNullOrEmpty(page) || !IsNumeric(page)) ? 1 : Convert.ToInt32(page) + 1;
-					int pageSize = (string.IsNullOrEmpty(rows) || !IsNumeric(rows)) ? 50 : Convert.ToInt32(rows);
-					var pagedTable = dataTable.GetPagedTable(pageIndex, pageSize);
-					System.Diagnostics.Debug.WriteLine($"[QueryNewSong] Rows after pagination: {pagedTable.Rows.Count}");
-					return DataTableToJSON(pagedTable);
+					var newSongs = SongQuery.NewSongs(SongDatas.SongData, lang, CurrentQueryOptions());
+					return SongPageToJson(newSongs, page, rows, 50, new[] { "Song_Id", "Song_SongName", "Song_Singer", "Song_Lang", "Song_CreatDate" });
 				}
 				catch (Exception ex)
 				{

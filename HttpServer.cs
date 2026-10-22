@@ -254,7 +254,6 @@ public class HttpServer : IDisposable
 		{
 			string lang = queryParams.ContainsKey("lang") ? queryParams["lang"] : string.Empty;
 			string singer = queryParams.ContainsKey("singer") ? queryParams["singer"] : string.Empty;
-			string words = queryParams.ContainsKey("words") ? queryParams["words"] : string.Empty;
 			string condition = queryParams.ContainsKey("condition") ? queryParams["condition"] : string.Empty;
 			string page = queryParams.ContainsKey("page") ? queryParams["page"] : string.Empty;
 			string rows = queryParams.ContainsKey("rows") ? queryParams["rows"] : string.Empty;
@@ -272,7 +271,7 @@ public class HttpServer : IDisposable
 			// Debug logging - skip for high frequency singerphoto query types
             if (queryType != "singerphoto")
             {
-			    System.Diagnostics.Debug.WriteLine($"[HTTP] Query: {queryType}, Lang: {lang}, Singer: {singer}, Words: {words}");
+			    System.Diagnostics.Debug.WriteLine($"[HTTP] Query: {queryType}, Lang: {lang}, Singer: {singer}");
 			    System.Diagnostics.Debug.WriteLine($"[HTTP] SongData loaded: {SongDatas.SongData?.Count ?? 0} songs");
                 
                 // Only log actionable or search queries to AppLogger (filter out periodic polling)
@@ -291,7 +290,11 @@ public class HttpServer : IDisposable
 
 			responseJson = queryType switch
 			{
-				"querysong" => HttpServerHelper.QuerySong(lang, singer, words, condition, page, rows, sort),
+				"querysong" => HttpServerHelper.OutdatedPage(),
+				"searchsong" => HttpServerHelper.SearchSongs(value, lang, page, rows),
+				"ranking" => HttpServerHelper.QueryRanking(value, page, rows),
+				"singersong" => HttpServerHelper.QuerySingerSongs(singer, page, rows),
+				"songbyid" => HttpServerHelper.QuerySongById(value),
 				"querynewsong" => HttpServerHelper.QueryNewSong(lang, page, rows),
 				"querysinger" => HttpServerHelper.QuerySinger(condition, page, rows, sort, MainSongData!, MainDataContext!),
 				"viewsong" => HttpServerHelper.ViewSong(page, rows, MainSongData!),
@@ -351,7 +354,7 @@ public class HttpServer : IDisposable
 	{
 		return queryType switch
 		{
-			"querysong" or "querynewsong" or "querysinger" or "viewsong" or "favoriteuser" or
+			"querysong" or "searchsong" or "ranking" or "singersong" or "songbyid" or "querynewsong" or "querysinger" or "viewsong" or "favoriteuser" or
 			"favoritelogin" or "favoritesong" or "addfavoritesong" or "ordersong" or
 			"queryplayerstate" or "queryhostserverinfo" or "queryplaylist" or "querygeneration" or "skipsong" or
 			"vocal" or "music" or

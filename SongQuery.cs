@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -12,11 +13,25 @@ namespace UltimateKtv
             new(settings.SongSortMethod, DateTime.Today, settings.NewSongDays);
     }
 
+    /// <summary>清單的一頁；Number 從 1 開始，超過最後一頁時 Items 為空。</summary>
+    public sealed record Page<T>(IReadOnlyList<T> Items, int Number, int Size, int TotalCount)
+    {
+        public int TotalPages => Size <= 0 || TotalCount == 0 ? 1 : (TotalCount + Size - 1) / Size;
+
+        /// <summary>取第 number 頁 (小於 1 視為 1)；size 小於 1 = 不分頁，整份清單為一頁。</summary>
+        public static Page<T> Of(IReadOnlyList<T> source, int number, int size)
+        {
+            if (number < 1) number = 1;
+            if (size < 1) return new Page<T>(source, 1, size, source.Count);
+            return new Page<T>(source.Skip((number - 1) * size).Take(size).ToList(), number, size, source.Count);
+        }
+    }
+
     /// <summary>快速搜尋比對的歌曲欄位。</summary>
     public enum SongTextField { Spell, PenStyle, Id, Name }
 
     /// <summary>
-    /// 歌庫的歌曲查詢：新歌、排行、語系篩選、快速搜尋、歌星的歌，以及歌曲排序。
+    /// 歌庫的歌曲查詢：新歌、排行、語系篩選、快速搜尋、搜尋框、歌星的歌，以及歌曲排序。
     /// 主畫面、隨機播放與手機點歌共用同一份規則。歌庫尚未載入 (null) 時回傳空清單。
     /// </summary>
     public static class SongQuery
@@ -149,6 +164,20 @@ namespace UltimateKtv
             return Sort(songs.Where(s => !string.IsNullOrEmpty(s.Name)
                 && (ContainsSinger(s.Singer, singer) || (!string.IsNullOrEmpty(primary) && ContainsSinger(s.Singer, primary)))), options);
         }
+
+        /// <summary>
+        /// 搜尋框：歌名或歌星包含 text 就算 (不分大小寫、全形半形、平假名片假名，不限字數)；
+        /// text 空白 = 該語系全部，lang 空白 = 全部語系。
+        /// </summary>
+        public static List<Song> Search(IEnumerable<Song>? songs, string? text, string? lang, SongQueryOptions options)
+        {
+            if (songs == null) return new List<Song>();
+            bool Contains(string field) => SearchCompare.IndexOf(field, text!, SearchOptions) >= 0;
+            return Sort(songs.Where(s => MatchesLang(s, lang) && (string.IsNullOrEmpty(text) || Contains(s.Name) || Contains(s.Singer))), options);
+        }
+
+        private static readonly CompareInfo SearchCompare = CultureInfo.GetCultureInfo("zh-TW").CompareInfo;
+        private const CompareOptions SearchOptions = CompareOptions.IgnoreCase | CompareOptions.IgnoreWidth | CompareOptions.IgnoreKanaType;
 
         private static bool IsDuet(Song song) => song.SingerType == DuetSingerType;
 

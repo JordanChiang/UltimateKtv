@@ -1553,8 +1553,8 @@
                 if (sectionId === 'newSong') {
                     loadNewSongsByLang(''); // Load all new songs by default
                 } else if (sectionId === 'rankingSong') {
-                    // Load Mandarin ranking by default when entering the section
-                    loadRankingByLang('國語');
+                    // Load Mandarin solo ranking by default when entering the section
+                    loadRankingByLang('國語-單曲');
                 }
             }
         }
@@ -1896,19 +1896,13 @@
             currentPage.searchResults = 0;
 
             try {
-                let conditions = [];
+                // 歌名或歌星包含關鍵字就算 (伺服器的 SongQuery.Search)
+                let url = `?queryType=searchsong&page=0&rows=50`;
                 if (currentLang) {
-                    conditions.push(`Song_Lang = '${currentLang}'`);
+                    url += `&lang=${encodeURIComponent(currentLang)}`;
                 }
                 if (searchText) {
-                    // Search in both song name and singer name
-                    conditions.push(`(Song_SongName LIKE '%${searchText}%' OR Song_Singer LIKE '%${searchText}%')`);
-                }
-
-                const conditionString = conditions.join(' AND ');
-                let url = `?queryType=querysong&page=0&rows=50`;
-                if (conditionString) {
-                    url += `&condition=${encodeURIComponent(conditionString)}`;
+                    url += `&value=${encodeURIComponent(searchText)}`;
                 }
 
                 lastSearchParams.searchResults = url;
@@ -2022,9 +2016,9 @@
 
         // Load ranking songs by language
         async function loadRankingByLang(lang) {
-            // Activate the correct button
-            document.querySelectorAll('#rankingSong .filter-btn').forEach(btn => btn.classList.remove('active'));
-            if (event && event.target) event.target.classList.add('active');
+            // 依按鈕的值標示目前的排行 (從選單進入時沒有點按鈕，也要亮起預設的那顆)
+            document.querySelectorAll('#rankingSong .filter-btn').forEach(btn =>
+                btn.classList.toggle('active', btn.getAttribute('onclick') === `loadRankingByLang('${lang}')`));
 
             const resultsDiv = document.getElementById('rankingSongResults');
             resultsDiv.innerHTML = '<div class="loading">' + t('Web.Loading', '載入中') + '</div>';
@@ -2032,23 +2026,8 @@
             currentPage.rankingSongResults = 0;
 
             try {
-                let condition = "Song_PlayCount > 0"; // Only show songs that have been played
-                let parts = lang.split('-');
-                let langFilter = parts[0];
-                let typeFilter = parts.length > 1 ? parts[1] : '';
-
-                if (lang === '其它') {
-                    condition += " AND Song_Lang NOT IN ('國語', '台語')";
-                } else if (typeFilter === '合唱') {
-                    condition += ` AND Song_Lang = '${langFilter}' AND Song_SingerType = '3'`;
-                } else if (typeFilter === '單曲') {
-                    condition += ` AND Song_Lang = '${langFilter}' AND Song_SingerType <> '3'`;
-                } else if (lang) {
-                    // Fallback for any other specific language string
-                    condition += ` AND Song_Lang = '${lang}'`;
-                }
-
-                const url = `?queryType=querysong&condition=${encodeURIComponent(condition)}&page=0&rows=50&sort=Song_PlayCount DESC`;
+                // 排行規則 (單曲/合唱、其它) 由伺服器的 SongQuery 決定
+                const url = `?queryType=ranking&value=${encodeURIComponent(lang)}&page=0&rows=50`;
                 lastSearchParams.rankingSongResults = url;
                 const response = await fetch(url);
                 const data = await response.json();
@@ -2271,9 +2250,7 @@
             currentPage.singerSongResults = 0;
 
             try {
-                let conditions = [`Song_Singer LIKE '%${singerName}%'`];
-                const conditionString = conditions.join(' AND ');
-                let url = `?queryType=querysong&page=0&rows=50&condition=${encodeURIComponent(conditionString)}`;
+                let url = `?queryType=singersong&singer=${encodeURIComponent(singerName)}&page=0&rows=50`;
                 
                 lastSearchParams.singerSongResults = url;
                 const response = await fetch(url);
@@ -2362,8 +2339,7 @@
             resultDiv.innerHTML = '<div class="loading">' + t('Web.Searching', '搜尋中') + '</div>';
 
             try {
-                const condition = `Song_Id = '${songId}'`;
-                const url = `?queryType=querysong&condition=${encodeURIComponent(condition)}&rows=1`;
+                const url = `?queryType=songbyid&value=${encodeURIComponent(songId)}`;
 
                 const response = await fetch(url);
                 const data = await response.json();
