@@ -162,9 +162,11 @@ namespace UltimateKtv
         private readonly ObservableCollection<SongDisplayItem> _songListPageItems = new ObservableCollection<SongDisplayItem>();
         private readonly ObservableCollection<SongDisplayItem> _languageSongListPageItems = new ObservableCollection<SongDisplayItem>();
         private readonly ObservableCollection<SongDisplayItem> _quickSongListPageItems = new ObservableCollection<SongDisplayItem>();
+        // YouTube 搜尋結果縮圖格 (4x4) 的固定格子：換頁只更新內容，不重建按鈕與其中的 MediaElement
+        private readonly ObservableCollection<SongDisplayItem> _youtubeGridPageItems = new ObservableCollection<SongDisplayItem>();
         private readonly ObservableCollection<WaitingListItem> _waitingListPageItems = new ObservableCollection<WaitingListItem>();
 
-        private static void ShowPageItems(DataGrid grid, ObservableCollection<SongDisplayItem> slots, IList<SongDisplayItem> items)
+        private static void ShowPageItems(ItemsControl grid, ObservableCollection<SongDisplayItem> slots, IList<SongDisplayItem> items)
         {
             ShowPageItemsCore(grid, slots, items, (slot, src) => slot.CopyFrom(src));
         }
@@ -174,7 +176,7 @@ namespace UltimateKtv
             ShowPageItemsCore(grid, slots, items, (slot, src) => slot.CopyFrom(src));
         }
 
-        private static void ShowPageItemsCore<T>(DataGrid grid, ObservableCollection<T> slots, IList<T> items, Action<T, T> copy)
+        private static void ShowPageItemsCore<T>(ItemsControl grid, ObservableCollection<T> slots, IList<T> items, Action<T, T> copy)
             where T : class, new()
         {
             // 只有最後一頁筆數不同時才會增減列

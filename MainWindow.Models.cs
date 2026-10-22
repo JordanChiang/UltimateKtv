@@ -58,6 +58,7 @@ namespace UltimateKtv
         private bool _isYoutube = false;
         private string _youtubeId = string.Empty;
         private string? _thumbnailUrl;
+        private System.Windows.Media.ImageSource? _thumbnailImage;
         private string _duration = string.Empty;
 
         public string SongId { get => _songId; set => Set(ref _songId, value); }
@@ -74,6 +75,8 @@ namespace UltimateKtv
         public bool IsYoutube { get => _isYoutube; set => Set(ref _isYoutube, value); }
         public string YoutubeId { get => _youtubeId; set => Set(ref _youtubeId, value); }
         public string? ThumbnailUrl { get => _thumbnailUrl; set => Set(ref _thumbnailUrl, value); }
+        /// <summary>縮圖格顯示的圖 (由 YoutubeThumbnailCache 在背景解碼後填入)；載入中為 null。</summary>
+        public System.Windows.Media.ImageSource? ThumbnailImage { get => _thumbnailImage; set => Set(ref _thumbnailImage, value); }
         /// <summary>YouTube 縮圖右上角顯示的歌曲長度 (H:MM:SS 或 M:SS)，未知時為空字串。</summary>
         public string Duration { get => _duration; set => Set(ref _duration, value); }
 
@@ -119,6 +122,7 @@ namespace UltimateKtv
             IsYoutube = src.IsYoutube;
             YoutubeId = src.YoutubeId;
             ThumbnailUrl = src.ThumbnailUrl;
+            ThumbnailImage = src.ThumbnailImage;
             Duration = src.Duration;
         }
 

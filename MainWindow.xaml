@@ -1683,9 +1683,6 @@
                                                         <DataTrigger Binding="{Binding ElementName=KeyboardListBtn, Path=FontWeight}" Value="{x:Static FontWeights.Bold}">
                                                             <Setter Property="Visibility" Value="Visible"/>
                                                         </DataTrigger>
-                                                        <DataTrigger Binding="{Binding IsDownloadingYoutube, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                            <Setter Property="Content" Value="{DynamicResource Str.Common.Cancel}"/>
-                                                        </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Button.Style>
@@ -1721,11 +1718,28 @@
                                                 <TextBlock Text="{DynamicResource Str.Legend.Other}" Foreground="{DynamicResource SingerButtonBackground}" Margin="0"/>
                                             </StackPanel>
                                                        
-                                            <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="{StaticResource BrushWarning}"
-                                                       FontSize="{StaticResource FontSizeS}" FontWeight="Bold" Margin="0,0,12,0" Visibility="Collapsed"/>
-                                            <TextBlock x:Name="YoutubeDownloadText" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource BrushWarning}"
-                                                       FontSize="{StaticResource FontSizeS}" FontWeight="Bold"
-                                                       Visibility="Collapsed" Text="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:0}%}"/>
+                                            <!-- YouTube 搜尋/下載狀態：搜尋列與歌曲/歌星搜尋共用，只在 YouTube 模式顯示 (由 _searchMode 切換) -->
+                                            <StackPanel x:Name="YoutubeStatusPanel" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                                                <TextBlock x:Name="YoutubeStatusText" VerticalAlignment="Center" Foreground="{StaticResource BrushWarning}"
+                                                           FontSize="{StaticResource FontSizeS}" FontWeight="Bold" Margin="0,0,12,0" Visibility="Collapsed"/>
+                                                <TextBlock x:Name="YoutubeDownloadText" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource BrushWarning}"
+                                                           FontSize="{StaticResource FontSizeS}" FontWeight="Bold"
+                                                           Visibility="Collapsed" Text="{Binding YoutubeDownloadPercentage, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:0}%}"/>
+                                                <!-- 取消下載：獨立按鈕 (不與「搜尋」共用)，下載中才顯示；取消目前下載並清空下載佇列 -->
+                                                <Button x:Name="YoutubeCancelDownloadBtn" Content="{DynamicResource Str.Common.Cancel}"
+                                                        Click="YoutubeCancelDownloadBtn_Click" Margin="12,0,0,0" MinWidth="72">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource FunctionButtonStyle}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDownloadingYoutube, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Grid>
                             </Border>
@@ -1910,7 +1924,7 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Button Click="YoutubeThumbnail_Click" Tag="{Binding}" Style="{StaticResource YoutubeThumbnailButtonStyle}"
+                                            <Button x:Name="ThumbnailButton" Click="YoutubeThumbnail_Click" Tag="{Binding}" Style="{StaticResource YoutubeThumbnailButtonStyle}"
                                                     MouseEnter="YoutubeThumbnail_MouseEnter" MouseLeave="YoutubeThumbnail_MouseLeave">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
@@ -1922,7 +1936,7 @@
                                                                 </Grid.RowDefinitions>
                                                                 <Image x:Name="ThumbnailImage" Grid.Row="0" Grid.RowSpan="2" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center">
                                                                     <Image.Source>
-                                                                        <Binding Path="ThumbnailUrl" TargetNullValue="{x:Null}">
+                                                                        <Binding Path="ThumbnailImage" TargetNullValue="{x:Null}">
                                                                             <Binding.FallbackValue>
                                                                                 <BitmapImage UriSource="/Images/FavoriteUser/favoriteuser_default.png"/>
                                                                             </Binding.FallbackValue>
@@ -1960,6 +1974,12 @@
                                                     </ControlTemplate>
                                                 </Button.Template>
                                             </Button>
+                                            <!-- 最後一頁補位用的空項目：隱藏但保留格子 (換頁時不拆掉/重建) -->
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding SongId}" Value="">
+                                                    <Setter TargetName="ThumbnailButton" Property="Visibility" Value="Hidden"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

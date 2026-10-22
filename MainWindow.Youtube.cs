@@ -321,6 +321,14 @@ namespace UltimateKtv
             foreach (var item in _quickSongListPageItems.Where(Matches)) { item.SingerName = lengthText; item.Duration = durationText; }
         }
 
+        /// <summary>取消下載：停止目前這首並清空下載佇列 (處理在 ProcessYoutubeDownloadQueueAsync 的 OperationCanceledException)。</summary>
+        private void YoutubeCancelDownloadBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (!IsDownloadingYoutube) return;
+            AppLogger.Log($"User action: Cancel YouTube download (queued: {_youtubeDownloadQueue.Count})");
+            _youtubeDownloadCts?.Cancel();
+        }
+
         private void CleanupDownloadUI()
         {
             IsDownloadingYoutube = false;
@@ -337,8 +345,8 @@ namespace UltimateKtv
         {
             if (sender is not Button btn || btn.Tag is not SongDisplayItem song) return;
 
-            // Single click orders it
-            DownloadYoutubeVideo(song);
+            // Single click orders it (Clone: 縮圖格是固定格子，換頁時內容會被改掉)
+            DownloadYoutubeVideo(song.Clone());
         }
 
         private void YoutubeThumbnail_MouseEnter(object sender, MouseEventArgs e)
@@ -347,8 +355,8 @@ namespace UltimateKtv
 
             try
             {
-                // Trigger preview via helper
-                StartYoutubePreview(btn, song, immediate: false);
+                // Trigger preview via helper (Clone: 固定格子換頁時內容會被改掉)
+                StartYoutubePreview(btn, song.Clone(), immediate: false);
             }
             catch (Exception ex)
             {
@@ -456,8 +464,26 @@ namespace UltimateKtv
         private void YoutubeThumbnail_MouseLeave(object sender, MouseEventArgs e)
         {
             _youtubePreviewCts?.Cancel();
-            
-            if (sender is not Button btn) return;
+            if (sender is Button btn) StopYoutubePreview(btn);
+        }
+
+        /// <summary>
+        /// 停止所有縮圖格的預覽影片。縮圖格是固定格子，換頁時要先停掉，否則新的一頁會留著上一頁的預覽。
+        /// </summary>
+        private void StopAllYoutubePreviews()
+        {
+            _youtubePreviewCts?.Cancel();
+            foreach (var btn in FindVisualChildren<Button>(YoutubeThumbnailGrid))
+            {
+                if (btn.Template?.FindName("PreviewPlayer", btn) is MediaElement { Visibility: Visibility.Visible })
+                {
+                    StopYoutubePreview(btn);
+                }
+            }
+        }
+
+        private void StopYoutubePreview(Button btn)
+        {
             var previewPlayer = btn.Template.FindName("PreviewPlayer", btn) as MediaElement;
             var thumbnailImage = btn.Template.FindName("ThumbnailImage", btn) as Image;
             var titleBorder = btn.Template.FindName("TitleBorder", btn) as Border;

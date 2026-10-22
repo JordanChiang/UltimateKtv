@@ -38,7 +38,22 @@ namespace UltimateKtv
 
         // Toggle state for Song vs Singer vs Youtube search
         private enum SearchMode { Song, Singer, Youtube }
-        private SearchMode _searchMode = SearchMode.Song;
+        private SearchMode _searchModeValue = SearchMode.Song;
+
+        /// <summary>
+        /// 目前的搜尋模式。搜尋列 (含 YouTube 下載狀態) 由歌曲/歌星/YouTube 共用，
+        /// 切換模式時一併決定下載狀態是否顯示：只在 YouTube 模式顯示，下載仍在背景繼續。
+        /// </summary>
+        private SearchMode _searchMode
+        {
+            get => _searchModeValue;
+            set
+            {
+                _searchModeValue = value;
+                if (YoutubeStatusPanel != null)
+                    YoutubeStatusPanel.Visibility = value == SearchMode.Youtube ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
         private bool _isSingerSearchMode => _searchMode == SearchMode.Singer;
         
         // Centralized page size for Quick Search (Keyboard uses 11 rows to utilize available vertical space, -1 for card style height)
@@ -179,13 +194,8 @@ namespace UltimateKtv
         private void BopomofoListBtn_Click(object sender, RoutedEventArgs e) => SetQuickMethod(QuickMethod.Bopomofo, sender as Button);
 
         private void YoutubeSearchBtn_Click(object sender, RoutedEventArgs e)
-        {            
-            if (IsDownloadingYoutube)
-            {
-                _youtubeDownloadCts?.Cancel();
-                return;
-            }
-
+        {
+            // 下載中也可以繼續搜尋/點歌 (多首排隊下載)；取消下載用獨立的 YoutubeCancelDownloadBtn
             if (_searchMode == SearchMode.Youtube && _currentQuickMethod == QuickMethod.YoutubeHistory)
             {
                 SetQuickMethod(QuickMethod.Keyboard, KeyboardListBtn);
@@ -1042,7 +1052,20 @@ namespace UltimateKtv
 
                 if (YoutubeThumbnailGrid != null)
                 {
-                    YoutubeThumbnailGrid.ItemsSource = useYoutubeGrid ? pageItems : null;
+                    if (useYoutubeGrid)
+                    {
+                        // 固定格子只更新內容；縮圖在背景解碼 (直接綁網址會在 UI 執行緒解碼原尺寸大圖，換頁時跑馬燈卡頓)
+                        StopAllYoutubePreviews();
+                        // 最後一頁不滿 16 筆時補空項目 (空格在 XAML 隱藏)，格子數不變就不會拆掉/重建
+                        var gridItems = new List<SongDisplayItem>(pageItems);
+                        while (gridItems.Count < QuickSearchPageSize) gridItems.Add(new SongDisplayItem());
+                        ShowPageItems(YoutubeThumbnailGrid, _youtubeGridPageItems, gridItems);
+                        LoadYoutubeThumbnails(_youtubeGridPageItems);
+                        YoutubeThumbnailCache.Prefetch(currentCache
+                            .Skip(currentPage * QuickSearchPageSize)
+                            .Take(QuickSearchPageSize)
+                            .Select(i => i.ThumbnailUrl));
+                    }
                     YoutubeThumbnailGrid.Visibility = useYoutubeGrid ? Visibility.Visible : Visibility.Collapsed;
                 }
 
@@ -1236,6 +1259,37 @@ namespace UltimateKtv
             if (currentWords.Count >= 10) return; // limit to max 10
             currentWords.Add(word);
             UpdateSearchWords();
+        }
+
+        /// <summary>
+        /// 填入縮圖格的圖：快取中有的立即顯示，其餘在背景下載解碼後再填入
+        /// (期間格子已換成別的影片則不填)。
+        /// </summary>
+        private static void LoadYoutubeThumbnails(IEnumerable<SongDisplayItem> slots)
+        {
+            foreach (var slot in slots)
+            {
+                string? url = slot.ThumbnailUrl;
+                if (string.IsNullOrEmpty(url))
+                {
+                    slot.ThumbnailImage = null;
+                    continue;
+                }
+                if (YoutubeThumbnailCache.TryGet(url, out var cached))
+                {
+                    slot.ThumbnailImage = cached;
+                    continue;
+                }
+
+                slot.ThumbnailImage = null;
+                _ = FillAsync(slot, url);
+            }
+
+            static async Task FillAsync(SongDisplayItem slot, string url)
+            {
+                var image = await YoutubeThumbnailCache.GetAsync(url); // 回到 UI 執行緒
+                if (image != null && slot.ThumbnailUrl == url) slot.ThumbnailImage = image;
+            }
         }
     }
 }
