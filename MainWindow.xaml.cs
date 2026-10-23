@@ -965,6 +965,16 @@ namespace UltimateKtv
             this.Visibility = Visibility.Visible;
             this.WindowState = WindowState.Maximized;
             this.Activate();
+
+            // 主控台隱藏時載入的歌曲列表：DataGrid 找不到看得見的儲存格，把儲存格左側的位移 (列 Margin + 外框) 算成 0，
+            // 「歌手」星號欄因此多出約 9px，最右邊的按鈕被裁掉。顯示後不會自己重算，重建列才會重新量測位移。
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+            {
+                foreach (var grid in new[] { SongListGrid, LanguageSongListGrid, QuickSongListGrid })
+                {
+                    if (grid.ItemsSource != null) grid.Items.Refresh();
+                }
+            }));
         }
 
         private void MediaPlayerContainer_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
