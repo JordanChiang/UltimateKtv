@@ -540,7 +540,7 @@ namespace UltimateKtv
 
                         // Increment play count if position more than user criteria and not already incremented
                         // no needed for random play
-                        if (!_playCountIncrementedForCurrentSong && progressPercentage > PlayCountUpdatePercentage && (_playback.Current?.IsRandom != true))
+                        if (!_playCountIncrementedForCurrentSong && progressPercentage > SettingsManager.Instance.CurrentSettings.PlayCountUpdatePercentage && (_playback.Current?.IsRandom != true))
                         {
                             if (!IsPlayingYoutube && _playingSongData != null)
                             {

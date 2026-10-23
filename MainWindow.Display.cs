@@ -198,6 +198,28 @@ namespace UltimateKtv
         }
 
         /// <summary>
+        /// 設定視窗按「套用」後：依新設定調整執行中的狀態。即時預覽的項目 (預覽、全螢幕、增益) 已在調整滑桿時套用。
+        /// </summary>
+        private void OnSettingsChanged(object? sender, SettingsChangedEventArgs e)
+        {
+            var previous = e.Previous;
+            var current = e.Current;
+
+            if (current.LimitCursorOnMain) ApplyCursorLimit();
+            else RemoveCursorLimit();
+
+            // 歌庫路徑變了才重建 (36k 首歌)；已顯示的列表與已點歌單各自持有 FilePath 複本，也要換成新路徑才會立即生效
+            if (previous.ChangeSongLibraryDriveEnabled != current.ChangeSongLibraryDriveEnabled ||
+                (previous.SongLibraryDrivePath ?? "") != (current.SongLibraryDrivePath ?? ""))
+            {
+                RemapSongFilePaths(SongDatas.RebuildSongFilePaths());
+            }
+
+            // 開啟隨機播放時，若待播清單是空的且沒有在播歌，延遲後開始隨機播放
+            if (current.RandomPlayEnabled) StartDelayedRandomPlayWhenEmpty();
+        }
+
+        /// <summary>
         /// Applies settings from SettingsManager to the application's state.
         /// </summary>
         private void ApplySettings()
@@ -207,7 +229,6 @@ namespace UltimateKtv
 
             // Apply settings to MainWindow properties
             _showPreviewInMainWindow = settings.ShowPreviewInMainWindow;
-            PlayCountUpdatePercentage = settings.PlayCountUpdatePercentage;
 
             // Re-initialize photo cache to reflect any path changes
             SingerPhotoManager.InitializeCache();
@@ -242,7 +263,7 @@ namespace UltimateKtv
                 MainWindow.VolumeMapper.MappingMode = (MainWindow.VolumeMapper.Mode)settings.SoundCurve;
                 
                 // Apply exponent setting with validation (0.1 - 5.0)
-                double exponent = Math.Max(0.1, Math.Min(5.0, settings.SoundCurveExponent));
+                double exponent = settings.SoundCurveExponent; // 已由 AppSettings.Normalize 限制範圍
                 MainWindow.VolumeMapper.Exponent = exponent;
                 
                 AppLogger.Log($"Applied SoundCurve setting: {MainWindow.VolumeMapper.MappingMode}, Exponent: {MainWindow.VolumeMapper.Exponent}");

@@ -165,9 +165,7 @@ namespace UltimateKtv
         {
             if (ktvPlayer != null)
             {
-                // Ensure value is within valid range (100-500)
-                int clampedValue = Math.Max(100, Math.Min(500, value));
-                ktvPlayer.AudioAmplify = clampedValue;
+                ktvPlayer.AudioAmplify = Math.Clamp(value, AppSettings.AudioAmplifyMin, AppSettings.AudioAmplifyMax);
             }
         }
 

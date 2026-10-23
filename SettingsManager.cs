@@ -9,11 +9,36 @@ using System.Text;
 
 namespace UltimateKtv
 {
+    /// <summary>設定視窗按「套用」後的變更：Previous 為套用前的設定複本，Current 為目前設定。</summary>
+    public sealed class SettingsChangedEventArgs : EventArgs
+    {
+        public SettingsChangedEventArgs(AppSettings previous, AppSettings current)
+        {
+            Previous = previous;
+            Current = current;
+        }
+
+        public AppSettings Previous { get; }
+        public AppSettings Current { get; }
+    }
+
     /// <summary>
     /// Manages loading and saving of application settings from a JSON file.
     /// </summary>
     public sealed class SettingsManager
     {
+        /// <summary>設定已套用並存檔 (UI 執行緒)；需要依設定調整狀態的地方訂閱這個事件，不由設定視窗逐一呼叫。</summary>
+        public event EventHandler<SettingsChangedEventArgs>? SettingsChanged;
+
+        /// <summary>
+        /// 存檔並通知訂閱者。previous 是修改 CurrentSettings 之前用 <see cref="AppSettings.Clone"/> 取得的複本。
+        /// </summary>
+        public void ApplyChanges(AppSettings previous)
+        {
+            SaveSettings();
+            SettingsChanged?.Invoke(this, new SettingsChangedEventArgs(previous, CurrentSettings));
+        }
+
         private static readonly Lazy<SettingsManager> _lazyInstance = new Lazy<SettingsManager>(() => new SettingsManager());
         public static SettingsManager Instance => _lazyInstance.Value;
 
@@ -66,78 +91,11 @@ namespace UltimateKtv
                         if (backup != null) AppLogger.Log($"Original settings.json backed up to {backup}");
                     }
 
-                    // Validate and correct AudioAmplify range (100-500)
-                    if (CurrentSettings.AudioAmplify < 100 || CurrentSettings.AudioAmplify > 500)
+                    // 超出有效範圍的設定拉回範圍內最接近的值
+                    var corrected = CurrentSettings.Normalize();
+                    if (corrected.Count > 0)
                     {
-                        AppLogger.Log($"AudioAmplify value {CurrentSettings.AudioAmplify} is out of range. Correcting to default 200.");
-                        CurrentSettings.AudioAmplify = 200;
-                        needsForceSave = true;
-                    }
-
-                    // Validate and correct YoutubeSearchCount range (10-100)
-                    if (CurrentSettings.YoutubeSearchCount < 10 || CurrentSettings.YoutubeSearchCount > 100)
-                    {
-                        AppLogger.Log($"YoutubeSearchCount value {CurrentSettings.YoutubeSearchCount} is out of range. Correcting to default 50.");
-                        CurrentSettings.YoutubeSearchCount = 50;
-                        needsForceSave = true;
-                    }
-
-                    // Validate and correct MarqueeTextFontSize range (12-128)
-                    if (CurrentSettings.MarqueeTextFontSize < 12 || CurrentSettings.MarqueeTextFontSize > 128)
-                    {
-                        AppLogger.Log($"MarqueeTextFontSize value {CurrentSettings.MarqueeTextFontSize} is out of range (12-128). Correcting to safe range.");
-                        CurrentSettings.MarqueeTextFontSize = Math.Clamp(CurrentSettings.MarqueeTextFontSize, 12, 128);
-                        needsForceSave = true;
-                    }
-
-                    // Validate and correct MarqueeTextFontStrokeThickness range (0-32)
-                    if (CurrentSettings.MarqueeTextFontStrokeThickness < 0 || CurrentSettings.MarqueeTextFontStrokeThickness > 32)
-                    {
-                        AppLogger.Log($"MarqueeTextFontStrokeThickness value {CurrentSettings.MarqueeTextFontStrokeThickness} is out of range (0-32). Correcting to safe range.");
-                        CurrentSettings.MarqueeTextFontStrokeThickness = Math.Clamp(CurrentSettings.MarqueeTextFontStrokeThickness, 0, 32);
-                        needsForceSave = true;
-                    }
-
-                    // Validate and correct MarqueeTextPlayCount range (0-10, 0 = disabled)
-                    if (CurrentSettings.MarqueeTextPlayCount < 0 || CurrentSettings.MarqueeTextPlayCount > 10)
-                    {
-                        AppLogger.Log($"MarqueeTextPlayCount value {CurrentSettings.MarqueeTextPlayCount} is out of range (0-10). Correcting to safe range.");
-                        CurrentSettings.MarqueeTextPlayCount = Math.Clamp(CurrentSettings.MarqueeTextPlayCount, 0, 10);
-                        needsForceSave = true;
-                    }
-
-                    // Validate and correct MarqueeTextTimeDuration range (100-1000 px/s)
-                    if (CurrentSettings.MarqueeTextTimeDuration < 100 || CurrentSettings.MarqueeTextTimeDuration > 1000)
-                    {
-                        CurrentSettings.MarqueeTextTimeDuration = Math.Clamp(CurrentSettings.MarqueeTextTimeDuration, 100, 1000);
-                        needsForceSave = true;
-                    }
-
-                    // Validate and correct MarqueeSongAddedFontSize range (12-128)
-                    if (CurrentSettings.MarqueeSongAddedFontSize < 12 || CurrentSettings.MarqueeSongAddedFontSize > 128)
-                    {
-                        CurrentSettings.MarqueeSongAddedFontSize = Math.Clamp(CurrentSettings.MarqueeSongAddedFontSize, 12, 128);
-                        needsForceSave = true;
-                    }
-
-                    // Validate and correct MarqueeSongAddedTimeDuration range (0-60 s)
-                    if (CurrentSettings.MarqueeSongAddedTimeDuration < 0 || CurrentSettings.MarqueeSongAddedTimeDuration > 60)
-                    {
-                        CurrentSettings.MarqueeSongAddedTimeDuration = Math.Clamp(CurrentSettings.MarqueeSongAddedTimeDuration, 0, 60);
-                        needsForceSave = true;
-                    }
-
-                    // Validate and correct MarqueeBroadcastFontSize range (12-128)
-                    if (CurrentSettings.MarqueeBroadcastFontSize < 12 || CurrentSettings.MarqueeBroadcastFontSize > 128)
-                    {
-                        CurrentSettings.MarqueeBroadcastFontSize = Math.Clamp(CurrentSettings.MarqueeBroadcastFontSize, 12, 128);
-                        needsForceSave = true;
-                    }
-
-                    // Validate and correct MarqueeBroadcastTimeDuration range (0-60 s)
-                    if (CurrentSettings.MarqueeBroadcastTimeDuration < 0 || CurrentSettings.MarqueeBroadcastTimeDuration > 60)
-                    {
-                        CurrentSettings.MarqueeBroadcastTimeDuration = Math.Clamp(CurrentSettings.MarqueeBroadcastTimeDuration, 0, 60);
+                        AppLogger.Log($"settings.json values out of range corrected: {string.Join(", ", corrected)}");
                         needsForceSave = true;
                     }
 
@@ -182,6 +140,8 @@ namespace UltimateKtv
             try
             {
                 AppLogger.Log("Saving current settings to file.");
+                var corrected = CurrentSettings.Normalize();
+                if (corrected.Count > 0) AppLogger.Log($"Settings out of range corrected before save: {string.Join(", ", corrected)}");
                 
                 var sb = new StringBuilder();
                 sb.AppendLine("{");

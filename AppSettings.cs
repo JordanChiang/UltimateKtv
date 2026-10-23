@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace UltimateKtv
@@ -16,7 +18,7 @@ namespace UltimateKtv
         [Description("保持全螢幕播放: 若設為是，影片將拉伸填滿螢幕；否則保留原始長寬比。")]
         public bool IsMediaFullScreen { get; set; } = true;
 
-        [Description("點播次數更新: 歌曲播放進度達到多少百分比時，增加一次點播次數。")]
+        [Description("點播次數更新: 歌曲播放進度達到多少百分比時，增加一次點播次數。有效範圍: 10 - 90。")]
         public int PlayCountUpdatePercentage { get; set; } = 35;
 
         [Description("音響增益值: 全域音訊增益設定 (100-500)。預設值為 200。")]
@@ -25,7 +27,7 @@ namespace UltimateKtv
         [Description("音量曲線: 設定音量調整的曲線模式。0=線性 (Linear), 1=指數 (Exponential - 預設), 2=對數 (Logarithmic)。有效範圍: 0 - 2。")]
         public int SoundCurve { get; set; } = 1;
 
-        [Description("音量曲線指數: 設定指數曲線的形狀 (僅適用於指數模式)。預設值為 0.1 (數值越小起始音量越大，數值越大起始音量越小)。有效範圍: 0.1 - 2。")]
+        [Description("音量曲線指數: 設定指數曲線的形狀 (僅適用於指數模式)。預設值為 0.1 (數值越小起始音量越大，數值越大起始音量越小)。有效範圍: 0.1 - 5。")]
         public double SoundCurveExponent { get; set; } = 0.6;
 
         [Description("主控台螢幕: 主程式視窗顯示的螢幕編號 (Monitor Index)。")]
@@ -213,6 +215,54 @@ namespace UltimateKtv
 
         [Description("系統廣播跑馬燈顯示時間: 設定系統廣播 (音量/音調/聲道/狀態) 提示的顯示秒數。有效範圍: 0 - 60 (0 代表不顯示)。預設為 3。")]
         public int MarqueeBroadcastTimeDuration { get; set; } = 3;
+
+        #endregion
+
+        /// <summary>淺層複本 (所有設定都是值或字串)，用來比較套用前後的差異。</summary>
+        public AppSettings Clone() => (AppSettings)MemberwiseClone();
+
+        #region 有效範圍
+
+        public const int AudioAmplifyMin = 100, AudioAmplifyMax = 500;
+        public const int PlayCountUpdatePercentageMin = 10, PlayCountUpdatePercentageMax = 90;
+        public const int PlayHistoryCountMin = 1, PlayHistoryCountMax = 10;
+        public const double SoundCurveExponentMin = 0.1, SoundCurveExponentMax = 5.0;
+        public const int YoutubeSearchCountMin = 10, YoutubeSearchCountMax = 100;
+        public const int MarqueeFontSizeMin = 12, MarqueeFontSizeMax = 128;
+        public const int MarqueeTextFontStrokeThicknessMin = 0, MarqueeTextFontStrokeThicknessMax = 32;
+        public const int MarqueeTextPlayCountMin = 0, MarqueeTextPlayCountMax = 10;
+        public const int MarqueeTextTimeDurationMin = 100, MarqueeTextTimeDurationMax = 1000;
+        public const int MarqueeShowSecondsMin = 0, MarqueeShowSecondsMax = 60;
+
+        /// <summary>
+        /// 把超出有效範圍的設定拉回範圍內最接近的值 (載入與儲存時呼叫)。
+        /// </summary>
+        /// <returns>被修正的項目，格式為「名稱: 原值 → 新值」。</returns>
+        public List<string> Normalize()
+        {
+            var corrected = new List<string>();
+            AudioAmplify = Clamp(nameof(AudioAmplify), AudioAmplify, AudioAmplifyMin, AudioAmplifyMax, corrected);
+            PlayCountUpdatePercentage = Clamp(nameof(PlayCountUpdatePercentage), PlayCountUpdatePercentage, PlayCountUpdatePercentageMin, PlayCountUpdatePercentageMax, corrected);
+            PlayHistoryCount = Clamp(nameof(PlayHistoryCount), PlayHistoryCount, PlayHistoryCountMin, PlayHistoryCountMax, corrected);
+            SoundCurveExponent = Clamp(nameof(SoundCurveExponent), SoundCurveExponent, SoundCurveExponentMin, SoundCurveExponentMax, corrected);
+            YoutubeSearchCount = Clamp(nameof(YoutubeSearchCount), YoutubeSearchCount, YoutubeSearchCountMin, YoutubeSearchCountMax, corrected);
+            MarqueeTextFontSize = Clamp(nameof(MarqueeTextFontSize), MarqueeTextFontSize, MarqueeFontSizeMin, MarqueeFontSizeMax, corrected);
+            MarqueeTextFontStrokeThickness = Clamp(nameof(MarqueeTextFontStrokeThickness), MarqueeTextFontStrokeThickness, MarqueeTextFontStrokeThicknessMin, MarqueeTextFontStrokeThicknessMax, corrected);
+            MarqueeTextPlayCount = Clamp(nameof(MarqueeTextPlayCount), MarqueeTextPlayCount, MarqueeTextPlayCountMin, MarqueeTextPlayCountMax, corrected);
+            MarqueeTextTimeDuration = Clamp(nameof(MarqueeTextTimeDuration), MarqueeTextTimeDuration, MarqueeTextTimeDurationMin, MarqueeTextTimeDurationMax, corrected);
+            MarqueeSongAddedFontSize = Clamp(nameof(MarqueeSongAddedFontSize), MarqueeSongAddedFontSize, MarqueeFontSizeMin, MarqueeFontSizeMax, corrected);
+            MarqueeSongAddedTimeDuration = Clamp(nameof(MarqueeSongAddedTimeDuration), MarqueeSongAddedTimeDuration, MarqueeShowSecondsMin, MarqueeShowSecondsMax, corrected);
+            MarqueeBroadcastFontSize = Clamp(nameof(MarqueeBroadcastFontSize), MarqueeBroadcastFontSize, MarqueeFontSizeMin, MarqueeFontSizeMax, corrected);
+            MarqueeBroadcastTimeDuration = Clamp(nameof(MarqueeBroadcastTimeDuration), MarqueeBroadcastTimeDuration, MarqueeShowSecondsMin, MarqueeShowSecondsMax, corrected);
+            return corrected;
+        }
+
+        private static T Clamp<T>(string name, T value, T min, T max, List<string> corrected) where T : IComparable<T>
+        {
+            T clamped = value.CompareTo(min) < 0 ? min : value.CompareTo(max) > 0 ? max : value;
+            if (clamped.CompareTo(value) != 0) corrected.Add($"{name}: {value} → {clamped}");
+            return clamped;
+        }
 
         #endregion
 

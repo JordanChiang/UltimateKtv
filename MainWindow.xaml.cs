@@ -152,7 +152,6 @@ namespace UltimateKtv
         // Configurable number of days for the "New Song" filter
 
         // Configurable percentage for when to increment the play count
-        public int PlayCountUpdatePercentage { get; set; } // Loaded from settings
         
         // Session timestamp for play history (initialized once at app startup)
         private string _sessionTimestampUserId = string.Empty;
@@ -198,6 +197,7 @@ namespace UltimateKtv
             // Load settings from JSON file first
             AppLogger.Log("Loading settings...");
             SettingsManager.Instance.LoadSettings();
+            SettingsManager.Instance.SettingsChanged += OnSettingsChanged;
             Loc.LanguageChanged += (_, _) => RefreshFilterButtonTexts();
             ThemeSettingsHandler.LoadSettings();
             ApplyNavMenuOrder();

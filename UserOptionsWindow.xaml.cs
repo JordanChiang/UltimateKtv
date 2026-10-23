@@ -273,6 +273,15 @@ namespace UltimateKtv
             PreviewToggle.IsChecked = settings.ShowPreviewInMainWindow;
             FullScreenButton.IsChecked = settings.IsMediaFullScreen;
             NewSongDaysTextBox.Text = settings.NewSongDays.ToString();
+
+            // 滑桿範圍以 AppSettings 的有效範圍為準
+            PlayCountSlider.Minimum = AppSettings.PlayCountUpdatePercentageMin;
+            PlayCountSlider.Maximum = AppSettings.PlayCountUpdatePercentageMax;
+            AudioAmplifySlider.Minimum = AppSettings.AudioAmplifyMin;
+            AudioAmplifySlider.Maximum = AppSettings.AudioAmplifyMax;
+            PlayHistoryCountSlider.Minimum = AppSettings.PlayHistoryCountMin;
+            PlayHistoryCountSlider.Maximum = AppSettings.PlayHistoryCountMax;
+
             PlayCountSlider.Value = settings.PlayCountUpdatePercentage;
             AudioAmplifySlider.Value = settings.AudioAmplify;
             HttpServerToggle.IsChecked = settings.EnableHttpServer;
@@ -489,10 +498,8 @@ namespace UltimateKtv
             if (_isInitializing) return;
             if (_parentWindow != null && sender is Slider slider)
             {
-                int newValue = (int)Math.Round(slider.Value);
-                newValue = Math.Max(10, Math.Min(90, newValue));
-                AppLogger.Log($"User setting changed: PlayCountUpdatePercentage = {newValue}");
-                _parentWindow.PlayCountUpdatePercentage = newValue;
+                // 按「套用」後才生效 (播放次數直接讀設定)
+                AppLogger.Log($"User setting changed: PlayCountUpdatePercentage = {(int)Math.Round(slider.Value)}");
             }
         }
 
@@ -502,8 +509,7 @@ namespace UltimateKtv
             if (_parentWindow != null && sender is Slider slider)
             {
                 int newValue = (int)Math.Round(slider.Value);
-                // Ensure value is within valid range (100-500)
-                newValue = Math.Max(100, Math.Min(500, newValue));
+                newValue = Math.Clamp(newValue, AppSettings.AudioAmplifyMin, AppSettings.AudioAmplifyMax);
                 AppLogger.Log($"User setting changed: AudioAmplify = {newValue}");
                 _parentWindow.SetAudioAmplify(newValue);
             }
@@ -515,14 +521,14 @@ namespace UltimateKtv
 
             // Update the settings object from the UI controls
             var settings = SettingsManager.Instance.CurrentSettings;
+            var previousSettings = settings.Clone();
             settings.ShowPreviewInMainWindow = PreviewToggle.IsChecked == true;
             settings.IsMediaFullScreen = FullScreenButton.IsChecked == true;
             settings.PlayCountUpdatePercentage = (int)PlayCountSlider.Value;
-            // Ensure AudioAmplify is within valid range (100-500)
-            settings.AudioAmplify = Math.Max(100, Math.Min(500, (int)AudioAmplifySlider.Value));
+            settings.AudioAmplify = (int)AudioAmplifySlider.Value;
             settings.EnableHttpServer = HttpServerToggle.IsChecked == true;
             settings.LimitCursorOnMain = LimitCursorToggle.IsChecked == true;
-            settings.PlayHistoryCount = Math.Max(1, Math.Min(10, (int)PlayHistoryCountSlider.Value));
+            settings.PlayHistoryCount = (int)PlayHistoryCountSlider.Value;
             settings.SongSortMethod = SongSortMethodComboBox.SelectedIndex + 1; // Convert 0-2 to 1-3
             settings.IsAppLoggerEnabled = AppLoggerToggle.IsChecked == true;
             if (int.TryParse(NewSongDaysTextBox.Text, out int days))
@@ -591,8 +597,6 @@ namespace UltimateKtv
             settings.IsLegacyAudioChannelDefinitionEnabled = LegacyAudioChannelToggle.IsChecked == true;
 
             // Save Change Song Library Drive settings
-            bool oldLibraryDriveEnabled = settings.ChangeSongLibraryDriveEnabled;
-            string oldLibraryDrivePath = settings.SongLibraryDrivePath ?? "";
             settings.ChangeSongLibraryDriveEnabled = ChangeSongLibraryDriveToggle.IsChecked == true;
             string drivePathText = SongLibraryDrivePathText.Text;
             settings.SongLibraryDrivePath = (drivePathText == Loc.T("Options.NoDirSelected")) ? "" : drivePathText.Trim();
@@ -625,33 +629,8 @@ namespace UltimateKtv
                 }
             }
 
-            // Apply changes to the running application
-
-            // Apply or remove cursor limiting based on setting
-            if (settings.LimitCursorOnMain)
-            {
-                _parentWindow?.ApplyCursorLimit();
-            }
-            else
-            {
-                _parentWindow?.RemoveCursorLimit();
-            }
-
-            // Save settings to the JSON file
-            SettingsManager.Instance.SaveSettings();
-
-            // Rebuild song file paths only when the library path changed (36k songs; skip for unrelated settings)
-            if (oldLibraryDriveEnabled != settings.ChangeSongLibraryDriveEnabled || oldLibraryDrivePath != (settings.SongLibraryDrivePath ?? ""))
-            {
-                // 已顯示的列表與已點歌單各自持有 FilePath 複本，也要換成新路徑才會立即生效
-                _parentWindow?.RemapSongFilePaths(SongDatas.RebuildSongFilePaths());
-            }
-
-            // If random play was enabled, trigger delayed check if waiting list is empty and nothing is currently playing
-            if (settings.RandomPlayEnabled && _parentWindow != null)
-            {
-                _parentWindow.StartDelayedRandomPlayWhenEmpty();
-            }
+            // 存檔並通知主程式套用 (游標限制、歌庫路徑、隨機播放等由 MainWindow.OnSettingsChanged 處理)
+            SettingsManager.Instance.ApplyChanges(previousSettings);
 
             string appliedMessage = Loc.T("Options.Applied");
             if (playerEngineChanged)
@@ -922,7 +901,7 @@ namespace UltimateKtv
             if (PlayHistoryCountValue != null && sender is Slider slider)
             {
                 int newValue = (int)Math.Round(slider.Value);
-                newValue = Math.Max(1, Math.Min(10, newValue));
+                newValue = Math.Clamp(newValue, AppSettings.PlayHistoryCountMin, AppSettings.PlayHistoryCountMax);
                 AppLogger.Log($"User setting changed: PlayHistoryCount = {newValue}");
                 PlayHistoryCountValue.Text = newValue.ToString();
             }
