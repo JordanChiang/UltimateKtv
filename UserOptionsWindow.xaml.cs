@@ -882,43 +882,13 @@ namespace UltimateKtv
             quitAppBtn.Click += async (s, ev) =>
             {
                 optionsDialog.Close();
-                // Stop recording and wait for MP3 to complete on a background thread
-                // BEFORE shutting down. This prevents the UI thread from being blocked
-                // while NAudio's RecordingStopped callback tries to dispatch back to it.
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        RecordingManager.Instance.StopRecording();
-                        RecordingManager.Instance.WaitForRecordingToFinish();
-                    }
-                    catch (Exception ex)
-                    {
-                        AppLogger.LogError("Error stopping recording before quit", ex);
-                    }
-                });
-                Application.Current.Shutdown();
+                await App.QuitAsync(shutdownWindows: false);
             };
 
             shutdownBtn.Click += async (s, ev) =>
             {
                 optionsDialog.Close();
-                // Stop recording and wait for MP3 to complete before shutting down PC
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        RecordingManager.Instance.StopRecording();
-                        RecordingManager.Instance.WaitForRecordingToFinish();
-                    }
-                    catch (Exception ex)
-                    {
-                        AppLogger.LogError("Error stopping recording before shutdown", ex);
-                    }
-                });
-                Application.Current.Shutdown();
-                // Shutdown the computer
-                System.Diagnostics.Process.Start("shutdown", "/s /t 0");
+                await App.QuitAsync(shutdownWindows: true);
             };
 
             buttonPanel.Children.Add(cancelBtn);

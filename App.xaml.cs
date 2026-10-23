@@ -26,6 +26,29 @@ namespace UltimateKtv
             AppDomain.CurrentDomain.AssemblyResolve += OnAssemblyResolve;
         }
 
+        /// <summary>
+        /// 結束程式 (shutdownWindows 時一併關機)；主控台與手機共用。須在 UI 執行緒呼叫。
+        /// 先在背景執行緒停止錄音並等 MP3 寫完：NAudio 的 RecordingStopped 會回呼 UI 執行緒，
+        /// 若在 App_Exit 才等就會互卡到逾時。
+        /// </summary>
+        public static async Task QuitAsync(bool shutdownWindows)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    RecordingManager.Instance.StopRecording();
+                    RecordingManager.Instance.WaitForRecordingToFinish();
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.LogError("Error stopping recording before quit", ex);
+                }
+            });
+            Current?.Shutdown();
+            if (shutdownWindows) System.Diagnostics.Process.Start("shutdown", "/s /t 0");
+        }
+
         private Assembly? OnAssemblyResolve(object? sender, ResolveEventArgs args)
         {
             string assemblyName = new AssemblyName(args.Name).Name + ".dll";
@@ -134,7 +157,7 @@ namespace UltimateKtv
         {
             try
             {
-                // StopRecording was already called in the button click handler before Shutdown().
+                // StopRecording was already called in App.QuitAsync before Shutdown().
                 // WaitForRecordingToFinish here is a safety net (e.g. if closed by Task Manager).
                 RecordingManager.Instance.StopRecording();    // no-op if already stopped
                 RecordingManager.Instance.WaitForRecordingToFinish();

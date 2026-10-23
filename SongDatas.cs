@@ -45,7 +45,6 @@ namespace UltimateKtv
         public static DataTable? FavoriteUserData { get; private set; }
         public static List<Dictionary<string, object?>>? FavoriteSongData { get; private set; }
         public static DataTable? FavoriteSongDataSchema { get; private set; }
-        public static DataTable? PlayListData { get; private set; }
 
         /// <summary>
         /// Removes text within parentheses or brackets from a song title to normalize it for matching.
@@ -256,15 +255,6 @@ namespace UltimateKtv
                     }
                 }
 
-
-                // Initialize the playlist DataTable
-                if (SongDataSchema != null)
-                {
-                    PlayListData = SongDataSchema.Clone();
-                    PlayListData.Columns.Add("Song_PrimaryKey", typeof(string));
-                    PlayListData.Columns.Add("Song_PlayOrder", typeof(string));
-                    PlayListData.Columns.Add("Song_Status", typeof(string));
-                }
             }
             catch (Exception ex)
             {

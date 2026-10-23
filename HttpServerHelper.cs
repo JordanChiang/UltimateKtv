@@ -18,7 +18,6 @@ namespace UltimateKtv;
 
 public class HttpServerHelper
 {
-	private static string FavoriteLoginID = string.Empty;
 	private static object lockthis = new object();
 	private static string EmptyResult = JsonConvert.SerializeObject(new JArray());
 
@@ -228,7 +227,7 @@ public class HttpServerHelper
 		return "";
 	}
 
-	public static string QuerySinger(string condition, string page, string rows, string sort, object singerData, object mainDataContext)
+	public static string QuerySinger(string condition, string page, string rows, string sort)
 	{
 		// Use cached table if available, else fallback (though fallback logic is not strictly needed if initialization is correct)
 		if (HttpServer.CachedSingerTable == null)
@@ -307,43 +306,7 @@ public class HttpServerHelper
 		}
 	}
 
-	public static string ViewSong(string page, string rows, object playListData)
-	{
-		if (SongDatas.PlayListData == null || SongDatas.PlayListData.Rows.Count == 0)
-			return EmptyResult;
-
-		try
-		{
-			using DataTable dataTable = SongDatas.PlayListData.DefaultView.ToTable();
-			if (dataTable.Rows.Count == 0)
-				return EmptyResult;
-
-			// Keep only specific columns
-			string[] columnsToKeep = { "Song_Id", "Song_SongName", "Song_Singer", "Song_WordCount", "Song_Lang", "Song_PrimaryKey" };
-			var columnsToRemove = dataTable.Columns.Cast<DataColumn>()
-				.Where(col => !columnsToKeep.Contains(col.ColumnName))
-				.ToList();
-
-			foreach (var col in columnsToRemove)
-			{
-				dataTable.Columns.Remove(col);
-			}
-
-			// Apply pagination
-			if (string.IsNullOrEmpty(rows) || !IsNumeric(rows))
-				return DataTableToJSON(dataTable);
-
-			int pageIndex = (string.IsNullOrEmpty(page) || !IsNumeric(page)) ? 1 : Convert.ToInt32(page) + 1;
-			int pageSize = Convert.ToInt32(rows);
-			return DataTableToJSON(dataTable.GetPagedTable(pageIndex, pageSize));
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("Query Error", ex.Message);
-		}
-	}
-
-	public static string FavoriteUser(string page, string rows, object favoriteUserData)
+	public static string FavoriteUser(string page, string rows)
 	{
 		try
 		{
@@ -373,38 +336,17 @@ public class HttpServerHelper
 		}
 	}
 
-	public static string FavoriteLogin(string user, object favoriteUserData)
+	/// <summary>手機選我的最愛使用者：回傳這位使用者是否存在 (伺服器不記住登入，每次查詢都帶使用者)。</summary>
+	public static string FavoriteLogin(string user) =>
+		JsonConvert.SerializeObject(new { success = IsFavoriteUser(user) });
+
+	private static bool IsFavoriteUser(string user) =>
+		!string.IsNullOrEmpty(user) && SongDatas.FavoriteUserData != null &&
+		SongDatas.FavoriteUserData.AsEnumerable().Any(row => Convert.ToString(row["User_Id"]) == user);
+
+	public static string FavoriteSong(string user, string page, string rows)
 	{
-		if (SongDatas.FavoriteUserData == null || SongDatas.FavoriteUserData.Rows.Count == 0)
-			return EmptyResult;
-
-		if (string.IsNullOrEmpty(user))
-			return EmptyResult;
-
-		try
-		{
-			var userExists = SongDatas.FavoriteUserData.AsEnumerable()
-				.Any(row => Convert.ToString(row["User_Id"]) == user);
-
-			if (userExists)
-			{
-				FavoriteLoginID = user;
-			}
-
-			return EmptyResult;
-		}
-		catch
-		{
-			return EmptyResult;
-		}
-	}
-
-	public static string FavoriteSong(string user, string page, string rows, object favoriteSongData, object songData)
-	{
-		if (FavoriteLoginID != user || SongDatas.FavoriteSongData == null || SongDatas.FavoriteSongData.Count == 0)
-			return EmptyResult;
-
-		if (string.IsNullOrEmpty(user))
+		if (!IsFavoriteUser(user) || SongDatas.FavoriteSongData == null || SongDatas.FavoriteSongData.Count == 0)
 			return EmptyResult;
 
 		try
@@ -463,59 +405,9 @@ public class HttpServerHelper
 		}
 	}
 
-	public static string AddFavoriteSong(string user, string value, object favoriteSongData, object mainDataContext)
+	public static string OrderSong(string value, string userName, RemoteControl remote)
 	{
-		if (FavoriteLoginID != user || SongDatas.FavoriteSongData == null)
-			return EmptyResult;
-
-		if (string.IsNullOrEmpty(user))
-			return EmptyResult;
-
-		try
-		{
-			string songId = value; // Use the provided value as song ID
-
-			// Check if already in favorites
-			var alreadyExists = SongDatas.FavoriteSongData
-				.Any(x => Convert.ToString(x["User_Id"]) == user && Convert.ToString(x["Song_Id"]) == songId);
-
-			if (alreadyExists)
-				return EmptyResult;
-
-			// Add to favorites (Note: This would need database write access)
-			// For now, just add to in-memory collection
-			SongDatas.FavoriteSongData.Add(new Dictionary<string, object?>
-			{
-				{ "User_Id", user },
-				{ "Song_Id", songId }
-			});
-
-			return EmptyResult;
-		}
-		catch
-		{
-			return EmptyResult;
-		}
-	}
-
-	/// <summary>
-	/// 在 UI 執行緒執行非同步動作並等待結果 (HTTP 請求在 Kestrel 執行緒上，不會卡住 UI)。
-	/// </summary>
-	private static T RunOnUiThread<T>(Func<UltimateKtv.MainWindow, Task<T>> action)
-	{
-		var dispatcher = System.Windows.Application.Current?.Dispatcher
-			?? throw new InvalidOperationException("Application is shutting down");
-		return dispatcher.InvokeAsync(() =>
-		{
-			var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow
-				?? throw new InvalidOperationException("MainWindow is not available");
-			return action(mainWindow);
-		}).Task.Unwrap().GetAwaiter().GetResult();
-	}
-
-	public static string OrderSong(string value, string userName, object playListData, object songData, object mainDataContext)
-	{
-		if (string.IsNullOrEmpty(value) || SongDatas.PlayListData == null || SongDatas.SongData == null)
+		if (string.IsNullOrEmpty(value) || SongDatas.SongData == null)
 			return EmptyResult;
 
 		try
@@ -530,29 +422,6 @@ public class HttpServerHelper
 				return EmptyResult;
 			}
 
-			// Check if song already exists in playlist using Select instead of Find
-			string primaryKey = value;
-			var existingRows = SongDatas.PlayListData.Select($"Song_PrimaryKey = '{value}'");
-			if (existingRows.Length > 0)
-			{
-				// Try to add with suffix
-				for (int i = 1; i <= 9; i++)
-				{
-					string testKey = $"{value}-{i}";
-					var testRows = SongDatas.PlayListData.Select($"Song_PrimaryKey = '{testKey}'");
-					if (testRows.Length == 0)
-					{
-						primaryKey = testKey;
-						break;
-					}
-					if (i == 9)
-					{
-						System.Diagnostics.Debug.WriteLine($"[OrderSong] Max duplicates reached for: {value}");
-						return EmptyResult; // Max duplicates reached
-					}
-				}
-			}
-
 			// Add to the waiting list via the UI thread
 			var songItem = UltimateKtv.SongDisplayItem.FromSong(song);
 			songItem.OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb;
@@ -565,13 +434,13 @@ public class HttpServerHelper
 			}
 
 			// 在 UI 執行緒點歌，等待真實結果 (重複、找不到檔案時回報失敗)
-			var result = RunOnUiThread(mainWindow => mainWindow.OrderSongAsync(songItem, OrderSource.Remote));
+			var result = remote.Order(songItem);
 			System.Diagnostics.Debug.WriteLine($"[OrderSong] {songItem.SongName}: {result}");
 
 			return result switch
 			{
 				EnqueueResult.Added or EnqueueResult.MovedToFirst =>
-					JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.OrderOk"), songId = primaryKey }),
+					JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.OrderOk"), songId = value }),
 				EnqueueResult.Duplicate =>
 					JsonConvert.SerializeObject(new { success = false, message = Loc.T("Wait.DuplicateMessage", songItem.SongName, songItem.SingerName), songId = value }),
 				_ =>
@@ -585,39 +454,19 @@ public class HttpServerHelper
 		}
 	}
 
-	public static string QueryPlayerState(string value, object mainDataContext)
+	public static string QueryPlayerState(RemoteControl remote)
 	{
 		try
 		{
-			bool isPlaying = false;
-			string songName = "";
-			string singerName = "";
-			string songId = "";
-			string orderedBy = "";
-			int playlistCount = 0;
-
-			System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-			{
-				if (System.Windows.Application.Current?.MainWindow is UltimateKtv.MainWindow mainWindow)
-				{
-					var info = mainWindow.GetCurrentPlayingSongInfo();
-					isPlaying = info.IsPlaying;
-					songName = info.SongName;
-					singerName = info.SingerName;
-					songId = info.SongId;
-					orderedBy = info.OrderedBy;
-					playlistCount = mainWindow.GetWaitingListCount();
-				}
-			});
-
+			var (now, playlistCount) = remote.GetPlayerState();
 			var state = new JObject
 			{
-				{ "IsPlaying", isPlaying },
-				{ "SongName", songName },
-				{ "SingerName", singerName },
-				{ "SongId", songId },
-				{ "CurrentSong", isPlaying ? (!string.IsNullOrEmpty(singerName) ? $"{songName} - {singerName}" : songName) : "" },
-				{ "OrderedBy", orderedBy },
+				{ "IsPlaying", now.IsPlaying },
+				{ "SongName", now.SongName },
+				{ "SingerName", now.SingerName },
+				{ "SongId", now.SongId },
+				{ "CurrentSong", CurrentSongText(now) },
+				{ "OrderedBy", now.OrderedBy },
 				{ "PlaylistCount", playlistCount }
 			};
 			return JsonConvert.SerializeObject(state);
@@ -629,27 +478,23 @@ public class HttpServerHelper
 		}
 	}
 
-	public static string QueryYoutubeQueue()
+	/// <summary>「歌名 - 歌手」(沒有歌手時只有歌名)；沒有歌在播放時為空字串。</summary>
+	private static string CurrentSongText(RemoteNowPlaying now) =>
+		!now.IsPlaying ? "" : !string.IsNullOrEmpty(now.SingerName) ? $"{now.SongName} - {now.SingerName}" : now.SongName;
+
+	public static string QueryYoutubeQueue(RemoteControl remote)
 	{
-	    try
-	    {
-	        object status = new { count = 0, isDownloading = false };
-	        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-	        {
-	            if (System.Windows.Application.Current?.MainWindow is UltimateKtv.MainWindow mainWindow)
-	            {
-	                status = mainWindow.GetYoutubeDownloadQueueStatus();
-	            }
-	        });
-	        return JsonConvert.SerializeObject(status);
-	    }
-	    catch
-	    {
-	        return JsonConvert.SerializeObject(new { count = 0, isDownloading = false });
-	    }
+		try
+		{
+			return JsonConvert.SerializeObject(remote.GetYoutubeQueueStatus());
+		}
+		catch
+		{
+			return JsonConvert.SerializeObject(new { count = 0, isDownloading = false });
+		}
 	}
 
-	public static string QueryHostServerInfo(string value, object mainDataContext)
+	public static string QueryHostServerInfo()
 	{
 		// Return basic server info
 		try
@@ -669,52 +514,24 @@ public class HttpServerHelper
 		}
 	}
 
-	public static string QueryPlaylist(string value, object mainDataContext)
+	public static string QueryPlaylist(string value, RemoteControl remote)
 	{
 		try
 		{
+			var (now, waitingList) = remote.GetWaitingList();
 			var playlist = new JArray();
-			bool isPlaying = false;
-			string playingSongName = "";
-			string playingSingerName = "";
-			string playingSongId = "";
-			string playingOrderedBy = "";
-
-			// Access the waiting list and current playing song on the UI thread
-			System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+			foreach (var item in waitingList)
 			{
-				if (System.Windows.Application.Current?.MainWindow is UltimateKtv.MainWindow mainWindow)
+				if (string.IsNullOrEmpty(item.WaitingListSongName)) continue;
+				playlist.Add(new JObject
 				{
-					var playInfo = mainWindow.GetCurrentPlayingSongInfo();
-					isPlaying = playInfo.IsPlaying;
-					playingSongName = playInfo.SongName;
-					playingSingerName = playInfo.SingerName;
-					playingSongId = playInfo.SongId;
-					playingOrderedBy = playInfo.OrderedBy;
-
-					var waitingList = mainWindow.GetWaitingListItems();
-					foreach (var item in waitingList)
-					{
-						var songName = item.WaitingListSongName;
-						var singerName = item.WaitingListSingerName;
-						var songId = item.SongId;
-						var orderedBy = item.OrderedBy;
-
-						if (!string.IsNullOrEmpty(songName))
-						{
-							var songObject = new JObject
-							{
-								{ "SongName", songName },
-								{ "SingerName", singerName },
-								{ "SongId", songId ?? "" },
-								{ "OrderedBy", orderedBy ?? "" },
-								{ "Id", item.Id.ToString() }
-							};
-							playlist.Add(songObject);
-						}
-					}
-				}
-			});
+					{ "SongName", item.WaitingListSongName },
+					{ "SingerName", item.WaitingListSingerName },
+					{ "SongId", item.SongId ?? "" },
+					{ "OrderedBy", item.OrderedBy ?? "" },
+					{ "Id", item.Id.ToString() }
+				});
+			}
 
 			if (string.Equals(value, "withCurrent", StringComparison.OrdinalIgnoreCase) ||
 			    string.Equals(value, "includePlaying", StringComparison.OrdinalIgnoreCase))
@@ -723,12 +540,12 @@ public class HttpServerHelper
 				{
 					{ "nowPlaying", new JObject
 						{
-							{ "isPlaying", isPlaying },
-							{ "songName", playingSongName },
-							{ "singerName", playingSingerName },
-							{ "songId", playingSongId },
-							{ "orderedBy", playingOrderedBy },
-							{ "currentSong", isPlaying ? (!string.IsNullOrEmpty(playingSingerName) ? $"{playingSongName} - {playingSingerName}" : playingSongName) : "" }
+							{ "isPlaying", now.IsPlaying },
+							{ "songName", now.SongName },
+							{ "singerName", now.SingerName },
+							{ "songId", now.SongId },
+							{ "orderedBy", now.OrderedBy },
+							{ "currentSong", CurrentSongText(now) }
 						}
 					},
 					{ "playlist", playlist }
@@ -745,128 +562,90 @@ public class HttpServerHelper
 		}
 	}
 
-	public static string SkipCurrentSong(string value, object mainDataContext)
+	/// <summary>與主畫面切歌鈕相同 (含解除暫停與單曲循環)。</summary>
+	public static string SkipCurrentSong(RemoteControl remote)
 	{
 		try
 		{
-			// Dispatch the skip action to the UI thread
-			System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-			{
-				var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-				mainWindow?.SkipSong_Click(null!, null!); // 與主畫面切歌鈕相同 (含解除單曲循環)
-			}));
-
+			remote.Skip();
 			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.SkipSent") });
 		}
 		catch (Exception ex)
 		{
-			System.Diagnostics.Debug.WriteLine($"[SkipCurrentSong] Exception: {ex.Message}");
 			return ErrorResult("Skip Error", ex.Message);
 		}
 	}
 
-	public static string SwitchToVocal(string value, object mainDataContext)
+	public static string SwitchToVocal(RemoteControl remote)
 	{
 		try
 		{
-			// Dispatch the vocal action to the UI thread
-			System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-			{
-				var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-				mainWindow?.SwitchToVocal();
-			}));
-
+			remote.SwitchToVocal();
 			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Vocal") });
 		}
 		catch (Exception ex)
 		{
-			System.Diagnostics.Debug.WriteLine($"[SwitchToVocal] Exception: {ex.Message}");
 			return ErrorResult("Vocal Switch Error", ex.Message);
 		}
 	}
 
-	public static string SwitchToMusic(string value, object mainDataContext)
+	public static string SwitchToMusic(RemoteControl remote)
 	{
 		try
 		{
-			// Dispatch the music action to the UI thread
-			System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-			{
-				var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-				mainWindow?.SwitchToMusic();
-			}));
-
+			remote.SwitchToMusic();
 			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Music") });
 		}
 		catch (Exception ex)
 		{
-			System.Diagnostics.Debug.WriteLine($"[SwitchToMusic] Exception: {ex.Message}");
 			return ErrorResult("Music Switch Error", ex.Message);
 		}
 	}
 
-    public static string MoveToFirst(string id, object mainDataContext)
-    {
-        try
-        {
-            if (Guid.TryParse(id, out Guid guid))
-            {
-                System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-                {
-                    var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-                    mainWindow?.MoveSongToFirst(guid);
-                }));
-                return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.MovedToFirst") });
-            }
-            return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult("Error", ex.Message);
-        }
-    }
+	public static string MoveToFirst(string id, RemoteControl remote)
+	{
+		try
+		{
+			if (!Guid.TryParse(id, out Guid guid))
+				return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
+			remote.MoveToFirst(guid);
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.MovedToFirst") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("Error", ex.Message);
+		}
+	}
 
-    public static string RemoveFromList(string id, object mainDataContext)
-    {
-        try
-        {
-            if (Guid.TryParse(id, out Guid guid))
-            {
-                System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-                {
-                    var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-                    mainWindow?.RemoveSongFromList(guid);
-                }));
-                return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Removed") });
-            }
-            return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult("Error", ex.Message);
-        }
-    }
+	public static string RemoveFromList(string id, RemoteControl remote)
+	{
+		try
+		{
+			if (!Guid.TryParse(id, out Guid guid))
+				return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
+			remote.Remove(guid);
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Removed") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("Error", ex.Message);
+		}
+	}
 
-    public static string MoveToNext(string id, object mainDataContext)
-    {
-        try
-        {
-            if (Guid.TryParse(id, out Guid guid))
-            {
-                System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-                {
-                    var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-                    mainWindow?.MoveSongToNext(guid);
-                }));
-                return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.MovedNext") });
-            }
-            return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult("Error", ex.Message);
-        }
-    }
+	public static string MoveToNext(string id, RemoteControl remote)
+	{
+		try
+		{
+			if (!Guid.TryParse(id, out Guid guid))
+				return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
+			remote.MoveToNext(guid);
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.MovedNext") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("Error", ex.Message);
+		}
+	}
 
 	public static string QueryGeneration(string genKey, string page, string rows)
 	{
@@ -947,168 +726,109 @@ public class HttpServerHelper
 	
 	    #region Remote Control Actions
 	
-	    public static string VolumeUp(string value, object mainDataContext)
-	    {
-	        try
-	        {
-	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-	            {
-	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-	                mainWindow?.VolumeUp();
-	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.VolUp") });
-	        }
-	        catch (Exception ex)
-	        {
-	            return ErrorResult("VolumeUp Error", ex.Message);
-	        }
-	    }
-	
-	    public static string VolumeDown(string value, object mainDataContext)
-	    {
-	        try
-	        {
-	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-	            {
-	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-	                mainWindow?.VolumeDown();
-	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.VolDown") });
-	        }
-	        catch (Exception ex)
-	        {
-	            return ErrorResult("VolumeDown Error", ex.Message);
-	        }
-	    }
-	
-	    public static string ToggleVolumeLock(string value, object mainDataContext)
-	    {
-	        try
-	        {
-	            bool isLocking = false;
-	            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-	            {
-	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-	                mainWindow?.ToggleVolumeLock();
-	                isLocking = mainWindow?.VolumeLockToggle.IsChecked ?? false;
-	            });
-	            return JsonConvert.SerializeObject(new { success = true, message = isLocking ? Loc.T("Web.Msg.VolLocked") : Loc.T("Web.Msg.VolUnlocked") });
-	        }
-	        catch (Exception ex)
-	        {
-	            return ErrorResult("ToggleVolumeLock Error", ex.Message);
-	        }
-	    }
-	
-	    public static string PitchUp(string value, object mainDataContext)
-	    {
-	        try
-	        {
-	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-	            {
-	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-	                mainWindow?.AdjustPitch(1);
-	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchUp") });
-	        }
-	        catch (Exception ex)
-	        {
-	            return ErrorResult("PitchUp Error", ex.Message);
-	        }
-	    }
-	
-	    public static string PitchDown(string value, object mainDataContext)
-	    {
-	        try
-	        {
-	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-	            {
-	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-	                mainWindow?.AdjustPitch(-1);
-	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchDown") });
-	        }
-	        catch (Exception ex)
-	        {
-	            return ErrorResult("PitchDown Error", ex.Message);
-	        }
-	    }
-	
-	    public static string PitchReset(string value, object mainDataContext)
-	    {
-	        try
-	        {
-	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
-	            {
-	                var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-	                mainWindow?.SetOriginalPitch();
-	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchReset") });
-	        }
-	        catch (Exception ex)
-	        {
-	            return ErrorResult("PitchReset Error", ex.Message);
-	        }
-	    }
+	public static string VolumeUp(RemoteControl remote)
+	{
+		try
+		{
+			remote.VolumeUp();
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.VolUp") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("VolumeUp Error", ex.Message);
+		}
+	}
 
-	    public static string QuitApp(string value, object mainDataContext)
-	    {
-	        try
-	        {
-	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(async () =>
-	            {
-	                // Stop recording and wait for the MP3 off the UI thread: NAudio's RecordingStopped
-	                // dispatches back to the UI thread, so waiting in App_Exit would deadlock until timeout
-	                await Task.Run(() =>
-	                {
-	                    try
-	                    {
-	                        RecordingManager.Instance.StopRecording();
-	                        RecordingManager.Instance.WaitForRecordingToFinish();
-	                    }
-	                    catch (Exception ex)
-	                    {
-	                        AppLogger.LogError("Error stopping recording before quit", ex);
-	                    }
-	                });
-	                System.Windows.Application.Current?.Shutdown();
-	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Quitting") });
-	        }
-	        catch (Exception ex)
-	        {
-	            return ErrorResult("QuitApp Error", ex.Message);
-	        }
-	    }
+	public static string VolumeDown(RemoteControl remote)
+	{
+		try
+		{
+			remote.VolumeDown();
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.VolDown") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("VolumeDown Error", ex.Message);
+		}
+	}
 
-	    public static string ShutdownWin(string value, object mainDataContext)
-	    {
-	        try
-	        {
-	            System.Windows.Application.Current?.Dispatcher.BeginInvoke((Action)(async () =>
-	            {
-	                await Task.Run(() =>
-	                {
-	                    try
-	                    {
-	                        RecordingManager.Instance.StopRecording();
-	                        RecordingManager.Instance.WaitForRecordingToFinish();
-	                    }
-	                    catch (Exception ex)
-	                    {
-	                        AppLogger.LogError("Error stopping recording before shutdown", ex);
-	                    }
-	                });
-	                System.Windows.Application.Current?.Shutdown();
-	                System.Diagnostics.Process.Start("shutdown", "/s /t 0");
-	            }));
-	            return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.ShuttingDown") });
-	        }
-	        catch (Exception ex)
-	        {
-	            return ErrorResult("ShutdownWin Error", ex.Message);
-	        }
-	    }
+	public static string ToggleVolumeLock(RemoteControl remote)
+	{
+		try
+		{
+			bool isLocking = remote.ToggleVolumeLock();
+			return JsonConvert.SerializeObject(new { success = true, message = isLocking ? Loc.T("Web.Msg.VolLocked") : Loc.T("Web.Msg.VolUnlocked") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("ToggleVolumeLock Error", ex.Message);
+		}
+	}
+
+	public static string PitchUp(RemoteControl remote)
+	{
+		try
+		{
+			remote.PitchUp();
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchUp") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("PitchUp Error", ex.Message);
+		}
+	}
+
+	public static string PitchDown(RemoteControl remote)
+	{
+		try
+		{
+			remote.PitchDown();
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchDown") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("PitchDown Error", ex.Message);
+		}
+	}
+
+	public static string PitchReset(RemoteControl remote)
+	{
+		try
+		{
+			remote.PitchReset();
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchReset") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("PitchReset Error", ex.Message);
+		}
+	}
+
+	public static string QuitApp(RemoteControl remote)
+	{
+		try
+		{
+			remote.Quit(shutdownWindows: false);
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Quitting") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("QuitApp Error", ex.Message);
+		}
+	}
+
+	public static string ShutdownWin(RemoteControl remote)
+	{
+		try
+		{
+			remote.Quit(shutdownWindows: true);
+			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.ShuttingDown") });
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("ShutdownWin Error", ex.Message);
+		}
+	}
 
 
 	    public static async Task<string> SearchYoutubeAsync(string keyword)
@@ -1140,7 +860,7 @@ public class HttpServerHelper
 	        }
 	    }
 
-	    public static async Task<string> OrderYoutubeAsync(string videoId, string userName, object mainDataContext)
+	    public static async Task<string> OrderYoutubeAsync(string videoId, string userName, RemoteControl remote)
 	    {
 	        if (string.IsNullOrWhiteSpace(videoId)) return EmptyResult;
 
@@ -1162,38 +882,25 @@ public class HttpServerHelper
 	                AudioTrack = 0
 	            };
 
+	            // 下載快取裡已有這部影片時，手機顯示「已下載」
+	            string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
+	            if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
+	            string vId = YtDlpHelper.ResolveVideoId(songItem.YoutubeId, songItem.SongId);
+	            string safeName = string.Join("_", songItem.SongName.Split(Path.GetInvalidFileNameChars()));
+	            bool isDownloaded = File.Exists(Path.Combine(cacheDir, $"{safeName}_{vId}.mp4"));
+
 	            bool downloadQueued = false;
 	            bool alreadyQueued = false;
-	            bool isDownloaded = false;
-	            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+	            try
 	            {
-	                try
-	                {
-	                    var mainWindow = System.Windows.Application.Current.MainWindow as UltimateKtv.MainWindow;
-	                    if (mainWindow != null)
-	                    {
-                            // Check if file already exists in cache directory
-                            string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
-                            if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
-                            string vId = YtDlpHelper.ResolveVideoId(songItem.YoutubeId, songItem.SongId);
-                            string safeName = string.Join("_", songItem.SongName.Split(Path.GetInvalidFileNameChars()));
-                            string filePath = Path.Combine(cacheDir, $"{safeName}_{vId}.mp4");
-
-                            if (File.Exists(filePath))
-                            {
-                                isDownloaded = true;
-                            }
-
-                            alreadyQueued = !mainWindow.DownloadYoutubeVideo(songItem);
-	                        System.Diagnostics.Debug.WriteLine($"[OrderYoutubeAsync] Triggered download via UI thread: {songItem.SongName}");
-                            downloadQueued = true;
-	                    }
-	                }
-	                catch (Exception ex)
-	                {
-	                    System.Diagnostics.Debug.WriteLine($"[OrderYoutubeAsync] Failed to trigger download: {ex.Message}");
-	                }
-	            });
+	                alreadyQueued = !remote.QueueYoutube(songItem);
+	                downloadQueued = true;
+	                System.Diagnostics.Debug.WriteLine($"[OrderYoutubeAsync] Triggered download via UI thread: {songItem.SongName}");
+	            }
+	            catch (Exception ex)
+	            {
+	                System.Diagnostics.Debug.WriteLine($"[OrderYoutubeAsync] Failed to trigger download: {ex.Message}");
+	            }
 
                 if (!downloadQueued)
                 {
@@ -1213,7 +920,7 @@ public class HttpServerHelper
 	        }
 	    }
 
-	    public static string OrderYoutubeHistory(string id, string userName, object mainDataContext)
+	    public static string OrderYoutubeHistory(string id, string userName, RemoteControl remote)
 	    {
 	        try
 	        {
@@ -1252,14 +959,7 @@ public class HttpServerHelper
 	                return ErrorResult("File Not Found", Loc.T("Web.Msg.NoFileNoLink"));
 	            }
 
-	            bool alreadyQueued = false;
-	            System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-	            {
-	                if (System.Windows.Application.Current.MainWindow is UltimateKtv.MainWindow mainWindow)
-	                {
-	                    alreadyQueued = !mainWindow.DownloadYoutubeVideo(songItem);
-	                }
-	            });
+	            bool alreadyQueued = !remote.QueueYoutube(songItem);
 
 	            if (alreadyQueued)
 	            {
@@ -1275,55 +975,30 @@ public class HttpServerHelper
 	        }
 	    }
 
-        public static async Task<string> CheckNewYoutubeAsync()
-        {
-            try
-            {
-                int count = 0;
-                if (System.Windows.Application.Current != null)
-                {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        if (System.Windows.Application.Current.MainWindow is UltimateKtv.MainWindow mainWindow)
-                        {
-                            var files = mainWindow.GetUnrecordedYoutubeFiles();
-                            count = files?.Count ?? 0;
-                        }
-                    });
-                }
-                return JsonConvert.SerializeObject(new { count = count });
-            }
-            catch (Exception ex)
-            {
-                return JsonConvert.SerializeObject(new { count = 0, error = ex.Message });
-            }
-        }
+	public static async Task<string> CheckNewYoutubeAsync(RemoteControl remote)
+	{
+		try
+		{
+			return JsonConvert.SerializeObject(new { count = await remote.CountUnrecordedYoutubeFilesAsync() });
+		}
+		catch (Exception ex)
+		{
+			return JsonConvert.SerializeObject(new { count = 0, error = ex.Message });
+		}
+	}
 
-        public static async Task<string> ImportNewYoutubeAsync()
-        {
-            try
-            {
-                if (System.Windows.Application.Current != null)
-                {
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
-                    {
-                        if (System.Windows.Application.Current.MainWindow is UltimateKtv.MainWindow mainWindow)
-                        {
-                            var files = mainWindow.GetUnrecordedYoutubeFiles();
-                            if (files != null && files.Count > 0)
-                            {
-                                await mainWindow.ImportUnrecordedYoutubeFilesAsync(files);
-                            }
-                        }
-                    }).Task.Unwrap();
-                }
-                return JsonConvert.SerializeObject(new { success = true });
-            }
-            catch (Exception ex)
-            {
-                return JsonConvert.SerializeObject(new { success = false, error = ex.Message });
-            }
-        }
+	public static async Task<string> ImportNewYoutubeAsync(RemoteControl remote)
+	{
+		try
+		{
+			await remote.ImportUnrecordedYoutubeFilesAsync();
+			return JsonConvert.SerializeObject(new { success = true });
+		}
+		catch (Exception ex)
+		{
+			return JsonConvert.SerializeObject(new { success = false, error = ex.Message });
+		}
+	}
 
 		public static string QueryYoutubeHistory(string page, string rows)
 		{

@@ -660,19 +660,22 @@ namespace UltimateKtv
         /// </summary>
         private bool IsSongPlaybackActive => ktvPlayer?.Source != null || _playback.Current != null;
 
-        public void SkipSong_Click(object sender, RoutedEventArgs e)
+        private void SkipSong_Click(object sender, RoutedEventArgs e) => SkipCurrentSong();
+
+        /// <summary>切歌：主畫面切歌鈕與手機共用；解除暫停與單曲循環後播下一首。</summary>
+        public void SkipCurrentSong()
         {
             try
             {
                 // 只有在歌曲播放（或載入中）時才真正作動
                 if (!IsSongPlaybackActive)
                 {
-                    DebugLog("SkipSong_Click: No song is currently playing, ignoring.");
+                    DebugLog("SkipCurrentSong: No song is currently playing, ignoring.");
                     return;
                 }
 
-                AppLogger.Log("User action: Skip song button clicked");
-                DebugLog("SkipSong_Click: Skip song button clicked");
+                AppLogger.Log("User action: Skip song");
+                DebugLog("SkipCurrentSong: Skip song");
 
                 SetPauseButtonResume(false);
                 if (_isLoopPlay)
@@ -693,8 +696,8 @@ namespace UltimateKtv
             }
             catch (Exception ex)
             {
-                DebugLog($"SkipSong_Click: Error skipping song: {ex.Message}\n{ex}");
-                AppLogger.LogError("SkipSong_Click: Error skipping song", ex);
+                DebugLog($"SkipCurrentSong: Error skipping song: {ex.Message}\n{ex}");
+                AppLogger.LogError("SkipCurrentSong: Error skipping song", ex);
             }
         }
 
@@ -1701,11 +1704,13 @@ namespace UltimateKtv
             AppLogger.Log($"Remote action: Volume Down to {newValue}");
         }
 
-        public void ToggleVolumeLock()
+        /// <summary>切換音量鎖定，回傳切換後是否鎖定。</summary>
+        public bool ToggleVolumeLock()
         {
             bool newState = !(VolumeLockToggle.IsChecked ?? false);
             VolumeLockToggle.IsChecked = newState;
             AppLogger.Log($"Remote action: Volume Lock toggled to {newState}");
+            return newState;
         }
     }
 }

@@ -17,9 +17,8 @@ namespace UltimateKtv;
 
 public class HttpServer : IDisposable
 {
-	public object? MainDataContext;
-	public object? MainConfigData;
-	public object? MainSongData;
+	/// <summary>手機指令對主程式的操作 (切到 UI 執行緒)；伺服器啟動前設定。</summary>
+	public RemoteControl Remote = null!;
 
 	private IWebHost? _webHost;
 	private readonly string _ipAddress;
@@ -296,40 +295,38 @@ public class HttpServer : IDisposable
 				"singersong" => HttpServerHelper.QuerySingerSongs(singer, page, rows),
 				"songbyid" => HttpServerHelper.QuerySongById(value),
 				"querynewsong" => HttpServerHelper.QueryNewSong(lang, page, rows),
-				"querysinger" => HttpServerHelper.QuerySinger(condition, page, rows, sort, MainSongData!, MainDataContext!),
-				"viewsong" => HttpServerHelper.ViewSong(page, rows, MainSongData!),
-				"favoriteuser" => HttpServerHelper.FavoriteUser(page, rows, MainSongData!),
-				"favoritelogin" => HttpServerHelper.FavoriteLogin(user, MainSongData!),
-				"favoritesong" => HttpServerHelper.FavoriteSong(user, page, rows, MainSongData!, MainSongData!),
-				"addfavoritesong" => HttpServerHelper.AddFavoriteSong(user, value, MainSongData!, MainDataContext!),
-				"ordersong" => HttpServerHelper.OrderSong(value, user, MainSongData!, MainSongData!, MainDataContext!),
-				"queryplayerstate" => HttpServerHelper.QueryPlayerState(value, MainDataContext!),
-				"queryhostserverinfo" => HttpServerHelper.QueryHostServerInfo(value, MainDataContext!),
-				"queryplaylist" => HttpServerHelper.QueryPlaylist(value, MainDataContext!),
+				"querysinger" => HttpServerHelper.QuerySinger(condition, page, rows, sort),
+				"favoriteuser" => HttpServerHelper.FavoriteUser(page, rows),
+				"favoritelogin" => HttpServerHelper.FavoriteLogin(user),
+				"favoritesong" => HttpServerHelper.FavoriteSong(user, page, rows),
+				"ordersong" => HttpServerHelper.OrderSong(value, user, Remote),
+				"queryplayerstate" => HttpServerHelper.QueryPlayerState(Remote),
+				"queryhostserverinfo" => HttpServerHelper.QueryHostServerInfo(),
+				"queryplaylist" => HttpServerHelper.QueryPlaylist(value, Remote),
 				"querygeneration" => HttpServerHelper.QueryGeneration(value, page, rows),
-				"skipsong" => HttpServerHelper.SkipCurrentSong(value, MainDataContext!),
-				"vocal" => HttpServerHelper.SwitchToVocal(value, MainDataContext!),
-				"music" => HttpServerHelper.SwitchToMusic(value, MainDataContext!),
-                "movetofirst" => HttpServerHelper.MoveToFirst(value, MainDataContext!),
-                "removefromlist" => HttpServerHelper.RemoveFromList(value, MainDataContext!),
-                "movetonext" => HttpServerHelper.MoveToNext(value, MainDataContext!),
-                "volup" => HttpServerHelper.VolumeUp(value, MainDataContext!),
-                "voldown" => HttpServerHelper.VolumeDown(value, MainDataContext!),
-                "vollock" => HttpServerHelper.ToggleVolumeLock(value, MainDataContext!),
-                "pitchup" => HttpServerHelper.PitchUp(value, MainDataContext!),
-                "pitchdown" => HttpServerHelper.PitchDown(value, MainDataContext!),
-                "pitchreset" => HttpServerHelper.PitchReset(value, MainDataContext!),
-                "quit" => HttpServerHelper.QuitApp(value, MainDataContext!),
-                "shutdownwin" => HttpServerHelper.ShutdownWin(value, MainDataContext!),
+				"skipsong" => HttpServerHelper.SkipCurrentSong(Remote),
+				"vocal" => HttpServerHelper.SwitchToVocal(Remote),
+				"music" => HttpServerHelper.SwitchToMusic(Remote),
+                "movetofirst" => HttpServerHelper.MoveToFirst(value, Remote),
+                "removefromlist" => HttpServerHelper.RemoveFromList(value, Remote),
+                "movetonext" => HttpServerHelper.MoveToNext(value, Remote),
+                "volup" => HttpServerHelper.VolumeUp(Remote),
+                "voldown" => HttpServerHelper.VolumeDown(Remote),
+                "vollock" => HttpServerHelper.ToggleVolumeLock(Remote),
+                "pitchup" => HttpServerHelper.PitchUp(Remote),
+                "pitchdown" => HttpServerHelper.PitchDown(Remote),
+                "pitchreset" => HttpServerHelper.PitchReset(Remote),
+                "quit" => HttpServerHelper.QuitApp(Remote),
+                "shutdownwin" => HttpServerHelper.ShutdownWin(Remote),
 				"debug" => GetDebugInfo(),
                 "singerphoto" => await HandleSingerPhoto(context, queryParams),
                 "youtubesearch" => await HttpServerHelper.SearchYoutubeAsync(value),
-                "orderyoutube" => await HttpServerHelper.OrderYoutubeAsync(value, user, MainDataContext!),
-                "orderyoutubehistory" => HttpServerHelper.OrderYoutubeHistory(value, user, MainDataContext!),
+                "orderyoutube" => await HttpServerHelper.OrderYoutubeAsync(value, user, Remote),
+                "orderyoutubehistory" => HttpServerHelper.OrderYoutubeHistory(value, user, Remote),
                 "queryyoutubehistory" => HttpServerHelper.QueryYoutubeHistory(page, rows),
-                "checknewyoutube" => await HttpServerHelper.CheckNewYoutubeAsync(),
-                "importnewyoutube" => await HttpServerHelper.ImportNewYoutubeAsync(),
-                "queryyoutubequeue" => HttpServerHelper.QueryYoutubeQueue(),
+                "checknewyoutube" => await HttpServerHelper.CheckNewYoutubeAsync(Remote),
+                "importnewyoutube" => await HttpServerHelper.ImportNewYoutubeAsync(Remote),
+                "queryyoutubequeue" => HttpServerHelper.QueryYoutubeQueue(Remote),
                 "uistrings" => JsonConvert.SerializeObject(new { culture = Loc.WebCulture ?? Loc.CurrentCulture, strings = Loc.GetWebStrings() }),
 				_ => JsonConvert.SerializeObject(new JArray())
 			};
@@ -354,8 +351,8 @@ public class HttpServer : IDisposable
 	{
 		return queryType switch
 		{
-			"querysong" or "searchsong" or "ranking" or "singersong" or "songbyid" or "querynewsong" or "querysinger" or "viewsong" or "favoriteuser" or
-			"favoritelogin" or "favoritesong" or "addfavoritesong" or "ordersong" or
+			"querysong" or "searchsong" or "ranking" or "singersong" or "songbyid" or "querynewsong" or "querysinger" or "favoriteuser" or
+			"favoritelogin" or "favoritesong" or "ordersong" or
 			"queryplayerstate" or "queryhostserverinfo" or "queryplaylist" or "querygeneration" or "skipsong" or
 			"vocal" or "music" or
             "movetofirst" or "removefromlist" or "movetonext" or
@@ -441,7 +438,7 @@ public class HttpServer : IDisposable
 		{
 			{ "SongDataCount", SongDatas.SongData?.Count ?? 0 },
 			{ "SingerDataCount", SongDatas.SingerData?.Count ?? 0 },
-			{ "PlayListDataCount", SongDatas.PlayListData?.Rows.Count ?? 0 },
+			{ "WaitingListCount", Remote.GetPlayerState().WaitingCount },
 			{ "FavoriteUserDataCount", SongDatas.FavoriteUserData?.Rows.Count ?? 0 },
 			{ "FavoriteSongDataCount", SongDatas.FavoriteSongData?.Count ?? 0 },
 			{ "SongLangList", SongDatas.SongLangList != null ? string.Join(", ", SongDatas.SongLangList) : "null" },
@@ -574,8 +571,7 @@ public class HttpServer : IDisposable
 		{
 			debugLog($"Starting HTTP server on {ipAddress}:{port} (attempt {attempt}/{attempts})...");
 			var httpServer = new HttpServer(ipAddress, port);
-			httpServer.MainDataContext = mainWindow;
-			httpServer.MainSongData = SongDatas.PlayListData;
+			httpServer.Remote = new RemoteControl(mainWindow);
 			try
 			{
 				httpServer.Start();
