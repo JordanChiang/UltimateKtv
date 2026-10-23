@@ -144,9 +144,9 @@ namespace UltimateKtv
                 formattedText,
                 ParseBrush(settings.MarqueeSongAddedFillColor, Brushes.LightGreen),
                 ParseFontFamily(settings.MarqueeSongAddedFontFamily),
-                Math.Clamp(settings.MarqueeSongAddedFontSize > 0 ? settings.MarqueeSongAddedFontSize : 48, 12, 128),
+                settings.MarqueeSongAddedFontSize,
                 MarqueePosition.Top,
-                Math.Clamp(settings.MarqueeSongAddedTimeDuration, 1, 60),
+                settings.MarqueeSongAddedTimeDuration,
                 MarqueePriority.High), device);
         }
 
@@ -250,7 +250,10 @@ namespace UltimateKtv
             Priority = priority ?? (timeoutSeconds > 0 ? MarqueePriority.High : MarqueePriority.Normal)
         };
 
-        /// <summary>MarqueeText 樣式 (含外框、粗細、停留) 的捲動跑馬燈；播放次數為 0 表示關閉。</summary>
+        /// <summary>
+        /// MarqueeText 樣式 (含外框、粗細、停留) 的捲動跑馬燈；播放次數為 0 表示關閉。
+        /// 字級、外框、速度、次數的範圍已由 AppSettings.Normalize 保證，這裡直接使用。
+        /// </summary>
         private static void ShowCustomStyledMarquee(string formattedText, AppSettings settings, MarqueeDisplayDevice device, bool isSongPlayback, MarqueePriority priority)
         {
             if (settings.MarqueeTextPlayCount <= 0)
@@ -265,11 +268,11 @@ namespace UltimateKtv
                 Color = ParseBrush(settings.MarqueeTextFillColor, Brushes.White),
                 FontFamily = ParseFontFamily(settings.MarqueeTextFontFamily, DefaultFontFamily),
                 FontWeight = ParseFontWeight(settings.MarqueeTextFontWeight, FontWeights.Bold),
-                FontSize = Math.Clamp(settings.MarqueeTextFontSize > 0 ? settings.MarqueeTextFontSize : 72, 12, 128),
+                FontSize = settings.MarqueeTextFontSize,
                 StrokeColor = ParseBrush(settings.MarqueeTextStrokeColor, Brushes.Black),
-                StrokeThickness = Math.Clamp(settings.MarqueeTextFontStrokeThickness >= 0 ? settings.MarqueeTextFontStrokeThickness : 8, 0, 32),
-                Speed = Math.Clamp(settings.MarqueeTextTimeDuration > 0 ? settings.MarqueeTextTimeDuration : 200, 100, 1000),
-                RepeatCount = Math.Clamp(settings.MarqueeTextPlayCount > 0 ? settings.MarqueeTextPlayCount : 2, 1, 10),
+                StrokeThickness = settings.MarqueeTextFontStrokeThickness,
+                Speed = settings.MarqueeTextTimeDuration,
+                RepeatCount = settings.MarqueeTextPlayCount,
                 HoldTimeMs = Math.Max(0, settings.MarqueeTextTimeHold),
                 Position = MarqueePosition.Top,
                 Priority = priority,
@@ -279,8 +282,7 @@ namespace UltimateKtv
 
         private static Brush BroadcastBrush(AppSettings settings) => ParseBrush(settings.MarqueeBroadcastFillColor, Brushes.Gold);
 
-        private static double BroadcastFontSize(AppSettings settings) =>
-            Math.Clamp(settings.MarqueeBroadcastFontSize > 0 ? settings.MarqueeBroadcastFontSize : 38, 12, 128);
+        private static double BroadcastFontSize(AppSettings settings) => settings.MarqueeBroadcastFontSize;
 
         /// <summary>網路點歌沒有名稱 ("網路點歌")、本機、隨機播放都不顯示點歌者。</summary>
         private static string DisplayOrderedBy(string? orderedBy) =>
