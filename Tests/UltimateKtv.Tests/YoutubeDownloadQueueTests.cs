@@ -140,7 +140,7 @@ namespace UltimateKtv.Tests
         }
 
         [Fact]
-        public void Progress_only_moves_forward_until_a_restart()
+        public async Task Progress_only_moves_forward_until_a_restart()
         {
             // 與主程式相同：佇列建立在單一執行緒的 SynchronizationContext，進度依序回到該執行緒
             using var ui = new SingleThreadContext();
@@ -155,7 +155,7 @@ namespace UltimateKtv.Tests
                 queue.Enqueue("aaaaaaaaaaa", "A", null, null);
             });
 
-            Assert.True(done.Task.Wait(Timeout));
+            await done.Task.WaitAsync(Timeout);
             ui.Run(() => { });
             Assert.Equal(new double[] { 10, 50, 60, 0, 20 }, seen);
         }

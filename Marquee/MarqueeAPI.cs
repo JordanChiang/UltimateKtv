@@ -150,25 +150,31 @@ namespace UltimateKtv
                 MarqueePriority.High), device);
         }
 
-        /// <summary>公告/廣播 (MarqueeBroadcast 樣式)，timeoutSeconds 為 0 時用設定的停留秒數。</summary>
+        /// <summary>
+        /// 公告/廣播 (MarqueeBroadcast 樣式)，timeoutSeconds 為 0 時用設定的停留秒數。
+        /// 設定的顯示時間為 0 代表關閉系統廣播，有指定 timeoutSeconds 也不顯示。
+        /// </summary>
         public static void ShowStaticAnnouncement(string text, int timeoutSeconds = 0, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
             var settings = SettingsManager.Instance.CurrentSettings;
-            int duration = timeoutSeconds > 0 ? timeoutSeconds : settings.MarqueeBroadcastTimeDuration;
-            if (duration <= 0)
+            if (settings.MarqueeBroadcastTimeDuration <= 0)
                 return;
+            int duration = timeoutSeconds > 0 ? timeoutSeconds : settings.MarqueeBroadcastTimeDuration;
 
             Show(Static(text, BroadcastBrush(settings), ParseFontFamily(settings.MarqueeBroadcastFontFamily),
                 BroadcastFontSize(settings), MarqueePosition.Top, duration, MarqueePriority.High), device);
         }
 
-        /// <summary>角落提示 (MarqueeBroadcast 樣式)；同一角落的新提示會原地取代舊的。</summary>
+        /// <summary>
+        /// 角落提示 (MarqueeBroadcast 樣式)；同一角落的新提示會原地取代舊的。
+        /// 設定的顯示時間為 0 代表關閉系統廣播，有指定 timeoutSeconds 也不顯示。
+        /// </summary>
         public static void ShowCornerText(string text, int timeoutSeconds = 0, MarqueePosition position = MarqueePosition.BottomRight, double? fontSize = null, MarqueeDisplayDevice device = MarqueeDisplayDevice.PlayerScreen)
         {
             var settings = SettingsManager.Instance.CurrentSettings;
-            int duration = timeoutSeconds > 0 ? timeoutSeconds : settings.MarqueeBroadcastTimeDuration;
-            if (duration <= 0)
+            if (settings.MarqueeBroadcastTimeDuration <= 0)
                 return;
+            int duration = timeoutSeconds > 0 ? timeoutSeconds : settings.MarqueeBroadcastTimeDuration;
 
             Show(Static(text, BroadcastBrush(settings), ParseFontFamily(settings.MarqueeBroadcastFontFamily),
                 fontSize ?? BroadcastFontSize(settings), position, duration), device);
