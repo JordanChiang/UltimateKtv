@@ -179,6 +179,27 @@ namespace UltimateKtv
         private static readonly CompareInfo SearchCompare = CultureInfo.GetCultureInfo("zh-TW").CompareInfo;
         private const CompareOptions SearchOptions = CompareOptions.IgnoreCase | CompareOptions.IgnoreWidth | CompareOptions.IgnoreKanaType;
 
+        /// <summary>手機歌星清單「其它」以外的歌手類別：男、女、團體、外國男、外國女、外國團。</summary>
+        private static readonly HashSet<string> NamedSingerTypes = new() { "0", "1", "2", "4", "5", "6" };
+
+        /// <summary>
+        /// 手機歌星清單的篩選：type 為歌手類別 (空白 = 全部，"99" = 上述六類以外，含未設定)；
+        /// name 為歌星名包含的文字 (不分大小寫、全形半形、平假名片假名)，空白 = 不限。
+        /// </summary>
+        public static bool MatchesSinger(string singerName, string? singerType, string? type, string? name)
+        {
+            string actualType = singerType ?? "";
+            if (type == "99")
+            {
+                if (NamedSingerTypes.Contains(actualType)) return false;
+            }
+            else if (!string.IsNullOrEmpty(type) && actualType != type)
+            {
+                return false;
+            }
+            return string.IsNullOrEmpty(name) || SearchCompare.IndexOf(singerName ?? "", name, SearchOptions) >= 0;
+        }
+
         private static bool IsDuet(Song song) => song.SingerType == DuetSingerType;
 
         private static bool MatchesLang(Song song, string? lang)

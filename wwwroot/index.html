@@ -1926,23 +1926,15 @@
             currentPage.singerResults = 0;
 
             try {
-                let conditions = [];
-
-                // Add type condition
-                if (type === 99) {
-                    conditions.push("Singer_Type NOT IN ('0', '1', '2', '4', '5', '6')");
-                } else if (type !== '') {
-                    conditions.push(`Singer_Type='${type}'`);
-                }
-
-                // Also include search box text if present
+                // 歌手類別 (99 = 其它) 與搜尋框文字由伺服器的 SongQuery.MatchesSinger 篩選
                 const singerName = document.getElementById('singerSearch').value.trim();
-                if (singerName) {
-                    conditions.push(`Singer_Name LIKE '%${singerName}%'`);
+                let url = `?queryType=singerlist&page=0&rows=50`;
+                if (type !== '') {
+                    url += `&type=${encodeURIComponent(type)}`;
                 }
-
-                const condition = conditions.join(' AND ');
-                const url = `?queryType=querysinger&condition=${encodeURIComponent(condition)}&page=0&rows=50&sort=Singer_Strokes`;
+                if (singerName) {
+                    url += `&value=${encodeURIComponent(singerName)}`;
+                }
                 lastSearchParams.singerResults = url; // Save the search URL
                 const response = await fetch(url);
                 const data = await response.json();
@@ -1970,12 +1962,10 @@
                 const activeTypeBtn = document.querySelector('#singerSong .filter-btn.active');
                 const singerType = activeTypeBtn ? activeTypeBtn.getAttribute('data-type') : '';
 
-                let conditions = [`Singer_Name LIKE '%${singerName}%'`];
+                let url = `?queryType=singerlist&value=${encodeURIComponent(singerName)}&page=0&rows=50`;
                 if (singerType && singerType !== '') {
-                    conditions.push(`Singer_Type='${singerType}'`);
+                    url += `&type=${encodeURIComponent(singerType)}`;
                 }
-
-                const url = `?queryType=querysinger&condition=${encodeURIComponent(conditions.join(' AND '))}&page=0&rows=50&sort=Singer_Strokes`;
                 lastSearchParams.singerResults = url; // Save the search URL
                 const response = await fetch(url);
                 const data = await response.json();

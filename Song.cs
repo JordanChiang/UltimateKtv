@@ -35,7 +35,7 @@ namespace UltimateKtv
         public string FilePath { get; set; } = "";
 
         /// <summary>
-        /// 載入時的原始欄位值，供手機網頁依欄位名稱查詢 (RowFilter) 與輸出使用。
+        /// 載入時的原始欄位值，供手機網頁依欄位名稱輸出使用。
         /// 會變動的欄位請改讀上面的屬性，見 <see cref="GetColumnValue"/>。
         /// </summary>
         public IReadOnlyDictionary<string, object?> Columns { get; init; } = EmptyColumns;

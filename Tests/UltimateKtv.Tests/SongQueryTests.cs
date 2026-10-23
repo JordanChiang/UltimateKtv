@@ -224,6 +224,34 @@ namespace UltimateKtv.Tests
             Assert.Equal(2, SongQuery.Search(songs, null, null, Options()).Count);
         }
 
+        // ---- 手機歌星清單 ----
+
+        [Theory]
+        [InlineData("", "", true)]
+        [InlineData("1", "", true)]
+        [InlineData("0", "", false)]
+        [InlineData("99", "", false)]
+        [InlineData("", "jay", true)]
+        [InlineData("", "ＪＡＹ", true)]
+        [InlineData("", "林", false)]
+        [InlineData("1", "Ja", true)]
+        public void Singer_list_filters_by_type_and_name(string type, string name, bool expected)
+        {
+            Assert.Equal(expected, SongQuery.MatchesSinger("Jay Chou", "1", type, name));
+        }
+
+        [Theory]
+        [InlineData("3", true)]
+        [InlineData("7", true)]
+        [InlineData("", true)]
+        [InlineData(null, true)]
+        [InlineData("0", false)]
+        [InlineData("6", false)]
+        public void Other_singer_type_is_everything_outside_the_six_named_types(string? singerType, bool expected)
+        {
+            Assert.Equal(expected, SongQuery.MatchesSinger("某人", singerType, "99", null));
+        }
+
         // ---- 分頁 ----
 
         [Fact]

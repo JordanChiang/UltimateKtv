@@ -207,8 +207,6 @@ namespace UltimateKtv
 
                 // Load songs, singers, etc. from CrazySong.db (SQLite) or CrazySong.mdb (Access) into memory for fast access.
                 SongDatas.Init();
-                // Ensure the server cache is built immediately after loading data, before any requests can come in.
-                HttpServer.PrepareCachedSingerData();
                 
                 // Scan for missing singer photos on startup if enabled
                 SingerPhotoManager.RecordMissingSinger();

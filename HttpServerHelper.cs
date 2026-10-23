@@ -155,7 +155,7 @@ public class HttpServerHelper
 
 	private static SongQueryOptions CurrentQueryOptions() => SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
 
-	/// <summary>舊版網頁以 RowFilter 字串查詢 (querysong)；已改為有型別的查詢，提示重新整理頁面。</summary>
+	/// <summary>舊版網頁以 RowFilter 字串查詢 (querysong、querysinger)；已改為有型別的查詢，提示重新整理頁面。</summary>
 	public static string OutdatedPage() => ErrorResult("Outdated page", "Please reload this page.");
 
 	/// <summary>手機搜尋框：歌名或歌星包含 text，lang 空白 = 全部語系。</summary>
@@ -204,101 +204,32 @@ public class HttpServerHelper
 		return song == null ? EmptyResult : SongPageToJson(new List<Song> { song }, "", "", 0);
 	}
 
-	private static string GetSingerTypeIndex(string singerTypeName)
+	/// <summary>
+	/// 手機歌星清單：依歌星排序 (英文在前、中文依筆畫) 列出，可依歌手類別 (type，"99" = 其它) 與名稱 (name，包含即可) 篩選。
+	/// </summary>
+	public static string QuerySingerList(string type, string name, string page, string rows)
 	{
-		// Map singer type names to their indices in SingerTypeList
-		if (SongDatas.SingerTypeList == null)
-		{
-			System.Diagnostics.Debug.WriteLine($"[GetSingerTypeIndex] SingerTypeList is null");
-			return "";
-		}
-
-		// Log the entire list
-		System.Diagnostics.Debug.WriteLine($"[GetSingerTypeIndex] SingerTypeList contents: {string.Join(", ", SongDatas.SingerTypeList.Select((s, i) => $"[{i}]='{s}'"))}");
-
-		int index = SongDatas.SingerTypeList.IndexOf(singerTypeName);
-		if (index >= 0)
-		{
-			System.Diagnostics.Debug.WriteLine($"[GetSingerTypeIndex] '{singerTypeName}' -> index {index}");
-			return index.ToString();
-		}
-
-		System.Diagnostics.Debug.WriteLine($"[GetSingerTypeIndex] '{singerTypeName}' not found in list");
-		return "";
-	}
-
-	public static string QuerySinger(string condition, string page, string rows, string sort)
-	{
-		// Use cached table if available, else fallback (though fallback logic is not strictly needed if initialization is correct)
-		if (HttpServer.CachedSingerTable == null)
-		{
-			// Fallback: This handles the case if server started very quickly or failed to init cache
-			if (SongDatas.SingerData == null) return EmptyResult;
-			// ... (Existing logic could go here, but let's just return error or empty for simplicity/safety)
-			System.Diagnostics.Debug.WriteLine("[QuerySinger] CachedSingerTable is null! Pre-sorting not ready.");
-			return EmptyResult; 
-		}
-
+		if (SongDatas.SingerData == null) return EmptyResult;
 		try
 		{
-			System.Diagnostics.Debug.WriteLine($"[QuerySinger] condition={condition}, page={page}, rows={rows}, sort={sort}");
+			static string Text(Dictionary<string, object?> singer, string key) =>
+				singer.TryGetValue(key, out var v) ? Convert.ToString(v) ?? "" : "";
 
-			// Use a DataView on the CACHED (pre-sorted) table
-			DataView view = new DataView(HttpServer.CachedSingerTable);
+			// SongDatas.SingerData 載入時已依歌星排序
+			var singers = SongDatas.SingerData
+				.Where(s => SongQuery.MatchesSinger(Text(s, "Singer_Name"), Text(s, "Singer_Type"), type, name))
+				.ToList();
+			if (singers.Count == 0) return EmptyResult;
 
-			// Apply filter
-			string rowFilter = !string.IsNullOrEmpty(condition) ? condition : string.Empty;
-			if (!string.IsNullOrEmpty(rowFilter))
+			int number = IsNumeric(page) ? Convert.ToInt32(page) + 1 : 1;
+			int size = IsNumeric(rows) ? Convert.ToInt32(rows) : 0;
+			var paged = Page<Dictionary<string, object?>>.Of(singers, number, size).Items.Select(s => new Dictionary<string, object?>
 			{
-				try
-				{
-					view.RowFilter = rowFilter;
-				}
-				catch (Exception ex)
-				{
-					return ErrorResult("RowFilter Error", ex.Message);
-				}
-			}
-
-            // Apply sort
-            // The cached table is already sorted by the global logic (English first, then Chinese by stroke).
-            // If the requested sort is "Singer_Strokes", we deliberately IGNORE it to preserve the complex global sort order.
-            // If we applied a simple "Singer_Strokes ASC" sort here, it would sort purely by number, breaking the "English first" rule
-            // and potentially mixing mixed-language result sets incorrectly.
-            if (!string.IsNullOrEmpty(sort))
-            {
-                 // Only apply sort if it's NOT the default "Singer_Strokes" request.
-                 // This ensures we respect the complex cultural sorting from SortedSingerData.
-                 if (!sort.Trim().Equals("Singer_Strokes", StringComparison.OrdinalIgnoreCase))
-                 {
-                     view.Sort = sort;
-                 }
-                 else
-                 {
-                     // Explicitly clear any sort to ensure we use the underlying table's natural order (which is sorted)
-                     view.Sort = string.Empty;
-                 }
-            }
-            else
-            {
-                 // Default: use underlying table order
-                 view.Sort = string.Empty;
-            }
-
-			// Select specific columns
-			using DataTable resultTable = view.ToTable(false,
-				"Singer_Name", "Singer_Type", "Singer_Strokes");
-
-			if (resultTable.Rows.Count == 0)
-				return EmptyResult;
-
-			// Apply pagination
-			if (string.IsNullOrEmpty(rows) || !IsNumeric(rows))
-				return DataTableToJSON(resultTable);
-
-			int pageIndex = (string.IsNullOrEmpty(page) || !IsNumeric(page)) ? 1 : Convert.ToInt32(page) + 1;
-			int pageSize = Convert.ToInt32(rows);
-			return DataTableToJSON(resultTable.GetPagedTable(pageIndex, pageSize));
+				["Singer_Name"] = s.GetValueOrDefault("Singer_Name"),
+				["Singer_Type"] = s.GetValueOrDefault("Singer_Type"),
+				["Singer_Strokes"] = s.GetValueOrDefault("Singer_Strokes"),
+			});
+			return JsonConvert.SerializeObject(paged);
 		}
 		catch (Exception ex)
 		{

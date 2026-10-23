@@ -31,9 +31,6 @@ public class HttpServer : IDisposable
 	// Singleton instance for broadcasting events
 	public static HttpServer? Instance { get; private set; }
 
-	// Cached singer data table (sorted by strokes)
-	public static DataTable? CachedSingerTable { get; private set; }
-
 	/// <summary>
 	/// Gets the server URL for external access
 	/// </summary>
@@ -253,13 +250,12 @@ public class HttpServer : IDisposable
 		{
 			string lang = queryParams.ContainsKey("lang") ? queryParams["lang"] : string.Empty;
 			string singer = queryParams.ContainsKey("singer") ? queryParams["singer"] : string.Empty;
-			string condition = queryParams.ContainsKey("condition") ? queryParams["condition"] : string.Empty;
 			string page = queryParams.ContainsKey("page") ? queryParams["page"] : string.Empty;
 			string rows = queryParams.ContainsKey("rows") ? queryParams["rows"] : string.Empty;
-			string sort = queryParams.ContainsKey("sort") ? queryParams["sort"] : string.Empty;
 			string user = queryParams.ContainsKey("user") ? queryParams["user"] : string.Empty;
 			string value = queryParams.ContainsKey("value") ? queryParams["value"] : string.Empty;
 			string state = queryParams.ContainsKey("state") ? queryParams["state"] : string.Empty;
+			string type = queryParams.ContainsKey("type") ? queryParams["type"] : string.Empty;
 
 			// Log user parameter for debugging
 			if (!string.IsNullOrEmpty(user))
@@ -283,7 +279,7 @@ public class HttpServer : IDisposable
                 if (!silentQueries.Contains(queryType)) 
                 {
                     string userLog = string.IsNullOrEmpty(user) ? "" : $"User: {user}, ";
-                    AppLogger.Log($"[Network API] Action: {queryType}, {userLog}Condition: {condition}, Value: {value}");
+                    AppLogger.Log($"[Network API] Action: {queryType}, {userLog}Value: {value}");
                 }
             }
 
@@ -295,7 +291,8 @@ public class HttpServer : IDisposable
 				"singersong" => HttpServerHelper.QuerySingerSongs(singer, page, rows),
 				"songbyid" => HttpServerHelper.QuerySongById(value),
 				"querynewsong" => HttpServerHelper.QueryNewSong(lang, page, rows),
-				"querysinger" => HttpServerHelper.QuerySinger(condition, page, rows, sort),
+				"querysinger" => HttpServerHelper.OutdatedPage(),
+				"singerlist" => HttpServerHelper.QuerySingerList(type, value, page, rows),
 				"favoriteuser" => HttpServerHelper.FavoriteUser(page, rows),
 				"favoritelogin" => HttpServerHelper.FavoriteLogin(user),
 				"favoritesong" => HttpServerHelper.FavoriteSong(user, page, rows),
@@ -351,7 +348,7 @@ public class HttpServer : IDisposable
 	{
 		return queryType switch
 		{
-			"querysong" or "searchsong" or "ranking" or "singersong" or "songbyid" or "querynewsong" or "querysinger" or "favoriteuser" or
+			"querysong" or "searchsong" or "ranking" or "singersong" or "songbyid" or "querynewsong" or "querysinger" or "singerlist" or "favoriteuser" or
 			"favoritelogin" or "favoritesong" or "ordersong" or
 			"queryplayerstate" or "queryhostserverinfo" or "queryplaylist" or "querygeneration" or "skipsong" or
 			"vocal" or "music" or
@@ -545,9 +542,6 @@ public class HttpServer : IDisposable
 			debugLog($"Access from browser: {serverUrl}");
 			debugLog($"SongData count: {SongDatas.SongData?.Count ?? 0}");
 
-			// Prepare cached singer data for faster and consistent sorting
-			PrepareCachedSingerData();
-
 			return httpServer;
 		}
 		catch (Exception ex)
@@ -727,46 +721,4 @@ public class HttpServer : IDisposable
 		return "Unable to get public IP";
 	}
 
-	/// <summary>
-	/// Prepares the cached singer data table with numeric sorting for strokes
-	/// </summary>
-	public static void PrepareCachedSingerData()
-	{
-		if (SongDatas.SingerData == null)
-        {
-             System.Diagnostics.Debug.WriteLine("[HttpServer] PrepareCachedSingerData failed: SongDatas.SingerData is null.");
-             return;
-        }
-        if (SongDatas.SingerDataSchema == null)
-        {
-             System.Diagnostics.Debug.WriteLine("[HttpServer] PrepareCachedSingerData failed: SongDatas.SingerDataSchema is null.");
-             return;
-        }
-
-		try
-		{
-			// Clone structure from schema
-			var dt = SongDatas.SingerDataSchema.Clone();
-			
-            // Populate data from the globally SORTED list
-            foreach (var singerDictionary in SongDatas.SingerData)
-			{
-				var row = dt.NewRow();
-				foreach (DataColumn col in dt.Columns)
-				{
-					if (singerDictionary.ContainsKey(col.ColumnName))
-					{
-						row[col.ColumnName] = singerDictionary[col.ColumnName] ?? DBNull.Value;
-					}
-				}
-				dt.Rows.Add(row);
-			}
-
-			CachedSingerTable = dt; // Use the table directly as it preserves insertion order
-		}
-		catch (Exception ex)
-		{
-			System.Diagnostics.Debug.WriteLine($"[HttpServer] Failed to prepare cached singer data: {ex.Message}");
-		}
-	}
 }
