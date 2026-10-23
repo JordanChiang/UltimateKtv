@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Reflection;
+using System.Runtime.Loader;
 
 namespace UltimateKtv
 {
@@ -23,7 +24,9 @@ namespace UltimateKtv
             // Ensure the working directory is set to the application's base directory
             Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
 
-            AppDomain.CurrentDomain.AssemblyResolve += OnAssemblyResolve;
+            // 用 ALC.Resolving + LoadFromAssemblyPath 而非 AssemblyResolve + Assembly.LoadFrom：
+            // LoadFrom 會掛上 .NET 內建的 LoadFromResolveHandler，在 libs\ 找不到衛星資源組件時丟 FileNotFoundException
+            AssemblyLoadContext.Default.Resolving += OnAssemblyResolve;
         }
 
         /// <summary>
@@ -49,9 +52,9 @@ namespace UltimateKtv
             if (shutdownWindows) System.Diagnostics.Process.Start("shutdown", "/s /t 0");
         }
 
-        private Assembly? OnAssemblyResolve(object? sender, ResolveEventArgs args)
+        private static Assembly? OnAssemblyResolve(AssemblyLoadContext context, AssemblyName name)
         {
-            string assemblyName = new AssemblyName(args.Name).Name + ".dll";
+            string assemblyName = name.Name + ".dll";
             
             string codecFolderName = Environment.Is64BitProcess ? "Codec" : "Codec_x86";
             
@@ -66,7 +69,7 @@ namespace UltimateKtv
             {
                 if (File.Exists(path))
                 {
-                    return Assembly.LoadFrom(path);
+                    return context.LoadFromAssemblyPath(path);
                 }
             }
 
