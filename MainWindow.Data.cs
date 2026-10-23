@@ -469,51 +469,5 @@ namespace UltimateKtv
             LoadSongPage(_currentSongPage);
         }
 
-        /// <summary>
-        /// Clears all songs from User_Id "****" (today's play list)
-        /// Called when the first song starts playing
-        /// </summary>
-        private void ClearTodayPlayList()
-        {
-            try
-            {
-                SongLibrary.ClearTodayList();
-                DebugLog("Cleared today's play list (User_Id = ****)");
-
-                // Reload the favorite data to keep it in sync
-                SongDatas.ReloadFavoriteData();
-            }
-            catch (Exception ex)
-            {
-                DebugLog($"Error clearing today's play list: {ex.Message}");
-                AppLogger.LogError("Failed to clear today's play list", ex);
-            }
-        }
-
-        /// <summary>
-        /// Records a song play to ktv_Favorite table with two User_Id entries:
-        /// 1. User_Id "****" (today's play - for current session)
-        /// 2. User_Id "MM/dd HH:mm" (timestamped history record)
-        /// </summary>
-        /// <param name="songId">The Song_Id to record</param>
-        private void RecordSongPlay(string songId)
-        {
-            if (string.IsNullOrEmpty(songId)) return;
-
-            try
-            {
-                int maxRecords = SettingsManager.Instance.CurrentSettings.PlayHistoryCount;
-                DebugLog($"RecordSongPlay called for Song_Id={songId}, session={_sessionTimestampUserId}, maxRecords={maxRecords}");
-                SongLibrary.RecordPlay(songId, _sessionTimestampUserId, maxRecords);
-
-                // Reload the favorite data to keep it in sync
-                SongDatas.ReloadFavoriteData();
-            }
-            catch (Exception ex)
-            {
-                DebugLog($"Error recording song play: {ex.Message}");
-                AppLogger.LogError("Failed to record song play", ex);
-            }
-        }
     }
 }

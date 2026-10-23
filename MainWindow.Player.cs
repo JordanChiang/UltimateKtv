@@ -89,6 +89,38 @@ namespace UltimateKtv
             _playback.SongOpened += Playback_SongOpened;
             _playback.SongEnded += Playback_SongEnded;
             _playback.BecameIdle += Playback_BecameIdle;
+
+            // 錄音跟著播放場次：開播開始錄，歌曲結束或閒置時停止 (暫停/繼續由暫停鈕控制)
+            _playback.SongOpened += (_, song) =>
+            {
+                if (_playingSongData == null) return;
+                var playing = _playingSongData;
+                TryRecording(() => RecordingManager.Instance.StartRecording(playing.Name, playing.Singer, song.IsRandom), "starting recording");
+            };
+            _playback.SongEnded += (_, _) => TryRecording(() => RecordingManager.Instance.StopRecording(), "stopping recording on song end");
+            _playback.BecameIdle += (_, _) => TryRecording(() => RecordingManager.Instance.StopRecording(), "stopping recording when playback became idle");
+        }
+
+        private static void TryRecording(Action action, string what)
+        {
+            try { action(); }
+            catch (Exception ex) { AppLogger.LogError($"Error {what}", ex); }
+        }
+
+        private PlayRecorder? _playRecorderInstance;
+
+        /// <summary>播放紀錄 (播放次數、今日點唱、點唱紀錄、YouTube 長度)；第一次開播時建立 (開機時間已確定)。</summary>
+        private PlayRecorder PlayRecorder => _playRecorderInstance ??= CreatePlayRecorder();
+
+        private PlayRecorder CreatePlayRecorder()
+        {
+            var recorder = new PlayRecorder(
+                _sessionTimestampUserId,
+                () => SettingsManager.Instance.CurrentSettings.PlayCountUpdatePercentage,
+                () => SettingsManager.Instance.CurrentSettings.PlayHistoryCount,
+                SongDatas.ReloadFavoriteData);
+            recorder.YoutubeLengthStored += (songId, seconds) => Dispatcher.BeginInvoke(() => RefreshYoutubeSongLengthInLists(songId, seconds));
+            return recorder;
         }
 
         /// <summary>
@@ -208,14 +240,7 @@ namespace UltimateKtv
                 SaveCurrentSongVolume();
             }
 
-            try
-            {
-                RecordingManager.Instance.StopRecording();
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError("Error stopping recording on song end", ex);
-            }
+            PlayRecorder.SongEnded();
 
             if (e.Reason is SongEndReason.Finished or SongEndReason.Skipped or SongEndReason.Replayed)
             {
@@ -244,15 +269,7 @@ namespace UltimateKtv
             IsPlayingYoutube = false;
             _playingSongData = null;
             UpdateCurrentPlayingDisplay();
-
-            try
-            {
-                RecordingManager.Instance.StopRecording();
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogError("Error stopping recording when playback became idle", ex);
-            }
+            PlayRecorder.SongEnded();
 
             SetPlayerControlsEnabled(true); // Keep controls interactive when idle
             SetPauseButtonResume(false); // Reset pause button text
@@ -366,14 +383,6 @@ namespace UltimateKtv
                 var songName = _playingSongData.Name;
                 var singerName = _playingSongData.Singer;
                 
-                try
-                {
-                    RecordingManager.Instance.StartRecording(songName, singerName, song.IsRandom);
-                }
-                catch (Exception ex)
-                {
-                    AppLogger.LogError("Error starting recording in mediaUriElement_MediaOpened", ex);
-                }
 
                 // Stop any leftover marquee/static text on console screen since NowPlayingBorder displays current song info
                 MarqueeAPI.Stop(MarqueeDisplayDevice.ConsoleScreen);
@@ -382,8 +391,7 @@ namespace UltimateKtv
                 // Display marquee on player display device
                 if (_videoDisplayWindow != null)
                 {
-                    var next = _playback.Snapshot.FirstOrDefault();
-                    MarqueeAPI.ShowSongPlaybackMarquee(songName, singerName, next?.SongName, next?.SingerName, song.IsRandom, song.OrderedBy, next?.OrderedBy, MarqueeDisplayDevice.PlayerScreen);
+                    ShowSongPlaybackMarquee(song);
 
                         // Ensure player window is on top in single monitor mode when song starts
                         if (IsSingleMonitorMode)
@@ -425,37 +433,6 @@ namespace UltimateKtv
                 // Apply audio channel for random play songs (if applicable)
                 ApplyRandomPlayAudioChannel(song);
 
-                // Clear today's play list on first song, then record this song play
-                // no needed for random play
-                var songId = _playingSongData.Id;
-                if (!string.IsNullOrEmpty(songId) && (!song.IsRandom))
-                {
-                    if (IsPlayingYoutube)
-                    {
-                        // PlayCount is incremented in the position timer once PlayCountUpdatePercentage is reached, like local songs
-                        long ticks = player.MediaDuration;
-                        int lengthSeconds = ticks > 0 ? (int)TimeSpan.FromTicks(ticks).TotalSeconds : 0;
-                        if (lengthSeconds > 0)
-                        {
-                            Task.Run(() =>
-                            {
-                                if (SongLibrary.UpdateYoutubeSongLength(songId, lengthSeconds))
-                                {
-                                    Dispatcher.BeginInvoke(() => RefreshYoutubeSongLengthInLists(songId, lengthSeconds));
-                                }
-                            });
-                        }
-                    }
-                    else
-                    {
-                        if (_isFirstSongInSession)
-                        {
-                            ClearTodayPlayList();
-                            _isFirstSongInSession = false;
-                        }
-                        RecordSongPlay(songId);
-                    }
-                }
             }
             catch (Exception ex)
             {
@@ -464,9 +441,9 @@ namespace UltimateKtv
             }
             finally
             {
-                // Reset the play count increment flag for the new song.
-                _playCountIncrementedForCurrentSong = false;
-                DebugLog("Play count increment flag reset for new song.");
+                // 今日點唱、點唱紀錄、YouTube 長度；播放次數之後由播放進度觸發
+                long ticks = player.MediaDuration;
+                PlayRecorder.SongOpened(_playingSongData, IsPlayingYoutube, song.IsRandom, ticks > 0 ? TimeSpan.FromTicks(ticks) : TimeSpan.Zero);
                 SetPlayerControlsEnabled(true);
                 SetPauseButtonResume(false); // Ensure pause button text is correct for new song
             }
@@ -538,63 +515,8 @@ namespace UltimateKtv
                             }
                         }
 
-                        // Increment play count if position more than user criteria and not already incremented
-                        // no needed for random play
-                        if (!_playCountIncrementedForCurrentSong && progressPercentage > SettingsManager.Instance.CurrentSettings.PlayCountUpdatePercentage && (_playback.Current?.IsRandom != true))
-                        {
-                            if (!IsPlayingYoutube && _playingSongData != null)
-                            {
-                                int newPlayCount = _playingSongData.PlayCount + 1;
-                                _playingSongData.PlayCount = newPlayCount;
-                                _playCountIncrementedForCurrentSong = true;
-                                DebugLog($"In-memory play count for '{_playingSongData.Name}' incremented to {newPlayCount}.");
-
-                                // Persist the change to the database asynchronously
-                                if (!string.IsNullOrEmpty(_playingSongData.Id))
-                                {
-                                    string songId = _playingSongData.Id;
-                                    Task.Run(() =>
-                                    {
-                                        try
-                                        {
-                                            SongLibrary.SetPlayCount(songId, newPlayCount);
-                                            AppLogger.Log($"DB Write: Updated Song_PlayCount to {newPlayCount} for Song_Id '{songId}'");
-                                            DebugLog($"Successfully saved new play count ({newPlayCount}) for Song_Id '{songId}' to the database.");
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            DebugLog($"Failed to save play count to database: {ex.Message}");
-                                            AppLogger.LogError($"DB Write failed: Song_PlayCount update for Song_Id '{songId}'", ex);
-                                        }
-                                    });
-                                }
-                            }
-                            else if (IsPlayingYoutube && _playingSongData != null && !string.IsNullOrEmpty(_playingSongData.Id))
-                            {
-                                _playCountIncrementedForCurrentSong = true;
-                                string ytSongId = _playingSongData.Id;
-                                string songNameForLog = _playingSongData.Name.Length > 0 ? _playingSongData.Name : "Unknown";
-                                Task.Run(() =>
-                                {
-                                    try
-                                    {
-                                        // Song_Id is the history Id (Y0017) for desktop orders but the video ID for web orders
-                                        int rows = SongLibrary.IncrementYoutubePlayCount(ytSongId);
-                                        AppLogger.Log($"DB Write: Incremented PlayCount for Youtube '{songNameForLog}' ({ytSongId}), rows affected={rows}");
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        AppLogger.LogError($"DB Write failed: PlayCount update for '{songNameForLog}'", ex);
-                                    }
-                                });
-                            }
-                            else
-                            {
-                                // Still set flag to true to avoid repeated attempts on invalid data
-                                _playCountIncrementedForCurrentSong = true;
-                                DebugLog("Could not increment play count: _playingSongData is null or has no Song_Id.");
-                            }
-                        }
+                        // 播放進度超過設定比例時播放次數加一 (隨機歌不算)
+                        PlayRecorder.ProgressChanged(progressPercentage);
                     }
                 }
                 catch (Exception ex)

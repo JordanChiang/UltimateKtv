@@ -79,10 +79,6 @@ namespace UltimateKtv
         // Media control flags
         private bool _isUpdatingProgressSlider = false;
         // Lock to prevent race conditions when transitioning between songs (e.g., Skip vs. MediaEnded)
-        // Flag to ensure play count is incremented only once per song playback
-        private bool _playCountIncrementedForCurrentSong = false;
-        // Flag to track if this is the first song played in the session
-        private bool _isFirstSongInSession = true;
 
         // Long press detection for adding to favorites
         private System.Windows.Threading.DispatcherTimer? _longPressTimer;

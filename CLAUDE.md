@@ -33,7 +33,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | :--- | :--- |
 | `Updater` (net471, 一律 x86) | `Services/ZipHelper.cs` |
 | `StyleSimulator` | `AppSettings.cs`, `ThemeSettings.cs`, `RowStyleBrushes.cs` |
-| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `AppLogger.cs`, `Db.cs`, `DbHelper.cs`, `DataTableExtension.cs`, `SongLibrary.cs`, `Song.cs`, `SongQuery.cs`, `AppSettings.cs`, `ThemeSettings.cs`, `SettingsJson.cs` |
+| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `AppLogger.cs`, `Db.cs`, `DbHelper.cs`, `DataTableExtension.cs`, `SongLibrary.cs`, `Song.cs`, `SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `AppSettings.cs`, `ThemeSettings.cs`, `SettingsJson.cs` |
 
 因此 `Playback/` 底下的檔案必須維持不依賴 WPF / 播放引擎；與 player 的 adapter (`PlayerTarget`) 放在 `MainWindow.Player.cs`。主程式 csproj 用 `DefaultItemExcludes` 排除 `Updater\**`、`StyleSimulator\**`、`Tests\**`。
 
@@ -44,6 +44,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 
 ### 播放：三層
 1. **`Playback/PlaybackSession`** — 擁有待播清單與正在播放的歌，決定何時開播下一首 (點歌、插播、切歌、重唱、單曲循環、隨機歌被切掉)。只能在 UI 執行緒呼叫；待播清單只能透過它的方法修改。只依賴 `IPlaybackTarget` (Open/Stop + Opened/Ended/Failed)，所以可用 `FakePlaybackTarget` 單元測試。
+   開播後要做的紀錄在 **`Playback/PlayRecorder`** (第一首清空今日點唱、記錄點唱、播放進度過門檻加播放次數、YouTube 長度，隨機歌不記)；錄音的開始/停止也是訂閱場次事件 (`MainWindow.Player.cs`)。
 2. **`MainWindow.Player.cs` 的 `PlayerTarget`** — `IPlaybackTarget` 的實作，開檔前套用音量/聲道設定，並把引擎事件帶回 UI 執行緒。
 3. **`Player/UKtvPlayer`** — 播放引擎介面，兩個實作：`DirectShowPlayer` (預設，CrazyKTV_MediaKit + LAV filters) 與 `MpvPlayer` (libmpv，`PlayerEngine=1`)。`MediaHostManager` 是全程式唯一 player 的 singleton，libmpv 載入失敗時退回 DirectShow。
 
@@ -62,12 +63,13 @@ HTTP 請求在 Kestrel 執行緒上；需要碰主程式 (點歌、播放控制�
 
 ### 設定、主題、語言
 - `settings.json` (執行目錄) ↔ `AppSettings`，由 `SettingsManager` 載入；`SettingsJson.Load` 是容錯載入：單一項目錯誤只退回該項預設值並回寫修正。屬性上的 `[Description]` 會成為設定檔說明。
+- 設定的有效範圍以 `AppSettings` 的常數宣告一次，`AppSettings.Normalize()` 在載入與存檔時把超出範圍的值拉回上下限；新增有範圍的設定時加在這裡，不要在各處自己 clamp。設定視窗按「套用」呼叫 `SettingsManager.ApplyChanges(previous)`，需要依設定調整狀態的地方訂閱 `SettingsChanged` (主程式在 `MainWindow.OnSettingsChanged`)。
 - `ThemeSettings` / `ThemeSettingsHandler` 管配色與字型；`SampleSettings/theme_*.json` 是範本配色。`Themes/Colors.xaml` 不能用 `<StaticResource x:Key ResourceKey>` 做顏色別名 (會啟動即 XamlParseException)。`StyleSimulator` 是獨立的預覽配色工具。
 - `Loc` — 介面多國語言。`Languages/{culture}.json` 為平面 key→字串，載入後寫成 `Str.{key}` 應用程式資源，XAML 用 `{DynamicResource Str.xxx}`、程式用 `Loc.T("key")`。`zh-TW.json` 是基準語言 (也內嵌進 exe)，其他語言缺的 key 退回 zh-TW；新增 UI 字串至少要加到 `zh-TW.json`。`Web.` 開頭的 key 給遠端網頁，依裝置 Accept-Language 回應。
 
 ### 其他模組
 - `Marquee/` — 跑馬燈 (`MarqueeAPI` → `MarqueeManager` → `MarqueeControl`)，用法見 `Marquee/MARQUEE_USAGE.md`、`STATIC_TEXT_USAGE.md`。
-- `YtDlpHelper` / `MainWindow.Youtube.cs` — 用 `Tools/yt-dlp.exe`、`Tools/ffmpeg.exe` 下載 YouTube，可多首排隊下載。
+- YouTube — `Youtube/YoutubeDownloadQueue` 是下載佇列 (以影片 ID 去重、一次一部、失敗不中斷、可取消)，下載器在 `IYoutubeDownloader` 後面 (`YtDlpDownloader`：`Tools/yt-dlp.exe` 失敗改用 YoutubeExplode)；`YoutubeVideoId` 是影片 ID 與快取檔名「{歌名}_{videoId}.mp4」的規則。`MainWindow.Youtube.cs` 訂閱佇列事件更新畫面、下載完點歌。點唱紀錄的 SongId 可能是紀錄 Id (`Y0017`) 或影片 ID，比對同一部影片一律用 `YoutubeVideoId.Resolve`。
 - `Services/UpdateManager` + `Updater/` — 從 GitHub Release 檢查與套用更新；Updater 是獨立 net471 x86 exe。
 - `ResourceMonitor` — 每 5 分鐘與每首歌開播時把記憶體/Handle/GDI 用量寫進 `UltimateKtv_Log.txt`，用來追資源洩漏 (欄位說明見 README)。
 
