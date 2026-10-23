@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
@@ -94,6 +96,41 @@ namespace UltimateKtv
             Volume = song.Volume ?? 90,
             AudioTrack = song.Track ?? 0,
         };
+
+        /// <summary>
+        /// 點唱紀錄 (YoutubeSongList 的一列) 轉成清單項目：SongId 為紀錄 Id (例如「Y0017」)，YoutubeId 為影片 ID，
+        /// FilePath 為下載快取中的檔案；歌手欄顯示影片長度。主畫面與手機點歌共用。
+        /// </summary>
+        public static SongDisplayItem FromYoutubeHistory(IReadOnlyDictionary<string, object?> row)
+        {
+            string Text(string key) => row.TryGetValue(key, out var v) ? v?.ToString() ?? "" : "";
+            int Number(string key, int fallback) => int.TryParse(Text(key), out int n) ? n : fallback;
+
+            string url = Text("Url");
+            string id = Text("Id");
+            int lengthSeconds = Number("Length", 0);
+            string fileName = Text("FileName");
+            string filePath = "";
+            if (fileName.Length > 0)
+            {
+                filePath = Path.Combine(SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir ?? "", fileName);
+                if (!Path.IsPathRooted(filePath)) filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filePath);
+            }
+
+            return new SongDisplayItem
+            {
+                SongId = id.Length > 0 ? id : url,
+                SongName = Text("Name"),
+                SingerName = lengthSeconds > 0 ? TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss") : Loc.T("Youtube.UnknownLength"),
+                Language = Text("Lang"),
+                FilePath = filePath,
+                IsYoutube = true,
+                YoutubeId = url,
+                Volume = Number("Volume", 30),
+                ThumbnailUrl = $"https://i.ytimg.com/vi/{url}/hqdefault.jpg",
+                Duration = FormatDuration(lengthSeconds),
+            };
+        }
 
         /// <summary>把秒數格式化為 H:MM:SS (不到 1 小時為 M:SS)；0 以下回傳空字串。</summary>
         public static string FormatDuration(double totalSeconds)

@@ -275,13 +275,13 @@ namespace UltimateKtv
                 {
                     var item = new SongDisplayItem
                     {
-                        SongName = YtDlpHelper.GetTitleFromFileName(file),
+                        SongName = YoutubeVideoId.TitleFromFileName(file),
                         FilePath = file,
-                        SongId = YtDlpHelper.ExtractVideoIdFromFileName(file), // blank if the name has no "_{videoId}" suffix
+                        SongId = YoutubeVideoId.FromFileName(file), // blank if the name has no "_{videoId}" suffix
                         Language = "",
                         Volume = 30
                     };
-                    SongDatas.RecordYoutubeSong(item);
+                    SongLibrary.RecordYoutubeSong(item.SongId, item.SongName, item.FilePath, item.Language, item.Volume);
                     System.Threading.Thread.Sleep(5); // Pause to prevent OleDb AccessViolation
                 }
             });
@@ -820,32 +820,7 @@ namespace UltimateKtv
                         AppLogger.Log("QuickSearch: Triggered YoutubeHistory search mode.");
                         var history = SongDatas.GetYoutubeHistory();
                         AppLogger.Log($"QuickSearch: Received {history.Count} history items from SongDatas.");
-                        var historyResults = history.Select(h => {
-                            string url = h.TryGetValue("Url", out var u) ? u?.ToString() ?? "" : "";
-                            string id = h.TryGetValue("Id", out var iObj) ? iObj?.ToString() ?? "" : url;
-                            int lengthSeconds = h.TryGetValue("Length", out var lenObj) && int.TryParse(lenObj?.ToString(), out int l) ? l : 0;
-                            string downloadDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir ?? "";
-                            string rawPath = h.TryGetValue("FileName", out var fn) && fn != null
-                                           ? System.IO.Path.Combine(downloadDir, fn.ToString() ?? "") : "";
-                            if (!string.IsNullOrEmpty(rawPath) && !System.IO.Path.IsPathRooted(rawPath))
-                            {
-                                rawPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rawPath);
-                            }
-
-                            return new SongDisplayItem
-                            {
-                                SongId = id,
-                                SongName = h.TryGetValue("Name", out var n) ? n?.ToString() ?? "" : "",
-                                SingerName = lengthSeconds > 0 ? TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss") : Loc.T("Youtube.UnknownLength"),
-                                Language = h.TryGetValue("Lang", out var lang) ? lang?.ToString() ?? "" : "",
-                                FilePath = rawPath,
-                                IsYoutube = true,
-                                YoutubeId = url,
-                                Volume = h.TryGetValue("Volume", out var v) && int.TryParse(v?.ToString(), out int iv) ? iv : 30,
-                                ThumbnailUrl = $"https://i.ytimg.com/vi/{url}/hqdefault.jpg",
-                                Duration = SongDisplayItem.FormatDuration(lengthSeconds)
-                            };
-                        }).ToList();
+                        var historyResults = history.Select(SongDisplayItem.FromYoutubeHistory).ToList();
 
                         if (!string.IsNullOrEmpty(key))
                         {

@@ -183,7 +183,6 @@ namespace UltimateKtv
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private CancellationTokenSource? _youtubeDownloadCts;
 
         public MainWindow()
         {

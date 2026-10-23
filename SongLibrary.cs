@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace UltimateKtv;
 
@@ -38,6 +40,187 @@ public static class SongLibrary
 	}
 
 	public static void ClearYoutubeHistory() => Db.ExecuteNonQuery("DELETE FROM YoutubeSongList");
+
+	/// <summary>YoutubeSongList.Name 實際的欄位長度 (舊歌庫若加寬失敗會比 255 短)；開機檢查欄位後設定。</summary>
+	public static int YoutubeNameMaxLength { get; set; } = 255;
+
+	/// <summary>
+	/// 記錄一部 YouTube 影片 (下載完成或匯入)。已有同一影片 ID，或同檔名 (匯入的檔案沒有影片 ID) 的紀錄時
+	/// 不新增，回傳既有的 Id；同檔名的紀錄若還沒有影片 ID 就補上。
+	/// </summary>
+	/// <returns>紀錄 Id (例如「Y0017」)；失敗時回傳空字串。</returns>
+	public static string RecordYoutubeSong(string videoId, string name, string filePath, string lang, int volume)
+	{
+		try
+		{
+			if (!string.IsNullOrEmpty(videoId))
+			{
+				var byUrl = Db.GetDataTable("SELECT Id FROM YoutubeSongList WHERE Url = ?", videoId);
+				if (byUrl.Rows.Count > 0) return byUrl.Rows[0][0].ToString() ?? "";
+			}
+
+			string fileName = Path.GetFileName(filePath) ?? "";
+			if (!string.IsNullOrEmpty(fileName))
+			{
+				var byFile = Db.GetDataTable("SELECT Id FROM YoutubeSongList WHERE FileName = ?", fileName);
+				if (byFile.Rows.Count > 0)
+				{
+					string existingId = byFile.Rows[0][0].ToString() ?? "";
+					if (!string.IsNullOrEmpty(videoId))
+					{
+						Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Url = ? WHERE Id = ? AND (Url IS NULL OR Url = '')", videoId, existingId);
+					}
+					return existingId;
+				}
+			}
+
+			// 新 Id：Y0001 起依序編號
+			var maxIdTable = Db.GetDataTable("SELECT MAX(Id) FROM YoutubeSongList");
+			string newId = "Y0001";
+			if (maxIdTable.Rows.Count > 0 && maxIdTable.Rows[0][0] != DBNull.Value)
+			{
+				string maxId = maxIdTable.Rows[0][0].ToString() ?? "";
+				if (maxId.StartsWith("Y") && int.TryParse(maxId.Substring(1), out int num)) newId = $"Y{(num + 1):D4}";
+			}
+
+			if (name.Length > YoutubeNameMaxLength) name = name.Substring(0, YoutubeNameMaxLength);
+			Db.ExecuteNonQuery(@"INSERT INTO YoutubeSongList
+				(Id, Name, CreatDate, Url, Singer, Lang, PlayCount, Length, FileName, FileSize, Track, Volume, WordCount)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				newId,
+				name,
+				DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"),
+				videoId,
+				"",         // Singer
+				lang ?? "",
+				0,          // PlayCount：實際唱過才計
+				0,          // Length：下載完成後另外寫入
+				fileName,
+				File.Exists(filePath) ? (int)Math.Min(new FileInfo(filePath).Length, int.MaxValue) : 0,
+				3,          // Track
+				volume,
+				0);         // WordCount
+			AppLogger.Log($"DB Write: Recorded YouTube song: {name} (Id: {newId})");
+			return newId;
+		}
+		catch (Exception ex)
+		{
+			AppLogger.Log($"Error recording YouTube song: {ex.Message}");
+			return "";
+		}
+	}
+
+	/// <summary>寫入影片長度 (只在還沒有長度時)；idOrUrl 可以是紀錄 Id 或影片 ID。</summary>
+	/// <returns>是否有更新。</returns>
+	public static bool UpdateYoutubeSongLength(string idOrUrl, int lengthSeconds)
+	{
+		if (string.IsNullOrEmpty(idOrUrl) || lengthSeconds <= 0) return false;
+		try
+		{
+			int rows = Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Length = ? WHERE (Id = ? OR Url = ?) AND (Length IS NULL OR Length = 0)",
+				lengthSeconds, idOrUrl, idOrUrl);
+			if (rows > 0) AppLogger.Log($"DB Write: Updated Youtube song {idOrUrl} length to {lengthSeconds} seconds.");
+			return rows > 0;
+		}
+		catch (Exception ex)
+		{
+			AppLogger.LogError($"Failed to update Youtube song length for {idOrUrl}", ex);
+			return false;
+		}
+	}
+
+	public static void DeleteYoutubeHistory(string id)
+	{
+		try
+		{
+			Db.ExecuteNonQuery("DELETE FROM YoutubeSongList WHERE Id = ?", id);
+			AppLogger.Log($"Deleted Youtube History record: {id}");
+		}
+		catch (Exception ex)
+		{
+			AppLogger.Log($"Error deleting Youtube history: {ex.Message}");
+		}
+	}
+
+	private static readonly Regex DurationLikeLang = new(@"^\d{1,2}(:\d{2}){1,2}$");
+
+	/// <summary>
+	/// 修正舊版留下的 YouTube 紀錄 (開機時做一次)：匯入的檔案沒有影片 ID 時從檔名補回、
+	/// 歌名曾被截成 40 字或帶著「_{videoId}」後綴時從檔名還原、Lang 曾被寫成影片長度時清空。
+	/// </summary>
+	/// <returns>修正的筆數。</returns>
+	public static int RepairYoutubeHistory()
+	{
+		int repaired = 0;
+		DataTable rows;
+		try
+		{
+			rows = Db.GetDataTable("SELECT Id, Name, Url, Lang, FileName FROM YoutubeSongList");
+		}
+		catch (Exception ex)
+		{
+			AppLogger.Log($"RepairYoutubeHistory: cannot read YoutubeSongList: {ex.Message}");
+			return 0;
+		}
+
+		foreach (DataRow row in rows.Rows)
+		{
+			string id = Convert.ToString(row["Id"]) ?? "";
+			string name = row["Name"] == DBNull.Value ? "" : Convert.ToString(row["Name"]) ?? "";
+			string url = row["Url"] == DBNull.Value ? "" : Convert.ToString(row["Url"]) ?? "";
+			string lang = row["Lang"] == DBNull.Value ? "" : Convert.ToString(row["Lang"]) ?? "";
+			string fileName = row["FileName"] == DBNull.Value ? "" : Convert.ToString(row["FileName"]) ?? "";
+			if (string.IsNullOrEmpty(id)) continue;
+
+			try
+			{
+				string recoveredId = string.IsNullOrEmpty(url) ? YoutubeVideoId.FromFileName(fileName) : "";
+				if (recoveredId.Length > 0)
+				{
+					Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Url = ? WHERE Id = ? AND (Url IS NULL OR Url = '')", recoveredId, id);
+					AppLogger.Log($"DB Write: Recovered YouTube video ID '{recoveredId}' for {id} from file name.");
+					repaired++;
+				}
+
+				string fixedName = RestoredYoutubeName(name, fileName);
+				if (fixedName != name)
+				{
+					Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Name = ? WHERE Id = ?", fixedName, id);
+					AppLogger.Log($"DB Write: Restored YouTube name for {id}: '{fixedName}'.");
+					repaired++;
+				}
+
+				if (DurationLikeLang.IsMatch(lang))
+				{
+					Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Lang = '' WHERE Id = ?", id);
+					AppLogger.Log($"DB Write: Cleared duration-like Lang '{lang}' for {id}.");
+					repaired++;
+				}
+			}
+			catch (Exception ex)
+			{
+				AppLogger.Log($"RepairYoutubeHistory: failed to repair {id}: {ex.Message}");
+			}
+		}
+		return repaired;
+	}
+
+	/// <summary>匯入的歌名是整個檔名 (含「_{videoId}」)，或舊版截在 40 字：從檔名還原；其他情況不變。</summary>
+	private static string RestoredYoutubeName(string name, string fileName)
+	{
+		string fileTitle = YoutubeVideoId.TitleFromFileName(fileName);
+		if (fileTitle.Length == 0 || name == fileTitle) return name;
+
+		string safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
+		string fileNameOnly = Path.GetFileNameWithoutExtension(fileName);
+		string fixedName = name;
+		if (name == fileNameOnly)
+			fixedName = fileTitle;
+		else if (name.Length == 40 && (fileTitle.StartsWith(safeName, StringComparison.Ordinal) || fileNameOnly.StartsWith(safeName, StringComparison.Ordinal)))
+			fixedName = fileTitle;
+		// 不可超過實際欄位長度 (舊的 40 字欄位會讓 UPDATE 失敗)
+		return fixedName.Length > YoutubeNameMaxLength ? fixedName.Substring(0, YoutubeNameMaxLength) : fixedName;
+	}
 
 	// ---------------- 我的最愛 ----------------
 

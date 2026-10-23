@@ -17,18 +17,38 @@ namespace UltimateKtv
     {
         private CancellationTokenSource? _youtubePreviewCts;
         private static readonly ConcurrentDictionary<string, string> _youtubeStreamUrlCache = new();
-        private ConcurrentQueue<SongDisplayItem> _youtubeDownloadQueue = new();
-        // SongIds accepted but not yet in the waiting list / download queue (during the async file check); UI thread only
-        private readonly HashSet<string> _youtubePendingSongIds = new();
+        private YoutubeDownloadQueue? _youtubeQueue;
+        private YoutubeDownloadJob? _youtubeShownJob;
+
+        /// <summary>YouTube 下載佇列；第一次使用時建立 (一定在 UI 執行緒，事件也回到 UI 執行緒)。</summary>
+        private YoutubeDownloadQueue YoutubeQueue => _youtubeQueue ??= CreateYoutubeQueue();
+
+        private YoutubeDownloadQueue CreateYoutubeQueue()
+        {
+            var queue = new YoutubeDownloadQueue(new YtDlpDownloader(_youtube), YoutubeCacheDir);
+            queue.Changed += (_, _) => YoutubeQueue_Changed();
+            queue.Progress += YoutubeQueue_Progress;
+            queue.Completed += YoutubeQueue_Completed;
+            queue.Failed += YoutubeQueue_Failed;
+            queue.Cancelled += YoutubeQueue_Cancelled;
+            return queue;
+        }
+
+        /// <summary>YouTube 下載快取資料夾 (設定的 YoutubeDownloadDir，相對路徑以程式目錄為準)。</summary>
+        internal static string YoutubeCacheDir()
+        {
+            string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
+            return Path.IsPathRooted(cacheDir) ? cacheDir : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
+        }
 
         public object GetYoutubeDownloadQueueStatus()
         {
-            return new { count = _youtubeDownloadQueue.Count, isDownloading = IsDownloadingYoutube };
+            return new { count = YoutubeQueue.WaitingCount, isDownloading = YoutubeQueue.IsDownloading };
         }
 
         private void UpdateYoutubeDownloadQueueUI()
         {
-            int remaining = _youtubeDownloadQueue.Count;
+            int remaining = YoutubeQueue.WaitingCount;
             HttpServer.BroadcastEvent("YoutubeQueueUpdate", new { count = remaining, isDownloading = IsDownloadingYoutube });
 
             if (YoutubeStatusText != null)
@@ -46,260 +66,131 @@ namespace UltimateKtv
             }
         }
 
-        /// <returns>false if the song is already in the waiting list or download queue.</returns>
+        /// <summary>點 YouTube 影片：已在待播清單或下載佇列中 (以影片 ID 判斷) 時回傳 false。</summary>
         internal bool DownloadYoutubeVideo(SongDisplayItem song)
         {
-            // Always prevent adding duplicate Youtube songs to queue or waiting list
-            if (_playback.Snapshot.Any(w => w.SongId == song.SongId) || _youtubeDownloadQueue.Any(q => q.SongId == song.SongId)
-                || _youtubePendingSongIds.Contains(song.SongId))
+            string videoId = YoutubeVideoId.Resolve(song.YoutubeId, song.SongId, song.FilePath);
+            if (IsYoutubeInWaitingList(videoId, song) || !YoutubeQueue.Enqueue(videoId, song.SongName, song.FilePath, song))
             {
-                AppLogger.Log($"YouTube: '{song.SongName}' is already in the waiting list or download queue, skipped.");
+                AppLogger.Log($"YouTube: '{song.SongName}' ({videoId}) is already in the waiting list or download queue, skipped.");
                 return false;
             }
-
-            _youtubePendingSongIds.Add(song.SongId);
-            _ = QueueYoutubeVideoAsync(song);
             return true;
         }
 
-        private async Task QueueYoutubeVideoAsync(SongDisplayItem song)
+        /// <summary>待播清單中是否已有這部影片；沒有影片 ID 時 (例如匯入的檔案) 退回比對 SongId。</summary>
+        private bool IsYoutubeInWaitingList(string videoId, SongDisplayItem song) =>
+            _playback.Snapshot.Any(w => w.IsYoutube && (videoId.Length > 0
+                ? YoutubeVideoId.Resolve(null, w.SongId, w.FilePath) == videoId
+                : w.SongId == song.SongId));
+
+        private void YoutubeQueue_Changed()
         {
+            IsDownloadingYoutube = YoutubeQueue.IsDownloading;
+            if (!IsDownloadingYoutube)
+            {
+                _youtubeShownJob = null;
+                CleanupDownloadUI();
+                return;
+            }
+
+            // 開始下載新的一部：進度歸零並顯示進度
+            var current = YoutubeQueue.Current;
+            if (current != null && !ReferenceEquals(current, _youtubeShownJob))
+            {
+                _youtubeShownJob = current;
+                YoutubeDownloadPercentage = 0;
+                if (YoutubeDownloadText != null) YoutubeDownloadText.Visibility = Visibility.Visible;
+                DebugLog($"YouTube Download: Starting for {current.Title} ({current.VideoId})");
+            }
+            UpdateYoutubeDownloadQueueUI();
+        }
+
+        private void YoutubeQueue_Progress(object? sender, YoutubeDownloadProgressEventArgs e)
+        {
+            YoutubeDownloadPercentage = e.Percentage;
+
+            string status = e.Status.Length > 0 ? e.Status : Loc.T("Youtube.DownloadingEllipsis");
+            if (e.Status.Length > 0 && YoutubeStatusText != null)
+            {
+                int remaining = YoutubeQueue.WaitingCount;
+                YoutubeStatusText.Text = remaining > 0 ? " " + Loc.T("Youtube.StatusRemaining", e.Status, remaining) : $" {e.Status}";
+                YoutubeStatusText.Visibility = Visibility.Visible;
+            }
+            HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = e.Job.VideoId, percentage = e.Percentage, status });
+        }
+
+        private async void YoutubeQueue_Completed(object? sender, YoutubeDownloadCompletedEventArgs e)
+        {
+            if (e.Job.Tag is not SongDisplayItem song) return;
             try
             {
-                // Quick check if file already exists in cache directory before queueing
-                string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
-                if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
-                string videoId = YtDlpHelper.ResolveVideoId(song.YoutubeId, song.SongId, song.FilePath);
-                string filePath = song.FilePath;
-                if (string.IsNullOrEmpty(filePath) || filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                {
-                    string safeName = string.Join("_", song.SongName.Split(Path.GetInvalidFileNameChars()));
-                    filePath = Path.Combine(cacheDir, $"{safeName}_{videoId}.mp4");
-                }
-                else if (!Path.IsPathRooted(filePath))
-                {
-                    filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filePath);
-                }
+                song.FilePath = e.Job.FilePath;
+                string recordId = SongLibrary.RecordYoutubeSong(e.Job.VideoId, song.SongName, e.Job.FilePath, song.Language, song.Volume);
 
-                bool exists = await Task.Run(() =>
+                if (!e.WasCached)
                 {
-                    try { return File.Exists(filePath); } catch { return false; }
-                });
+                    DebugLog($"YouTube Download: Completed! Path: {e.Job.FilePath}");
+                    HttpServer.BroadcastEvent("YoutubeComplete", new { videoId = e.Job.VideoId });
 
-                if (exists)
+                    // 下載完就寫入長度，點唱紀錄列表不必等到播放才有長度
+                    int lengthSeconds = await YtDlpHelper.GetMediaDurationSecondsAsync(e.Job.FilePath);
+                    if (lengthSeconds > 0 && !string.IsNullOrEmpty(recordId))
+                    {
+                        SongLibrary.UpdateYoutubeSongLength(recordId, lengthSeconds);
+                        RefreshYoutubeSongLengthInLists(song.SongId, lengthSeconds);
+                    }
+                }
+                else
                 {
-                    DebugLog($"YouTube: File already exists in cache: {filePath}");
-                    song.FilePath = filePath;
-                    SongDatas.RecordYoutubeSong(song);
-                    _ = OrderSongAsync(song, OrderSource.YouTube);
-                    return;
+                    DebugLog($"YouTube: File already exists in cache: {e.Job.FilePath}");
                 }
 
-                _youtubeDownloadQueue.Enqueue(song);
-                UpdateYoutubeDownloadQueueUI();
+                _ = OrderSongAsync(song, OrderSource.YouTube);
 
-                if (!IsDownloadingYoutube)
+                if (!e.WasCached && _currentQuickMethod == QuickMethod.YoutubeHistory)
                 {
-                    _ = ProcessYoutubeDownloadQueueAsync();
+                    UpdateSearchWords(true, resetPage: false);
                 }
             }
             catch (Exception ex)
             {
-                AppLogger.LogError($"Failed to queue YouTube song '{song.SongName}'", ex);
-            }
-            finally
-            {
-                _youtubePendingSongIds.Remove(song.SongId);
+                AppLogger.LogError($"YouTube: failed to order downloaded song '{song.SongName}'", ex);
             }
         }
 
-        private async Task ProcessYoutubeDownloadQueueAsync()
+        private void YoutubeQueue_Failed(object? sender, YoutubeDownloadFailedEventArgs e)
         {
-            if (IsDownloadingYoutube) return;
-            IsDownloadingYoutube = true;
+            DebugLog($"YouTube Download: Error: {e.Error.Message}");
+            HttpServer.BroadcastEvent("YoutubeError", new { videoId = e.Job.VideoId, message = e.Error.Message });
+            if (e.Job.Tag is not SongDisplayItem song) return;
 
-            while (_youtubeDownloadQueue.TryDequeue(out var song))
+            // 對話框排到之後顯示，不擋住佇列下載下一部
+            Dispatcher.BeginInvoke(() =>
             {
-                UpdateYoutubeDownloadQueueUI();
-
-                try
+                if (!string.IsNullOrEmpty(song.YoutubeId) && song.SongId.StartsWith("Y"))
                 {
-                    YoutubeDownloadPercentage = 0;
-                    
-                    // Show progress UI
-                    if (YoutubeDownloadText != null) YoutubeDownloadText.Visibility = Visibility.Visible;
-
-                _youtubeDownloadCts = new CancellationTokenSource();
-                var token = _youtubeDownloadCts.Token;
-
-                    string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
-                    if (!Path.IsPathRooted(cacheDir))
+                    var result = MessageBox.Show(Loc.T("Youtube.DownloadFailedRemove", e.Error.Message), Loc.T("Youtube.DownloadErrorTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (result == MessageBoxResult.Yes)
                     {
-                        cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
-                    }
-                    if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
-
-                    string videoId = YtDlpHelper.ResolveVideoId(song.YoutubeId, song.SongId, song.FilePath);
-                    string filePath = song.FilePath;
-                    
-                    if (string.IsNullOrEmpty(filePath) || filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string safeName = string.Join("_", song.SongName.Split(Path.GetInvalidFileNameChars()));
-                        filePath = Path.Combine(cacheDir, $"{safeName}_{videoId}.mp4");
-                    }
-                    else if (!Path.IsPathRooted(filePath))
-                    {
-                        filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filePath);
-                    }
-
-                    // Check if already exists
-                    if (File.Exists(filePath))
-                    {
-                        DebugLog($"YouTube: File already exists in cache: {filePath}");
-                        song.FilePath = filePath;
-                        SongDatas.RecordYoutubeSong(song);
-                        _ = OrderSongAsync(song, OrderSource.YouTube);
-                        continue;
-                    }
-
-                DebugLog($"YouTube Download: Starting for {song.SongName} ({videoId})");
-                bool isHighQualityEnabled = SettingsManager.Instance.CurrentSettings.HighQualityYoutube;
-                string currentStatus = Loc.T("Youtube.DownloadingEllipsis");
-                var progress = new Progress<double>(p => {
-                    double newPct = Math.Round(p * 100);
-                    if (p == 0 || newPct > YoutubeDownloadPercentage)
-                    {
-                        YoutubeDownloadPercentage = newPct;
-                        HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = YoutubeDownloadPercentage, status = currentStatus });
-                    }
-                });
-
-                bool downloadedSuccess = false;
-
-                // Primary engine: yt-dlp
-                try
-                {
-                    await YtDlpHelper.DownloadVideoAsync(videoId, filePath, isHighQualityEnabled, progress, token, status =>
-                    {
-                        currentStatus = status;
-                        Dispatcher.BeginInvoke(() =>
+                        SongLibrary.DeleteYoutubeHistory(song.SongId);
+                        if (_currentQuickMethod == QuickMethod.YoutubeHistory)
                         {
-                            if (YoutubeStatusText != null)
-                            {
-                                int rem = _youtubeDownloadQueue.Count;
-                                YoutubeStatusText.Text = rem > 0 ? " " + Loc.T("Youtube.StatusRemaining", status, rem) : $" {status}";
-                                YoutubeStatusText.Visibility = Visibility.Visible;
-                            }
-                        });
-                        HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = YoutubeDownloadPercentage, status = currentStatus });
-                    });
-                    downloadedSuccess = true;
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    DebugLog($"YouTube Download: yt-dlp engine failed ({ex.Message}), trying YoutubeExplode fallback...");
-                }
-
-                // Backup fallback engine: YoutubeExplode
-                if (!downloadedSuccess)
-                {
-                    try
-                    {
-                        currentStatus = Loc.T("Youtube.FallbackDownloading");
-                        YoutubeDownloadPercentage = 0;
-                        _ = Dispatcher.BeginInvoke(() =>
-                        {
-                            if (YoutubeStatusText != null)
-                            {
-                                int rem = _youtubeDownloadQueue.Count;
-                                YoutubeStatusText.Text = rem > 0 ? " " + Loc.T("Youtube.StatusRemaining", Loc.T("Youtube.FallbackDownloading"), rem) : " " + Loc.T("Youtube.FallbackDownloading");
-                                YoutubeStatusText.Visibility = Visibility.Visible;
-                            }
-                        });
-                        HttpServer.BroadcastEvent("YoutubeProgress", new { videoId = song.SongId, percentage = 0, status = currentStatus });
-
-                        var streamManifest = await _youtube.Videos.Streams.GetManifestAsync(videoId, token);
-                        var muxedStream = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
-                        if (muxedStream != null)
-                        {
-                            await _youtube.Videos.Streams.DownloadAsync(muxedStream, filePath, progress, token);
-                            downloadedSuccess = true;
+                            UpdateSearchWords(true, resetPage: false);
                         }
                     }
-                    catch (OperationCanceledException)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex)
-                    {
-                        DebugLog($"YouTube Download: YoutubeExplode fallback also failed: {ex.Message}");
-                        throw;
-                    }
                 }
-
-                if (downloadedSuccess)
+                else
                 {
-                    DebugLog($"YouTube Download: Completed! Path: {filePath}");
-                    HttpServer.BroadcastEvent("YoutubeComplete", new { videoId = song.SongId });
-                    
-                    // Update song path, record to database, and add to waiting list
-                    song.FilePath = filePath;
-                    string recordId = SongDatas.RecordYoutubeSong(song);
-
-                    // Store the duration right away so the history list shows it without waiting for playback
-                    int lengthSeconds = await YtDlpHelper.GetMediaDurationSecondsAsync(filePath);
-                    if (lengthSeconds > 0 && !string.IsNullOrEmpty(recordId))
-                    {
-                        SongDatas.UpdateYoutubeSongLength(recordId, lengthSeconds);
-                        RefreshYoutubeSongLengthInLists(song.SongId, lengthSeconds);
-                    }
-
-                    _ = OrderSongAsync(song, OrderSource.YouTube);
-
-                    if (_currentQuickMethod == QuickMethod.YoutubeHistory)
-                    {
-                        UpdateSearchWords(true, resetPage: false);
-                    }
+                    MessageBox.Show(Loc.T("Youtube.DownloadFailed", e.Error.Message), Loc.T("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                }
-                catch (OperationCanceledException)
-                {
-                    DebugLog("YouTube Download: Cancelled by user. Clearing queue.");
-                    HttpServer.BroadcastEvent("YoutubeError", new { videoId = song.SongId, message = Loc.T("Youtube.UserCancelled") });
-                    _youtubeDownloadQueue.Clear(); // Clear the remaining queue on cancel
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    DebugLog($"YouTube Download: Error: {ex.Message}");
-                    HttpServer.BroadcastEvent("YoutubeError", new { videoId = song.SongId, message = ex.Message });
-                    
-                    if (!string.IsNullOrEmpty(song.YoutubeId) && song.SongId.StartsWith("Y"))
-                    {
-                        var result = MessageBox.Show(Loc.T("Youtube.DownloadFailedRemove", ex.Message), Loc.T("Youtube.DownloadErrorTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
-                        if (result == MessageBoxResult.Yes)
-                        {
-                            SongDatas.DeleteYoutubeHistory(song.SongId);
-                            
-                            // Also trigger UI refresh for YoutubeHistory tab
-                            if (_currentQuickMethod == QuickMethod.YoutubeHistory)
-                            {
-                                UpdateSearchWords(true, resetPage: false);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        MessageBox.Show(Loc.T("Youtube.DownloadFailed", ex.Message), Loc.T("Common.Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-            }
+            });
+        }
 
-            CleanupDownloadUI();
+        private void YoutubeQueue_Cancelled(object? sender, YoutubeDownloadJob job)
+        {
+            DebugLog("YouTube Download: Cancelled by user. Clearing queue.");
+            HttpServer.BroadcastEvent("YoutubeError", new { videoId = job.VideoId, message = Loc.T("Youtube.UserCancelled") });
         }
 
         /// <summary>
@@ -321,12 +212,12 @@ namespace UltimateKtv
             foreach (var item in _quickSongListPageItems.Where(Matches)) { item.SingerName = lengthText; item.Duration = durationText; }
         }
 
-        /// <summary>取消下載：停止目前這首並清空下載佇列 (處理在 ProcessYoutubeDownloadQueueAsync 的 OperationCanceledException)。</summary>
+        /// <summary>取消下載：停止目前這首並清空下載佇列。</summary>
         private void YoutubeCancelDownloadBtn_Click(object sender, RoutedEventArgs e)
         {
             if (!IsDownloadingYoutube) return;
-            AppLogger.Log($"User action: Cancel YouTube download (queued: {_youtubeDownloadQueue.Count})");
-            _youtubeDownloadCts?.Cancel();
+            AppLogger.Log($"User action: Cancel YouTube download (queued: {YoutubeQueue.WaitingCount})");
+            YoutubeQueue.Cancel();
         }
 
         private void CleanupDownloadUI()
@@ -335,8 +226,6 @@ namespace UltimateKtv
             YoutubeDownloadPercentage = 0;
             if (YoutubeDownloadText != null) YoutubeDownloadText.Visibility = Visibility.Collapsed;
             if (YoutubeStatusText != null) YoutubeStatusText.Visibility = Visibility.Collapsed;
-            _youtubeDownloadCts?.Dispose();
-            _youtubeDownloadCts = null;
             UpdateYoutubeDownloadQueueUI();
         }
 
@@ -387,7 +276,7 @@ namespace UltimateKtv
                  }
                 else
                 {
-                    string previewVideoId = YtDlpHelper.ResolveVideoId(song.YoutubeId, song.SongId, song.FilePath);
+                    string previewVideoId = YoutubeVideoId.Resolve(song.YoutubeId, song.SongId, song.FilePath);
 
                     // Primary engine: yt-dlp
                     if (!token.IsCancellationRequested)
@@ -396,7 +285,7 @@ namespace UltimateKtv
                     }
 
                     // Fallback engine: YoutubeExplode
-                    if (string.IsNullOrEmpty(streamUrl) && !token.IsCancellationRequested && YtDlpHelper.IsValidVideoId(previewVideoId))
+                    if (string.IsNullOrEmpty(streamUrl) && !token.IsCancellationRequested && YoutubeVideoId.IsValid(previewVideoId))
                     {
                         try
                         {

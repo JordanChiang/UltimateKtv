@@ -883,11 +883,8 @@ public class HttpServerHelper
 	            };
 
 	            // 下載快取裡已有這部影片時，手機顯示「已下載」
-	            string cacheDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir;
-	            if (!Path.IsPathRooted(cacheDir)) cacheDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, cacheDir);
-	            string vId = YtDlpHelper.ResolveVideoId(songItem.YoutubeId, songItem.SongId);
-	            string safeName = string.Join("_", songItem.SongName.Split(Path.GetInvalidFileNameChars()));
-	            bool isDownloaded = File.Exists(Path.Combine(cacheDir, $"{safeName}_{vId}.mp4"));
+	            string vId = YoutubeVideoId.Resolve(songItem.YoutubeId, songItem.SongId);
+	            bool isDownloaded = File.Exists(Path.Combine(UltimateKtv.MainWindow.YoutubeCacheDir(), YoutubeVideoId.CacheFileName(songItem.SongName, vId)));
 
 	            bool downloadQueued = false;
 	            bool alreadyQueued = false;
@@ -927,31 +924,11 @@ public class HttpServerHelper
 	            var item = SongDatas.GetYoutubeHistoryById(id);
 	            if (item == null) return ErrorResult("Not Found", Loc.T("Web.Msg.HistoryNotFound"));
 
-	            string url = item.TryGetValue("Url", out var u) ? u?.ToString() ?? "" : "";
-	            string name = item.TryGetValue("Name", out var n) ? n?.ToString() ?? "" : "";
-	            int lengthSeconds = item.TryGetValue("Length", out var lenObj) && int.TryParse(lenObj?.ToString(), out int l) ? l : 0;
-	            string downloadDir = SettingsManager.Instance.CurrentSettings.YoutubeDownloadDir ?? "";
-	            string rawPath = item.TryGetValue("FileName", out var fn) && fn != null
-	                           ? System.IO.Path.Combine(downloadDir, fn.ToString() ?? "") : "";
-
-	            if (!string.IsNullOrEmpty(rawPath) && !System.IO.Path.IsPathRooted(rawPath))
-	            {
-	                rawPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, rawPath);
-	            }
-
-	            var songItem = new UltimateKtv.SongDisplayItem
-	            {
-	                SongId = string.IsNullOrEmpty(url) ? id : url,
-	                SongName = name,
-	                SingerName = lengthSeconds > 0 ? TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss") : Loc.T("Web.UnknownLength"),
-	                Language = item.TryGetValue("Lang", out var lang) ? lang?.ToString() ?? "" : "",
-	                FilePath = rawPath,
-	                IsYoutube = true,
-	                YoutubeId = url,
-	                Volume = item.TryGetValue("Volume", out var v) && int.TryParse(v?.ToString(), out int iv) ? iv : 30,
-	                OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb,
-	                AudioTrack = 0
-	            };
+	            var songItem = UltimateKtv.SongDisplayItem.FromYoutubeHistory(item);
+	            songItem.OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb;
+	            string url = songItem.YoutubeId;
+	            string name = songItem.SongName;
+	            string rawPath = songItem.FilePath;
 
 	            bool fileExists = System.IO.File.Exists(rawPath);
 	            if (!fileExists && string.IsNullOrEmpty(url))

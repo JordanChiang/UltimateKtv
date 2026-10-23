@@ -439,7 +439,7 @@ namespace UltimateKtv
                         {
                             Task.Run(() =>
                             {
-                                if (SongDatas.UpdateYoutubeSongLength(songId, lengthSeconds))
+                                if (SongLibrary.UpdateYoutubeSongLength(songId, lengthSeconds))
                                 {
                                     Dispatcher.BeginInvoke(() => RefreshYoutubeSongLengthInLists(songId, lengthSeconds));
                                 }

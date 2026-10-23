@@ -357,10 +357,14 @@ namespace UltimateKtv.Playback
             }
         }
 
+        /// <summary>
+        /// 同檔案，或同歌名加同歌手。YouTube 歌只比檔案 (檔名含影片 ID)：它沒有歌手，比歌名會把同名的不同影片當成重複。
+        /// </summary>
         private QueuedSong? FindDuplicate(QueuedSong song) =>
             _queue.FirstOrDefault(item =>
                 (!string.IsNullOrEmpty(item.FilePath) && item.FilePath.Equals(song.FilePath, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(item.SongName) &&
+                (!song.IsYoutube && !item.IsYoutube &&
+                 !string.IsNullOrEmpty(item.SongName) &&
                  item.SongName.Equals(song.SongName, StringComparison.OrdinalIgnoreCase) &&
                  item.SingerName.Equals(song.SingerName, StringComparison.OrdinalIgnoreCase)));
 

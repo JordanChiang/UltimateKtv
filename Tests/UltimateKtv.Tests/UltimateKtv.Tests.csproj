@@ -19,6 +19,8 @@
     <Compile Include="..\..\SongLibrary.cs" Link="Linked\SongLibrary.cs" />
     <Compile Include="..\..\Song.cs" Link="Linked\Song.cs" />
     <Compile Include="..\..\SongQuery.cs" Link="Linked\SongQuery.cs" />
+    <Compile Include="..\..\Youtube\YoutubeVideoId.cs" Link="Linked\Youtube\YoutubeVideoId.cs" />
+    <Compile Include="..\..\Youtube\YoutubeDownloadQueue.cs" Link="Linked\Youtube\YoutubeDownloadQueue.cs" />
     <Compile Include="..\..\AppSettings.cs" Link="Linked\AppSettings.cs" />
     <Compile Include="..\..\ThemeSettings.cs" Link="Linked\ThemeSettings.cs" />
     <Compile Include="..\..\SettingsJson.cs" Link="Linked\SettingsJson.cs" />

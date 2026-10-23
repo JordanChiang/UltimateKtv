@@ -69,6 +69,63 @@ namespace UltimateKtv.Tests
             Assert.Equal(2L, Scalar("SELECT PlayCount FROM YoutubeSongList WHERE Id = 'Y0001'"));
         }
 
+        /// <summary>完整的 YoutubeSongList (與主程式建立的欄位相同)。</summary>
+        private static void CreateFullYoutubeTable()
+        {
+            Db.ExecuteNonQuery("DROP TABLE IF EXISTS YoutubeSongList");
+            Db.ExecuteNonQuery(@"CREATE TABLE YoutubeSongList (Id TEXT PRIMARY KEY, Name TEXT, CreatDate TEXT, Url TEXT, Singer TEXT,
+                Lang TEXT, PlayCount INTEGER, Length INTEGER, FileName TEXT, FileSize INTEGER, Track INTEGER, Volume INTEGER, WordCount INTEGER)");
+        }
+
+        [Fact]
+        public void Record_youtube_song_numbers_new_rows_and_reuses_the_same_video()
+        {
+            CreateFullYoutubeTable();
+
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "第一首", @"D:\yt\第一首_aaaaaaaaaaa.mp4", "", 30));
+            Assert.Equal("Y0002", SongLibrary.RecordYoutubeSong("bbbbbbbbbbb", "第二首", @"D:\yt\第二首_bbbbbbbbbbb.mp4", "", 30));
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "第一首", @"D:\other\x.mp4", "", 30));
+            Assert.Equal(2L, Scalar("SELECT COUNT(*) FROM YoutubeSongList"));
+        }
+
+        [Fact]
+        public void Record_youtube_song_fills_the_missing_video_id_of_an_imported_file()
+        {
+            CreateFullYoutubeTable();
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("", "匯入", @"D:\yt\匯入.mp4", "", 30));
+
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("ccccccccccc", "匯入", @"D:\yt\匯入.mp4", "", 30));
+            Assert.Equal("ccccccccccc", Scalar("SELECT Url FROM YoutubeSongList WHERE Id = 'Y0001'"));
+        }
+
+        [Fact]
+        public void Youtube_length_is_written_only_once()
+        {
+            CreateFullYoutubeTable();
+            SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "A", @"D:\yt\A_aaaaaaaaaaa.mp4", "", 30);
+
+            Assert.True(SongLibrary.UpdateYoutubeSongLength("aaaaaaaaaaa", 200));
+            Assert.False(SongLibrary.UpdateYoutubeSongLength("Y0001", 300));
+            Assert.Equal(200L, Scalar("SELECT Length FROM YoutubeSongList WHERE Id = 'Y0001'"));
+        }
+
+        [Fact]
+        public void Repair_youtube_history_fixes_legacy_rows_once()
+        {
+            CreateFullYoutubeTable();
+            Db.ExecuteNonQuery("INSERT INTO YoutubeSongList (Id, Name, Url, Lang, FileName) VALUES ('Y0001', '歌名_aaaaaaaaaaa', '', '05:11', '歌名_aaaaaaaaaaa.mp4')");
+            Db.ExecuteNonQuery("INSERT INTO YoutubeSongList (Id, Name, Url, Lang, FileName) VALUES ('Y0002', '正常', 'bbbbbbbbbbb', '國語', '正常_bbbbbbbbbbb.mp4')");
+
+            Assert.Equal(3, SongLibrary.RepairYoutubeHistory());
+            Assert.Equal(0, SongLibrary.RepairYoutubeHistory());
+
+            var row = Db.GetDataTable("SELECT Name, Url, Lang FROM YoutubeSongList WHERE Id = 'Y0001'").Rows[0];
+            Assert.Equal("歌名", row["Name"]);
+            Assert.Equal("aaaaaaaaaaa", row["Url"]);
+            Assert.Equal("", row["Lang"]);
+            Assert.Equal("國語", Scalar("SELECT Lang FROM YoutubeSongList WHERE Id = 'Y0002'"));
+        }
+
         [Fact]
         public void Add_favorite_is_idempotent()
         {

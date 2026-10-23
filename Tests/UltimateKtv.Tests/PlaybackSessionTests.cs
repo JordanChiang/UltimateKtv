@@ -153,6 +153,18 @@ namespace UltimateKtv.Tests
         }
 
         [Fact]
+        public void YouTube_videos_with_the_same_title_are_different_songs()
+        {
+            PlayNow(Song("A"));
+            var first = Song("Love Song", singer: "", youtube: true) with { FilePath = @"D:\Yt\Love Song_aaaaaaaaaaa.mp4" };
+            var other = Song("Love Song", singer: "", youtube: true) with { FilePath = @"D:\Yt\Love Song_bbbbbbbbbbb.mp4" };
+
+            Assert.Equal(EnqueueResult.Added, Order(first));
+            Assert.Equal(EnqueueResult.Added, Order(other));
+            Assert.Equal(EnqueueResult.Duplicate, Order(first with { SongId = "Y0001" }));
+        }
+
+        [Fact]
         public void Insert_first_of_a_queued_song_moves_it_to_first()
         {
             PlayNow(Song("A"));

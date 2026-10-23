@@ -13,8 +13,6 @@ namespace UltimateKtv
     {
         private static readonly Regex ProgressRegex = new(@"\[download\]\s+(\d+(?:\.\d+)?)%", RegexOptions.Compiled);
         private static readonly SemaphoreSlim DownloadLock = new(1, 1);
-        private static readonly Regex VideoIdRegex = new(@"^[A-Za-z0-9_-]{11}$", RegexOptions.Compiled);
-        private static readonly Regex FileNameVideoIdRegex = new(@"_([A-Za-z0-9_-]{11})$", RegexOptions.Compiled);
         private const string LatestReleaseUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest";
         private const string LatestDownloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
 
@@ -24,39 +22,6 @@ namespace UltimateKtv
             "Incomplete YouTube ID", "looks truncated", "is not a valid URL",
             "Video unavailable", "Private video", "has been removed", "account associated with this video has been terminated"
         };
-
-        public static bool IsValidVideoId(string? id) => !string.IsNullOrEmpty(id) && VideoIdRegex.IsMatch(id);
-
-        /// <summary>
-        /// Downloaded files are named "{title}_{videoId}.mp4"; recover the 11-char video ID from such a file name.
-        /// </summary>
-        public static string ExtractVideoIdFromFileName(string? fileName)
-        {
-            if (string.IsNullOrEmpty(fileName)) return "";
-            var m = FileNameVideoIdRegex.Match(Path.GetFileNameWithoutExtension(fileName));
-            return m.Success ? m.Groups[1].Value : "";
-        }
-
-        /// <summary>
-        /// Returns the song title part of a downloaded file name ("{title}_{videoId}.mp4" -> "{title}").
-        /// </summary>
-        public static string GetTitleFromFileName(string? fileName)
-        {
-            if (string.IsNullOrEmpty(fileName)) return "";
-            string nameOnly = Path.GetFileNameWithoutExtension(fileName);
-            var m = FileNameVideoIdRegex.Match(nameOnly);
-            return m.Success && m.Index > 0 ? nameOnly.Substring(0, m.Index) : nameOnly;
-        }
-
-        /// <summary>
-        /// Returns the real YouTube video ID for a song, never the internal history Id (e.g. "Y0017").
-        /// </summary>
-        public static string ResolveVideoId(string? youtubeId, string? songId, string? filePath = null)
-        {
-            if (IsValidVideoId(youtubeId)) return youtubeId!;
-            if (IsValidVideoId(songId)) return songId!;
-            return ExtractVideoIdFromFileName(filePath);
-        }
 
         public static string GetFFmpegDir()
         {
@@ -365,7 +330,7 @@ namespace UltimateKtv
 
         public static async Task<string?> GetPreviewStreamUrlAsync(string videoId, CancellationToken cancellationToken = default)
         {
-            if (!IsValidVideoId(videoId))
+            if (!YoutubeVideoId.IsValid(videoId))
             {
                 AppLogger.LogWarn($"[YouTube Preview] '{videoId}' is not a valid YouTube video ID, skipping preview.");
                 return null;
@@ -438,7 +403,7 @@ namespace UltimateKtv
             CancellationToken cancellationToken = default,
             Action<string>? statusCallback = null)
         {
-            if (!IsValidVideoId(videoId))
+            if (!YoutubeVideoId.IsValid(videoId))
             {
                 AppLogger.LogError($"[YouTube Download] '{videoId}' is not a valid YouTube video ID, download aborted.");
                 throw new Exception(Loc.T("Ytdlp.InvalidId", videoId));
