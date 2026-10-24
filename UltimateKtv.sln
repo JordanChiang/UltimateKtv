@@ -4,8 +4,6 @@ VisualStudioVersion = 17.14.36401.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltimateKtv", "UltimateKtv.csproj", "{59D7DED1-DE9B-4171-8DE4-5D6D2E62F277}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Updater", "Updater", "{E4D06EF3-4A34-0221-57B6-390073E3859C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltimateKtv.Updater", "Updater\UltimateKtv.Updater.csproj", "{3610ACC7-F237-4246-87B5-60563385340C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltimateKtv.StyleSimulator", "StyleSimulator\UltimateKtv.StyleSimulator.csproj", "{C6615598-DE09-4C59-99E7-2BCB612C2849}"
@@ -55,9 +53,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{3610ACC7-F237-4246-87B5-60563385340C} = {E4D06EF3-4A34-0221-57B6-390073E3859C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EA249748-4E24-4F5B-905D-ABE9AE0335FE}
