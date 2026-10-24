@@ -17,7 +17,7 @@ namespace UltimateKtv
     public partial class App : Application
     {
         private static Mutex? _instanceMutex;
-        public static SplashScreen? StartupSplashScreen { get; private set; }
+        public static StartupSplash? StartupSplashScreen { get; private set; }
 
         public App()
         {
@@ -107,8 +107,7 @@ namespace UltimateKtv
             }
 
             // Show splash screen as soon as possible after single instance check
-            StartupSplashScreen = new SplashScreen("logo.jpg");
-            StartupSplashScreen.Show(false);
+            StartupSplashScreen = StartupSplash.Show();
 
             base.OnStartup(e);
             AppLogger.Log("Application starting up.");
