@@ -31,13 +31,32 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 
 | 專案 | 連結的檔案 |
 | :--- | :--- |
-| `Updater` (net471, 一律 x86) | `Services/ZipHelper.cs` |
-| `StyleSimulator` | `AppSettings.cs`, `ThemeSettings.cs`, `RowStyleBrushes.cs` |
-| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `AppLogger.cs`, `Db.cs`, `DbHelper.cs`, `DataTableExtension.cs`, `SongLibrary.cs`, `Song.cs`, `SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `AppSettings.cs`, `ThemeSettings.cs`, `SettingsJson.cs`, `WebCultureMatcher.cs` |
+| `Updater` (net471, 一律 x86) | `Update/ZipHelper.cs` |
+| `StyleSimulator` | `Settings/AppSettings.cs`, `Themes/ThemeSettings.cs`, `Themes/RowStyleBrushes.cs` |
+| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`SongLibrary.cs`、`Song.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Remote/WebCultureMatcher.cs` |
+
+搬移或改名這些檔案時，要一併改上述專案 csproj 的 `Include` 路徑。
 
 因此 `Playback/` 底下的檔案必須維持不依賴 WPF / 播放引擎；與 player 的 adapter (`PlayerTarget`) 放在 `MainWindow.Player.cs`。主程式 csproj 用 `DefaultItemExcludes` 排除 `Updater\**`、`StyleSimulator\**`、`Tests\**`。
 
 ## 架構
+
+### 檔案配置
+原始碼依功能放資料夾；namespace 不跟資料夾 (大多是 `UltimateKtv`)，搬檔不必改 `using` / `xmlns`。根目錄只放程式外殼 (`App`、`StartupSplash`、`MainWindow.xaml` 與 `MainWindow.*.cs`)。
+
+| 資料夾 | 內容 |
+| :--- | :--- |
+| `Playback/` | 播放場次、待播清單、點唱紀錄 (不依賴 WPF) |
+| `Player/` | 播放引擎、`MediaHostManager`、電視畫面 `VideoDisplayWindow`、錄音 |
+| `Library/` | 資料庫與歌庫 (`Db`、`SongDatas`、`SongQuery`、`SongLibrary`) |
+| `Settings/` | `AppSettings`、`SettingsManager`、設定視窗 |
+| `Themes/` | 配色 xaml 與 `ThemeSettings` / `ThemeSettingsHandler` / `RowStyleBrushes` |
+| `Localization/` | `Loc` (語言檔本身在 `Languages/`) |
+| `Remote/` | 手機遠端點歌 (`HttpServer`、`HttpServerHelper`、`RemoteControl`) |
+| `Youtube/`、`Marquee/`、`Lyrics/`、`Singers/`、`Update/` | 各自功能 |
+| `Infrastructure/` | Log、資源監控、電源管理、共用 converter |
+
+執行期資產 (`Codec*`、`Images`、`Languages`、`Tools`、`wwwroot`、`SampleSettings`、mdb) 留在根目錄：執行目錄路徑、PostBuild 與 pack URI 綁著它們。
 
 ### 主視窗 = 一個 partial class 拆成多檔
 `MainWindow` 依功能拆成 `MainWindow.*.cs` (Player、WaitingList、QuickSearch、Favorites、Youtube、RandomPlay、Pitch、Filters、Views、Display、Settings…)，共用同一份 `MainWindow.xaml`。大部分 UI 邏輯在這裡，找功能時先看檔名對應的 partial。
@@ -70,7 +89,7 @@ HTTP 請求在 Kestrel 執行緒上；需要碰主程式 (點歌、播放控制�
 ### 其他模組
 - `Marquee/` — 跑馬燈 (`MarqueeAPI` → `MarqueeManager` → `MarqueeControl`)，用法見 `Marquee/MARQUEE_USAGE.md`、`STATIC_TEXT_USAGE.md`。
 - YouTube — `Youtube/YoutubeDownloadQueue` 是下載佇列 (以影片 ID 去重、一次一部、失敗不中斷、可取消)，下載器在 `IYoutubeDownloader` 後面 (`YtDlpDownloader`：`Tools/yt-dlp.exe` 失敗改用 YoutubeExplode)；`YoutubeVideoId` 是影片 ID 與快取檔名「{歌名}_{videoId}.mp4」的規則。`MainWindow.Youtube.cs` 訂閱佇列事件更新畫面、下載完點歌。點唱紀錄的 SongId 可能是紀錄 Id (`Y0017`) 或影片 ID，比對同一部影片一律用 `YoutubeVideoId.Resolve`。
-- `Services/UpdateManager` + `Updater/` — 從 GitHub Release 檢查與套用更新；Updater 是獨立 net471 x86 exe。
+- `Update/UpdateManager` + `Updater/` — 從 GitHub Release 檢查與套用更新；Updater 是獨立 net471 x86 exe。
 - `ResourceMonitor` — 每 5 分鐘與每首歌開播時把記憶體/Handle/GDI 用量寫進 `UltimateKtv_Log.txt`，用來追資源洩漏 (欄位說明見 README)。
 
 ## UI 規則

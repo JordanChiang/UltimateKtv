@@ -12,19 +12,19 @@
   <!-- 與 StyleSimulator/Updater 相同：直接連結主程式的原始檔，不參考整個 WPF 主程式 -->
   <ItemGroup>
     <Compile Include="..\..\Playback\*.cs" Link="Linked\Playback\%(Filename)%(Extension)" />
-    <Compile Include="..\..\AppLogger.cs" Link="Linked\AppLogger.cs" />
-    <Compile Include="..\..\Db.cs" Link="Linked\Db.cs" />
-    <Compile Include="..\..\DbHelper.cs" Link="Linked\DbHelper.cs" />
-    <Compile Include="..\..\DataTableExtension.cs" Link="Linked\DataTableExtension.cs" />
-    <Compile Include="..\..\SongLibrary.cs" Link="Linked\SongLibrary.cs" />
-    <Compile Include="..\..\Song.cs" Link="Linked\Song.cs" />
-    <Compile Include="..\..\SongQuery.cs" Link="Linked\SongQuery.cs" />
+    <Compile Include="..\..\Infrastructure\AppLogger.cs" Link="Linked\Infrastructure\AppLogger.cs" />
+    <Compile Include="..\..\Library\Db.cs" Link="Linked\Library\Db.cs" />
+    <Compile Include="..\..\Library\DbHelper.cs" Link="Linked\Library\DbHelper.cs" />
+    <Compile Include="..\..\Library\DataTableExtension.cs" Link="Linked\Library\DataTableExtension.cs" />
+    <Compile Include="..\..\Library\SongLibrary.cs" Link="Linked\Library\SongLibrary.cs" />
+    <Compile Include="..\..\Library\Song.cs" Link="Linked\Library\Song.cs" />
+    <Compile Include="..\..\Library\SongQuery.cs" Link="Linked\Library\SongQuery.cs" />
     <Compile Include="..\..\Youtube\YoutubeVideoId.cs" Link="Linked\Youtube\YoutubeVideoId.cs" />
     <Compile Include="..\..\Youtube\YoutubeDownloadQueue.cs" Link="Linked\Youtube\YoutubeDownloadQueue.cs" />
-    <Compile Include="..\..\AppSettings.cs" Link="Linked\AppSettings.cs" />
-    <Compile Include="..\..\ThemeSettings.cs" Link="Linked\ThemeSettings.cs" />
-    <Compile Include="..\..\SettingsJson.cs" Link="Linked\SettingsJson.cs" />
-    <Compile Include="..\..\WebCultureMatcher.cs" Link="Linked\WebCultureMatcher.cs" />
+    <Compile Include="..\..\Settings\AppSettings.cs" Link="Linked\Settings\AppSettings.cs" />
+    <Compile Include="..\..\Themes\ThemeSettings.cs" Link="Linked\Themes\ThemeSettings.cs" />
+    <Compile Include="..\..\Settings\SettingsJson.cs" Link="Linked\Settings\SettingsJson.cs" />
+    <Compile Include="..\..\Remote\WebCultureMatcher.cs" Link="Linked\Remote\WebCultureMatcher.cs" />
   </ItemGroup>
 
   <ItemGroup>

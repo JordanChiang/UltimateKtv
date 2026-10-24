@@ -37,6 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Services\ZipHelper.cs" Link="ZipHelper.cs" />
+    <Compile Include="..\Update\ZipHelper.cs" Link="ZipHelper.cs" />
   </ItemGroup>
 </Project>

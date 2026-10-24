@@ -37,9 +37,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\AppSettings.cs" Link="Shared\AppSettings.cs" />
-    <Compile Include="..\ThemeSettings.cs" Link="Shared\ThemeSettings.cs" />
-    <Compile Include="..\RowStyleBrushes.cs" Link="Shared\RowStyleBrushes.cs" />
+    <Compile Include="..\Settings\AppSettings.cs" Link="Shared\AppSettings.cs" />
+    <Compile Include="..\Themes\ThemeSettings.cs" Link="Shared\ThemeSettings.cs" />
+    <Compile Include="..\Themes\RowStyleBrushes.cs" Link="Shared\RowStyleBrushes.cs" />
   </ItemGroup>
 
   <ItemGroup>
