@@ -24,6 +24,7 @@
     <Compile Include="..\..\AppSettings.cs" Link="Linked\AppSettings.cs" />
     <Compile Include="..\..\ThemeSettings.cs" Link="Linked\ThemeSettings.cs" />
     <Compile Include="..\..\SettingsJson.cs" Link="Linked\SettingsJson.cs" />
+    <Compile Include="..\..\WebCultureMatcher.cs" Link="Linked\WebCultureMatcher.cs" />
   </ItemGroup>
 
   <ItemGroup>

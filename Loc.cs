@@ -25,24 +25,42 @@ namespace UltimateKtv
         /// <summary>語言檔裡放該語言自己名稱的 key (顯示在設定的語言選單)，不會退回 zh-TW。</summary>
         public const string LanguageNameKey = "Language.Name";
 
-        private static IReadOnlyList<KeyValuePair<string, string>>? _supportedCultures;
+        /// <summary>語言檔裡放語言代碼的 key (例如 "de"，可用逗號列出別名)，遠端點歌網頁依此對應裝置語言；未填時以檔名當代碼。</summary>
+        public const string LanguageCodeKey = "Language.Code";
+
+        /// <summary>掃描 Languages 目錄的結果：選單用的名稱與網頁比對用的代碼放在一起，整個換掉。</summary>
+        private sealed class CultureCatalog
+        {
+            public CultureCatalog(IReadOnlyList<KeyValuePair<string, string>> names, IReadOnlyList<KeyValuePair<string, IReadOnlyList<string>>> codes)
+            {
+                Names = names;
+                Codes = codes;
+            }
+            public IReadOnlyList<KeyValuePair<string, string>> Names { get; }
+            public IReadOnlyList<KeyValuePair<string, IReadOnlyList<string>>> Codes { get; }
+        }
+
+        private static volatile CultureCatalog? _catalog;
+
+        private static CultureCatalog Catalog => _catalog ??= ScanCultures();
 
         /// <summary>
         /// 可用的介面語言 (culture → 該語言自己的名稱)，來自 Languages 目錄下的 *.json，
         /// 使用者自行新增的語言檔也會列出。zh-TW 固定排第一。
         /// </summary>
-        public static IReadOnlyList<KeyValuePair<string, string>> SupportedCultures => _supportedCultures ??= ScanCultures();
+        public static IReadOnlyList<KeyValuePair<string, string>> SupportedCultures => Catalog.Names;
 
         /// <summary>重新掃描 Languages 目錄 (開啟設定視窗時呼叫，新增的語言檔不用重開程式即可選擇)。</summary>
         public static IReadOnlyList<KeyValuePair<string, string>> RefreshCultures()
         {
             _cultureCache.Clear(); // 語言檔可能被修改，網頁用的快取一併清除
-            return _supportedCultures = ScanCultures();
+            return (_catalog = ScanCultures()).Names;
         }
 
-        private static IReadOnlyList<KeyValuePair<string, string>> ScanCultures()
+        private static CultureCatalog ScanCultures()
         {
-            var list = new List<KeyValuePair<string, string>>();
+            var names = new List<KeyValuePair<string, string>>();
+            var codes = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
             try
             {
                 string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Languages");
@@ -51,8 +69,10 @@ namespace UltimateKtv
                     foreach (var file in Directory.GetFiles(dir, "*.json").OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
                     {
                         string culture = Path.GetFileNameWithoutExtension(file);
-                        string name = LoadFile(culture).TryGetValue(LanguageNameKey, out var n) && !string.IsNullOrWhiteSpace(n) ? n : culture;
-                        list.Add(new KeyValuePair<string, string>(culture, name));
+                        var strings = LoadFile(culture);
+                        string name = strings.TryGetValue(LanguageNameKey, out var n) && !string.IsNullOrWhiteSpace(n) ? n : culture;
+                        names.Add(new KeyValuePair<string, string>(culture, name));
+                        codes[culture] = strings.TryGetValue(LanguageCodeKey, out var code) ? code : null;
                     }
                 }
             }
@@ -62,9 +82,13 @@ namespace UltimateKtv
             }
 
             // 基準語言一定存在且排第一
-            list.RemoveAll(c => string.Equals(c.Key, DefaultCulture, StringComparison.OrdinalIgnoreCase));
-            list.Insert(0, new KeyValuePair<string, string>(DefaultCulture, "繁體中文"));
-            return list;
+            names.RemoveAll(c => string.Equals(c.Key, DefaultCulture, StringComparison.OrdinalIgnoreCase));
+            names.Insert(0, new KeyValuePair<string, string>(DefaultCulture, "繁體中文"));
+
+            var cultureCodes = names
+                .Select(c => new KeyValuePair<string, IReadOnlyList<string>>(c.Key, WebCultureMatcher.ParseCodes(codes.GetValueOrDefault(c.Key), c.Key)))
+                .ToList();
+            return new CultureCatalog(names, cultureCodes);
         }
 
         /// <summary>目前語言與字串表放在同一個物件，整個換掉 (切換時背景執行緒不會讀到「新語言 + 舊字串」的混合狀態)。</summary>
@@ -253,60 +277,11 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// 依瀏覽器的 Accept-Language (例如 "zh-TW,zh;q=0.9,en-US;q=0.8") 選出可用的語言；都對應不到時用主程式目前的語言。
+        /// 依瀏覽器的 Accept-Language (例如 "zh-TW,zh;q=0.9,en-US;q=0.8") 選出可用的語言 (比對語言檔的 Language.Code)；
+        /// 都對應不到時用主程式目前的語言。
         /// </summary>
-        public static string ResolveWebCulture(string? acceptLanguage)
-        {
-            if (string.IsNullOrWhiteSpace(acceptLanguage)) return CurrentCulture;
-
-            var requested = acceptLanguage.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select((part, index) =>
-                {
-                    var pieces = part.Split(';', StringSplitOptions.TrimEntries);
-                    double q = 1.0;
-                    foreach (var p in pieces.Skip(1))
-                    {
-                        if (p.StartsWith("q=", StringComparison.OrdinalIgnoreCase) &&
-                            double.TryParse(p[2..], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v))
-                            q = v;
-                    }
-                    return (Tag: pieces[0], Q: q, Index: index);
-                })
-                .Where(x => x.Tag.Length > 0 && x.Tag != "*" && x.Q > 0)
-                .OrderByDescending(x => x.Q).ThenBy(x => x.Index)
-                .Select(x => x.Tag);
-
-            var available = SupportedCultures.Select(c => c.Key).ToList();
-            foreach (var tag in requested)
-            {
-                var match = MatchCulture(tag, available);
-                if (match != null) return match;
-            }
-            return CurrentCulture;
-        }
-
-        private static string? MatchCulture(string tag, List<string> available)
-        {
-            string? Find(string c) => available.FirstOrDefault(a => string.Equals(a, c, StringComparison.OrdinalIgnoreCase));
-
-            // 1) 完全相同
-            var exact = Find(tag);
-            if (exact != null) return exact;
-
-            // 2) 中文：繁體 (台灣/香港/澳門/Hant) → zh-TW，簡體 (中國/新加坡/Hans/只有 zh) → zh-CN
-            string lower = tag.ToLowerInvariant();
-            if (lower == "zh" || lower.StartsWith("zh-"))
-            {
-                bool traditional = lower.Contains("hant") || lower.EndsWith("-tw") || lower.EndsWith("-hk") || lower.EndsWith("-mo");
-                var zh = Find(traditional ? "zh-TW" : "zh-CN");
-                if (zh != null) return zh;
-            }
-
-            // 3) 主要語言相同 (en-US → en、ja-JP → ja，或 pt → pt-BR)
-            string primary = lower.Split('-')[0];
-            return available.FirstOrDefault(a => string.Equals(a, primary, StringComparison.OrdinalIgnoreCase))
-                ?? available.FirstOrDefault(a => a.Split('-')[0].Equals(primary, StringComparison.OrdinalIgnoreCase));
-        }
+        public static string ResolveWebCulture(string? acceptLanguage) =>
+            WebCultureMatcher.Resolve(acceptLanguage, Catalog.Codes, CurrentCulture);
 
         /// <summary>指定語言的完整字串表 (zh-TW 補齊缺少的 key)，網頁請求使用，會快取。</summary>
         private static Dictionary<string, string> GetCultureStrings(string culture)

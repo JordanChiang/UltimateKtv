@@ -3,6 +3,7 @@
   // Missing keys fall back to zh-TW.json. {0} {1} ... are parameters passed into the program; please keep them and do not delete them.
 
   "Language.Name": "Dansk(丹麥文)",
+  "Language.Code": "da",
 
   "Nav.Singer": "Sangere",
   "Nav.Fav": "Favoritter",

@@ -2,6 +2,7 @@
   // English. Missing keys fall back to zh-TW.json. Keep {0} {1} ... placeholders.
 
   "Language.Name": "English",
+  "Language.Code": "en",
 
   "Nav.Singer": "Singers",
   "Nav.Fav": "Favorites",

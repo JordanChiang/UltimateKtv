@@ -3,6 +3,7 @@
   // Missing keys fall back to zh-TW.json. {0} {1} ... are parameters passed into the program; please keep them and do not delete them.
 
   "Language.Name": "Русский(俄文)",
+  "Language.Code": "ru",
 
   "Nav.Singer": "Исполнители",
   "Nav.Fav": "Избранное",

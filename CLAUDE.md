@@ -33,7 +33,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | :--- | :--- |
 | `Updater` (net471, 一律 x86) | `Services/ZipHelper.cs` |
 | `StyleSimulator` | `AppSettings.cs`, `ThemeSettings.cs`, `RowStyleBrushes.cs` |
-| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `AppLogger.cs`, `Db.cs`, `DbHelper.cs`, `DataTableExtension.cs`, `SongLibrary.cs`, `Song.cs`, `SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `AppSettings.cs`, `ThemeSettings.cs`, `SettingsJson.cs` |
+| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `AppLogger.cs`, `Db.cs`, `DbHelper.cs`, `DataTableExtension.cs`, `SongLibrary.cs`, `Song.cs`, `SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `AppSettings.cs`, `ThemeSettings.cs`, `SettingsJson.cs`, `WebCultureMatcher.cs` |
 
 因此 `Playback/` 底下的檔案必須維持不依賴 WPF / 播放引擎；與 player 的 adapter (`PlayerTarget`) 放在 `MainWindow.Player.cs`。主程式 csproj 用 `DefaultItemExcludes` 排除 `Updater\**`、`StyleSimulator\**`、`Tests\**`。
 
@@ -65,7 +65,7 @@ HTTP 請求在 Kestrel 執行緒上；需要碰主程式 (點歌、播放控制�
 - `settings.json` (執行目錄) ↔ `AppSettings`，由 `SettingsManager` 載入；`SettingsJson.Load` 是容錯載入：單一項目錯誤只退回該項預設值並回寫修正。屬性上的 `[Description]` 會成為設定檔說明。
 - 設定的有效範圍以 `AppSettings` 的常數宣告一次，`AppSettings.Normalize()` 在載入與存檔時把超出範圍的值拉回上下限；新增有範圍的設定時加在這裡，不要在各處自己 clamp。設定視窗按「套用」呼叫 `SettingsManager.ApplyChanges(previous)`，需要依設定調整狀態的地方訂閱 `SettingsChanged` (主程式在 `MainWindow.OnSettingsChanged`)。
 - `ThemeSettings` / `ThemeSettingsHandler` 管配色與字型；`SampleSettings/theme_*.json` 是範本配色。`Themes/Colors.xaml` 不能用 `<StaticResource x:Key ResourceKey>` 做顏色別名 (會啟動即 XamlParseException)。`StyleSimulator` 是獨立的預覽配色工具。
-- `Loc` — 介面多國語言。`Languages/{culture}.json` 為平面 key→字串，載入後寫成 `Str.{key}` 應用程式資源，XAML 用 `{DynamicResource Str.xxx}`、程式用 `Loc.T("key")`。`zh-TW.json` 是基準語言 (也內嵌進 exe)，其他語言缺的 key 退回 zh-TW；新增 UI 字串至少要加到 `zh-TW.json`。`Web.` 開頭的 key 給遠端網頁，依裝置 Accept-Language 回應。
+- `Loc` — 介面多國語言。`Languages/{culture}.json` 為平面 key→字串，載入後寫成 `Str.{key}` 應用程式資源，XAML 用 `{DynamicResource Str.xxx}`、程式用 `Loc.T("key")`。`zh-TW.json` 是基準語言 (也內嵌進 exe)，其他語言缺的 key 退回 zh-TW；新增 UI 字串至少要加到 `zh-TW.json`。`Web.` 開頭的 key 給遠端網頁，依裝置 Accept-Language 回應：比對的是語言檔的 `Language.Code` (未填時用檔名)，不是檔名 (`WebCultureMatcher`)，所以語言檔可用 `Deutsch_German_德文.json` 這類自訂檔名。
 
 ### 其他模組
 - `Marquee/` — 跑馬燈 (`MarqueeAPI` → `MarqueeManager` → `MarqueeControl`)，用法見 `Marquee/MARQUEE_USAGE.md`、`STATIC_TEXT_USAGE.md`。

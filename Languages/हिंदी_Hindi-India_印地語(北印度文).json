@@ -3,6 +3,7 @@
   // Missing keys fall back to zh-TW.json. {0} {1} ... are parameters passed into the program; please keep them and do not delete them.
 
   "Language.Name": "हिंदी(印地語-北印度文)",
+  "Language.Code": "hi",
 
   "Nav.Singer": "गायक",
   "Nav.Fav": "पसंदीदा",

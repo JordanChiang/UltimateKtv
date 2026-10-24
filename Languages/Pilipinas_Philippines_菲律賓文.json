@@ -3,6 +3,7 @@
   // Missing keys fall back to zh-TW.json. {0} {1} ... are parameters passed into the program; please keep them and do not delete them.
 
   "Language.Name": "Pilipinas(菲律賓文)",
+  "Language.Code": "fil, tl",
 
   "Nav.Singer": "Mga Mang-aawit",
   "Nav.Fav": "Mga Paborito",

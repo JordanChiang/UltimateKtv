@@ -2,6 +2,7 @@
   // 简体中文。缺少的 key 会使用 zh-TW.json 的文字。{0} {1} ... 为程序带入的参数，请保留。
 
   "Language.Name": "简体中文(簡體中文)",
+  "Language.Code": "zh-CN",
 
   "Nav.Singer": "歌星",
   "Nav.Fav": "收藏",

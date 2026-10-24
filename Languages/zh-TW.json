@@ -4,10 +4,13 @@
   // {0} {1} ... 為程式帶入的參數，翻譯時請保留。
   // settings.json 的設定說明 (SettingDesc.* / ThemeDesc.*) 以程式內的 [Description] 為繁中原文，不放在這裡。
   // 新增語言：請複製 en.json (此檔缺少 SettingDesc.* / ThemeDesc.*，複製此檔這些說明會維持繁中)，
-  // 並以語言代碼命名 (例如 ja.json、ko.json)，遠端點歌網頁才能依裝置語言自動對應；
+  // 檔名可自訂 (設定檔記錄的是檔名)；
   // "Language.Name" 填該語言自己的名稱 (例如 "日本語")，會顯示在設定的語言選單。
+  // "Language.Code" 填語言代碼 (例如 ja、ko、pt-BR，有別名時用逗號分隔，例如 "fil, tl")，遠端點歌網頁依此對應裝置語言；
+  // 未填時以檔名當語言代碼。
 
   "Language.Name": "繁體中文",
+  "Language.Code": "zh-TW",
 
   "Nav.Singer": "歌星",
   "Nav.Fav": "最愛",

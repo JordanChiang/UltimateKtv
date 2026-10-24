@@ -3,6 +3,7 @@
   // Missing keys fall back to zh-TW.json. {0} {1} ... are parameters passed into the program; please keep them and do not delete them.
 
   "Language.Name": "Tiếng Việt(越南文)",
+  "Language.Code": "vi",
 
   "Nav.Singer": "ca sĩ",
   "Nav.Fav": "Mục yêu thích",
