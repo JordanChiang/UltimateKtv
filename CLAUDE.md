@@ -16,7 +16,12 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64
 
 # 單一測試
 dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --filter "FullyQualifiedName~SongQueryTests.Sort"
+
+# 略過連網測試 (YouTube 下載格式)
+dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --filter "Category!=Network"
 ```
+
+- `YoutubeFormatNetworkTests` (`Category=Network`) 會實際連 YouTube，用 repo 的 `Tools/yt-dlp.exe` 與 YoutubeExplode 確認下載仍選到高畫質 H.264 + AAC-LC 128k 並能下載音訊。預設會跑，沒有網路時會失敗；失敗時先 `Tools/yt-dlp.exe -U` 更新再判斷是否 YouTube 改版。
 
 - 平台只有 x86 / x64，沒有 Any CPU。x64 輸出 `UltimateKtv.exe` 並使用 `Codec\`；x86 輸出 `UltimateKtv_x86.exe` 並使用 `Codec_x86\`。`dotnet sln add` 會加入 Any CPU 設定，需手動改成只有 x86/x64。
 - `libmpv-2.dll` 超過 GitHub 檔案上限不在 repo 中；build 前的 `FetchLibmpv` target 會呼叫 `Tools/Get-Libmpv.ps1` 下載。x86 必須用 20260412 版 (之後的 i686 版初始化即 abort)。
@@ -33,7 +38,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | :--- | :--- |
 | `Updater` (net471, 一律 x86) | `Update/ZipHelper.cs` |
 | `StyleSimulator` | `Settings/AppSettings.cs`, `Themes/ThemeSettings.cs`, `Themes/RowStyleBrushes.cs` |
-| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`SongLibrary.cs`、`Song.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Remote/WebCultureMatcher.cs` |
+| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`SongLibrary.cs`、`Song.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Remote/WebCultureMatcher.cs` |
 
 搬移或改名這些檔案時，要一併改上述專案 csproj 的 `Include` 路徑。
 
@@ -88,7 +93,7 @@ HTTP 請求在 Kestrel 執行緒上；需要碰主程式 (點歌、播放控制�
 
 ### 其他模組
 - `Marquee/` — 跑馬燈 (`MarqueeAPI` → `MarqueeManager` → `MarqueeControl`)，用法見 `Marquee/MARQUEE_USAGE.md`、`STATIC_TEXT_USAGE.md`。
-- YouTube — `Youtube/YoutubeDownloadQueue` 是下載佇列 (以影片 ID 去重、一次一部、失敗不中斷、可取消)，下載器在 `IYoutubeDownloader` 後面 (`YtDlpDownloader`：`Tools/yt-dlp.exe` 失敗改用 YoutubeExplode)；`YoutubeVideoId` 是影片 ID 與快取檔名「{歌名}_{videoId}.mp4」的規則。`MainWindow.Youtube.cs` 訂閱佇列事件更新畫面、下載完點歌。點唱紀錄的 SongId 可能是紀錄 Id (`Y0017`) 或影片 ID，比對同一部影片一律用 `YoutubeVideoId.Resolve`。
+- YouTube — `Youtube/YoutubeDownloadQueue` 是下載佇列 (以影片 ID 去重、一次一部、失敗不中斷、可取消)，下載器在 `IYoutubeDownloader` 後面 (`YtDlpDownloader`：`Tools/yt-dlp.exe` 失敗改用 YoutubeExplode 分別下載影像/音訊再以 ffmpeg 合併)，要抓哪種格式 (客戶端、H.264 + AAC-LC 128k) 集中在 `YoutubeFormat`；`YoutubeVideoId` 是影片 ID 與快取檔名「{歌名}_{videoId}.mp4」的規則。`MainWindow.Youtube.cs` 訂閱佇列事件更新畫面、下載完點歌。點唱紀錄的 SongId 可能是紀錄 Id (`Y0017`) 或影片 ID，比對同一部影片一律用 `YoutubeVideoId.Resolve`。
 - `Update/UpdateManager` + `Updater/` — 從 GitHub Release 檢查與套用更新；Updater 是獨立 net471 x86 exe。
 - `ResourceMonitor` — 每 5 分鐘與每首歌開播時把記憶體/Handle/GDI 用量寫進 `UltimateKtv_Log.txt`，用來追資源洩漏 (欄位說明見 README)。
 

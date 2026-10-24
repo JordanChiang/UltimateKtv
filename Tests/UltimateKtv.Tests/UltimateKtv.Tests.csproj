@@ -21,6 +21,7 @@
     <Compile Include="..\..\Library\SongQuery.cs" Link="Linked\Library\SongQuery.cs" />
     <Compile Include="..\..\Youtube\YoutubeVideoId.cs" Link="Linked\Youtube\YoutubeVideoId.cs" />
     <Compile Include="..\..\Youtube\YoutubeDownloadQueue.cs" Link="Linked\Youtube\YoutubeDownloadQueue.cs" />
+    <Compile Include="..\..\Youtube\YoutubeFormat.cs" Link="Linked\Youtube\YoutubeFormat.cs" />
     <Compile Include="..\..\Settings\AppSettings.cs" Link="Linked\Settings\AppSettings.cs" />
     <Compile Include="..\..\Themes\ThemeSettings.cs" Link="Linked\Themes\ThemeSettings.cs" />
     <Compile Include="..\..\Settings\SettingsJson.cs" Link="Linked\Settings\SettingsJson.cs" />
@@ -38,6 +39,8 @@
     <PackageReference Include="System.Data.SQLite" Version="2.0.4" />
     <!-- System.Data.SQLite 2.x 不附原生 e_sqlite3，測試用 SQLite 歌庫時另外帶入 -->
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
+    <!-- YoutubeFormat 的 YoutubeExplode 串流選擇與連網測試，版本與主程式相同 -->
+    <PackageReference Include="YoutubeExplode" Version="6.6.2" />
   </ItemGroup>
 
 </Project>

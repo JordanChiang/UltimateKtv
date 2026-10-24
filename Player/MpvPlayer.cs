@@ -13,7 +13,7 @@ namespace UltimateKtv
     /// 以 libmpv 實作的播放引擎 (原型：HwndHost 嵌入)。
     /// 語意盡量對齊 DirectShowPlayer：
     /// - 音軌編號 = mpv aid (從 1 開始)，與 MediaKit 相同
-    /// - AudioChannel 0/1/2/3 = 立體聲/左/右/消人聲，以 lavfi pan 濾鏡實作
+    /// - AudioChannel 0/1/2/3 = 立體聲/左/右/消人聲，以 lavfi pan 濾鏡實作 (消人聲另加 lowpass/highpass 分頻)
     /// - AudioPitch 以 rubberband 濾鏡實作 (需 libmpv 編入 librubberband)
     /// - Volume 0..1 視為 -100dB..0dB (同 DirectShow IBasicAudio)，再乘上 AudioAmplify%
     /// </summary>
@@ -545,7 +545,7 @@ namespace UltimateKtv
 
         // 對齊 CrazyKTV_MediaKit 的音訊處理 (MediaUriPlayer graph：解碼 → SoundTouch → AudioMixerDS → Renderer)：
         // AudioMixerDS.cpp Transform() 逐樣本處理：
-        //   1. 聲道對應 (SetChannelOrder)：左=L/L、右=R/R、消人聲=兩聲道都輸出 L−R
+        //   1. 聲道對應 (SetChannelOrder)：左=L/L、右=R/R、消人聲=兩聲道都輸出分頻 L−R (見 VocalRemovalFilter)
         //   2. 增益 = AudioAmplify% × 10^(BASE_AUDIO_BOOST_DB(3)/20)
         //   3. 峰值包絡限制器：門檻 30000/32767，attack 係數 0.999 (≈21ms)、release 0.99995 (≈417ms)
         //   4. 軟削峰：超過 20000 以 tanh 壓到 32767
@@ -555,6 +555,20 @@ namespace UltimateKtv
         private const string MixerSoftClip =
             "if(gt(val(ch)\\,0.6103516)\\,0.6103516+0.3896179*tanh((val(ch)-0.6103516)/0.3896179)\\," +
             "if(lt(val(ch)\\,-0.6103516)\\,-0.6103516-0.3896179*tanh((-0.6103516-val(ch))/0.3896179)\\,val(ch)))";
+
+        // 分頻消人聲 (與 AudioMixerDS 模式 2 相同)：out = D + LP(M−D) + HP(M)，D = L−R、M = (L+R)/2，兩聲道輸出相同。
+        // - 200 Hz ~ 12 kHz 只有 D：傳統 L−R，消去置中的人聲
+        // - 低於 200 Hz：D + (M−D) = M，就是原曲的單聲道混音，大鼓、貝斯不論聲像都保留
+        //   (若用 D + LP(M)，偏右聲像的低音會被 D 抵消)
+        // - 高於 12 kHz：D + M，保留鈸與 D 的立體聲空間感
+        // 分界以 KTV 伴奏帶對照試聽決定：高頻分界原為 6 kHz，人聲齒音與泛音 (4~10 kHz) 會從 HP(M) 漏回來。
+        // 濾波器都是 2 階 (Q 0.707，即 ffmpeg lowpass/highpass 預設值)，AudioMixerDS 用同一組 RBJ 公式。
+        // 先轉 float：s16 時 pan 的相加會先削峰；3.0 聲道 (FL/FR/FC) 讓 c 選項只濾其中一個聲道，整條是線性串接。
+        private const string VocalRemovalFilter =
+            "lavfi=[aformat=sample_fmts=flt|fltp," +
+            "pan=3.0|c0=c0-c1|c1=-0.5*c0+1.5*c1|c2=0.5*c0+0.5*c1," +   // FL = D、FR = M−D、FC = M
+            "lowpass=f=200:c=FR,highpass=f=12000:c=FC," +
+            "pan=stereo|c0=c0+c1+c2|c1=c0+c1+c2]";
 
         /// <summary>
         /// 預覽是獨立的 mpv 實例，各自計時；每秒比對一次，差超過 0.3 秒就讓預覽 seek 對齊。
@@ -661,7 +675,7 @@ namespace UltimateKtv
             {
                 case 1: filters.Add("lavfi=[pan=stereo|c0=c0|c1=c0]"); break;          // 左聲道
                 case 2: filters.Add("lavfi=[pan=stereo|c0=c1|c1=c1]"); break;          // 右聲道
-                case 3: filters.Add("lavfi=[pan=stereo|c0=c0-c1|c1=c0-c1]"); break;    // 消人聲 (兩聲道都是 L−R)
+                case 3: filters.Add(VocalRemovalFilter); break;                        // 消人聲 (分頻 L−R)
             }
 
             double gain = _audioAmplify / 100.0 * MixerBaseBoost;

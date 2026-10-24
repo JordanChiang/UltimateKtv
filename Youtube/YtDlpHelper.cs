@@ -413,9 +413,7 @@ namespace UltimateKtv
             string outDir = Path.GetDirectoryName(outputFilePath)!;
             if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
 
-            string formatArg = isHighQuality
-                ? "-f \"bestvideo[height<=1080]+bestaudio/best\" --merge-output-format mp4"
-                : "-f \"bestvideo[height<=720]+bestaudio/best/bestvideo+bestaudio\" --merge-output-format mp4";
+            string formatArg = $"-f \"{YoutubeFormat.YtDlpFormat(isHighQuality ? 1080 : 720)}\" --merge-output-format mp4";
 
             await EnsureYtDlpAsync();
             string ytDlpPath = GetYtDlpPath();
@@ -425,7 +423,7 @@ namespace UltimateKtv
                 var psi = new ProcessStartInfo
                 {
                     FileName = ytDlpPath,
-                    Arguments = $"{formatArg} --extractor-args \"youtube:player_client=android,web\" --newline --no-playlist --ffmpeg-location \"{ffmpegDir}\" -o \"{outputFilePath}\" \"https://www.youtube.com/watch?v={videoId}\"",
+                    Arguments = $"{formatArg} --extractor-args \"youtube:player_client={YoutubeFormat.DownloadClients}\" --newline --no-playlist --ffmpeg-location \"{ffmpegDir}\" -o \"{outputFilePath}\" \"https://www.youtube.com/watch?v={videoId}\"",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
