@@ -18,6 +18,7 @@
     <Compile Include="..\..\Library\DataTableExtension.cs" Link="Linked\Library\DataTableExtension.cs" />
     <Compile Include="..\..\Library\SongLibrary.cs" Link="Linked\Library\SongLibrary.cs" />
     <Compile Include="..\..\Library\Song.cs" Link="Linked\Library\Song.cs" />
+    <Compile Include="..\..\Library\Singer.cs" Link="Linked\Library\Singer.cs" />
     <Compile Include="..\..\Library\SongQuery.cs" Link="Linked\Library\SongQuery.cs" />
     <Compile Include="..\..\Youtube\YoutubeVideoId.cs" Link="Linked\Youtube\YoutubeVideoId.cs" />
     <Compile Include="..\..\Youtube\YoutubeDownloadQueue.cs" Link="Linked\Youtube\YoutubeDownloadQueue.cs" />
@@ -26,6 +27,7 @@
     <Compile Include="..\..\Themes\ThemeSettings.cs" Link="Linked\Themes\ThemeSettings.cs" />
     <Compile Include="..\..\Settings\SettingsJson.cs" Link="Linked\Settings\SettingsJson.cs" />
     <Compile Include="..\..\Remote\WebCultureMatcher.cs" Link="Linked\Remote\WebCultureMatcher.cs" />
+    <Compile Include="..\..\Remote\RemoteCommands.cs" Link="Linked\Remote\RemoteCommands.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +43,8 @@
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
     <!-- YoutubeFormat 的 YoutubeExplode 串流選擇與連網測試，版本與主程式相同 -->
     <PackageReference Include="YoutubeExplode" Version="6.6.2" />
+    <!-- RemoteCommands 的 JSON 回應，版本與主程式相同 -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
 </Project>

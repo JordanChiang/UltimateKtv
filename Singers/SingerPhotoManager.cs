@@ -180,7 +180,7 @@ namespace UltimateKtv
 
                 // Get all distinct singer names
                 var allSingerNames = SongDatas.SingerData
-                    .Select(s => s.TryGetValue("Singer_Name", out var nameObj) ? nameObj?.ToString() ?? "" : "")
+                    .Select(s => s.Name)
                     .Where(n => !string.IsNullOrEmpty(n))
                     .Distinct()
                     .ToList();

@@ -74,19 +74,7 @@ public class HttpServerHelper
 		return 0;
 	}
 
-	private static string ErrorResult(string key, string value)
-	{
-		if (!string.IsNullOrEmpty(key) && !string.IsNullOrEmpty(value))
-		{
-			JArray val = new JArray();
-			JObject val2 = new JObject();
-			val2.Add("Error", JToken.FromObject(key));
-			val2.Add("Message", JToken.FromObject(value));
-			val.Add(val2);
-			return JsonConvert.SerializeObject(val);
-		}
-		return JsonConvert.SerializeObject(new JArray());
-	}
+	private static string ErrorResult(string key, string value) => RemoteJson.Error(key, value);
 
 	private static string DataTableToJSON(DataTable dt)
 	{
@@ -212,22 +200,19 @@ public class HttpServerHelper
 		if (SongDatas.SingerData == null) return EmptyResult;
 		try
 		{
-			static string Text(Dictionary<string, object?> singer, string key) =>
-				singer.TryGetValue(key, out var v) ? Convert.ToString(v) ?? "" : "";
-
 			// SongDatas.SingerData 載入時已依歌星排序
 			var singers = SongDatas.SingerData
-				.Where(s => SongQuery.MatchesSinger(Text(s, "Singer_Name"), Text(s, "Singer_Type"), type, name))
+				.Where(s => SongQuery.MatchesSinger(s, type, name))
 				.ToList();
 			if (singers.Count == 0) return EmptyResult;
 
 			int number = IsNumeric(page) ? Convert.ToInt32(page) + 1 : 1;
 			int size = IsNumeric(rows) ? Convert.ToInt32(rows) : 0;
-			var paged = Page<Dictionary<string, object?>>.Of(singers, number, size).Items.Select(s => new Dictionary<string, object?>
+			var paged = Page<Singer>.Of(singers, number, size).Items.Select(s => new Dictionary<string, object?>
 			{
-				["Singer_Name"] = s.GetValueOrDefault("Singer_Name"),
-				["Singer_Type"] = s.GetValueOrDefault("Singer_Type"),
-				["Singer_Strokes"] = s.GetValueOrDefault("Singer_Strokes"),
+				["Singer_Name"] = s.GetColumnValue("Singer_Name"),
+				["Singer_Type"] = s.GetColumnValue("Singer_Type"),
+				["Singer_Strokes"] = s.GetColumnValue("Singer_Strokes"),
 			});
 			return JsonConvert.SerializeObject(paged);
 		}
@@ -493,91 +478,6 @@ public class HttpServerHelper
 		}
 	}
 
-	/// <summary>與主畫面切歌鈕相同 (含解除暫停與單曲循環)。</summary>
-	public static string SkipCurrentSong(RemoteControl remote)
-	{
-		try
-		{
-			remote.Skip();
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.SkipSent") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("Skip Error", ex.Message);
-		}
-	}
-
-	public static string SwitchToVocal(RemoteControl remote)
-	{
-		try
-		{
-			remote.SwitchToVocal();
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Vocal") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("Vocal Switch Error", ex.Message);
-		}
-	}
-
-	public static string SwitchToMusic(RemoteControl remote)
-	{
-		try
-		{
-			remote.SwitchToMusic();
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Music") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("Music Switch Error", ex.Message);
-		}
-	}
-
-	public static string MoveToFirst(string id, RemoteControl remote)
-	{
-		try
-		{
-			if (!Guid.TryParse(id, out Guid guid))
-				return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
-			remote.MoveToFirst(guid);
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.MovedToFirst") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("Error", ex.Message);
-		}
-	}
-
-	public static string RemoveFromList(string id, RemoteControl remote)
-	{
-		try
-		{
-			if (!Guid.TryParse(id, out Guid guid))
-				return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
-			remote.Remove(guid);
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Removed") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("Error", ex.Message);
-		}
-	}
-
-	public static string MoveToNext(string id, RemoteControl remote)
-	{
-		try
-		{
-			if (!Guid.TryParse(id, out Guid guid))
-				return ErrorResult("Invalid ID", "Provided ID is not a valid GUID");
-			remote.MoveToNext(guid);
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.MovedNext") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("Error", ex.Message);
-		}
-	}
-
 	public static string QueryGeneration(string genKey, string page, string rows)
 	{
 		if (string.IsNullOrEmpty(genKey) || SongDatas.GenerationSongs == null)
@@ -655,112 +555,8 @@ public class HttpServerHelper
 				}
 			}
 	
-	    #region Remote Control Actions
+	    #region YouTube
 	
-	public static string VolumeUp(RemoteControl remote)
-	{
-		try
-		{
-			remote.VolumeUp();
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.VolUp") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("VolumeUp Error", ex.Message);
-		}
-	}
-
-	public static string VolumeDown(RemoteControl remote)
-	{
-		try
-		{
-			remote.VolumeDown();
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.VolDown") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("VolumeDown Error", ex.Message);
-		}
-	}
-
-	public static string ToggleVolumeLock(RemoteControl remote)
-	{
-		try
-		{
-			bool isLocking = remote.ToggleVolumeLock();
-			return JsonConvert.SerializeObject(new { success = true, message = isLocking ? Loc.T("Web.Msg.VolLocked") : Loc.T("Web.Msg.VolUnlocked") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("ToggleVolumeLock Error", ex.Message);
-		}
-	}
-
-	public static string PitchUp(RemoteControl remote)
-	{
-		try
-		{
-			remote.PitchUp();
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchUp") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("PitchUp Error", ex.Message);
-		}
-	}
-
-	public static string PitchDown(RemoteControl remote)
-	{
-		try
-		{
-			remote.PitchDown();
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchDown") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("PitchDown Error", ex.Message);
-		}
-	}
-
-	public static string PitchReset(RemoteControl remote)
-	{
-		try
-		{
-			remote.PitchReset();
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.PitchReset") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("PitchReset Error", ex.Message);
-		}
-	}
-
-	public static string QuitApp(RemoteControl remote)
-	{
-		try
-		{
-			remote.Quit(shutdownWindows: false);
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.Quitting") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("QuitApp Error", ex.Message);
-		}
-	}
-
-	public static string ShutdownWin(RemoteControl remote)
-	{
-		try
-		{
-			remote.Quit(shutdownWindows: true);
-			return JsonConvert.SerializeObject(new { success = true, message = Loc.T("Web.Msg.ShuttingDown") });
-		}
-		catch (Exception ex)
-		{
-			return ErrorResult("ShutdownWin Error", ex.Message);
-		}
-	}
-
 
 	    public static async Task<string> SearchYoutubeAsync(string keyword)
 	    {

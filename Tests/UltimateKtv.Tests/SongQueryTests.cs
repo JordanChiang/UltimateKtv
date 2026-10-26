@@ -25,6 +25,11 @@ namespace UltimateKtv.Tests
 
         private static string[] Ids(IEnumerable<Song> songs) => songs.Select(s => s.Id).ToArray();
 
+        private static Singer Sg(string name, string type = "", string id = "", string spell = "", string penStyle = "") =>
+            new() { Name = name, Type = type, Id = id, Spell = spell, PenStyle = penStyle };
+
+        private static string[] Names(IEnumerable<Singer> singers) => singers.Select(s => s.Name).ToArray();
+
         // ---- 歌曲排序 ----
 
         [Fact]
@@ -237,7 +242,7 @@ namespace UltimateKtv.Tests
         [InlineData("1", "Ja", true)]
         public void Singer_list_filters_by_type_and_name(string type, string name, bool expected)
         {
-            Assert.Equal(expected, SongQuery.MatchesSinger("Jay Chou", "1", type, name));
+            Assert.Equal(expected, SongQuery.MatchesSinger(Sg("Jay Chou", "1"), type, name));
         }
 
         [Theory]
@@ -249,7 +254,106 @@ namespace UltimateKtv.Tests
         [InlineData("6", false)]
         public void Other_singer_type_is_everything_outside_the_six_named_types(string? singerType, bool expected)
         {
-            Assert.Equal(expected, SongQuery.MatchesSinger("某人", singerType, "99", null));
+            Assert.Equal(expected, SongQuery.MatchesSinger(Sg("某人", singerType ?? ""), "99", null));
+        }
+
+        [Fact]
+        public void Singer_list_type_filter_compares_the_type_text_exactly()
+        {
+            Assert.False(SongQuery.MatchesSinger(Sg("某人", "01"), "1", null));
+            Assert.True(SongQuery.MatchesSinger(Sg("某人", "01"), "99", null));
+        }
+
+        // ---- 歌星 ----
+
+        [Fact]
+        public void Singer_from_columns_reads_text_fields_and_keeps_raw_values()
+        {
+            var singer = Singer.FromColumns(new Dictionary<string, object?>
+            {
+                ["Singer_Id"] = 12,
+                ["Singer_Name"] = "周杰倫",
+                ["Singer_Type"] = "0",
+                ["Singer_Spell"] = null,
+                ["Singer_Strokes"] = (byte)8,
+            });
+
+            Assert.Equal("12", singer.Id);
+            Assert.Equal("周杰倫", singer.Name);
+            Assert.Equal("0", singer.Type);
+            Assert.Equal("", singer.Spell);
+            Assert.Equal("", singer.PenStyle);
+            Assert.Equal((byte)8, singer.GetColumnValue("Singer_Strokes"));
+            Assert.Null(singer.GetColumnValue("Singer_SpellNum"));
+        }
+
+        [Fact]
+        public void Split_singers_handles_duet_names_and_skips_blanks()
+        {
+            Assert.Equal(new[] { "甲", "乙", "丙", "丁" }, SongQuery.SplitSingers(" 甲 & 乙/丙、、丁 ").ToArray());
+            Assert.Empty(SongQuery.SplitSingers(null));
+        }
+
+        [Fact]
+        public void Singer_list_keeps_only_singers_with_songs()
+        {
+            var singers = new[] { Sg("周杰倫"), Sg("沒有歌"), Sg("JOLIN "), Sg("五月天"), Sg(""), null };
+            var songs = new[] { S("1", singer: "周杰倫"), S("2", singer: "Jolin&五月天") };
+
+            Assert.Equal(new[] { "JOLIN ", "五月天", "周杰倫" }, Names(SongQuery.SingerList(singers, songs)));
+            Assert.Empty(SongQuery.SingerList(singers, null));
+        }
+
+        [Fact]
+        public void Singer_list_puts_english_names_first()
+        {
+            var singers = new[] { Sg("王力宏"), Sg("Beyond"), Sg("丁噹"), Sg("A-Lin") };
+            var songs = singers.Select((s, i) => S(i.ToString(), singer: s.Name)).ToArray();
+
+            var names = Names(SongQuery.SingerList(singers, songs));
+
+            Assert.Equal(new[] { "A-Lin", "Beyond" }, names.Take(2).ToArray());
+            Assert.Equal(new[] { "丁噹", "王力宏" }, names.Skip(2).ToArray());
+        }
+
+        [Theory]
+        [InlineData(SingerCategory.Male, new[] { "男" })]
+        [InlineData(SingerCategory.Female, new[] { "女" })]
+        [InlineData(SingerCategory.ForeignGroup, new[] { "外團" })]
+        [InlineData(SingerCategory.Other, new[] { "合唱類", "七", "未設定", "亂碼" })]
+        public void Singer_category_buttons_match_by_type_number(SingerCategory category, string[] expected)
+        {
+            var singers = new[]
+            {
+                Sg("男", "0"), Sg("女", "1"), Sg("團", "2"), Sg("合唱類", "3"), Sg("外男", "4"), Sg("外女", "5"),
+                Sg("外團", "6"), Sg("七", "7"), Sg("未設定"), Sg("亂碼", "x"),
+            };
+            Assert.Equal(expected, SongQuery.SingerNamesIn(singers, category).ToArray());
+        }
+
+        [Fact]
+        public void Singer_category_parses_the_type_as_a_number_and_lists_each_name_once()
+        {
+            var singers = new[] { Sg("甲", " 1"), Sg("乙", "01"), Sg("甲", "1"), Sg("", "1"), null };
+            Assert.Equal(new[] { "甲", "乙" }, SongQuery.SingerNamesIn(singers, SingerCategory.Female).ToArray());
+            Assert.Empty(SongQuery.SingerNamesIn(null, SingerCategory.Female));
+        }
+
+        [Fact]
+        public void Quick_singer_search_matches_the_field_prefix_and_sorts_by_name()
+        {
+            var singers = new[] { Sg("王力宏", spell: "ㄨㄌㄏ"), Sg("Wang", spell: "ㄨ"), Sg("林俊傑", spell: "ㄌㄐㄐ"), Sg("無注音") };
+
+            Assert.Equal(new[] { "Wang", "王力宏" }, Names(SongQuery.QuickMatchSingers(singers, SongTextField.Spell, "ㄨ", contains: false)));
+        }
+
+        [Fact]
+        public void Quick_singer_search_contains_mode_ignores_case()
+        {
+            var singers = new[] { Sg("Jay Chou", id: "100"), Sg("JJ Lin", id: "200"), Sg("Chou Chuan-Huing", id: "310") };
+
+            Assert.Equal(new[] { "Chou Chuan-Huing", "Jay Chou" }, Names(SongQuery.QuickMatchSingers(singers, SongTextField.Name, "chou", contains: true)));
+            Assert.Equal(new[] { "Chou Chuan-Huing" }, Names(SongQuery.QuickMatchSingers(singers, SongTextField.Id, "3", contains: false)));
         }
 
         // ---- 分頁 ----

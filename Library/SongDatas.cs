@@ -38,7 +38,8 @@ namespace UltimateKtv
         public static DataTable? SongDataSchema { get; private set; }
         public static DataTable? LangData { get; private set; }
         public static List<string>? SongLangList { get; private set; }
-        public static List<Dictionary<string, object?>>? SingerData { get; private set; }
+        /// <summary>歌星清單：只含歌庫中有歌的歌星，已依 <see cref="SongQuery.SingerList"/> 排序。</summary>
+        public static List<Singer>? SingerData { get; private set; }
         public static DataTable? SingerDataSchema { get; private set; }
         public static DataTable? SingerTypeData { get; private set; }
         public static List<string>? SingerTypeList { get; private set; }
@@ -174,7 +175,7 @@ namespace UltimateKtv
                 }
 
                 LangData = Db.GetDataTable("SELECT * FROM ktv_Langauage ORDER BY Langauage_Id");
-                SingerData = Db.GetDictionary("SELECT * FROM ktv_Singer ORDER BY Singer_Id");
+                SingerData = Db.GetDictionary("SELECT * FROM ktv_Singer ORDER BY Singer_Id").Select(Singer.FromColumns).ToList();
                 SingerDataSchema = Db.GetDataTable("SELECT * FROM ktv_Singer WHERE 1=0");
                 SingerTypeData = Db.GetDataTable("SELECT * FROM ktv_Swan ORDER BY Swan_Id");
                 FavoriteUserData = Db.GetDataTable("SELECT * FROM ktv_User ORDER BY User_Id");
@@ -195,59 +196,13 @@ namespace UltimateKtv
                         .ToList();
                 }
 
-                // Sort SingerData immediately using global logic
+                // 歌星清單只留歌庫中有歌的歌星並排序 (規則見 SongQuery.SingerList)；排序失敗時保留資料庫的順序
                 if (SingerData != null)
                 {
                     try
                     {
-                        var strokeComparer = StringComparer.Create(
-                            System.Globalization.CultureInfo.GetCultureInfo("zh-TW"),
-                            System.Globalization.CompareOptions.StringSort);
-
-                        // Extract all active singers from SongData
-                        var activeSingers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                        if (SongData != null)
-                        {
-                            char[] delimiters = { '&', '/', ',', '、', '；', ';', '|' };
-                            foreach (var song in SongData)
-                            {
-                                if (song.Singer.Length > 0)
-                                {
-                                    var singers = song.Singer.Split(delimiters, StringSplitOptions.RemoveEmptyEntries);
-                                    foreach (var s in singers)
-                                    {
-                                        var trimmed = s.Trim();
-                                        if (!string.IsNullOrEmpty(trimmed))
-                                        {
-                                            activeSingers.Add(trimmed);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        SingerData = SingerData
-                            .Where(s => s != null)
-                            .Where(s => 
-                            {
-                                var name = s.TryGetValue("Singer_Name", out var nameObj) ? nameObj?.ToString()?.Trim() ?? "" : "";
-                                bool hasSongs = activeSingers.Contains(name);
-                                if (!hasSongs && !string.IsNullOrEmpty(name))
-                                {
-                                    Debug.WriteLine($"[SongDatas] Filtered out singer with 0 songs: {name}");
-                                }
-                                return hasSongs;
-                            })
-                            .OrderBy(s =>
-                            {
-                                var name = s.TryGetValue("Singer_Name", out var nameObj) ? nameObj?.ToString() ?? "" : "";
-                                // Sort English names (ASCII) first (return 0), then others (return 1)
-                                return string.IsNullOrEmpty(name) || name[0] > 127 ? 1 : 0;
-                            })
-                            .ThenBy(s => s.TryGetValue("Singer_Name", out var name) ? name?.ToString() ?? "" : "", strokeComparer)
-                            .ToList();
-
-                         Debug.WriteLine($"[SongDatas] SingerData loaded and sorted with {SingerData.Count} singers.");
+                        SingerData = SongQuery.SingerList(SingerData, SongData);
+                        Debug.WriteLine($"[SongDatas] SingerData loaded and sorted with {SingerData.Count} singers.");
                     }
                     catch (Exception ex)
                     {

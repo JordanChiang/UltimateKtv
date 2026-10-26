@@ -166,7 +166,7 @@ namespace UltimateKtv
                 SafeStop(w.ktvPlayer, "ktvPlayer");
 
                 // Set the volume slider to the song's specific setting (volume lock: keep the locked value)
-                w.VolumeSlider.Value = w.VolumeLockToggle.IsChecked != true ? song.Volume : w._lockedVolume;
+                w.VolumeSlider.Value = w._volume.SongStarting(song.Volume);
 
                 // Log if using pre-loaded file content
                 if (SettingsManager.Instance.CurrentSettings.EnablePreLoading &&
@@ -298,38 +298,20 @@ namespace UltimateKtv
 
             try
             {
-                // Only update the volume from the song's data if the volume lock is NOT active.
-                if (VolumeLockToggle.IsChecked != true)
-                {
-                    if (_playingSongData.Volume is int dbVolume)
-                    {
-                        PlayingFileVolume = dbVolume;
-                    }
-                    else
-                    {
-                        PlayingFileVolume = 60; // Fallback to a sensible default
-                    }
-                }
-                else
-                {
-                    // Volume lock is active: use the locked volume value
-                    PlayingFileVolume = _lockedVolume;
-                }
-
-                // Apply initial mapped volume to the player based on PlayingFileVolume
+                // 開播音量：歌庫記錄的音量 (鎖定時為鎖定音量)
+                int openedVolume = _volume.SongOpened(_playingSongData.Volume);
                 try
                 {
-                    // PlayingFileVolume is 0..100
-                    player.Volume = ComputePlayerVolume(PlayingFileVolume);
-                    
+                    player.Volume = ComputePlayerVolume(openedVolume);
+
                     // Synchronize the UI slider with the actual loaded volume (e.g. if DB was just updated)
-                    if (VolumeLockToggle.IsChecked != true && VolumeSlider.Value != PlayingFileVolume)
+                    if (!_volume.IsLocked && VolumeSlider.Value != openedVolume)
                     {
-                        VolumeSlider.Value = PlayingFileVolume;
+                        VolumeSlider.Value = openedVolume;
                     }
                 }
                 catch {
-                    DebugLog($"     failed to set player.Volume={PlayingFileVolume} ");
+                    DebugLog($"     failed to set player.Volume={openedVolume} ");
                 }
 
                 // Apply the global AudioAmplify setting from the options panel
@@ -374,11 +356,11 @@ namespace UltimateKtv
                 }
                 
                 Debug.WriteLine($"Playing video path :      {PlayingFilePath}");
-                Debug.WriteLine($"        Audio Volume:     {PlayingFileVolume}");
+                Debug.WriteLine($"        Audio Volume:     {_volume.OpenedLevel}");
                 Debug.WriteLine($"        Audio Track:      {player.AudioTrack}");
                 Debug.WriteLine($"        Audio Channel:    {player.AudioChannel}");
                 Debug.WriteLine($"        IsPlayingYoutube: {IsPlayingYoutube}");
-                AppLogger.Log($"    vol={PlayingFileVolume}, track={player.AudioTrack}, channel={player.AudioChannel} ");
+                AppLogger.Log($"    vol={_volume.OpenedLevel}, track={player.AudioTrack}, channel={player.AudioChannel} ");
                 // Show marquee with song name and singer name before playing
                 var songName = _playingSongData.Name;
                 var singerName = _playingSongData.Singer;
@@ -533,23 +515,16 @@ namespace UltimateKtv
 
         private void SaveCurrentSongVolume()
         {
-            // Do not save volume if it's 0 (invalid/muted) or 100 (invalid/muted)
-            if (VolumeSlider.Value == 0 || VolumeSlider.Value > 100) return;
-            
-            // Only update the volume from the song's data if the volume lock is NOT active.
-            if (VolumeLockToggle.IsChecked == true) return;
-            
+            // 使用者調整過音量才存 (靜音、鎖定中不存；規則見 SongVolume.VolumeToSave)
+            if (_volume.VolumeToSave() is not int currentVolume) return;
+
             if (_playingSongData == null || IsPlayingYoutube) return;
 
             if (!string.IsNullOrEmpty(_playingSongData.Id))
             {
                 string songId = _playingSongData.Id;
-                int currentVolume = (int)VolumeSlider.Value;
-                
-                // Compare with original PlayingFileVolume
-                if (currentVolume != PlayingFileVolume)
                 {
-                    DebugLog($"User changed volume from {PlayingFileVolume} to {currentVolume}. Saving to DB for Song_Id '{songId}'.");
+                    DebugLog($"User changed volume from {_volume.OpenedLevel} to {currentVolume}. Saving to DB for Song_Id '{songId}'.");
                     
                     // update in memory DB
                     var memorySong = SongDatas.FindSongById(songId);
@@ -823,21 +798,9 @@ namespace UltimateKtv
         {
             if (ktvPlayer == null) return;
 
-            _isMuted = !_isMuted;
-
-            if (_isMuted)
-            {
-                AppLogger.Log("User action: Mute button clicked");
-                // Store current volume and mute
-                _volumeBeforeMute = VolumeSlider.Value;
-                VolumeSlider.Value = 0; // This will trigger VolumeSlider_ValueChanged to update UI and player
-            }
-            else
-            {
-                AppLogger.Log("User action: Unmute button clicked");
-                // Restore volume to previous level, or a sensible default if it was 0
-                VolumeSlider.Value = _volumeBeforeMute > 0 ? _volumeBeforeMute : 50;
-            }
+            double level = _volume.ToggleMute();
+            AppLogger.Log(_volume.IsMuted ? "User action: Mute button clicked" : "User action: Unmute button clicked");
+            VolumeSlider.Value = level; // This will trigger VolumeSlider_ValueChanged to update UI and player
         }
 
 
@@ -850,7 +813,7 @@ namespace UltimateKtv
             if (slider == null) return;
 
             // Snap the value to the nearest multiple of 5
-            double snappedValue = Math.Round(e.NewValue / 5.0) * 5.0;
+            double snappedValue = SongVolume.Snap(e.NewValue);
 
             // If the value is not snapped, update the slider. This will re-trigger the event.
             if (Math.Abs(snappedValue - slider.Value) > 0.01)
@@ -864,6 +827,7 @@ namespace UltimateKtv
             try
             {
                 double sliderValue = snappedValue;
+                _volume.Set(slider.Value);
 
                 // Set the player volume and update the UI text.
                 ktvPlayer.Volume = ComputePlayerVolume(sliderValue);
@@ -873,20 +837,8 @@ namespace UltimateKtv
                 MarqueeAPI.ShowVolumeLevel(sliderValue.ToString(), MarqueeDisplayDevice.PlayerScreen);
 
                 // Update the volume icon based on the new value
-                if (sliderValue == 0)
-                {
-                    VolumeIcon.Kind = PackIconKind.VolumeOff;
-                    _isMuted = true;
-                }
-                else
-                {
-                    // Use the same icon for all audible levels for consistent visual size
-                    VolumeIcon.Kind = PackIconKind.VolumeHigh;
-                    if (_isMuted)
-                    {
-                        _isMuted = false;
-                    }
-                }
+                // Use the same icon for all audible levels for consistent visual size
+                VolumeIcon.Kind = _volume.IsMuted ? PackIconKind.VolumeOff : PackIconKind.VolumeHigh;
             }
             finally
             {
@@ -1595,10 +1547,10 @@ namespace UltimateKtv
         private void VolumeLockToggle_Checked(object sender, RoutedEventArgs e)
         {
             // Store the current volume when lock is activated
-            _lockedVolume = (int)VolumeSlider.Value;
-            AppLogger.Log($"User action: Volume lock activated at {_lockedVolume}");
-            DebugLog($"Volume lock activated. Locked volume: {_lockedVolume}");
-            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.VolumeLocked", _lockedVolume), 2);
+            _volume.Lock();
+            AppLogger.Log($"User action: Volume lock activated at {_volume.LockedLevel}");
+            DebugLog($"Volume lock activated. Locked volume: {_volume.LockedLevel}");
+            MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.VolumeLocked", _volume.LockedLevel), 2);
         }
 
         /// <summary>
@@ -1607,6 +1559,7 @@ namespace UltimateKtv
         /// </summary>
         private void VolumeLockToggle_Unchecked(object sender, RoutedEventArgs e)
         {
+            _volume.Unlock();
             AppLogger.Log("User action: Volume lock deactivated");
             DebugLog("Volume lock deactivated.");
             MarqueeAPI.ShowStaticAnnouncement(Loc.T("Player.VolumeUnlocked"), 2);
@@ -1614,14 +1567,14 @@ namespace UltimateKtv
 
         public void VolumeUp()
         {
-            double newValue = Math.Min(100, VolumeSlider.Value + 5);
+            double newValue = _volume.Up();
             VolumeSlider.Value = newValue;
             AppLogger.Log($"Remote action: Volume Up to {newValue}");
         }
 
         public void VolumeDown()
         {
-            double newValue = Math.Max(0, VolumeSlider.Value - 5);
+            double newValue = _volume.Down();
             VolumeSlider.Value = newValue;
             AppLogger.Log($"Remote action: Volume Down to {newValue}");
         }

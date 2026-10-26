@@ -30,6 +30,9 @@ namespace UltimateKtv
     /// <summary>快速搜尋比對的歌曲欄位。</summary>
     public enum SongTextField { Spell, PenStyle, Id, Name }
 
+    /// <summary>主畫面歌星頁的歌手類別按鈕；數值為 Singer_Type。</summary>
+    public enum SingerCategory { Male = 0, Female = 1, Group = 2, ForeignMale = 4, ForeignFemale = 5, ForeignGroup = 6, Other = 99 }
+
     /// <summary>
     /// 歌庫的歌曲查詢：新歌、排行、語系篩選、快速搜尋、搜尋框、歌星的歌，以及歌曲排序。
     /// 主畫面、隨機播放與手機點歌共用同一份規則。歌庫尚未載入 (null) 時回傳空清單。
@@ -179,25 +182,105 @@ namespace UltimateKtv
         private static readonly CompareInfo SearchCompare = CultureInfo.GetCultureInfo("zh-TW").CompareInfo;
         private const CompareOptions SearchOptions = CompareOptions.IgnoreCase | CompareOptions.IgnoreWidth | CompareOptions.IgnoreKanaType;
 
-        /// <summary>手機歌星清單「其它」以外的歌手類別：男、女、團體、外國男、外國女、外國團。</summary>
-        private static readonly HashSet<string> NamedSingerTypes = new() { "0", "1", "2", "4", "5", "6" };
+        /// <summary>「其它」以外的歌手類別：男、女、團體、外國男、外國女、外國團 (3 = 合唱只用在歌曲上)。</summary>
+        private static readonly int[] NamedSingerTypes = { 0, 1, 2, 4, 5, 6 };
+        private static readonly HashSet<string> NamedSingerTypeTexts = new(NamedSingerTypes.Select(t => t.ToString(CultureInfo.InvariantCulture)));
+
+        /// <summary>歌庫的歌手名可能是合唱 (例如「甲&amp;乙」)，拆成各位歌星 (去頭尾空白、略過空白)。</summary>
+        public static IEnumerable<string> SplitSingers(string? singer) =>
+            (singer ?? "").Split(SingerDelimiters, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).Where(s => s.Length > 0);
 
         /// <summary>
-        /// 手機歌星清單的篩選：type 為歌手類別 (空白 = 全部，"99" = 上述六類以外，含未設定)；
+        /// 歌星清單 (載入歌庫時建立一次)：只留歌庫中有歌的歌星 (合唱歌的每一位都算)，英文名在前，其餘依 zh-TW 字串排序。
+        /// songs 為 null 時沒有任何歌星。
+        /// </summary>
+        public static List<Singer> SingerList(IEnumerable<Singer?> singers, IEnumerable<Song>? songs)
+        {
+            var activeSingers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (songs != null)
+            {
+                foreach (var song in songs)
+                {
+                    foreach (var name in SplitSingers(song.Singer)) activeSingers.Add(name);
+                }
+            }
+
+            return singers
+                .Where(s => s != null && activeSingers.Contains(s.Name.Trim()))
+                .Select(s => s!)
+                .OrderBy(s => string.IsNullOrEmpty(s.Name) || s.Name[0] > 127 ? 1 : 0)
+                .ThenBy(s => s.Name, SingerListOrder)
+                .ToList();
+        }
+
+        private static readonly StringComparer SingerListOrder = StringComparer.Create(CultureInfo.GetCultureInfo("zh-TW"), CompareOptions.StringSort);
+
+        /// <summary>
+        /// 主畫面歌星頁某個歌手類別按鈕的歌星名 (依 singers 原本的順序、不重複、略過空白名)。
+        /// Singer_Type 以整數比對；「其它」= 六類以外，含未設定或不是數字。
+        /// </summary>
+        public static List<string> SingerNamesIn(IEnumerable<Singer?>? singers, SingerCategory category)
+        {
+            if (singers == null) return new List<string>();
+            return singers
+                .Where(s => s != null && InCategory(s, category))
+                .Select(s => s!.Name)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .ToList();
+        }
+
+        private static bool InCategory(Singer singer, SingerCategory category)
+        {
+            bool isNumber = int.TryParse(singer.Type, out int type);
+            return category == SingerCategory.Other
+                ? !isNumber || !NamedSingerTypes.Contains(type)
+                : isNumber && type == (int)category;
+        }
+
+        /// <summary>
+        /// 快速搜尋的歌星模式：欄位以 key 開頭 (contains 時為包含)，不分大小寫；依歌星名排列 (<see cref="NameOrder"/>)。
+        /// 歌星沒有字數，SongTextField.Name 以外的欄位分別比對注音、筆畫碼、歌星編號。
+        /// </summary>
+        public static List<Singer> QuickMatchSingers(IEnumerable<Singer>? singers, SongTextField field, string key, bool contains)
+        {
+            if (singers == null) return new List<Singer>();
+            Func<Singer, string> getField = field switch
+            {
+                SongTextField.Spell => s => s.Spell,
+                SongTextField.PenStyle => s => s.PenStyle,
+                SongTextField.Id => s => s.Id,
+                _ => s => s.Name,
+            };
+
+            return singers
+                .Where(s =>
+                {
+                    var text = getField(s);
+                    if (string.IsNullOrEmpty(text)) return false;
+                    return contains
+                        ? text.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0
+                        : text.StartsWith(key, StringComparison.OrdinalIgnoreCase);
+                })
+                .OrderBy(s => s.Name, NameOrder)
+                .ToList();
+        }
+
+        /// <summary>
+        /// 手機歌星清單的篩選：type 為歌手類別 (空白 = 全部，"99" = 六類以外，含未設定)，與 Singer_Type 的文字完全相同才算；
         /// name 為歌星名包含的文字 (不分大小寫、全形半形、平假名片假名)，空白 = 不限。
         /// </summary>
-        public static bool MatchesSinger(string singerName, string? singerType, string? type, string? name)
+        public static bool MatchesSinger(Singer singer, string? type, string? name)
         {
-            string actualType = singerType ?? "";
             if (type == "99")
             {
-                if (NamedSingerTypes.Contains(actualType)) return false;
+                if (NamedSingerTypeTexts.Contains(singer.Type)) return false;
             }
-            else if (!string.IsNullOrEmpty(type) && actualType != type)
+            else if (!string.IsNullOrEmpty(type) && singer.Type != type)
             {
                 return false;
             }
-            return string.IsNullOrEmpty(name) || SearchCompare.IndexOf(singerName ?? "", name, SearchOptions) >= 0;
+            return string.IsNullOrEmpty(name) || SearchCompare.IndexOf(singer.Name, name, SearchOptions) >= 0;
         }
 
         private static bool IsDuet(Song song) => song.SingerType == DuetSingerType;

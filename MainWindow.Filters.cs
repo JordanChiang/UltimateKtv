@@ -14,59 +14,49 @@ namespace UltimateKtv
         {
             ShowSingerPanels(true);
             ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("MaleSinger", s => s.TryGetValue("Singer_Type", out var typeObj) && int.TryParse(typeObj?.ToString(), out int typeVal) && typeVal == 0);
+            FilterAndDisplaySingers("MaleSinger", SingerCategory.Male);
         }
 
         private void FemaleSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             ShowSingerPanels(true);
             ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("FemaleSinger", s => s.TryGetValue("Singer_Type", out var typeObj) && int.TryParse(typeObj?.ToString(), out int typeVal) && typeVal == 1);
+            FilterAndDisplaySingers("FemaleSinger", SingerCategory.Female);
         }
 
         private void GroupSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             ShowSingerPanels(true);
             ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("GroupSinger", s => s.TryGetValue("Singer_Type", out var typeObj) && int.TryParse(typeObj?.ToString(), out int typeVal) && typeVal == 2);
+            FilterAndDisplaySingers("GroupSinger", SingerCategory.Group);
         }
 
         private void ForeignMaleSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             ShowSingerPanels(true);
             ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("ForeignMaleSinger", s => s.TryGetValue("Singer_Type", out var typeObj) && int.TryParse(typeObj?.ToString(), out int typeVal) && typeVal == 4);
+            FilterAndDisplaySingers("ForeignMaleSinger", SingerCategory.ForeignMale);
         }
 
         private void ForeignFemaleSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             ShowSingerPanels(true);
             ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("ForeignFemaleSinger", s => s.TryGetValue("Singer_Type", out var typeObj) && int.TryParse(typeObj?.ToString(), out int typeVal) && typeVal == 5);
+            FilterAndDisplaySingers("ForeignFemaleSinger", SingerCategory.ForeignFemale);
         }
 
         private void ForeignGroupSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             ShowSingerPanels(true);
             ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("ForeignGroupSinger", s => s.TryGetValue("Singer_Type", out var typeObj) && int.TryParse(typeObj?.ToString(), out int typeVal) && typeVal == 6);
+            FilterAndDisplaySingers("ForeignGroupSinger", SingerCategory.ForeignGroup);
         }
 
         private void OtherSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             ShowSingerPanels(true);
             ShowQuickInputPanels(false);
-            var knownTypes = new HashSet<int> { 0, 1, 2, 4, 5, 6 };
-            FilterAndDisplaySingers("OtherSinger", s =>
-            {
-                if (s.TryGetValue("Singer_Type", out var typeObj) && int.TryParse(typeObj?.ToString(), out int typeVal))
-                {
-                    // If type is valid, check if it's NOT a known type
-                    return !knownTypes.Contains(typeVal);
-                }
-                // Include singers with missing or invalid type in the "Other" category
-                return true;
-            });
+            FilterAndDisplaySingers("OtherSinger", SingerCategory.Other);
         }
 
 

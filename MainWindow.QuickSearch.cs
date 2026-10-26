@@ -737,6 +737,15 @@ namespace UltimateKtv
 
 
         // Rebuild the quick results cache when query (selected words/method) changes
+        /// <summary>快速搜尋的輸入法比對哪個欄位 (歌曲與歌星相同)：注音、筆畫、編號，其餘比對名稱。</summary>
+        private static SongTextField QuickSearchField(QuickMethod method) => method switch
+        {
+            QuickMethod.Bopomofo => SongTextField.Spell,
+            QuickMethod.PenStyle => SongTextField.PenStyle,
+            QuickMethod.SongId => SongTextField.Id,
+            _ => SongTextField.Name,
+        };
+
         private async Task RebuildQuickResultsCache()
         {
             // Cancel any previous search that is still running.
@@ -798,18 +807,6 @@ namespace UltimateKtv
 
                 // Determine matching strategy based on method
                 bool useContains = _currentQuickMethod == QuickMethod.EngNum || _currentQuickMethod == QuickMethod.Keyboard;
-                IEnumerable<T> Match<T>(IEnumerable<T> source, Func<T, string> getField) => source.Where(s =>
-                {
-                    try
-                    {
-                        var f = getField(s);
-                        if (string.IsNullOrEmpty(f)) return false;
-                        return useContains
-                            ? f.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0
-                            : f.StartsWith(key, StringComparison.OrdinalIgnoreCase);
-                    }
-                    catch { return false; }
-                });
 
                 Func<List<SongDisplayItem>> search;
 
@@ -884,59 +881,22 @@ namespace UltimateKtv
                     }
 
                     var singers = SongDatas.SingerData;
-                    // Default fallback
-                    Func<Dictionary<string, object?>, string> getField = s => s.TryGetValue("Singer_Name", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-
-                    switch (_currentQuickMethod)
+                    var field = QuickSearchField(_currentQuickMethod);
+                    // 歌星依名稱排列；SongName 欄放歌星名，SingerName 欄標示「歌手」
+                    search = () => SongQuery.QuickMatchSingers(singers, field, key, useContains).Select(s => new SongDisplayItem
                     {
-                        case QuickMethod.Bopomofo:
-                            // Attempt to use Singer_Spell (Bopomofo) if available, otherwise name?
-                            // CAUTION: If Singer_Spell doesn't exist, this will return empty and match nothing.
-                            // We assume standard field naming convention.
-                            getField = s => s.TryGetValue("Singer_Spell", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                            break;
-                        case QuickMethod.PenStyle:
-                            getField = s => s.TryGetValue("Singer_PenStyle", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                            break;
-                        case QuickMethod.EngNum:
-                            // Check name for english/num match
-                            getField = s => s.TryGetValue("Singer_Name", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                            break;
-                        case QuickMethod.SongId:
-                             // Maybe search by Singer_Id?
-                            getField = s => s.TryGetValue("Singer_Id", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                            break;
-                        case QuickMethod.Keyboard:
-                             getField = s => s.TryGetValue("Singer_Name", out var v) ? v?.ToString() ?? string.Empty : string.Empty;
-                             break;
-                    }
-
-                    // Map Singer Data to SongDisplayItem for display
-                    // SongName column -> Singer Name
-                    // SingerName column -> "歌手" (Static text or count if available?)
-                    // We'll put "歌手" for now to indicate it represents a singer object
-                    search = () => Match(singers, getField).Select(s => new SongDisplayItem
-                    {
-                        SongName = s.TryGetValue("Singer_Name", out var n) ? n?.ToString() ?? string.Empty : string.Empty,
-                        SingerName = Loc.T("Col.Singer"), // Indicator
+                        SongName = s.Name,
+                        SingerName = Loc.T("Col.Singer"),
                         // 歌星模式沒有語言，借用此欄存放 Singer_Type (歌星按鈕格依類型上色)
-                        Language = s.TryGetValue("Singer_Type", out var t) ? t?.ToString() ?? "" : "",
+                        Language = s.Type,
                         FilePath = "", // Not playable
-                        SongId = s.TryGetValue("Singer_Id", out var id) ? id?.ToString() ?? "" : "",
-                        // Other fields default
-                    }).OrderBy(s => s.SongName, SongQuery.NameOrder).ToList();
+                        SongId = s.Id,
+                    }).ToList();
                 }
                 else
                 {
                     // === SONG SEARCH MODE ===
-                    var field = _currentQuickMethod switch
-                    {
-                        QuickMethod.Bopomofo => SongTextField.Spell,
-                        QuickMethod.PenStyle => SongTextField.PenStyle,
-                        QuickMethod.SongId => SongTextField.Id,
-                        // EngNum: fallback to name contains for now
-                        _ => SongTextField.Name,
-                    };
+                    var field = QuickSearchField(_currentQuickMethod);
                     var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
                     search = () => SongQuery.QuickMatch(SongDatas.SongData, field, key, useContains, options).Select(SongDisplayItem.FromSong).ToList();
                 }

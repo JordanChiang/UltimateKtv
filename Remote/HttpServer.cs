@@ -23,6 +23,7 @@ public class HttpServer : IDisposable
 	private IWebHost? _webHost;
 	private readonly string _ipAddress;
 	private readonly int _port;
+	private readonly Dictionary<string, ApiEndpoint> _api;
 
 	// SSE (Server-Sent Events) support for real-time notifications
 	private static readonly List<HttpResponse> _sseClients = new List<HttpResponse>();
@@ -47,6 +48,7 @@ public class HttpServer : IDisposable
 	{
 		_ipAddress = ipAddress;
 		_port = port;
+		_api = CreateApi();
 	}
 
 	/// <summary>
@@ -237,96 +239,37 @@ public class HttpServer : IDisposable
 			return;
 		}
 
-		// Check if this is a valid API query
-		bool isValidQuery = !string.IsNullOrEmpty(queryType) && IsValidQueryType(queryType);
-
 		string responseJson;
 
-		if (!isValidQuery)
+		if (!_api.TryGetValue(queryType, out var endpoint))
 		{
 			responseJson = JsonConvert.SerializeObject(new JArray());
 		}
 		else
 		{
-			string lang = queryParams.ContainsKey("lang") ? queryParams["lang"] : string.Empty;
-			string singer = queryParams.ContainsKey("singer") ? queryParams["singer"] : string.Empty;
-			string page = queryParams.ContainsKey("page") ? queryParams["page"] : string.Empty;
-			string rows = queryParams.ContainsKey("rows") ? queryParams["rows"] : string.Empty;
-			string user = queryParams.ContainsKey("user") ? queryParams["user"] : string.Empty;
-			string value = queryParams.ContainsKey("value") ? queryParams["value"] : string.Empty;
-			string state = queryParams.ContainsKey("state") ? queryParams["state"] : string.Empty;
-			string type = queryParams.ContainsKey("type") ? queryParams["type"] : string.Empty;
+			var request = new ApiRequest(context, queryParams);
 
 			// Log user parameter for debugging
-			if (!string.IsNullOrEmpty(user))
+			if (!string.IsNullOrEmpty(request.User))
 			{
-				System.Diagnostics.Debug.WriteLine($"[HTTP] User parameter: {user}");
+				System.Diagnostics.Debug.WriteLine($"[HTTP] User parameter: {request.User}");
 			}
 
 			// Debug logging - skip for high frequency singerphoto query types
             if (queryType != "singerphoto")
             {
-			    System.Diagnostics.Debug.WriteLine($"[HTTP] Query: {queryType}, Lang: {lang}, Singer: {singer}");
+			    System.Diagnostics.Debug.WriteLine($"[HTTP] Query: {queryType}, Lang: {request.Lang}, Singer: {request.Singer}");
 			    System.Diagnostics.Debug.WriteLine($"[HTTP] SongData loaded: {SongDatas.SongData?.Count ?? 0} songs");
                 
                 // Only log actionable or search queries to AppLogger (filter out periodic polling)
-                var silentQueries = new System.Collections.Generic.HashSet<string> { 
-                    "events", "debug", "queryyoutubequeue", "checknewyoutube", 
-                    "queryyoutubehistory", "queryplayerstate", "queryhostserverinfo", 
-                    "queryplaylist", "singerphoto", "uistrings"
-                };
-
-                if (!silentQueries.Contains(queryType)) 
+                if (!endpoint.Silent) 
                 {
-                    string userLog = string.IsNullOrEmpty(user) ? "" : $"User: {user}, ";
-                    AppLogger.Log($"[Network API] Action: {queryType}, {userLog}Value: {value}");
+                    string userLog = string.IsNullOrEmpty(request.User) ? "" : $"User: {request.User}, ";
+                    AppLogger.Log($"[Network API] Action: {queryType}, {userLog}Value: {request.Value}");
                 }
             }
 
-			responseJson = queryType switch
-			{
-				"querysong" => HttpServerHelper.OutdatedPage(),
-				"searchsong" => HttpServerHelper.SearchSongs(value, lang, page, rows),
-				"ranking" => HttpServerHelper.QueryRanking(value, page, rows),
-				"singersong" => HttpServerHelper.QuerySingerSongs(singer, page, rows),
-				"songbyid" => HttpServerHelper.QuerySongById(value),
-				"querynewsong" => HttpServerHelper.QueryNewSong(lang, page, rows),
-				"querysinger" => HttpServerHelper.OutdatedPage(),
-				"singerlist" => HttpServerHelper.QuerySingerList(type, value, page, rows),
-				"favoriteuser" => HttpServerHelper.FavoriteUser(page, rows),
-				"favoritelogin" => HttpServerHelper.FavoriteLogin(user),
-				"favoritesong" => HttpServerHelper.FavoriteSong(user, page, rows),
-				"ordersong" => HttpServerHelper.OrderSong(value, user, Remote),
-				"queryplayerstate" => HttpServerHelper.QueryPlayerState(Remote),
-				"queryhostserverinfo" => HttpServerHelper.QueryHostServerInfo(),
-				"queryplaylist" => HttpServerHelper.QueryPlaylist(value, Remote),
-				"querygeneration" => HttpServerHelper.QueryGeneration(value, page, rows),
-				"skipsong" => HttpServerHelper.SkipCurrentSong(Remote),
-				"vocal" => HttpServerHelper.SwitchToVocal(Remote),
-				"music" => HttpServerHelper.SwitchToMusic(Remote),
-                "movetofirst" => HttpServerHelper.MoveToFirst(value, Remote),
-                "removefromlist" => HttpServerHelper.RemoveFromList(value, Remote),
-                "movetonext" => HttpServerHelper.MoveToNext(value, Remote),
-                "volup" => HttpServerHelper.VolumeUp(Remote),
-                "voldown" => HttpServerHelper.VolumeDown(Remote),
-                "vollock" => HttpServerHelper.ToggleVolumeLock(Remote),
-                "pitchup" => HttpServerHelper.PitchUp(Remote),
-                "pitchdown" => HttpServerHelper.PitchDown(Remote),
-                "pitchreset" => HttpServerHelper.PitchReset(Remote),
-                "quit" => HttpServerHelper.QuitApp(Remote),
-                "shutdownwin" => HttpServerHelper.ShutdownWin(Remote),
-				"debug" => GetDebugInfo(),
-                "singerphoto" => await HandleSingerPhoto(context, queryParams),
-                "youtubesearch" => await HttpServerHelper.SearchYoutubeAsync(value),
-                "orderyoutube" => await HttpServerHelper.OrderYoutubeAsync(value, user, Remote),
-                "orderyoutubehistory" => HttpServerHelper.OrderYoutubeHistory(value, user, Remote),
-                "queryyoutubehistory" => HttpServerHelper.QueryYoutubeHistory(page, rows),
-                "checknewyoutube" => await HttpServerHelper.CheckNewYoutubeAsync(Remote),
-                "importnewyoutube" => await HttpServerHelper.ImportNewYoutubeAsync(Remote),
-                "queryyoutubequeue" => HttpServerHelper.QueryYoutubeQueue(Remote),
-                "uistrings" => JsonConvert.SerializeObject(new { culture = Loc.WebCulture ?? Loc.CurrentCulture, strings = Loc.GetWebStrings() }),
-				_ => JsonConvert.SerializeObject(new JArray())
-			};
+			responseJson = await endpoint.Handle(request);
 			
             if (queryType != "singerphoto")
             {
@@ -344,20 +287,70 @@ public class HttpServer : IDisposable
 		await context.Response.WriteAsync(responseJson, Encoding.UTF8);
 	}
 
-	private bool IsValidQueryType(string queryType)
+	/// <summary>一個手機 API (queryType)。Silent = 網頁定時輪詢的查詢，不寫進 AppLogger。</summary>
+	private sealed record ApiEndpoint(bool Silent, Func<ApiRequest, Task<string>> Handle);
+
+	/// <summary>手機 API 請求的參數；沒有帶的參數為空字串。</summary>
+	private sealed record ApiRequest(HttpContext Context, Dictionary<string, string> Params)
 	{
-		return queryType switch
+		private string Get(string key) => Params.TryGetValue(key, out var v) ? v : string.Empty;
+		public string Value => Get("value");
+		public string Lang => Get("lang");
+		public string Singer => Get("singer");
+		public string Page => Get("page");
+		public string Rows => Get("rows");
+		public string User => Get("user");
+		public string Type => Get("type");
+	}
+
+	/// <summary>
+	/// 所有手機 API。queryType 不在表中時回傳空陣列；播放控制指令 (切歌、音量…) 來自 <see cref="RemoteCommands"/>。
+	/// events (SSE) 在查表前另外處理。
+	/// </summary>
+	private Dictionary<string, ApiEndpoint> CreateApi()
+	{
+		static ApiEndpoint Query(Func<ApiRequest, string> handle) => new(false, r => Task.FromResult(handle(r)));
+		static ApiEndpoint Poll(Func<ApiRequest, string> handle) => new(true, r => Task.FromResult(handle(r)));
+
+		var api = new Dictionary<string, ApiEndpoint>
 		{
-			"querysong" or "searchsong" or "ranking" or "singersong" or "songbyid" or "querynewsong" or "querysinger" or "singerlist" or "favoriteuser" or
-			"favoritelogin" or "favoritesong" or "ordersong" or
-			"queryplayerstate" or "queryhostserverinfo" or "queryplaylist" or "querygeneration" or "skipsong" or
-			"vocal" or "music" or
-            "movetofirst" or "removefromlist" or "movetonext" or
-            "volup" or "voldown" or "vollock" or
-            "pitchup" or "pitchdown" or "pitchreset" or "quit" or "shutdownwin" or
-			"debug" or "events" or "singerphoto" or "uistrings" or "youtubesearch" or "orderyoutube" or "queryyoutubehistory" or "orderyoutubehistory" or "checknewyoutube" or "importnewyoutube" or "queryyoutubequeue" => true,
-			_ => false
+			["querysong"] = Query(_ => HttpServerHelper.OutdatedPage()),
+			["searchsong"] = Query(r => HttpServerHelper.SearchSongs(r.Value, r.Lang, r.Page, r.Rows)),
+			["ranking"] = Query(r => HttpServerHelper.QueryRanking(r.Value, r.Page, r.Rows)),
+			["singersong"] = Query(r => HttpServerHelper.QuerySingerSongs(r.Singer, r.Page, r.Rows)),
+			["songbyid"] = Query(r => HttpServerHelper.QuerySongById(r.Value)),
+			["querynewsong"] = Query(r => HttpServerHelper.QueryNewSong(r.Lang, r.Page, r.Rows)),
+			["querysinger"] = Query(_ => HttpServerHelper.OutdatedPage()),
+			["singerlist"] = Query(r => HttpServerHelper.QuerySingerList(r.Type, r.Value, r.Page, r.Rows)),
+			["favoriteuser"] = Query(r => HttpServerHelper.FavoriteUser(r.Page, r.Rows)),
+			["favoritelogin"] = Query(r => HttpServerHelper.FavoriteLogin(r.User)),
+			["favoritesong"] = Query(r => HttpServerHelper.FavoriteSong(r.User, r.Page, r.Rows)),
+			["ordersong"] = Query(r => HttpServerHelper.OrderSong(r.Value, r.User, Remote)),
+			["queryplayerstate"] = Poll(_ => HttpServerHelper.QueryPlayerState(Remote)),
+			["queryhostserverinfo"] = Poll(_ => HttpServerHelper.QueryHostServerInfo()),
+			["queryplaylist"] = Poll(r => HttpServerHelper.QueryPlaylist(r.Value, Remote)),
+			["querygeneration"] = Query(r => HttpServerHelper.QueryGeneration(r.Value, r.Page, r.Rows)),
+			["debug"] = Poll(_ => GetDebugInfo()),
+			["singerphoto"] = new(true, r => HandleSingerPhoto(r.Context, r.Params)),
+			["youtubesearch"] = new(false, r => HttpServerHelper.SearchYoutubeAsync(r.Value)),
+			["orderyoutube"] = new(false, r => HttpServerHelper.OrderYoutubeAsync(r.Value, r.User, Remote)),
+			["orderyoutubehistory"] = Query(r => HttpServerHelper.OrderYoutubeHistory(r.Value, r.User, Remote)),
+			["queryyoutubehistory"] = Poll(r => HttpServerHelper.QueryYoutubeHistory(r.Page, r.Rows)),
+			["checknewyoutube"] = new(true, _ => HttpServerHelper.CheckNewYoutubeAsync(Remote)),
+			["importnewyoutube"] = new(false, _ => HttpServerHelper.ImportNewYoutubeAsync(Remote)),
+			["queryyoutubequeue"] = Poll(_ => HttpServerHelper.QueryYoutubeQueue(Remote)),
+			["uistrings"] = Poll(_ => JsonConvert.SerializeObject(new { culture = Loc.WebCulture ?? Loc.CurrentCulture, strings = Loc.GetWebStrings() })),
 		};
+
+		foreach (var name in RemoteCommands.Names)
+		{
+			api.Add(name, Query(r =>
+			{
+				RemoteCommands.TryRun(name, r.Value, Remote, key => Loc.T(key), out var json);
+				return json;
+			}));
+		}
+		return api;
 	}
 
 	/// <summary>

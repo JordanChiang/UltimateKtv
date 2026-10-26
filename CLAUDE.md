@@ -38,7 +38,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | :--- | :--- |
 | `Updater` (net471, 一律 x86) | `Update/ZipHelper.cs` |
 | `StyleSimulator` | `Settings/AppSettings.cs`, `Themes/ThemeSettings.cs`, `Themes/RowStyleBrushes.cs` |
-| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`SongLibrary.cs`、`Song.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Remote/WebCultureMatcher.cs` |
+| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`SongLibrary.cs`、`Song.cs`、`Singer.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Remote/WebCultureMatcher.cs`, `Remote/RemoteCommands.cs` |
 
 搬移或改名這些檔案時，要一併改上述專案 csproj 的 `Include` 路徑。
 
@@ -69,6 +69,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 ### 播放：三層
 1. **`Playback/PlaybackSession`** — 擁有待播清單與正在播放的歌，決定何時開播下一首 (點歌、插播、切歌、重唱、單曲循環、隨機歌被切掉)。只能在 UI 執行緒呼叫；待播清單只能透過它的方法修改。只依賴 `IPlaybackTarget` (Open/Stop + Opened/Ended/Failed)，所以可用 `FakePlaybackTarget` 單元測試。
    開播後要做的紀錄在 **`Playback/PlayRecorder`** (第一首清空今日點唱、記錄點唱、播放進度過門檻加播放次數、YouTube 長度，隨機歌不記)；錄音的開始/停止也是訂閱場次事件 (`MainWindow.Player.cs`)。
+   主控台音量滑桿的規則 (開播音量、音量鎖定、靜音、播完存回歌庫) 在 **`Playback/SongVolume`**，滑桿只顯示它的 `Level`。
 2. **`MainWindow.Player.cs` 的 `PlayerTarget`** — `IPlaybackTarget` 的實作，開檔前套用音量/聲道設定，並把引擎事件帶回 UI 執行緒。
 3. **`Player/UKtvPlayer`** — 播放引擎介面，兩個實作：`DirectShowPlayer` (預設，CrazyKTV_MediaKit + LAV filters) 與 `MpvPlayer` (libmpv，`PlayerEngine=1`)。`MediaHostManager` 是全程式唯一 player 的 singleton，libmpv 載入失敗時退回 DirectShow。
 
@@ -76,14 +77,14 @@ libmpv 的影片是原生視窗，WPF 元素疊不上去：電視畫面的跑馬
 
 ### 歌庫 / 資料庫
 - **`Db`** — 唯一的資料庫入口。執行目錄有 `CrazySong.db` 就用 SQLite，否則用 `CrazySong.mdb` (Access：x64 用 ACE.OLEDB.12.0、x86 用 Jet 4.0)。SQL 一律用 `?` 位置參數；兩種資料庫的 SQL 差異 (例如 `IIF` vs `COALESCE`) 用 `Db.IsAccess` 分支。決定資料庫種類的是靜態建構子，測試必須在第一次碰 `Db` 前建立 SQLite 檔。
-- **`SongDatas`** — 啟動時從 DB 載入的記憶體快取 (歌曲、歌星、語系、年代…)，查詢都打記憶體而不是 DB。
-- **`SongQuery`** — 新歌、排行、語系篩選、快速搜尋、歌星的歌與歌曲排序的規則；主畫面、隨機播放、手機點歌共用。外部條件由 `SongQueryOptions` 傳入 (不自己讀設定或系統時間)，所以可純測試。
+- **`SongDatas`** — 啟動時從 DB 載入的記憶體快取 (歌曲、歌星、語系、年代…)，查詢都打記憶體而不是 DB。歌星是有型別的 `Singer` (`Library/Singer.cs`，原始欄位在 `Columns`)。
+- **`SongQuery`** — 新歌、排行、語系篩選、快速搜尋、歌星的歌與歌曲排序的規則，以及歌星清單 (只留有歌的歌星與排序、主畫面歌手類別按鈕、快速搜尋歌星、手機歌星篩選)；主畫面、隨機播放、手機點歌共用。外部條件由 `SongQueryOptions` 傳入 (不自己讀設定或系統時間)，所以可純測試。
 - **`SongLibrary`** — 歌庫的寫入 (播放次數、音量、伴唱音軌、我的最愛、點唱紀錄、YouTube 紀錄)，SQL 都集中在這裡。寫入後需要時由呼叫端自行重新載入 `SongDatas`。
 - `CrazySong.mdb` 是進版控的歌庫檔；播放/切歌會把音量等寫回它，實測腳本若會播放歌曲應先備份。
 
 ### 手機遠端點歌 (HTTP)
-`HttpServer` (Kestrel，預設 port 8080，被占用時自動換 port) 服務 `wwwroot/index.html` 單頁，以 query type 字串分派 API (`searchsong`、`ordersong`、`orderyoutube`、`skipsong`、`voldown`、`quit`…，見 `HttpServer.cs` 中的 `queryType switch`)，實作在 `HttpServerHelper`，並以 SSE (`events`) 推播狀態。這些 API 也可用來自動化點歌做實機驗證。
-HTTP 請求在 Kestrel 執行緒上；需要碰主程式 (點歌、播放控制、待播清單、YouTube 佇列) 的 handler 一律透過 `RemoteControl` (`HttpServer.Remote`)，由它切到 UI 執行緒，不要在 `HttpServerHelper` 直接用 `Application.Current.MainWindow` 或 `Dispatcher`。新增指令時在 `RemoteControl` 加方法：與主畫面按鈕相同、不需結果的動作用 `Post` (BeginInvoke，立即返回)，需要結果的用 `Invoke`。
+`HttpServer` (Kestrel，預設 port 8080，被占用時自動換 port) 服務 `wwwroot/index.html` 單頁，以 query type 字串分派 API (`searchsong`、`ordersong`、`orderyoutube`、`skipsong`、`voldown`、`quit`…，見 `HttpServer.CreateApi` 的 API 表；Silent 表示輪詢類查詢不寫 AppLogger)，實作在 `HttpServerHelper`，並以 SSE (`events`) 推播狀態。這些 API 也可用來自動化點歌做實機驗證。
+HTTP 請求在 Kestrel 執行緒上；需要碰主程式 (點歌、播放控制、待播清單、YouTube 佇列) 的 handler 一律透過 `RemoteControl` (`HttpServer.Remote`)，由它切到 UI 執行緒，不要在 `HttpServerHelper` 直接用 `Application.Current.MainWindow` 或 `Dispatcher`。播放控制指令 (切歌、人聲/伴唱、待播清單移動、音量、升降 Key、結束) 集中在 `Remote/RemoteCommands` (只依賴 `IRemoteControl`，有單元測試)，新增時在它的指令表加一列並在 `IRemoteControl` / `RemoteControl` 加方法。`RemoteControl` 的方法：與主畫面按鈕相同、不需結果的動作用 `Post` (BeginInvoke，立即返回)，需要結果的用 `Invoke`。
 
 ### 設定、主題、語言
 - `settings.json` (執行目錄) ↔ `AppSettings`，由 `SettingsManager` 載入；`SettingsJson.Load` 是容錯載入：單一項目錯誤只退回該項預設值並回寫修正。屬性上的 `[Description]` 會成為設定檔說明。

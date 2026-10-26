@@ -47,7 +47,6 @@ namespace UltimateKtv
 
         // Current playing song file path and properties for database lookup
         private string PlayingFilePath = string.Empty;
-        private int PlayingFileVolume = 30;
         // Store the full song data dictionary for the currently playing song
         // This is needed for properties like ReplayGain
         private Song? _playingSongData = null;
@@ -86,12 +85,8 @@ namespace UltimateKtv
 
         private bool _showPreviewInMainWindow = true;
 
-        // Mute state management
-        private bool _isMuted = false;
-        private double _volumeBeforeMute;
-        
-        // Volume lock state management
-        private int _lockedVolume = 60; // Store the locked volume value
+        // 音量滑桿背後的狀態：目前音量、靜音、音量鎖定、這首歌的開播音量
+        private readonly SongVolume _volume = new();
 
         // Video display window for secondary monitor
         private VideoDisplayWindow? _videoDisplayWindow = null;
@@ -762,8 +757,8 @@ namespace UltimateKtv
         /// A generic helper method to filter the main singer list and update the UI.
         /// </summary>
         /// <param name="filterKey">A unique key to identify this filter for page state memory.</param>
-        /// <param name="filter">A predicate to apply to the singer data.</param>
-        private void FilterAndDisplaySingers(string filterKey, Predicate<Dictionary<string, object?>> filter)
+        /// <param name="category">歌手類別按鈕 (規則見 SongQuery.SingerNamesIn)。</param>
+        private void FilterAndDisplaySingers(string filterKey, SingerCategory category)
         {
             // 在最愛頁按歌手類型按鈕：直接切到歌星頁的該類型列表 (最愛清單是使用者名稱，不做交集篩選)
             if (SingerPhotoManager.CurrentSubFolder == "FavoriteUser")
@@ -784,20 +779,8 @@ namespace UltimateKtv
             // Update current filter key
             _currentFilterKey = filterKey;
 
-            if (SongDatas.SingerData == null)
-            {
-                _allSingers = new List<string>();
-            }
-            else
-            {
-                // Use the globally sorted data directly.
-                _allSingers = SongDatas.SingerData
-                    .Where(s => s != null && filter(s))
-                    .Select(s => s["Singer_Name"]?.ToString() ?? "")
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .Distinct()
-                    .ToList();
-            }
+            // SongDatas.SingerData 載入時已排序
+            _allSingers = SongQuery.SingerNamesIn(SongDatas.SingerData, category);
 
             _totalPages = (_allSingers.Count == 0) ? 1 : (_allSingers.Count + PageSize - 1) / PageSize;
 

@@ -14,7 +14,7 @@ namespace UltimateKtv
     /// 切歌、人聲/伴唱、音量、升降調、移動待播清單排進 UI 執行緒後立即返回 (與主畫面按鈕相同的動作)；
     /// 點歌、查詢狀態與音量鎖定等到 UI 執行緒做完才回傳結果。
     /// </summary>
-    public sealed class RemoteControl
+    public sealed class RemoteControl : IRemoteControl
     {
         private readonly MainWindow _main;
 
