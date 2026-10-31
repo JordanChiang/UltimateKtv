@@ -2,7 +2,7 @@
   // 缺少的 key 會使用 zh-TW.json 的文字。{0} {1} ... 為程序帶入的参數，請保留勿刪除。
   // Missing keys fall back to zh-TW.json. {0} {1} ... are parameters passed into the program; please keep them and do not delete them.
 
-  "Language.Name": "Latina(拉丁文)",
+  "Language.Name": "Latine(拉丁文)",
   "Language.Code": "la",
 
   "Nav.Singer": "Cantores",
