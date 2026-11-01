@@ -218,7 +218,8 @@ namespace UltimateKtv
                     Lang = "Youtube",
                     FilePath = song.FilePath,
                     Volume = song.Volume,
-                    Track = song.AudioTrack,
+                    // 開播聲道看點唱紀錄的 Track (SongMgr 可修改)；SongId 是紀錄 Id 或影片 ID
+                    Track = SongLibrary.GetYoutubeTrack(song.SongId),
                 };
             }
             else

@@ -73,10 +73,45 @@ namespace UltimateKtv.Tests
         {
             var (vs, audio) = Create(1);
 
-            vs.ApplyForNewSong(songTrack: 0, legacyDefinition: true, isYoutube: true, youtubeDefaultNoVocal: true);
+            vs.ApplyForNewSong(songTrack: null, legacyDefinition: true, isYoutube: true, youtubeDefaultNoVocal: true);
 
             Assert.Equal(3, audio.Channel);
             Assert.Equal(VocalMode.Music, vs.Mode);
+        }
+
+        [Fact]
+        public void Youtube_defaults_to_stereo_vocal_when_not_configured()
+        {
+            var (vs, audio) = Create(1);
+            audio.Channel = 3; // 上一首留下的聲道
+
+            vs.ApplyForNewSong(songTrack: null, legacyDefinition: true, isYoutube: true, youtubeDefaultNoVocal: false);
+
+            Assert.Equal(0, audio.Channel);
+            Assert.Equal(VocalMode.Vocal, vs.Mode);
+        }
+
+        [Theory]
+        [InlineData(0, true)]
+        [InlineData(2, true)]
+        [InlineData(3, false)]
+        public void Youtube_track_from_history_overrides_the_default(int track, bool defaultNoVocal)
+        {
+            var (vs, audio) = Create(1);
+
+            vs.ApplyForNewSong(songTrack: track, legacyDefinition: true, isYoutube: true, youtubeDefaultNoVocal: defaultNoVocal);
+
+            Assert.Equal(track, audio.Channel);
+        }
+
+        [Fact]
+        public void Youtube_invalid_track_falls_back_to_the_default()
+        {
+            var (vs, audio) = Create(1);
+
+            vs.ApplyForNewSong(songTrack: 7, legacyDefinition: true, isYoutube: true, youtubeDefaultNoVocal: true);
+
+            Assert.Equal(3, audio.Channel);
         }
 
         // ---------- 人聲 / 伴唱鈕 ----------
@@ -136,7 +171,7 @@ namespace UltimateKtv.Tests
         public void Youtube_toggles_between_stereo_and_vocal_removed()
         {
             var (vs, audio) = Create(1);
-            vs.ApplyForNewSong(0, true, true, true);
+            vs.ApplyForNewSong(null, true, true, true);
 
             vs.SwitchToVocal();
             Assert.Equal(0, audio.Channel);

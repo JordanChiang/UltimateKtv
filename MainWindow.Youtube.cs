@@ -126,7 +126,8 @@ namespace UltimateKtv
             try
             {
                 song.FilePath = e.Job.FilePath;
-                string recordId = SongLibrary.RecordYoutubeSong(e.Job.VideoId, song.SongName, e.Job.FilePath, song.Language, song.Volume);
+                string recordId = SongLibrary.RecordYoutubeSong(e.Job.VideoId, song.SongName, e.Job.FilePath, song.Language, song.Volume,
+                    VocalSwitch.YoutubeDefaultChannel(SettingsManager.Instance.CurrentSettings.YoutubeDefaultNoVocal));
 
                 if (!e.WasCached)
                 {

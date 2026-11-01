@@ -117,7 +117,7 @@ namespace UltimateKtv
         [Description("Youtube 高畫質下載: 決定是否優先以高畫質 (1080p/720p) 下載 YouTube 影片。 true=開啟, false=關閉")]
         public bool HighQualityYoutube { get; set; } = true;
 
-        [Description("Youtube 預設消除人聲: 啟動時是否預設將 YouTube 影片設定為消除人聲模式。 true=開啟, false=關閉")]
+        [Description("Youtube 預設消除人聲: 啟動時是否預設將 YouTube 影片設定為消除人聲模式 (點唱紀錄的 Track 有值時以 Track 為準，新下載的影片依此寫入 Track)。 true=開啟, false=關閉")]
         public bool YoutubeDefaultNoVocal { get; set; } = true;
 
         [Description("Youtube 搜尋數量: 設定 YouTube 搜尋時回傳的影片數量。有效範圍: 10 - 100。 預設值為 50。")]

@@ -72,7 +72,7 @@ namespace UltimateKtv.Playback
         /// <summary>
         /// 新歌開檔後套用：決定伴唱位置，預設播伴唱；固定人聲時改播人聲。
         /// </summary>
-        /// <param name="songTrack">歌庫的 Song_Track；null 表示沒有資料。</param>
+        /// <param name="songTrack">歌庫的 Song_Track (YouTube 為點唱紀錄的 Track 聲道)；null 表示沒有資料。</param>
         /// <param name="legacyDefinition">舊式聲道定義：Song_Track 直接是伴唱位置。</param>
         public void ApplyForNewSong(int? songTrack, bool legacyDefinition, bool isYoutube, bool youtubeDefaultNoVocal)
         {
@@ -129,9 +129,13 @@ namespace UltimateKtv.Playback
 
             if (isYoutube)
             {
-                _audio.Channel = youtubeDefaultNoVocal ? 3 : 1;
+                // YouTube 的 songTrack 是點唱紀錄的 Track (聲道 0~3)；沒有或不合法時依預設
+                _audio.Channel = songTrack is >= 0 and <= 3 ? songTrack.Value : YoutubeDefaultChannel(youtubeDefaultNoVocal);
             }
         }
+
+        /// <summary>YouTube 預設聲道：消人聲 (3) 或立體聲 (0)。新的點唱紀錄以此寫入 Track。</summary>
+        public static int YoutubeDefaultChannel(bool youtubeDefaultNoVocal) => youtubeDefaultNoVocal ? 3 : 0;
 
         /// <summary>人聲鈕：單音軌換到人聲聲道；多音軌輪流切換音軌。固定人聲時只解除固定。</summary>
         public VocalSwitchResult SwitchToVocal()

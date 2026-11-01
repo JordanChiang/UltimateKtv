@@ -48,8 +48,9 @@ public static class SongLibrary
 	/// 記錄一部 YouTube 影片 (下載完成或匯入)。已有同一影片 ID，或同檔名 (匯入的檔案沒有影片 ID) 的紀錄時
 	/// 不新增，回傳既有的 Id；同檔名的紀錄若還沒有影片 ID 就補上。
 	/// </summary>
+	/// <param name="track">開播聲道 (0=立體聲, 1=左, 2=右, 3=消人聲)。</param>
 	/// <returns>紀錄 Id (例如「Y0017」)；失敗時回傳空字串。</returns>
-	public static string RecordYoutubeSong(string videoId, string name, string filePath, string lang, int volume)
+	public static string RecordYoutubeSong(string videoId, string name, string filePath, string lang, int volume, int track)
 	{
 		try
 		{
@@ -97,7 +98,7 @@ public static class SongLibrary
 				0,          // Length：下載完成後另外寫入
 				fileName,
 				File.Exists(filePath) ? (int)Math.Min(new FileInfo(filePath).Length, int.MaxValue) : 0,
-				3,          // Track
+				track,
 				volume,
 				0);         // WordCount
 			AppLogger.Log($"DB Write: Recorded YouTube song: {name} (Id: {newId})");
@@ -107,6 +108,23 @@ public static class SongLibrary
 		{
 			AppLogger.Log($"Error recording YouTube song: {ex.Message}");
 			return "";
+		}
+	}
+
+	/// <summary>點唱紀錄的開播聲道 (Track，可由 SongMgr 修改)；idOrUrl 可以是紀錄 Id 或影片 ID。沒有紀錄或沒有值時回傳 null。</summary>
+	public static int? GetYoutubeTrack(string idOrUrl)
+	{
+		if (string.IsNullOrEmpty(idOrUrl)) return null;
+		try
+		{
+			var dt = Db.GetDataTable("SELECT Track FROM YoutubeSongList WHERE Id = ? OR Url = ?", idOrUrl, idOrUrl);
+			if (dt.Rows.Count == 0 || dt.Rows[0][0] == DBNull.Value) return null;
+			return Convert.ToInt32(dt.Rows[0][0]);
+		}
+		catch (Exception ex)
+		{
+			AppLogger.Log($"GetYoutubeTrack Error ({idOrUrl}): {ex.Message}");
+			return null;
 		}
 	}
 

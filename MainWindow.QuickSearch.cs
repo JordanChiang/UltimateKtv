@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using UltimateKtv.Enums;
+using UltimateKtv.Playback;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 
@@ -269,6 +270,7 @@ namespace UltimateKtv
         {
             if (newFiles == null || newFiles.Count == 0) return;
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            int track = VocalSwitch.YoutubeDefaultChannel(SettingsManager.Instance.CurrentSettings.YoutubeDefaultNoVocal);
             await Task.Run(() =>
             {
                 foreach (var file in newFiles)
@@ -281,7 +283,7 @@ namespace UltimateKtv
                         Language = "",
                         Volume = 30
                     };
-                    SongLibrary.RecordYoutubeSong(item.SongId, item.SongName, item.FilePath, item.Language, item.Volume);
+                    SongLibrary.RecordYoutubeSong(item.SongId, item.SongName, item.FilePath, item.Language, item.Volume, track);
                     System.Threading.Thread.Sleep(5); // Pause to prevent OleDb AccessViolation
                 }
             });
