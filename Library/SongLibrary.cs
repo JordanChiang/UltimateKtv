@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -40,6 +41,12 @@ public static class SongLibrary
 	}
 
 	public static void ClearYoutubeHistory() => Db.ExecuteNonQuery("DELETE FROM YoutubeSongList");
+
+	/// <summary>
+	/// 寫入日期欄位的文字格式，與 SongMgr 匯出的 CrazySong.db 相同。SQLite 的 DATETIME 欄位讀取時會解析成 DateTime，
+	/// 只認得這種「-」分隔的格式；Access 也接受。
+	/// </summary>
+	private const string DateFormat = "yyyy-MM-dd HH:mm:ss";
 
 	/// <summary>YoutubeSongList.Name 實際的欄位長度 (舊歌庫若加寬失敗會比 255 短)；開機檢查欄位後設定。</summary>
 	public static int YoutubeNameMaxLength { get; set; } = 255;
@@ -90,7 +97,7 @@ public static class SongLibrary
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 				newId,
 				name,
-				DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"),
+				DateTime.Now.ToString(DateFormat, CultureInfo.InvariantCulture),
 				videoId,
 				"",         // Singer
 				lang ?? "",
@@ -164,12 +171,29 @@ public static class SongLibrary
 
 	/// <summary>
 	/// 修正舊版留下的 YouTube 紀錄 (開機時做一次)：匯入的檔案沒有影片 ID 時從檔名補回、
-	/// 歌名曾被截成 40 字或帶著「_{videoId}」後綴時從檔名還原、Lang 曾被寫成影片長度時清空。
+	/// 歌名曾被截成 40 字或帶著「_{videoId}」後綴時從檔名還原、Lang 曾被寫成影片長度時清空、
+	/// SQLite 中「/」分隔的日期改成 <see cref="DateFormat"/>。
 	/// </summary>
 	/// <returns>修正的筆數。</returns>
 	public static int RepairYoutubeHistory()
 	{
 		int repaired = 0;
+
+		// 舊版在 SQLite 寫入「yyyy/MM/dd HH:mm:ss」，讀取時解析失敗會讓整份紀錄讀不出來 (Access 的日期欄位存的是日期，沒有這個問題)
+		if (!Db.IsAccess)
+		{
+			try
+			{
+				int fixedDates = Db.ExecuteNonQuery("UPDATE YoutubeSongList SET CreatDate = REPLACE(CreatDate, '/', '-') WHERE CreatDate LIKE '____/__/__ __:__:__'");
+				if (fixedDates > 0) AppLogger.Log($"DB Write: Converted {fixedDates} YouTube dates to {DateFormat}.");
+				repaired += fixedDates;
+			}
+			catch (Exception ex)
+			{
+				AppLogger.Log($"RepairYoutubeHistory: failed to convert dates: {ex.Message}");
+			}
+		}
+
 		DataTable rows;
 		try
 		{

@@ -127,6 +127,8 @@ namespace UltimateKtv
 
             try
             {
+                if (!Db.IsAccess) LogSQLiteDbVersion();
+
                 // Check and create YoutubeSongList table before proceeding
                 CheckAndCreateYoutubeTable();
 
@@ -331,6 +333,28 @@ namespace UltimateKtv
             if (notFoundSongs.Any())
             {
                 File.WriteAllLines("genFilePathNA.txt", notFoundSongs);
+            }
+        }
+
+        /// <summary>
+        /// 記錄 CrazySong.db 的匯出格式版本 (SongMgr 匯出時寫入 ktv_DBVersion.DBVer)；目前只寫進 log，不依版本做任何處理。
+        /// </summary>
+        private static void LogSQLiteDbVersion()
+        {
+            try
+            {
+                if (!Db.GetTableList().Contains("ktv_DBVersion"))
+                {
+                    AppLogger.Log("SQLite database version: none (no ktv_DBVersion table)");
+                    return;
+                }
+                var table = Db.GetDataTable("SELECT DBVer FROM ktv_DBVersion");
+                string version = table.Rows.Count > 0 ? Convert.ToString(table.Rows[0][0]) ?? "" : "";
+                AppLogger.Log($"SQLite database version: {(version.Length > 0 ? version : "none (ktv_DBVersion is empty)")}");
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"Failed to read SQLite database version: {ex.Message}");
             }
         }
 

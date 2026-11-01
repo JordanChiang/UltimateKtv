@@ -77,6 +77,7 @@ libmpv 的影片是原生視窗，WPF 元素疊不上去：電視畫面的跑馬
 
 ### 歌庫 / 資料庫
 - **`Db`** — 唯一的資料庫入口。執行目錄有 `CrazySong.db` 就用 SQLite，否則用 `CrazySong.mdb` (Access：x64 用 ACE.OLEDB.12.0、x86 用 Jet 4.0)。SQL 一律用 `?` 位置參數；兩種資料庫的 SQL 差異 (例如 `IIF` vs `COALESCE`) 用 `Db.IsAccess` 分支。決定資料庫種類的是靜態建構子，測試必須在第一次碰 `Db` 前建立 SQLite 檔。
+  `CrazySong.db` 由 CrazyKTV 加歌程式 (SongMgr) 的「匯出 SQLite 資料庫」從 mdb 產生 (本程式不轉檔)；其 `DATETIME` 欄位讀取時會被解析成 `DateTime`，只認 `yyyy-MM-dd HH:mm:ss`，寫入日期要用這個格式，否則整張表讀不出來。原生 `e_sqlite3.dll` 來自 `SQLitePCLRaw.lib.e_sqlite3` (csproj 的 `TrimSqliteNative` 只留當前平台)。
 - **`SongDatas`** — 啟動時從 DB 載入的記憶體快取 (歌曲、歌星、語系、年代…)，查詢都打記憶體而不是 DB。歌星是有型別的 `Singer` (`Library/Singer.cs`，原始欄位在 `Columns`)。
 - **`SongQuery`** — 新歌、排行、語系篩選、快速搜尋、歌星的歌與歌曲排序的規則，以及歌星清單 (只留有歌的歌星與排序、主畫面歌手類別按鈕、快速搜尋歌星、手機歌星篩選)；主畫面、隨機播放、手機點歌共用。外部條件由 `SongQueryOptions` 傳入 (不自己讀設定或系統時間)，所以可純測試。
 - **`SongLibrary`** — 歌庫的寫入 (播放次數、音量、伴唱音軌、我的最愛、點唱紀錄、YouTube 紀錄)，SQL 都集中在這裡。寫入後需要時由呼叫端自行重新載入 `SongDatas`。

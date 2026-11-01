@@ -273,20 +273,15 @@ public class DbHelper
 			var tableList = new List<string>();
 			if (File.Exists(Database))
 			{
+				// GetSchema("Tables") 的 TABLE_TYPE 在 System.Data.SQLite 2.x 不是 "TABLE"，直接查 sqlite_master
 				using var connection = OpenConn(Database, Password);
-				using DataTable schema = connection.GetSchema("Tables");
-				foreach (DataRow row in schema.Rows)
-                {
-                    if (row["TABLE_TYPE"]?.ToString() == "TABLE")
-                    {
-						// Safely convert the table name to a string and add it to the list.
-						var tableName = row["TABLE_NAME"]?.ToString();
-						if (!string.IsNullOrEmpty(tableName))
-						{
-							tableList.Add(tableName);
-						}
-                    }
-                }
+				using var command = connection.CreateCommand();
+				command.CommandText = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
+				using var reader = command.ExecuteReader();
+				while (reader.Read())
+				{
+					tableList.Add(reader.GetString(0));
+				}
 			}
 			return tableList;
 		}

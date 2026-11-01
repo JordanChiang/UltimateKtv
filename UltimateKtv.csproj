@@ -80,6 +80,8 @@
     <PackageReference Include="QRCoder" Version="1.8.1" />
     <PackageReference Include="System.Data.OleDb" Version="10.0.13" />
     <PackageReference Include="System.Data.SQLite" Version="2.0.4" />
+    <!-- System.Data.SQLite 2.x 不附原生 e_sqlite3，沒有它 CrazySong.db 開不起來 (版本與測試專案相同) -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
     <PackageReference Include="YoutubeExplode" Version="6.6.2" />
   </ItemGroup>
 
@@ -143,6 +145,13 @@
     <!-- Codec 的 Content 項目在評估時就決定了，這次才下載的檔案要補進去，publish 才會帶上 -->
     <ItemGroup Condition="Exists('$(ProjectDir)$(CodecDir)\libmpv-2.dll')">
       <Content Include="$(CodecDir)\libmpv-2.dll" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+
+  <!-- SQLitePCLRaw.lib.e_sqlite3 附了 android/ios/linux… 等 30 多種平台的原生檔 (約 80MB)，只留這次平台的 win-x64 / win-x86 -->
+  <Target Name="TrimSqliteNative" AfterTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="'%(RuntimeTargetsCopyLocalItems.NuGetPackageId)' == 'SQLitePCLRaw.lib.e_sqlite3' And '%(RuntimeTargetsCopyLocalItems.RuntimeIdentifier)' != 'win-$(Platform)'" />
     </ItemGroup>
   </Target>
 

@@ -69,12 +69,47 @@ namespace UltimateKtv.Tests
             Assert.Equal(2L, Scalar("SELECT PlayCount FROM YoutubeSongList WHERE Id = 'Y0001'"));
         }
 
-        /// <summary>完整的 YoutubeSongList (與主程式建立的欄位相同)。</summary>
+        /// <summary>完整的 YoutubeSongList (與主程式建立、SongMgr 匯出的欄位相同；CreatDate 是 DATETIME，讀取時會解析成 DateTime)。</summary>
         private static void CreateFullYoutubeTable()
         {
             Db.ExecuteNonQuery("DROP TABLE IF EXISTS YoutubeSongList");
-            Db.ExecuteNonQuery(@"CREATE TABLE YoutubeSongList (Id TEXT PRIMARY KEY, Name TEXT, CreatDate TEXT, Url TEXT, Singer TEXT,
+            Db.ExecuteNonQuery(@"CREATE TABLE YoutubeSongList (Id TEXT PRIMARY KEY, Name TEXT, CreatDate DATETIME, Url TEXT, Singer TEXT,
                 Lang TEXT, PlayCount INTEGER, Length INTEGER, FileName TEXT, FileSize INTEGER, Track INTEGER, Volume INTEGER, WordCount INTEGER)");
+        }
+
+        [Fact]
+        public void Table_list_contains_the_tables()
+        {
+            var tables = Db.GetTableList();
+            Assert.Contains("ktv_Song", tables);
+            Assert.Contains("YoutubeSongList", tables);
+        }
+
+        [Fact]
+        public void Recorded_youtube_date_is_read_back_as_datetime()
+        {
+            CreateFullYoutubeTable();
+            Db.ExecuteNonQuery("INSERT INTO YoutubeSongList (Id, CreatDate) VALUES ('Y0001', '2026-08-16 00:45:08')");
+            SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "新歌", @"D:\yt\新歌_aaaaaaaaaaa.mp4", "", 30, 3);
+
+            // SELECT * 讀整張表 (YouTube 紀錄清單的讀法)：任何一筆日期解析失敗都會讓整份清單讀不出來
+            var dates = Db.GetDataTable("SELECT * FROM YoutubeSongList ORDER BY CreatDate DESC").Rows.Cast<DataRow>()
+                .Select(r => (string)r["Id"]).ToList();
+            Assert.Equal(new[] { "Y0002", "Y0001" }, dates);
+            Assert.Equal(1L, Scalar("SELECT CreatDate LIKE '____-__-__ __:__:__' FROM YoutubeSongList WHERE Id = 'Y0002'"));
+        }
+
+        [Fact]
+        public void Repair_youtube_history_converts_slash_dates()
+        {
+            CreateFullYoutubeTable();
+            Db.ExecuteNonQuery("INSERT INTO YoutubeSongList (Id, CreatDate) VALUES ('Y0001', '2026/11/01 11:01:25')");
+            Db.ExecuteNonQuery("INSERT INTO YoutubeSongList (Id, CreatDate) VALUES ('Y0002', '2026-08-16 00:45:08')");
+
+            Assert.Equal(1, SongLibrary.RepairYoutubeHistory());
+            Assert.Equal(0, SongLibrary.RepairYoutubeHistory());
+
+            Assert.Equal(new DateTime(2026, 11, 1, 11, 1, 25), Scalar("SELECT CreatDate FROM YoutubeSongList WHERE Id = 'Y0001'"));
         }
 
         [Fact]
