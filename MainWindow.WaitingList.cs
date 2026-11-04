@@ -91,6 +91,7 @@ namespace UltimateKtv
             }
 
             bool isPlaying = !string.IsNullOrEmpty(songName);
+            if (!isPlaying) AmbientLayer.SetPlayback(AmbientPlayback.Idle);
 
             if (isPlaying)
             {
@@ -110,6 +111,7 @@ namespace UltimateKtv
                         isPaused = true;
                     }
                 }
+                AmbientLayer.SetPlayback(isPaused ? AmbientPlayback.Paused : AmbientPlayback.Playing);
 
                 if (isPaused)
                 {

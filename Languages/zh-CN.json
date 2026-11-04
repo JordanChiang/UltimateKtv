@@ -581,5 +581,7 @@
   "ThemeDesc.PrimaryLightColor": "主要浅色: 悬停/焦点状态与歌星标签。默认为 '#FFE082'。",
   "ThemeDesc.AccentColor": "按钮发光与选中强调色。默认为空 (由 PrimaryColor 自动推算)。",
   "ThemeDesc.SongListRowStyle": "歌曲列表行外观风格: 1=静态微光光晕, 2=胶囊外框轮廓, 3=左侧主色指示条卡片, 4=现代悬浮微圆角卡片。",
-  "ThemeDesc.NavMenuOrder": "左侧主菜单顺序 (以逗号分隔，「设置」固定在最下方): Singer=歌星, Fav=收藏, Num=编号, Language=语种, New=新歌, Rank=排行, Input=搜索, Youtube=Youtube。"
+  "ThemeDesc.NavMenuOrder": "左侧主菜单顺序 (以逗号分隔，「设置」固定在最下方): Singer=歌星, Fav=收藏, Num=编号, Language=语种, New=新歌, Rank=排行, Input=搜索, Youtube=Youtube。",
+  "ThemeDesc.BackgroundEffect": "主画面背景效果: 0=关闭 (纯色), 1=流动光晕, 2=流动光晕 + 随状态变化 (切换分类换色、播放时呼吸、暂停时静止变暗、切歌时扫光)。修改后需重新启动程序。",
+  "ThemeDesc.GlassPanels": "玻璃质感面板: true=面板与列表半透明、外框上缘细高光，背景加暗角与细纹理; false=不透明面板。修改后需重新启动程序。"
 }

@@ -55,7 +55,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | `Player/` | 播放引擎、`MediaHostManager`、電視畫面 `VideoDisplayWindow`、錄音 |
 | `Library/` | 資料庫與歌庫 (`Db`、`SongDatas`、`SongQuery`、`SongLibrary`) |
 | `Settings/` | `AppSettings`、`SettingsManager`、設定視窗 |
-| `Themes/` | 配色 xaml 與 `ThemeSettings` / `ThemeSettingsHandler` / `RowStyleBrushes` |
+| `Themes/` | 配色 xaml 與 `ThemeSettings` / `ThemeSettingsHandler` / `RowStyleBrushes`、主畫面動態背景 `AmbientBackground` |
 | `Localization/` | `Loc` (語言檔本身在 `Languages/`) |
 | `Remote/` | 手機遠端點歌 (`HttpServer`、`HttpServerHelper`、`RemoteControl`) |
 | `Youtube/`、`Marquee/`、`Lyrics/`、`Singers/`、`Update/` | 各自功能 |

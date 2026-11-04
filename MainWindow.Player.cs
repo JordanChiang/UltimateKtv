@@ -89,6 +89,7 @@ namespace UltimateKtv
             _playback.SongOpened += Playback_SongOpened;
             _playback.SongEnded += Playback_SongEnded;
             _playback.BecameIdle += Playback_BecameIdle;
+            _playback.SongOpened += (_, _) => AmbientLayer.Sweep();
 
             // 錄音跟著播放場次：開播開始錄，歌曲結束或閒置時停止 (暫停/繼續由暫停鈕控制)
             _playback.SongOpened += (_, song) =>

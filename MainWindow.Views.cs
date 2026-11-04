@@ -131,18 +131,7 @@ namespace UltimateKtv
         /// </summary>
         private void ApplyNavMenuOrder()
         {
-            var buttonsByKey = new Dictionary<string, Button>
-            {
-                ["Singer"] = FuncBtnBySinger,
-                ["Fav"] = FuncBtnByFav,
-                ["Num"] = FuncBtnByNum,
-                ["Language"] = FuncBtnLanguage,
-                ["New"] = FuncBtnByNew,
-                ["Rank"] = FuncBtnByRank,
-                ["Input"] = FuncBtnByInput,
-                ["Youtube"] = FuncBtnByYoutube
-            };
-
+            var buttonsByKey = NavButtonsByKey();
             var order = ThemeSettings.ParseNavMenuOrder(ThemeSettingsHandler.Settings.NavMenuOrder);
             NavMenuPanel.Children.Clear();
             foreach (var key in order)
@@ -151,6 +140,19 @@ namespace UltimateKtv
             }
             AppLogger.Log($"Nav menu order: {string.Join(",", order)}");
         }
+
+        /// <summary>左側主選單按鈕，key 同 ThemeSettings.NavMenuDefaultKeys。</summary>
+        private Dictionary<string, Button> NavButtonsByKey() => new()
+        {
+            ["Singer"] = FuncBtnBySinger,
+            ["Fav"] = FuncBtnByFav,
+            ["Num"] = FuncBtnByNum,
+            ["Language"] = FuncBtnLanguage,
+            ["New"] = FuncBtnByNew,
+            ["Rank"] = FuncBtnByRank,
+            ["Input"] = FuncBtnByInput,
+            ["Youtube"] = FuncBtnByYoutube
+        };
 
         private void SetActiveNavButton(Button btn)
         {
@@ -166,6 +168,7 @@ namespace UltimateKtv
             btn.SetResourceReference(Control.BackgroundProperty, "BrushCyberActiveGradient");
             btn.SetResourceReference(Control.ForegroundProperty, "BrushOnAccentActive");
             _activeNavButton = btn;
+            AmbientLayer.SetCategory(NavButtonsByKey().FirstOrDefault(kv => kv.Value == btn).Key);
         }
 
         private void FuncBtnBySinger_Click(object sender, RoutedEventArgs e)

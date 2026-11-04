@@ -178,6 +178,9 @@ namespace UltimateKtv
         public MainWindow()
         {
             AppLogger.Log("MainWindow constructor started.");
+            // 主題要在 InitializeComponent 之前載入：背景效果會換掉樣式以 StaticResource 引用的表面筆刷
+            ThemeSettingsHandler.LoadSettings();
+            ThemeSettingsHandler.ApplyBackgroundSurfaces();
             InitializeComponent();
 
             // Initialize session timestamp once at app startup
@@ -189,7 +192,6 @@ namespace UltimateKtv
             SettingsManager.Instance.LoadSettings();
             SettingsManager.Instance.SettingsChanged += OnSettingsChanged;
             Loc.LanguageChanged += (_, _) => RefreshFilterButtonTexts();
-            ThemeSettingsHandler.LoadSettings();
             ApplyNavMenuOrder();
             ApplySettings();
             AppLogger.Log("Settings loaded and applied.");
@@ -813,6 +815,8 @@ namespace UltimateKtv
             // Apply theme settings to XAML resources (colors, brushes, etc.)
             ThemeSettingsHandler.ApplyToResources(this);
             ApplyResponsiveFontSizing();
+            AmbientLayer.Start(ThemeSettingsHandler.Settings, ThemeSettingsHandler.ResolvedAccentColor,
+                ThemeSettingsHandler.ParseColor(ThemeSettingsHandler.Settings.PrimaryLightColor, Color.FromRgb(255, 224, 130)));
 
             // 主題色套用後才開啟預設頁面：部分頁面 (如 Youtube 點播記錄按鈕) 會直接取用當下的筆刷值
             OpenDefaultNavView();
