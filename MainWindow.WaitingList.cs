@@ -298,7 +298,7 @@ namespace UltimateKtv
             ShowPageItems(WaitingListGrid, _waitingListPageItems, displayList);
 
             // Update pagination info (2 lines)
-            WaitListPageInfo.Text = Loc.T("Wait.PageInfo", nonEmptySongs.Count, _currentWaitingListPage, _totalWaitingListPages);
+            SetWaitListPageInfo(Loc.T("Wait.PageInfo", nonEmptySongs.Count, _currentWaitingListPage, _totalWaitingListPages));
 
             // Enable/disable pagination buttons
             WaitListPageUp.IsEnabled = _currentWaitingListPage > 1;
@@ -610,13 +610,14 @@ namespace UltimateKtv
         /// </summary>
         /// <param name="song">The song to add</param>
         /// <param name="insertFirst">插播：放到已點歌單第一首</param>
-        internal async Task<EnqueueResult> OrderSongAsync(SongDisplayItem song, OrderSource source = OrderSource.User, bool insertFirst = false)
+        /// <param name="origin">點歌動畫歌名飛出的位置 (MicroFxLayer 座標)；未指定時一般點歌用最後按下的位置，其他來源從畫面右側</param>
+        internal async Task<EnqueueResult> OrderSongAsync(SongDisplayItem song, OrderSource source = OrderSource.User, bool insertFirst = false, Point? origin = null)
         {
             // PlaybackSession 只能在 UI 執行緒使用；呼叫端多為 fire-and-forget，在這裡轉回 UI 執行緒以免點歌被吞掉
             if (!Dispatcher.CheckAccess())
             {
                 AppLogger.Log($"OrderSongAsync called off the UI thread ({source}): '{song.SongName}'");
-                return await Dispatcher.InvokeAsync(() => OrderSongAsync(song, source, insertFirst)).Task.Unwrap();
+                return await Dispatcher.InvokeAsync(() => OrderSongAsync(song, source, insertFirst, origin)).Task.Unwrap();
             }
 
             var queued = new QueuedSong
@@ -636,6 +637,8 @@ namespace UltimateKtv
             bool cutsOffRandom = source != OrderSource.Random && _playback.Current?.IsRandom == true;
             // 「已點歌」通知會把播放中跑馬燈移到 pending，先記下原本是否在播
             bool wasPlaybackActive = MarqueeAPI.IsSongPlaybackMarqueeActiveOrPending(Enums.MarqueeDisplayDevice.PlayerScreen);
+            // 點歌動畫飛行期間「已點 N 首」維持點歌前的數字
+            string pageInfoBefore = WaitListPageInfo.Text;
 
             var result = await _playback.EnqueueAsync(queued, source, insertFirst);
 
@@ -651,9 +654,11 @@ namespace UltimateKtv
 
                 case EnqueueResult.MovedToFirst:
                     RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
+                    AnimateSongOrdered(queued, source, toFirst: true, pageInfoBefore, origin);
                     return result;
 
                 case EnqueueResult.Added when source != OrderSource.Random:
+                    AnimateSongOrdered(queued, source, insertFirst, pageInfoBefore, origin);
                     break;
 
                 default:

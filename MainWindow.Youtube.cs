@@ -66,8 +66,11 @@ namespace UltimateKtv
             }
         }
 
-        /// <summary>點 YouTube 影片：已在待播清單或下載佇列中 (以影片 ID 判斷) 時回傳 false。</summary>
-        internal bool DownloadYoutubeVideo(SongDisplayItem song)
+        /// <summary>
+        /// 點 YouTube 影片：已在待播清單或下載佇列中 (以影片 ID 判斷) 時回傳 false。
+        /// tappedOnScreen：在主控台點的 (不是手機)，下載完點歌時歌名從點的位置飛出，與一般點歌相同。
+        /// </summary>
+        internal bool DownloadYoutubeVideo(SongDisplayItem song, bool tappedOnScreen = false)
         {
             string videoId = YoutubeVideoId.Resolve(song.YoutubeId, song.SongId, song.FilePath);
             if (IsYoutubeInWaitingList(videoId, song) || !YoutubeQueue.Enqueue(videoId, song.SongName, song.FilePath, song))
@@ -75,6 +78,7 @@ namespace UltimateKtv
                 AppLogger.Log($"YouTube: '{song.SongName}' ({videoId}) is already in the waiting list or download queue, skipped.");
                 return false;
             }
+            if (tappedOnScreen) RememberYoutubeOrderOrigin(videoId);
             return true;
         }
 
@@ -147,7 +151,7 @@ namespace UltimateKtv
                     DebugLog($"YouTube: File already exists in cache: {e.Job.FilePath}");
                 }
 
-                _ = OrderSongAsync(song, OrderSource.YouTube);
+                _ = OrderSongAsync(song, OrderSource.YouTube, origin: TakeYoutubeOrderOrigin(e.Job.VideoId));
 
                 if (!e.WasCached && _currentQuickMethod == QuickMethod.YoutubeHistory)
                 {
@@ -164,6 +168,7 @@ namespace UltimateKtv
         {
             DebugLog($"YouTube Download: Error: {e.Error.Message}");
             HttpServer.BroadcastEvent("YoutubeError", new { videoId = e.Job.VideoId, message = e.Error.Message });
+            TakeYoutubeOrderOrigin(e.Job.VideoId);
             if (e.Job.Tag is not SongDisplayItem song) return;
 
             // 對話框排到之後顯示，不擋住佇列下載下一部
@@ -191,6 +196,7 @@ namespace UltimateKtv
         private void YoutubeQueue_Cancelled(object? sender, YoutubeDownloadJob job)
         {
             DebugLog("YouTube Download: Cancelled by user. Clearing queue.");
+            _youtubeOrderOrigins.Clear();
             HttpServer.BroadcastEvent("YoutubeError", new { videoId = job.VideoId, message = Loc.T("Youtube.UserCancelled") });
         }
 
@@ -236,7 +242,7 @@ namespace UltimateKtv
             if (sender is not Button btn || btn.Tag is not SongDisplayItem song) return;
 
             // Single click orders it (Clone: 縮圖格是固定格子，換頁時內容會被改掉)
-            DownloadYoutubeVideo(song.Clone());
+            DownloadYoutubeVideo(song.Clone(), tappedOnScreen: true);
         }
 
         private void YoutubeThumbnail_MouseEnter(object sender, MouseEventArgs e)

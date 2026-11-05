@@ -1050,7 +1050,7 @@
     <materialDesign:DialogHost x:Name="RootDialog" Identifier="RootDialog" Background="{DynamicResource BrushBgPrimary}">
         <Viewbox Stretch="Fill" StretchDirection="Both">
             <Grid Width="1920" Height="1080" Background="{DynamicResource BrushBgPrimary}">
-                <!-- 動態背景 (themesettings.json 的 BackgroundEffect / GlassPanels)，在所有面板之下 -->
+                <!-- 動態背景 (themesettings.json 的 VisualEffects)，在所有面板之下 -->
                 <local:AmbientBackground x:Name="AmbientLayer"/>
                 <DockPanel Margin="0">
                     <!-- Left Nav Rail (功能鍵直排，選中的頁面由 SetActiveNavButton 標示) -->
@@ -2303,6 +2303,8 @@
                     </Border>
 
                 </DockPanel>
+                <!-- 微互動的飛行標籤與閃光 (MainWindow.MicroFx.cs)，在所有面板之上，不接收滑鼠/觸控 -->
+                <Canvas x:Name="MicroFxLayer" IsHitTestVisible="False"/>
             </Grid>
         </Viewbox>
     </materialDesign:DialogHost>

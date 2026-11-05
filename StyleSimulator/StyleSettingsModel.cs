@@ -325,6 +325,12 @@ namespace StyleSimulator
             get => _themeSettings.NavMenuOrder;
             set { _themeSettings.NavMenuOrder = value; OnPropertyChanged(); }
         }
+
+        public bool VisualEffects
+        {
+            get => _themeSettings.VisualEffects;
+            set { _themeSettings.VisualEffects = value; OnPropertyChanged(); }
+        }
         #endregion
 
         #region Load and Save Methods
@@ -395,6 +401,7 @@ namespace StyleSimulator
             {
                 int currentSongListRowStyle = _themeSettings.SongListRowStyle;
                 string currentNavMenuOrder = _themeSettings.NavMenuOrder;
+                bool currentVisualEffects = _themeSettings.VisualEffects;
                 var loaded = JsonSerializer.Deserialize<ThemeSettings>(json, _jsonOptions);
                 if (loaded != null)
                 {
@@ -407,6 +414,11 @@ namespace StyleSimulator
                     if (!json.Contains("NavMenuOrder", StringComparison.OrdinalIgnoreCase))
                     {
                         loaded.NavMenuOrder = currentNavMenuOrder;
+                    }
+                    // 動態效果開關同理
+                    if (!json.Contains("VisualEffects", StringComparison.OrdinalIgnoreCase))
+                    {
+                        loaded.VisualEffects = currentVisualEffects;
                     }
 
                     _themeSettings = loaded;
@@ -492,6 +504,7 @@ namespace StyleSimulator
             WebHostInfoForegroundColor = defaults.WebHostInfoForegroundColor;
             SongListRowStyle = defaults.SongListRowStyle;
             NavMenuOrder = defaults.NavMenuOrder;
+            VisualEffects = defaults.VisualEffects;
         }
 
         public void ResetTextSettingsToDefaults() => ResetThemeSettingsToDefaults();

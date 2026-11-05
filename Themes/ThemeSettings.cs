@@ -76,16 +76,10 @@ namespace UltimateKtv
 
         #endregion
 
-        #region Background Settings
+        #region Visual Effects
 
-        public const int BackgroundEffectMin = 0;
-        public const int BackgroundEffectMax = 2;
-
-        [Description("主畫面背景效果: 0=關閉 (純色), 1=流動光暈 (背景光斑緩慢漂移), 2=流動光暈 + 隨狀態變化 (切換分類換色、播放時呼吸、暫停時靜止變暗、切歌時掃光). 改了要重新啟動程式.")]
-        public int BackgroundEffect { get; set; } = 2;
-
-        [Description("玻璃質感面板: true=面板與列表半透明、外框上緣細高光，背景加暗角與細紋理; false=不透明面板. 改了要重新啟動程式.")]
-        public bool GlassPanels { get; set; } = true;
+        [Description("動態效果: true=背景流動光暈 (切換分類換色、播放時呼吸、暫停時變暗、開播掃光)、玻璃質感半透明面板、點歌時歌名飛到待播清單; false=全部關閉 (純色背景、不透明面板、無動畫). 改了要重新啟動程式.")]
+        public bool VisualEffects { get; set; } = true;
 
         #endregion
 
@@ -120,7 +114,7 @@ namespace UltimateKtv
         #region Validation
 
         /// <summary>
-        /// 把超出範圍的字級拉回可用範圍 (與 StyleSimulator 的滑桿範圍相同)，背景效果拉回 0~2。
+        /// 把超出範圍的字級拉回可用範圍 (與 StyleSimulator 的滑桿範圍相同)。
         /// 字級 0 或負數會讓 WPF 丟出例外而無法啟動。
         /// </summary>
         /// <returns>被修正的項目名稱。</returns>
@@ -132,12 +126,6 @@ namespace UltimateKtv
             WaitingListFontSize = ClampFontSize(nameof(WaitingListFontSize), WaitingListFontSize, 12, 60, corrected);
             SongListFontSize = ClampFontSize(nameof(SongListFontSize), SongListFontSize, 16, 72, corrected);
             WebHostInfoFontSize = ClampFontSize(nameof(WebHostInfoFontSize), WebHostInfoFontSize, 12, 60, corrected);
-            int effect = Math.Clamp(BackgroundEffect, BackgroundEffectMin, BackgroundEffectMax);
-            if (effect != BackgroundEffect)
-            {
-                BackgroundEffect = effect;
-                corrected.Add(nameof(BackgroundEffect));
-            }
             return corrected;
         }
 

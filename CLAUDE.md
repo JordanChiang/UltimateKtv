@@ -37,7 +37,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | 專案 | 連結的檔案 |
 | :--- | :--- |
 | `Updater` (net471, 一律 x86) | `Update/ZipHelper.cs` |
-| `StyleSimulator` | `Settings/AppSettings.cs`, `Themes/ThemeSettings.cs`, `Themes/RowStyleBrushes.cs` |
+| `StyleSimulator` | `Settings/AppSettings.cs`, `Themes/ThemeSettings.cs`, `Themes/RowStyleBrushes.cs`, `Themes/AmbientBackground.cs`, `Themes/MicroFx.cs` |
 | `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`SongLibrary.cs`、`Song.cs`、`Singer.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Remote/WebCultureMatcher.cs`, `Remote/RemoteCommands.cs` |
 
 搬移或改名這些檔案時，要一併改上述專案 csproj 的 `Include` 路徑。
@@ -55,7 +55,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | `Player/` | 播放引擎、`MediaHostManager`、電視畫面 `VideoDisplayWindow`、錄音 |
 | `Library/` | 資料庫與歌庫 (`Db`、`SongDatas`、`SongQuery`、`SongLibrary`) |
 | `Settings/` | `AppSettings`、`SettingsManager`、設定視窗 |
-| `Themes/` | 配色 xaml 與 `ThemeSettings` / `ThemeSettingsHandler` / `RowStyleBrushes`、主畫面動態背景 `AmbientBackground` |
+| `Themes/` | 配色 xaml 與 `ThemeSettings` / `ThemeSettingsHandler` / `RowStyleBrushes`、動態效果 (`VisualEffects`：背景 `AmbientBackground`、微互動 `MicroFx`) |
 | `Localization/` | `Loc` (語言檔本身在 `Languages/`) |
 | `Remote/` | 手機遠端點歌 (`HttpServer`、`HttpServerHelper`、`RemoteControl`) |
 | `Youtube/`、`Marquee/`、`Lyrics/`、`Singers/`、`Update/` | 各自功能 |

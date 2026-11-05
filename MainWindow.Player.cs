@@ -72,6 +72,9 @@ namespace UltimateKtv
         // 播放場次：待播清單、正在播放的歌、何時播下一首都由它決定
         private PlaybackSession _playback = null!;
 
+        // 上一首是切掉或播完 (下一首開始時背景要掃光)
+        private bool _sweepOnNextStart;
+
         /// <summary>建立播放場次並接上主視窗的反應；必須在 UI 執行緒、使用待播清單之前呼叫。</summary>
         private void InitializePlaybackSession()
         {
@@ -89,7 +92,15 @@ namespace UltimateKtv
             _playback.SongOpened += Playback_SongOpened;
             _playback.SongEnded += Playback_SongEnded;
             _playback.BecameIdle += Playback_BecameIdle;
-            _playback.SongOpened += (_, _) => AmbientLayer.Sweep();
+            // 背景掃光：只在切歌與播完自動接下一首時 (點第一首、重唱、單曲循環、隨機歌被點歌切掉都不掃)。
+            // 在決定播下一首時就開始 (切歌當下)，不等開檔完成 (開檔約 0.2 秒，在 player 自己的執行緒)
+            _playback.SongEnded += (_, e) => _sweepOnNextStart = e.Reason is SongEndReason.Skipped or SongEndReason.Finished;
+            _playback.BecameIdle += (_, _) => _sweepOnNextStart = false;
+            _playback.SongStarting += (_, _) =>
+            {
+                if (_sweepOnNextStart) AmbientLayer.Sweep();
+                _sweepOnNextStart = false;
+            };
 
             // 錄音跟著播放場次：開播開始錄，歌曲結束或閒置時停止 (暫停/繼續由暫停鈕控制)
             _playback.SongOpened += (_, song) =>

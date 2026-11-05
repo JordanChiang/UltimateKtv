@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:StyleSimulator"
+        xmlns:ukt="clr-namespace:UltimateKtv"
         Title="UltimateKTV 樣式與效果模擬器"
         MinWidth="1024" MinHeight="620"
         WindowStartupLocation="CenterScreen"
@@ -628,6 +629,8 @@
                             <Border x:Name="BorderKtvFrame" Width="1920" Height="1080" Background="{StaticResource BrushBgPrimary}" SnapsToDevicePixels="True" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="0" CornerRadius="0">
                                 <!-- 與主程式相同：整個 1920x1080 直接是導覽列 / 歌曲列表 / 播放區 (主程式沒有公告列) -->
                                 <Grid Margin="0">
+                                    <!-- 動態背景 (themesettings.json 的 VisualEffects，與主程式同一個 AmbientBackground)，在所有面板之下 -->
+                                    <ukt:AmbientBackground x:Name="AmbientLayer" />
                                     <!-- Main Content Area: 左側導覽列 (120px) + 中間歌曲列表 (*) + 右側播放區 (460px)，與 UltimateKtv MainWindow.xaml 新版面一致 -->
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -1456,6 +1459,8 @@
                                             </Border>
                                         </DockPanel>
                                     </Grid>
+                                    <!-- 微互動的飛行標籤與閃光 (與主程式 MicroFxLayer 相同)，在所有面板之上，不接收滑鼠 -->
+                                    <Canvas x:Name="MicroFxLayer" IsHitTestVisible="False" />
                                 </Grid>
                             </Border>
                         </Viewbox>
@@ -1818,6 +1823,16 @@
                                         </Grid>
                                         <TextBlock x:Name="TxtNavMenuOrder" Foreground="{StaticResource SimBrushIndigo50}" FontSize="13" TextWrapping="Wrap" Margin="2,0,0,4" />
                                         <TextBlock Text="💡 在左側模擬畫面按住主選單按鈕上下拖曳即可調整順序 (「設定」固定在最下方)，儲存後重新啟動主程式生效。" Foreground="{StaticResource SimBrushIndigo200}" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- 動態效果 (VisualEffects)：背景光暈、玻璃質感面板、微互動一起開關 -->
+                                <Border Background="{StaticResource SimBrushIndigoBg}" BorderBrush="{StaticResource SimBrushIndigoA400}" BorderThickness="1.5" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                                    <StackPanel>
+                                        <CheckBox x:Name="ChkVisualEffects" Content="✨ 動態效果 (Visual Effects)" IsChecked="True" FontWeight="Bold" Foreground="{StaticResource SimBrushBlue200}" Margin="0,0,0,6" Checked="ParamChanged" Unchecked="ParamChanged"
+                                                  ToolTip="背景流動光暈、玻璃質感半透明面板、點歌飛入待播清單；取消打勾全部關閉" />
+                                        <TextBlock Text="背景流動光暈 (切換分類換色、播放時呼吸、暫停時變暗、切歌掃光)、玻璃質感半透明面板、點歌時歌名飛到待播清單。" Foreground="{StaticResource SimBrushIndigo50}" FontSize="12" TextWrapping="Wrap" Margin="2,0,0,4" />
+                                        <TextBlock Text="💡 在左側模擬畫面試試：點主選單換色、按暫停/切歌、點歌曲列 (點歌) 或「插播」。開啟時，播放中跑馬燈會跳, 把播放引擎設定成 libmpv 可解決。儲存後重新啟動主程式生效。" Foreground="{StaticResource SimBrushIndigo200}" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
 

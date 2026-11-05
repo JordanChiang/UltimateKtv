@@ -421,52 +421,24 @@ namespace UltimateKtv
         #region Background Surfaces
 
         /// <summary>
-        /// 面板/按鈕/列表列底色的不透明度：有背景效果時改半透明讓背景透出來，玻璃質感更透。
+        /// 面板/按鈕/列表列底色的不透明度：動態效果開啟時改半透明讓背景透出來。
         /// </summary>
-        public static byte SurfaceAlpha =>
-            Settings.GlassPanels ? (byte)0x9E
-            : Settings.BackgroundEffect > 0 ? (byte)0xDB
-            : (byte)0xFF;
+        public static byte SurfaceAlpha => Settings.VisualEffects ? AmbientBackground.SurfaceAlpha : (byte)0xFF;
 
         /// <summary>
-        /// 依背景效果把表面筆刷換成半透明，玻璃質感另外把外框換成上緣較亮的漸層。
+        /// 動態效果開啟時把表面筆刷換成半透明 (AmbientBackground.TranslucentSurfaces)。
         /// 主視窗的樣式大多用 StaticResource 引用這些筆刷，必須在主視窗 InitializeComponent 之前呼叫。
-        /// 對話框底色 (BrushBgSecondary) 與影片預覽底 (BrushSurfaceSunken) 維持不透明。
         /// </summary>
         public static void ApplyBackgroundSurfaces()
         {
             var resources = System.Windows.Application.Current?.Resources;
-            byte alpha = SurfaceAlpha;
-            if (resources == null || alpha == 0xFF) return;
+            if (resources == null || !Settings.VisualEffects) return;
 
-            // 列表外框 (BrushBgCard) 在列底下又疊一層，要更透，否則兩層疊起來幾乎不透明
-            byte cardAlpha = Settings.GlassPanels ? (byte)0x40 : (byte)0x90;
-            foreach (var (key, a) in new[] { ("BrushSurface", alpha), ("BrushSurfaceRaised", alpha), ("BrushButtonFlat", alpha), ("BrushBgCard", cardAlpha) })
+            foreach (var kv in AmbientBackground.TranslucentSurfaces(key => resources[key] as Brush))
             {
-                if (resources[key] is not SolidColorBrush source) continue;
-                var c = source.Color;
-                var brush = new SolidColorBrush(Color.FromArgb(a, c.R, c.G, c.B));
-                brush.Freeze();
-                resources[key] = brush;
+                resources[kv.Key] = kv.Value;
             }
-
-            if (Settings.GlassPanels)
-            {
-                var rim = new LinearGradientBrush
-                {
-                    StartPoint = new System.Windows.Point(0, 0),
-                    EndPoint = new System.Windows.Point(0, 1),
-                    GradientStops = new GradientStopCollection
-                    {
-                        new GradientStop(Color.FromArgb(0x48, 255, 255, 255), 0.0),
-                        new GradientStop(Color.FromArgb(0x18, 255, 255, 255), 0.4),
-                        new GradientStop(Color.FromArgb(0x10, 255, 255, 255), 1.0)
-                    }
-                };
-                rim.Freeze();
-                resources["BrushBorderDefault"] = rim;
-            }
-            AppLogger.Log($"Background surfaces: effect={Settings.BackgroundEffect}, glass={Settings.GlassPanels}, alpha=0x{alpha:X2}");
+            AppLogger.Log("Visual effects on: translucent surfaces applied.");
         }
 
         #endregion

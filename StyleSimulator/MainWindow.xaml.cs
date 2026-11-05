@@ -394,6 +394,8 @@ namespace StyleSimulator
                 CboSongListRowStyle.SelectedIndex = targetIndex;
             }
 
+            if (ChkVisualEffects != null) ChkVisualEffects.IsChecked = _model.VisualEffects;
+
             ApplyNavMenuOrder();
 
             // settings.json - 點歌網址 (內部 IP, port)
@@ -560,6 +562,7 @@ namespace StyleSimulator
                 _model.SongListRowStyle = selectedRowStyle;
             }
 
+            _model.VisualEffects = ChkVisualEffects?.IsChecked == true;
             _model.NavMenuOrder = GetNavMenuOrderFromPanel();
 
             if (!string.IsNullOrWhiteSpace(TxtMockLanIp.Text))
@@ -684,6 +687,9 @@ namespace StyleSimulator
             Color primaryColor = ParseColor(TxtPrimaryColor.Text, Color.FromRgb(255, 193, 7));
             Color accentColor = ParseColor(TxtAccentColor?.Text, primaryColor);
             if (accentColor.A == 0) accentColor = primaryColor;
+
+            // 動態效果 (背景光暈、半透明面板)：要在下面取用表面筆刷之前套用
+            ApplyVisualEffectsPreview(accentColor, (primaryLightBrush as SolidColorBrush)?.Color ?? Color.FromRgb(255, 224, 130));
 
             var accentBrush = new SolidColorBrush(accentColor);
             var accentDimBrush = new SolidColorBrush(Color.FromArgb(38, accentColor.R, accentColor.G, accentColor.B));
@@ -891,8 +897,9 @@ namespace StyleSimulator
             }
 
             // Waiting List rows & pagination
-            TextBlock?[] waitSongs = { TxtWaitSong1, TxtWaitSong2, TxtWaitSong3 };
-            TextBlock?[] waitSingers = { TxtWaitSinger1, TxtWaitSinger2, TxtWaitSinger3 };
+            // 8 列都要設字型：點歌示範會把歌填進第 4 列之後
+            TextBlock?[] waitSongs = { TxtWaitSong1, TxtWaitSong2, TxtWaitSong3, TxtWaitSong4, TxtWaitSong5, TxtWaitSong6, TxtWaitSong7, TxtWaitSong8 };
+            TextBlock?[] waitSingers = { TxtWaitSinger1, TxtWaitSinger2, TxtWaitSinger3, TxtWaitSinger4, TxtWaitSinger5, TxtWaitSinger6, TxtWaitSinger7, TxtWaitSinger8 };
             for (int i = 0; i < waitSongs.Length; i++)
             {
                 // 同上：每次重設為一般顏色，避免殘留舊主題的選取漸層
@@ -2623,8 +2630,10 @@ namespace StyleSimulator
 
             if (tag == "theme_default_amber.json" || tag == "textsettings_default_amber.json")
             {
+                bool preservedVisualEffects = _model.VisualEffects;
                 _model.ResetThemeSettingsToDefaults();
                 _model.SongListRowStyle = preservedRowStyle;
+                _model.VisualEffects = preservedVisualEffects;
                 ApplySettingsToUI();
                 UpdateLivePreviews();
                 return;

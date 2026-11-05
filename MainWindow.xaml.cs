@@ -182,6 +182,7 @@ namespace UltimateKtv
             ThemeSettingsHandler.LoadSettings();
             ThemeSettingsHandler.ApplyBackgroundSurfaces();
             InitializeComponent();
+            InitializeMicroFx();
 
             // Initialize session timestamp once at app startup
             _sessionTimestampUserId = DateTime.Now.ToString("MM/dd HH:mm");
@@ -815,8 +816,11 @@ namespace UltimateKtv
             // Apply theme settings to XAML resources (colors, brushes, etc.)
             ThemeSettingsHandler.ApplyToResources(this);
             ApplyResponsiveFontSizing();
-            AmbientLayer.Start(ThemeSettingsHandler.Settings, ThemeSettingsHandler.ResolvedAccentColor,
-                ThemeSettingsHandler.ParseColor(ThemeSettingsHandler.Settings.PrimaryLightColor, Color.FromRgb(255, 224, 130)));
+            if (ThemeSettingsHandler.Settings.VisualEffects)
+            {
+                AmbientLayer.Start(ThemeSettingsHandler.ResolvedAccentColor,
+                    ThemeSettingsHandler.ParseColor(ThemeSettingsHandler.Settings.PrimaryLightColor, Color.FromRgb(255, 224, 130)));
+            }
 
             // 主題色套用後才開啟預設頁面：部分頁面 (如 Youtube 點播記錄按鈕) 會直接取用當下的筆刷值
             OpenDefaultNavView();
@@ -1340,7 +1344,7 @@ namespace UltimateKtv
                 {
                     if (_longPressSongItem.IsYoutube)
                     {
-                        DownloadYoutubeVideo(_longPressSongItem);
+                        DownloadYoutubeVideo(_longPressSongItem, tappedOnScreen: true);
                     }
                     else
                     {
