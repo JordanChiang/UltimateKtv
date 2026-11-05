@@ -308,8 +308,10 @@ namespace UltimateKtv
                     LoadSongsForSinger(name);
                 }
 
-                // Toggle visibility: hide singer grid and show song list
+                // 隱藏歌手格 (文字與照片兩種) 再顯示歌曲列表：列表是半透明玻璃面板 (VisualEffects)，
+                // 照片格留著會從列表後面透出來。回到歌手頁時由 ShowSingerGrid / LoadSingerPage 依樣式再顯示
                 SingerGrid.Visibility = Visibility.Collapsed;
+                VisualSingerGrid.Visibility = Visibility.Collapsed;
                 SongListGrid.Visibility = Visibility.Visible;
             }
         }
