@@ -759,10 +759,10 @@ namespace UltimateKtv
         /// <summary>
         /// A generic helper method to filter the main singer list and update the UI.
         /// </summary>
-        /// <param name="filterKey">A unique key to identify this filter for page state memory.</param>
-        /// <param name="category">歌手類別按鈕 (規則見 SongQuery.SingerNamesIn)。</param>
-        private void FilterAndDisplaySingers(string filterKey, SingerCategory category)
+        /// <param name="filter">歌手類別 (Key 用來記住各類別看到第幾頁；類別規則見 SongQuery.SingerNamesIn)。</param>
+        private void FilterAndDisplaySingers(SingerFilter filter)
         {
+            string filterKey = filter.Key;
             // 在最愛頁按歌手類型按鈕：直接切到歌星頁的該類型列表 (最愛清單是使用者名稱，不做交集篩選)
             if (SingerPhotoManager.CurrentSubFolder == "FavoriteUser")
             {
@@ -781,9 +781,11 @@ namespace UltimateKtv
 
             // Update current filter key
             _currentFilterKey = filterKey;
+            _lastSingerFilter = filter;
+            HighlightFilterButtons(filter.ButtonTag);
 
             // SongDatas.SingerData 載入時已排序
-            _allSingers = SongQuery.SingerNamesIn(SongDatas.SingerData, category);
+            _allSingers = SongQuery.SingerNamesIn(SongDatas.SingerData, filter.Category);
 
             _totalPages = (_allSingers.Count == 0) ? 1 : (_allSingers.Count + PageSize - 1) / PageSize;
 

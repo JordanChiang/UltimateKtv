@@ -1138,11 +1138,8 @@ namespace StyleSimulator
 
         #region Nav Menu Order (主選單拖曳排序)
 
-        private static readonly Dictionary<string, string> NavMenuDisplayNames = new()
-        {
-            ["Singer"] = "歌星", ["Fav"] = "最愛", ["Num"] = "編號", ["Language"] = "語系",
-            ["New"] = "新進", ["Rank"] = "排行", ["Input"] = "搜尋", ["Youtube"] = "Youtube"
-        };
+        private static readonly Dictionary<string, string> NavMenuDisplayNames =
+            UltimateKtv.NavMenu.Items.ToDictionary(i => i.Key, i => i.DisplayName);
 
         /// <summary>模擬器預覽中左側選單文字相對於 FuncBtnFontSize 的放大倍率 (主程式不受影響)。</summary>
         private const double NavRailFontScale = 1.2;
@@ -1182,7 +1179,7 @@ namespace StyleSimulator
 
         private void BtnResetNavMenuOrder_Click(object sender, RoutedEventArgs e)
         {
-            _model.NavMenuOrder = string.Join(",", UltimateKtv.ThemeSettings.NavMenuDefaultKeys);
+            _model.NavMenuOrder = string.Join(",", UltimateKtv.NavMenu.DefaultKeys);
             ApplyNavMenuOrder();
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace UltimateKtv
@@ -115,21 +116,10 @@ namespace UltimateKtv
             canvas.UpdateLayout();
             var origin = canvas.TranslatePoint(new Point(0, 0), _root);
             double canvasWidth = canvas.ActualWidth;
+            var bounds = VisualTreeHelper.GetDescendantBounds(text);
+            if (bounds.IsEmpty || bounds.Width < 1 || bounds.Height < 1) return null;
 
-            var phases = new OsdBitmap[ScrollPhaseCount];
-            Rect bounds = default;
-            for (int i = 0; i < ScrollPhaseCount; i++)
-            {
-                var b = OsdBitmap.Rasterize(text, scale, out bounds, (double)i / ScrollPhaseCount);
-                if (b == null)
-                {
-                    for (int j = 0; j < i; j++) phases[j].Dispose();
-                    return null;
-                }
-                phases[i] = b;
-            }
-
-            return Wrap(_osd.StartScroll(phases,
+            OsdItem? Begin() => _osd.BeginScroll(
                 y: (int)Math.Round((origin.Y + y + bounds.Y) * scale),
                 startX: (origin.X + canvasWidth + bounds.X) * scale,
                 endX: (origin.X - textWidth + bounds.X) * scale,
@@ -139,7 +129,50 @@ namespace UltimateKtv
                 repeatCount: repeatCount,
                 holdMs: holdMs,
                 dispatcher: dispatcher,
-                onFinished: onFinished));
+                onFinished: onFinished);
+
+            // 文字只是一個 Drawing (OutlinedTextBlock) 時，凍結一份交給背景執行緒點陣化：
+            // 4 張相位圖在 UI 執行緒要 100~170ms，切歌時會讓主控台的動畫 (背景掃光) 停頓
+            var drawing = OsdBitmap.OwnDrawing(text)?.CloneCurrentValue();
+            if (drawing != null && drawing.CanFreeze)
+            {
+                drawing.Freeze();
+                var pending = Begin();
+                if (pending == null) return null;
+                OsdRenderThread.Post(() =>
+                {
+                    OsdBitmap[]? rendered = null;
+                    try { rendered = RasterizePhases(offset => OsdBitmap.RasterizeDrawing(drawing, bounds, scale, offset)); }
+                    catch (Exception ex) { AppLogger.LogError("[mpv-osd] marquee rasterize failed", ex); }
+                    _osd.CompleteScroll(pending, rendered);
+                });
+                return Wrap(pending);
+            }
+
+            // 有子元素或特效：只能在 UI 執行緒經由 VisualBrush 點陣化
+            var phases = RasterizePhases(offset => OsdBitmap.Rasterize(text, scale, out _, offset));
+            if (phases == null) return null;
+            var item = Begin();
+            if (item == null) { foreach (var b in phases) b.Dispose(); return null; }
+            _osd.CompleteScroll(item, phases);
+            return Wrap(item);
+        }
+
+        /// <summary>依序畫出各次像素相位 (0, 1/n, 2/n... 像素)；任一張失敗就全部釋放並回傳 null。</summary>
+        private static OsdBitmap[]? RasterizePhases(Func<double, OsdBitmap?> rasterize)
+        {
+            var phases = new OsdBitmap[ScrollPhaseCount];
+            for (int i = 0; i < ScrollPhaseCount; i++)
+            {
+                var b = rasterize((double)i / ScrollPhaseCount);
+                if (b == null)
+                {
+                    for (int j = 0; j < i; j++) phases[j].Dispose();
+                    return null;
+                }
+                phases[i] = b;
+            }
+            return phases;
         }
 
         public void Remove(TvOverlayItem? item)

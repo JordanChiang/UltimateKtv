@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -33,17 +34,10 @@ namespace UltimateKtv
         private static readonly TimeSpan HueDuration = TimeSpan.FromSeconds(1.2);
         private static readonly Color DeepBlue = Color.FromRgb(0x3D, 0x4B, 0xD9);
 
-        // 左側主選單各分類的光暈色 (key 同 ThemeSettings.NavMenuDefaultKeys)；不在表中的 (新進) 用主題強調色
-        private static readonly Dictionary<string, Color> NavHues = new()
-        {
-            ["Rank"] = Color.FromRgb(0xFF, 0x6A, 0x3D),
-            ["Singer"] = Color.FromRgb(0x9B, 0x7B, 0xFF),
-            ["Fav"] = Color.FromRgb(0xFF, 0x5C, 0x9A),
-            ["Num"] = Color.FromRgb(0x4D, 0x8B, 0xFF),
-            ["Language"] = Color.FromRgb(0x5B, 0xD6, 0x8F),
-            ["Input"] = Color.FromRgb(0x3F, 0xC1, 0xC9),
-            ["Youtube"] = Color.FromRgb(0xFF, 0x44, 0x44)
-        };
+        // 左側主選單各分類的光暈色 (NavMenu.Items 的 GlowColor)；沒有指定的 (新進) 用主題強調色
+        private static readonly Dictionary<string, Color> NavHues = NavMenu.Items
+            .Where(i => i.GlowColor != null)
+            .ToDictionary(i => i.Key, i => (Color)ColorConverter.ConvertFromString(i.GlowColor!));
 
         // 光暈的位置超出畫面，裁到畫面大小，快取才只有畫面的 1/4 解析度
         private readonly Canvas _blobs = new()

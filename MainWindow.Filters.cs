@@ -10,59 +10,48 @@ namespace UltimateKtv
 {
     public partial class MainWindow
     {
-        private void MaleSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
+        /// <summary>
+        /// 歌星頁上方的一個歌手類別按鈕。Key 是記住頁數用的名稱；ButtonTag 是按鈕的 Tag，也是按鈕文字的語言檔 key。
+        /// </summary>
+        private sealed record SingerFilter(string Key, SingerCategory Category, string ButtonTag);
+
+        /// <summary>歌星頁上方的歌手類別按鈕，依顯示順序。</summary>
+        private static readonly SingerFilter[] SingerFilters =
         {
+            new("MaleSinger", SingerCategory.Male, "SingerType.Male"),
+            new("FemaleSinger", SingerCategory.Female, "SingerType.Female"),
+            new("GroupSinger", SingerCategory.Group, "SingerType.Group"),
+            new("ForeignMaleSinger", SingerCategory.ForeignMale, "SingerType.ForeignMale"),
+            new("ForeignFemaleSinger", SingerCategory.ForeignFemale, "SingerType.ForeignFemale"),
+            new("ForeignGroupSinger", SingerCategory.ForeignGroup, "SingerType.ForeignGroup"),
+            new("OtherSinger", SingerCategory.Other, "SingerType.Other"),
+        };
+
+        // 新進、排行第一次進入時選的次功能 (按鈕 Tag)
+        private const string DefaultNewSongLang = "國語";
+        private const string DefaultRankingFilter = "國語-單曲";
+
+        // 歌星、新進、排行上次選的次功能；再進入該頁時自動選它 (只在這次執行期間記住)
+        private SingerFilter _lastSingerFilter = SingerFilters[0];
+        private string _lastNewSongLang = DefaultNewSongLang;
+        private string _lastRankingFilter = DefaultRankingFilter;
+
+        /// <summary>歌星頁上方的歌手類別按鈕 (依按鈕 Tag 找出類別)。</summary>
+        private void SingerFilter_Click(object sender, RoutedEventArgs e)
+        {
+            var tag = (sender as Button)?.Tag as string;
+            var filter = Array.Find(SingerFilters, f => f.ButtonTag == tag);
+            if (filter == null) return;
             ShowSingerPanels(true);
             ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("MaleSinger", SingerCategory.Male);
+            FilterAndDisplaySingers(filter);
         }
-
-        private void FemaleSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            ShowSingerPanels(true);
-            ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("FemaleSinger", SingerCategory.Female);
-        }
-
-        private void GroupSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            ShowSingerPanels(true);
-            ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("GroupSinger", SingerCategory.Group);
-        }
-
-        private void ForeignMaleSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            ShowSingerPanels(true);
-            ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("ForeignMaleSinger", SingerCategory.ForeignMale);
-        }
-
-        private void ForeignFemaleSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            ShowSingerPanels(true);
-            ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("ForeignFemaleSinger", SingerCategory.ForeignFemale);
-        }
-
-        private void ForeignGroupSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            ShowSingerPanels(true);
-            ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("ForeignGroupSinger", SingerCategory.ForeignGroup);
-        }
-
-        private void OtherSingerFilter_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            ShowSingerPanels(true);
-            ShowQuickInputPanels(false);
-            FilterAndDisplaySingers("OtherSinger", SingerCategory.Other);
-        }
-
 
         private async void NewSongFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            var lang = (sender as Button)?.Tag as string ?? "國語";
+            var lang = (sender as Button)?.Tag as string ?? DefaultNewSongLang;
+            _lastNewSongLang = lang;
+            HighlightFilterButtons(lang);
             var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
 
             var newSongs = await Task.Run(() =>
@@ -73,7 +62,9 @@ namespace UltimateKtv
 
         private async void RankingFilter_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            var filterTag = (sender as Button)?.Tag as string ?? "國語-單曲";
+            var filterTag = (sender as Button)?.Tag as string ?? DefaultRankingFilter;
+            _lastRankingFilter = filterTag;
+            HighlightFilterButtons(filterTag);
 
             var rankedSongs = await Task.Run(() =>
                 SongQuery.Ranking(SongDatas.SongData, filterTag).Select(SongDisplayItem.FromSong).ToList());
@@ -137,24 +128,12 @@ namespace UltimateKtv
             if (LanguageSecondFilterGrid != null) LanguageSecondFilterGrid.Visibility = System.Windows.Visibility.Visible;
             if (LanguageWordCountFilterGrid != null) LanguageWordCountFilterGrid.Visibility = System.Windows.Visibility.Visible;
 
-            var activeBg = (System.Windows.Media.Brush)(TryFindResource("BrushCyberActiveGradient") ?? FindResource("PrimaryBrush"));
-            var inactiveBg = (System.Windows.Media.Brush)(TryFindResource("BrushButtonFlat") ?? System.Windows.Media.Brushes.Transparent);
-            var activeFg = (System.Windows.Media.Brush)FindResource("BrushOnAccentActive");
-            var inactiveFg = (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
-            var activeBorder = (System.Windows.Media.Brush)(TryFindResource("BrushAccent") ?? TryFindResource("PrimaryHueMidBrush") ?? activeBg);
-            var inactiveBorder = (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
-
             // 1. Update top language buttons
             foreach (var filterBtn in _filterButtons)
             {
                 filterBtn.Visibility = System.Windows.Visibility.Visible;
                 string btnTag = filterBtn.Tag?.ToString() ?? "";
-                bool isSelected = _selectedLanguages.Contains(btnTag);
-                
-                filterBtn.FontWeight = isSelected ? System.Windows.FontWeights.ExtraBold : System.Windows.FontWeights.Normal;
-                filterBtn.Background = isSelected ? activeBg : inactiveBg;
-                filterBtn.Foreground = isSelected ? activeFg : inactiveFg;
-                filterBtn.BorderBrush = isSelected ? activeBorder : inactiveBorder;
+                SetFilterButtonSelected(filterBtn, _selectedLanguages.Contains(btnTag));
             }
 
             // 1.5 Update Duet toggle button state and background
@@ -174,12 +153,7 @@ namespace UltimateKtv
                 btn.IsEnabled = !_isDuetOnly;
                 
                 string btnTag = btn.Tag?.ToString() ?? "";
-                bool isSelected = !_isDuetOnly && _selectedSingerType == btnTag;
-
-                btn.FontWeight = isSelected ? System.Windows.FontWeights.ExtraBold : System.Windows.FontWeights.Normal;
-                btn.Background = isSelected ? activeBg : inactiveBg;
-                btn.Foreground = isSelected ? activeFg : inactiveFg;
-                btn.BorderBrush = isSelected ? activeBorder : inactiveBorder;
+                SetFilterButtonSelected(btn, !_isDuetOnly && _selectedSingerType == btnTag);
             }
 
             // 3. Word count buttons - they are in LanguageWordCountFilterGrid
@@ -190,14 +164,50 @@ namespace UltimateKtv
                     if (child is Button btn)
                     {
                         string btnTag = btn.Tag?.ToString() ?? "";
-                        bool isSelected = _selectedWordCountRange == btnTag;
-
-                        btn.FontWeight = isSelected ? System.Windows.FontWeights.ExtraBold : System.Windows.FontWeights.Normal;
-                        btn.Background = isSelected ? activeBg : inactiveBg;
-                        btn.Foreground = isSelected ? activeFg : inactiveFg;
-                        btn.BorderBrush = isSelected ? activeBorder : inactiveBorder;
+                        SetFilterButtonSelected(btn, _selectedWordCountRange == btnTag);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// 歌星、新進、排行頁：上方次功能按鈕中 Tag 等於 selectedTag 的那顆反白，其餘恢復一般樣式。
+        /// </summary>
+        private void HighlightFilterButtons(string selectedTag)
+        {
+            foreach (var btn in _filterButtons)
+            {
+                if (btn.Visibility != System.Windows.Visibility.Visible) continue;
+                if ((btn.Tag as string) == selectedTag) SetFilterButtonSelected(btn, true);
+                else ResetFilterButtonStyle(btn);
+            }
+        }
+
+        /// <summary>次功能按鈕回到樣式本身的外觀 (保留滑過/按下效果)。</summary>
+        private static void ResetFilterButtonStyle(Button btn)
+        {
+            btn.FontWeight = FontWeights.Normal;
+            btn.ClearValue(Control.BackgroundProperty);
+            btn.ClearValue(Control.ForegroundProperty);
+            btn.ClearValue(Control.BorderBrushProperty);
+        }
+
+        /// <summary>上方次功能按鈕的選中/一般樣式 (語系頁與歌星、新進、排行頁共用)。筆刷每次重新取，主題變更後也正確。</summary>
+        private void SetFilterButtonSelected(Button btn, bool isSelected)
+        {
+            if (isSelected)
+            {
+                btn.FontWeight = System.Windows.FontWeights.ExtraBold;
+                btn.Background = (System.Windows.Media.Brush)(TryFindResource("BrushCyberActiveGradient") ?? FindResource("PrimaryBrush"));
+                btn.Foreground = (System.Windows.Media.Brush)FindResource("BrushOnAccentActive");
+                btn.BorderBrush = (System.Windows.Media.Brush)(TryFindResource("BrushAccent") ?? TryFindResource("PrimaryHueMidBrush") ?? btn.Background);
+            }
+            else
+            {
+                btn.FontWeight = System.Windows.FontWeights.Normal;
+                btn.Background = (System.Windows.Media.Brush)(TryFindResource("BrushButtonFlat") ?? System.Windows.Media.Brushes.Transparent);
+                btn.Foreground = (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
+                btn.BorderBrush = (System.Windows.Media.Brush)TryFindResource("SingerButtonBackground");
             }
         }
 

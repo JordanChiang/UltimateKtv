@@ -131,7 +131,10 @@ namespace UltimateKtv
         /// </summary>
         private void ApplyNavMenuOrder()
         {
-            var buttonsByKey = NavButtonsByKey();
+            // 按鈕的 Tag 是 NavMenu.Items 的 Key
+            var buttonsByKey = NavMenuPanel.Children.OfType<Button>()
+                .Where(b => b.Tag is string)
+                .ToDictionary(b => (string)b.Tag);
             var order = ThemeSettings.ParseNavMenuOrder(ThemeSettingsHandler.Settings.NavMenuOrder);
             NavMenuPanel.Children.Clear();
             foreach (var key in order)
@@ -140,19 +143,6 @@ namespace UltimateKtv
             }
             AppLogger.Log($"Nav menu order: {string.Join(",", order)}");
         }
-
-        /// <summary>左側主選單按鈕，key 同 ThemeSettings.NavMenuDefaultKeys。</summary>
-        private Dictionary<string, Button> NavButtonsByKey() => new()
-        {
-            ["Singer"] = FuncBtnBySinger,
-            ["Fav"] = FuncBtnByFav,
-            ["Num"] = FuncBtnByNum,
-            ["Language"] = FuncBtnLanguage,
-            ["New"] = FuncBtnByNew,
-            ["Rank"] = FuncBtnByRank,
-            ["Input"] = FuncBtnByInput,
-            ["Youtube"] = FuncBtnByYoutube
-        };
 
         private void SetActiveNavButton(Button btn)
         {
@@ -168,7 +158,7 @@ namespace UltimateKtv
             btn.SetResourceReference(Control.BackgroundProperty, "BrushCyberActiveGradient");
             btn.SetResourceReference(Control.ForegroundProperty, "BrushOnAccentActive");
             _activeNavButton = btn;
-            AmbientLayer.SetCategory(NavButtonsByKey().FirstOrDefault(kv => kv.Value == btn).Key);
+            AmbientLayer.SetCategory(btn.Tag as string);
         }
 
         private void FuncBtnBySinger_Click(object sender, RoutedEventArgs e)
@@ -178,8 +168,11 @@ namespace UltimateKtv
             ShowSingerPanels(true);
             ShowQuickInputPanels(false);
             SetupFilterButtons(MainFilterMode.Singer);
-            // Trigger the first filter button by default
-            if (_filterButtons.Any() && _filterButtons[0].IsVisible) MaleSingerFilter_Click(null!, null!);
+            // 自動選上次的歌手類別 (第一次是男歌手)；各類別的頁數由 FilterAndDisplaySingers 記住
+            if (_filterButtons.Any() && _filterButtons[0].IsVisible)
+            {
+                FilterAndDisplaySingers(_lastSingerFilter);
+            }
         }
         private async void FuncBtnByYoutube_Click(object sender, RoutedEventArgs e)
         {
@@ -279,8 +272,8 @@ namespace UltimateKtv
             ShowQuickInputPanels(false);
             if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
             SetupFilterButtons(MainFilterMode.NewSong);
-            // Trigger the first filter button by default
-            if (_filterButtons.Any() && _filterButtons[0].IsVisible) NewSongFilter_Click(sender, new RoutedEventArgs());
+            // 自動點上次選的次功能 (第一次是國語)
+            if (LastSelectedFilterButton(_lastNewSongLang) is Button btn) NewSongFilter_Click(btn, new RoutedEventArgs());
         }
 
         private void FuncBtnByRank_Click(object sender, RoutedEventArgs e)
@@ -290,8 +283,19 @@ namespace UltimateKtv
             ShowQuickInputPanels(false);
             if (LanguageSongListGrid != null) LanguageSongListGrid.Visibility = Visibility.Collapsed;
             SetupFilterButtons(MainFilterMode.Ranking);
-            // Trigger the first filter button by default
-            if (_filterButtons.Any() && _filterButtons[0].IsVisible) RankingFilter_Click(sender, new RoutedEventArgs());
+            // 自動點上次選的次功能 (第一次是國語-單曲)
+            if (LastSelectedFilterButton(_lastRankingFilter) is Button btn) RankingFilter_Click(btn, new RoutedEventArgs());
+        }
+
+        /// <summary>
+        /// 新進/排行進入時要自動點的次功能按鈕：Tag 等於上次選的那顆，找不到就第一顆。
+        /// 要傳按鈕本身給篩選函式 (它讀 sender 的 Tag)，不可傳左側選單按鈕 (它的 Tag 是選單 Key)。
+        /// </summary>
+        private Button? LastSelectedFilterButton(string lastTag)
+        {
+            if (!_filterButtons.Any() || !_filterButtons[0].IsVisible) return null;
+            return _filterButtons.FirstOrDefault(b => b.Visibility == Visibility.Visible && (b.Tag as string) == lastTag)
+                ?? _filterButtons[0];
         }
 
         #endregion
@@ -306,23 +310,13 @@ namespace UltimateKtv
             {
                 // A simple way to remove previous anonymous handlers is to nullify the event.
                 // This is safe as long as we are the only ones adding/removing handlers this way.
-                btn.Click -= MaleSingerFilter_Click;
-                btn.Click -= FemaleSingerFilter_Click;
-                btn.Click -= GroupSingerFilter_Click;
-                btn.Click -= ForeignMaleSingerFilter_Click;
-                btn.Click -= ForeignFemaleSingerFilter_Click;
-                btn.Click -= ForeignGroupSingerFilter_Click;
-                btn.Click -= OtherSingerFilter_Click;
+                btn.Click -= SingerFilter_Click;
                 btn.Click -= NewSongFilter_Click;
                 btn.Click -= RankingFilter_Click;
                 btn.Click -= GenerationFilter_Click;
                 btn.Click -= LanguageFilter_Click;
                 btn.Visibility = Visibility.Collapsed;
-                // Reset button appearance (clear any active highlight if we use it later)
-                btn.FontWeight = FontWeights.Normal;
-                btn.ClearValue(Button.BackgroundProperty);
-                btn.ClearValue(Button.ForegroundProperty);
-                btn.ClearValue(Button.BorderBrushProperty);
+                ResetFilterButtonStyle(btn); // 清掉上一頁的反白
             }
 
             // Hide extra Language filter rows by default
@@ -332,13 +326,11 @@ namespace UltimateKtv
             switch (mode)
             {
                 case MainFilterMode.Singer:
-                    var singerFilters = new[] { "SingerType.Male", "SingerType.Female", "SingerType.Group", "SingerType.ForeignMale", "SingerType.ForeignFemale", "SingerType.ForeignGroup", "SingerType.Other" };
-                    var singerActions = new RoutedEventHandler[] { MaleSingerFilter_Click, FemaleSingerFilter_Click, GroupSingerFilter_Click, ForeignMaleSingerFilter_Click, ForeignFemaleSingerFilter_Click, ForeignGroupSingerFilter_Click, OtherSingerFilter_Click };
-                    for (int i = 0; i < singerFilters.Length; i++)
+                    for (int i = 0; i < SingerFilters.Length; i++)
                     {
-                        _filterButtons[i].Tag = singerFilters[i];
-                        _filterButtons[i].Content = Loc.T(singerFilters[i]);
-                        _filterButtons[i].Click += singerActions[i];
+                        _filterButtons[i].Tag = SingerFilters[i].ButtonTag;
+                        _filterButtons[i].Content = Loc.T(SingerFilters[i].ButtonTag);
+                        _filterButtons[i].Click += SingerFilter_Click;
                         _filterButtons[i].Visibility = Visibility.Visible;
                     }
                     break;

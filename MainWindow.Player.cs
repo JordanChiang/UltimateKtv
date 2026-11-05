@@ -28,7 +28,7 @@ namespace UltimateKtv
         {
             public IReadOnlyList<int> Streams => MediaHostManager.Instance.Player.AudioStreams;
             public int Track { get => MediaHostManager.Instance.Player.AudioTrack; set => MediaHostManager.Instance.Player.AudioTrack = value; }
-            public int Channel { get => MediaHostManager.Instance.Player.AudioChannel; set => MediaHostManager.Instance.Player.AudioChannel = value; }
+            public AudioChannel Channel { get => (AudioChannel)MediaHostManager.Instance.Player.AudioChannel; set => MediaHostManager.Instance.Player.AudioChannel = (int)value; }
         }
         
         // LRC fields
@@ -72,8 +72,10 @@ namespace UltimateKtv
         // 播放場次：待播清單、正在播放的歌、何時播下一首都由它決定
         private PlaybackSession _playback = null!;
 
-        // 上一首是切掉或播完 (下一首開始時背景要掃光)
+        // 上一首播完 (下一首開始時背景要掃光)
         private bool _sweepOnNextStart;
+        // 上一首播完時待播清單已空：接著由隨機播放補上的歌也要掃光
+        private bool _sweepOnRandomStart;
 
         /// <summary>建立播放場次並接上主視窗的反應；必須在 UI 執行緒、使用待播清單之前呼叫。</summary>
         private void InitializePlaybackSession()
@@ -93,13 +95,24 @@ namespace UltimateKtv
             _playback.SongEnded += Playback_SongEnded;
             _playback.BecameIdle += Playback_BecameIdle;
             // 背景掃光：只在切歌與播完自動接下一首時 (點第一首、重唱、單曲循環、隨機歌被點歌切掉都不掃)。
-            // 在決定播下一首時就開始 (切歌當下)，不等開檔完成 (開檔約 0.2 秒，在 player 自己的執行緒)
-            _playback.SongEnded += (_, e) => _sweepOnNextStart = e.Reason is SongEndReason.Skipped or SongEndReason.Finished;
-            _playback.BecameIdle += (_, _) => _sweepOnNextStart = false;
-            _playback.SongStarting += (_, _) =>
+            // - 切歌：按下當下就掃 (SkipCurrentSong)，待播清單沒歌、正在開檔、或那首開檔失敗都一樣
+            // - 播完：下一首開始時掃；清單已空時，由隨機播放補上的那首也掃 (隨機播放約 0.2 秒後才點歌)
+            // 不等開檔完成 (開檔約 0.2 秒，在 player 自己的執行緒)
+            _playback.SongEnded += (_, e) =>
             {
-                if (_sweepOnNextStart) AmbientLayer.Sweep();
+                _sweepOnNextStart = e.Reason == SongEndReason.Finished;
+                _sweepOnRandomStart = false;
+            };
+            _playback.BecameIdle += (_, _) =>
+            {
+                _sweepOnRandomStart = _sweepOnNextStart && SettingsManager.Instance.CurrentSettings.RandomPlayEnabled;
                 _sweepOnNextStart = false;
+            };
+            _playback.SongStarting += (_, song) =>
+            {
+                if (_sweepOnNextStart || (_sweepOnRandomStart && song.IsRandom)) AmbientLayer.Sweep();
+                _sweepOnNextStart = false;
+                _sweepOnRandomStart = false;
             };
 
             // 錄音跟著播放場次：開播開始錄，歌曲結束或閒置時停止 (暫停/繼續由暫停鈕控制)
@@ -231,7 +244,7 @@ namespace UltimateKtv
                     FilePath = song.FilePath,
                     Volume = song.Volume,
                     // 開播聲道看點唱紀錄的 Track (SongMgr 可修改)；SongId 是紀錄 Id 或影片 ID
-                    Track = SongLibrary.GetYoutubeTrack(song.SongId),
+                    Track = (int?)SongLibrary.GetYoutubeTrack(song.SongId),
                 };
             }
             else
@@ -586,6 +599,7 @@ namespace UltimateKtv
 
                 AppLogger.Log("User action: Skip song");
                 DebugLog("SkipCurrentSong: Skip song");
+                AmbientLayer.Sweep(); // 背景掃光：按下切歌當下 (開檔中切歌要等開檔完成才真的結束那首)
 
                 SetPauseButtonResume(false);
                 if (_isLoopPlay)

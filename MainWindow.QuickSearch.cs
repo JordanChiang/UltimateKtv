@@ -270,7 +270,7 @@ namespace UltimateKtv
         {
             if (newFiles == null || newFiles.Count == 0) return;
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            int track = VocalSwitch.YoutubeDefaultChannel(SettingsManager.Instance.CurrentSettings.YoutubeDefaultNoVocal);
+            var track = VocalSwitch.YoutubeDefaultChannel(SettingsManager.Instance.CurrentSettings.YoutubeDefaultNoVocal);
             await Task.Run(() =>
             {
                 foreach (var file in newFiles)

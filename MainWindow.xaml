@@ -1066,7 +1066,7 @@
                             </Button>
                             <!-- 項目順序由 themesettings.json 的 NavMenuOrder 決定 (ApplyNavMenuOrder) -->
                             <StackPanel x:Name="NavMenuPanel" DockPanel.Dock="Top">
-                                <Button Name="FuncBtnBySinger" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnBySinger_Click">
+                                <Button Name="FuncBtnBySinger" Tag="Singer" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnBySinger_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="AccountMusic" Width="40" Height="40" HorizontalAlignment="Center"/>
                                         <Viewbox StretchDirection="DownOnly" Margin="8,0">
@@ -1074,7 +1074,7 @@
                                         </Viewbox>
                                     </StackPanel>
                                 </Button>
-                                <Button Name="FuncBtnByFav" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByFav_Click">
+                                <Button Name="FuncBtnByFav" Tag="Fav" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByFav_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Heart" Width="40" Height="40" HorizontalAlignment="Center"/>
                                         <Viewbox StretchDirection="DownOnly" Margin="8,0">
@@ -1082,7 +1082,7 @@
                                         </Viewbox>
                                     </StackPanel>
                                 </Button>
-                                <Button Name="FuncBtnByNum" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNum_Click">
+                                <Button Name="FuncBtnByNum" Tag="Num" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNum_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Pound" Width="40" Height="40" HorizontalAlignment="Center"/>
                                         <Viewbox StretchDirection="DownOnly" Margin="8,0">
@@ -1090,7 +1090,7 @@
                                         </Viewbox>
                                     </StackPanel>
                                 </Button>
-                                <Button Name="FuncBtnLanguage" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByLanguage_Click">
+                                <Button Name="FuncBtnLanguage" Tag="Language" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByLanguage_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Translate" Width="40" Height="40" HorizontalAlignment="Center"/>
                                         <Viewbox StretchDirection="DownOnly" Margin="8,0">
@@ -1098,7 +1098,7 @@
                                         </Viewbox>
                                     </StackPanel>
                                 </Button>
-                                <Button Name="FuncBtnByNew" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNew_Click">
+                                <Button Name="FuncBtnByNew" Tag="New" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByNew_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="NewBox" Width="40" Height="40" HorizontalAlignment="Center"/>
                                         <Viewbox StretchDirection="DownOnly" Margin="8,0">
@@ -1106,7 +1106,7 @@
                                         </Viewbox>
                                     </StackPanel>
                                 </Button>
-                                <Button Name="FuncBtnByRank" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByRank_Click">
+                                <Button Name="FuncBtnByRank" Tag="Rank" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByRank_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Trophy" Width="40" Height="40" HorizontalAlignment="Center"/>
                                         <Viewbox StretchDirection="DownOnly" Margin="8,0">
@@ -1114,7 +1114,7 @@
                                         </Viewbox>
                                     </StackPanel>
                                 </Button>
-                                <Button Name="FuncBtnByInput" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByInput_Click">
+                                <Button Name="FuncBtnByInput" Tag="Input" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByInput_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Magnify" Width="40" Height="40" HorizontalAlignment="Center"/>
                                         <Viewbox StretchDirection="DownOnly" Margin="8,0">
@@ -1122,7 +1122,7 @@
                                         </Viewbox>
                                     </StackPanel>
                                 </Button>
-                                <Button Name="FuncBtnByYoutube" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByYoutube_Click">
+                                <Button Name="FuncBtnByYoutube" Tag="Youtube" Style="{StaticResource NavRailButtonStyle}" Click="FuncBtnByYoutube_Click">
                                     <StackPanel HorizontalAlignment="Center">
                                         <!-- Youtube 圖示本身留白較多，放大一點才和其他圖示看起來一樣大 -->
                                         <materialDesign:PackIcon Kind="Youtube" Width="54" Height="54" HorizontalAlignment="Center" Margin="0,-8,0,-8"/>
@@ -1374,7 +1374,8 @@
                                         </Border>
 
                                         <!-- Currently Playing Song and Singer Display -->
-                                        <!-- 字級固定不縮小；放不下時歌名以 … 截斷，歌手保留在後面。
+                                        <!-- 字級固定不縮小；歌手最多佔 4 個中文字寬 (超過以 … 截斷，寬度在 UpdateCurrentPlayingDisplay 依字級設定)，
+                                             其餘空間給歌名，放不下時歌名以 … 截斷。
                                              Left 對齊的 Grid 在空間足夠時貼合內容寬度，不足時 * 欄才被壓縮 -->
                                         <Grid x:Name="NowPlayingInfoPanel" Grid.Column="1"
                                               HorizontalAlignment="Left" VerticalAlignment="Center"
@@ -1404,6 +1405,7 @@
                                                        Text=""
                                                        FontSize="{StaticResource FontSizeL}"
                                                        FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
                                                        Foreground="{DynamicResource PrimaryLightBrush}"
                                                        VerticalAlignment="Center"/>
                                         </Grid>

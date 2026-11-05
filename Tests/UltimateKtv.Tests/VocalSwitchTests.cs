@@ -11,7 +11,7 @@ namespace UltimateKtv.Tests
             public List<int> StreamList { get; }
             public IReadOnlyList<int> Streams => StreamList;
             public int Track { get; set; }
-            public int Channel { get; set; }
+            public AudioChannel Channel { get; set; }
         }
 
         private static (VocalSwitch Switch, FakeAudio Audio) Create(params int[] streams)
@@ -30,7 +30,7 @@ namespace UltimateKtv.Tests
             vs.ApplyForNewSong(songTrack: 2, legacyDefinition: true, isYoutube: false, youtubeDefaultNoVocal: false);
 
             Assert.Equal(2, vs.MusicTrack);
-            Assert.Equal(2, audio.Channel);
+            Assert.Equal(AudioChannel.Right, audio.Channel);
             Assert.Equal(1, audio.Track);
             Assert.Equal(VocalMode.Music, vs.Mode);
         }
@@ -75,7 +75,7 @@ namespace UltimateKtv.Tests
 
             vs.ApplyForNewSong(songTrack: null, legacyDefinition: true, isYoutube: true, youtubeDefaultNoVocal: true);
 
-            Assert.Equal(3, audio.Channel);
+            Assert.Equal(AudioChannel.NoVocal, audio.Channel);
             Assert.Equal(VocalMode.Music, vs.Mode);
         }
 
@@ -83,11 +83,11 @@ namespace UltimateKtv.Tests
         public void Youtube_defaults_to_stereo_vocal_when_not_configured()
         {
             var (vs, audio) = Create(1);
-            audio.Channel = 3; // 上一首留下的聲道
+            audio.Channel = AudioChannel.NoVocal; // 上一首留下的聲道
 
             vs.ApplyForNewSong(songTrack: null, legacyDefinition: true, isYoutube: true, youtubeDefaultNoVocal: false);
 
-            Assert.Equal(0, audio.Channel);
+            Assert.Equal(AudioChannel.Stereo, audio.Channel);
             Assert.Equal(VocalMode.Vocal, vs.Mode);
         }
 
@@ -101,7 +101,7 @@ namespace UltimateKtv.Tests
 
             vs.ApplyForNewSong(songTrack: track, legacyDefinition: true, isYoutube: true, youtubeDefaultNoVocal: defaultNoVocal);
 
-            Assert.Equal(track, audio.Channel);
+            Assert.Equal((AudioChannel)track, audio.Channel);
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace UltimateKtv.Tests
 
             vs.ApplyForNewSong(songTrack: 7, legacyDefinition: true, isYoutube: true, youtubeDefaultNoVocal: true);
 
-            Assert.Equal(3, audio.Channel);
+            Assert.Equal(AudioChannel.NoVocal, audio.Channel);
         }
 
         // ---------- 人聲 / 伴唱鈕 ----------
@@ -123,11 +123,11 @@ namespace UltimateKtv.Tests
             vs.ApplyForNewSong(1, true, false, false);
 
             vs.SwitchToVocal();
-            Assert.Equal(2, audio.Channel);
+            Assert.Equal(AudioChannel.Right, audio.Channel);
             Assert.Equal(VocalMode.Vocal, vs.Mode);
 
             vs.SwitchToMusic();
-            Assert.Equal(1, audio.Channel);
+            Assert.Equal(AudioChannel.Left, audio.Channel);
             Assert.Equal(VocalMode.Music, vs.Mode);
         }
 
@@ -174,11 +174,11 @@ namespace UltimateKtv.Tests
             vs.ApplyForNewSong(null, true, true, true);
 
             vs.SwitchToVocal();
-            Assert.Equal(0, audio.Channel);
+            Assert.Equal(AudioChannel.Stereo, audio.Channel);
             Assert.Equal(VocalMode.Vocal, vs.Mode);
 
             vs.SwitchToMusic();
-            Assert.Equal(3, audio.Channel);
+            Assert.Equal(AudioChannel.NoVocal, audio.Channel);
         }
 
         // ---------- 設為伴唱 / 固定人聲 ----------
@@ -192,7 +192,7 @@ namespace UltimateKtv.Tests
             int saved = vs.SetAsMusic(audio.Track);
 
             Assert.Equal(2, saved);
-            Assert.Equal(2, audio.Channel);
+            Assert.Equal(AudioChannel.Right, audio.Channel);
         }
 
         [Fact]
@@ -220,7 +220,7 @@ namespace UltimateKtv.Tests
 
             Assert.Equal(VocalMode.Fixed, vs.Mode);
             Assert.Equal(2, audio.Track);
-            Assert.Equal(0, audio.Channel);
+            Assert.Equal(AudioChannel.Stereo, audio.Channel);
         }
 
         [Fact]
@@ -246,7 +246,7 @@ namespace UltimateKtv.Tests
 
             vs.ApplyForNewSong(2, true, false, false);
 
-            Assert.Equal(1, audio.Channel);
+            Assert.Equal(AudioChannel.Left, audio.Channel);
         }
 
         [Fact]

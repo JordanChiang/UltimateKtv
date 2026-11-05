@@ -42,36 +42,60 @@ namespace UltimateKtv
             int h = (int)Math.Ceiling(boundsInElement.Height * scale);
             if (w <= 0 || h <= 0) return null;
 
-            var dv = new DrawingVisual();
             // 元素本身就有繪圖內容 (例如 OutlinedTextBlock) 且沒有子元素/特效時，直接畫它的 Drawing。
             // 經由 VisualBrush 轉點陣圖時，沒有外框的文字 (DrawText 字形) 實測會變成空白。
-            var ownDrawing = VisualTreeHelper.GetDrawing(element);
-            bool simple = ownDrawing != null && VisualTreeHelper.GetChildrenCount(element) == 0
-                          && (element as UIElement)?.Effect == null;
+            var ownDrawing = OwnDrawing(element);
+            if (ownDrawing != null) return RasterizeDrawing(ownDrawing, boundsInElement, scale, subPixelOffset);
+
+            var dv = new DrawingVisual();
             using (var dc = dv.RenderOpen())
             {
-                if (simple)
+                var brush = new VisualBrush(element)
                 {
-                    dc.PushTransform(new TranslateTransform(-boundsInElement.X + subPixelOffset / scale, -boundsInElement.Y));
-                    dc.DrawDrawing(ownDrawing);
-                    dc.Pop();
-                }
-                else
-                {
-                    var brush = new VisualBrush(element)
-                    {
-                        Stretch = Stretch.None,
-                        AlignmentX = AlignmentX.Left,
-                        AlignmentY = AlignmentY.Top,
-                        ViewboxUnits = BrushMappingMode.Absolute,
-                        Viewbox = boundsInElement
-                    };
-                    dc.DrawRectangle(brush, null, new Rect(subPixelOffset / scale, 0, boundsInElement.Width, boundsInElement.Height));
-                }
+                    Stretch = Stretch.None,
+                    AlignmentX = AlignmentX.Left,
+                    AlignmentY = AlignmentY.Top,
+                    ViewboxUnits = BrushMappingMode.Absolute,
+                    Viewbox = boundsInElement
+                };
+                dc.DrawRectangle(brush, null, new Rect(subPixelOffset / scale, 0, boundsInElement.Width, boundsInElement.Height));
             }
+            return Render(dv, w, h, scale);
+        }
 
+        /// <summary>元素可以直接以自己的 Drawing 點陣化時 (有繪圖內容、沒有子元素與特效) 回傳它，否則 null。</summary>
+        public static Drawing? OwnDrawing(Visual element)
+        {
+            var drawing = VisualTreeHelper.GetDrawing(element);
+            return drawing != null && VisualTreeHelper.GetChildrenCount(element) == 0 && (element as UIElement)?.Effect == null
+                ? drawing
+                : null;
+        }
+
+        /// <summary>
+        /// 把 Drawing 的 bounds 範圍畫成點陣圖 (同 Rasterize 的直接繪製路徑)。
+        /// drawing 已凍結 (Freeze) 時可在任何 STA 執行緒呼叫 (見 OsdRenderThread)。
+        /// </summary>
+        public static OsdBitmap? RasterizeDrawing(Drawing drawing, Rect bounds, double scale, double subPixelOffset = 0)
+        {
+            int w = (int)Math.Ceiling(bounds.Width * scale) + (subPixelOffset > 0 ? 1 : 0);
+            int h = (int)Math.Ceiling(bounds.Height * scale);
+            if (w <= 0 || h <= 0) return null;
+
+            var dv = new DrawingVisual();
+            using (var dc = dv.RenderOpen())
+            {
+                dc.PushTransform(new TranslateTransform(-bounds.X + subPixelOffset / scale, -bounds.Y));
+                dc.DrawDrawing(drawing);
+                dc.Pop();
+            }
+            return Render(dv, w, h, scale);
+        }
+
+        private static OsdBitmap Render(Visual visual, int w, int h, double scale)
+        {
             var rtb = new RenderTargetBitmap(w, h, 96 * scale, 96 * scale, PixelFormats.Pbgra32);
-            rtb.Render(dv);
+            rtb.Render(visual);
 
             int stride = w * 4;
             IntPtr buf = Marshal.AllocHGlobal(stride * h);
@@ -120,6 +144,34 @@ namespace UltimateKtv
     }
 
     /// <summary>
+    /// 在背景 STA 執行緒點陣化已凍結的 Drawing (RenderTargetBitmap 是軟體繪製，長跑馬燈的相位圖要 100ms 以上)。
+    /// 單一執行緒，工作依序處理。
+    /// </summary>
+    internal static class OsdRenderThread
+    {
+        private static readonly Lazy<Dispatcher> RenderDispatcher = new(Start);
+
+        public static void Post(Action work) => RenderDispatcher.Value.BeginInvoke(work);
+
+        private static Dispatcher Start()
+        {
+            Dispatcher? dispatcher = null;
+            using var ready = new ManualResetEventSlim();
+            var thread = new Thread(() =>
+            {
+                dispatcher = Dispatcher.CurrentDispatcher;
+                ready.Set();
+                Dispatcher.Run();
+            })
+            { IsBackground = true, Name = "mpv-osd-render" };
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            ready.Wait();
+            return dispatcher!;
+        }
+    }
+
+    /// <summary>
     /// 一個顯示中的疊加項目。靜態項目固定位置；捲動項目由 MpvOsd 的動畫執行緒推動。
     /// 所有座標都是 mpv OSD 像素 (= 電視視窗實體像素)。
     /// </summary>
@@ -127,7 +179,7 @@ namespace UltimateKtv
     {
         internal int Id;
         internal string? Slot; // 同一 slot 的新項目沿用同一 overlay id 原地換圖 (不會有空白或重疊的畫格)
-        internal OsdBitmap Bitmap = null!;
+        internal OsdBitmap? Bitmap; // 捲動項目在 CompleteScroll 之前為 null (背景繪製中)
         // 捲動用的次像素相位圖：Phases[i] 為往右偏移 i/Phases.Length 像素的版本 (Phases[0] == Bitmap)
         internal OsdBitmap[]? Phases;
         internal OsdBitmap? LastShownBitmap;
@@ -144,6 +196,8 @@ namespace UltimateKtv
         internal long HoldUntilTicks;
         internal volatile int CompletedCycles;
         internal volatile bool Finished;
+        // 捲動項目的點陣圖還在背景繪製時為 false：動畫執行緒先跳過它 (BeginScroll / CompleteScroll)
+        internal volatile bool Ready = true;
         internal Action? OnFinished;
         internal Dispatcher? Dispatcher;
         internal int LastShownX = int.MinValue, LastShownW = -1;
@@ -154,7 +208,7 @@ namespace UltimateKtv
         {
             get
             {
-                if (!IsScrolling || Finished) return 0;
+                if (!IsScrolling || Finished || !Ready) return 0;
                 if (Holding) return 1;
                 double elapsed = (Stopwatch.GetTimestamp() - CycleStartTicks) * 1000.0 / Stopwatch.Frequency;
                 return Math.Clamp(elapsed / DurationMs, 0, 1);
@@ -184,7 +238,10 @@ namespace UltimateKtv
         private volatile bool _disposed;
         private int _scrollingCount;
 
-        /// <summary>捲動中的項目從無到有 (true) 或全部結束 (false) 時觸發；可能在 UI 或動畫執行緒呼叫。</summary>
+        /// <summary>
+        /// 捲動中的項目從無到有 (true) 或全部結束 (false) 時觸發。項目在點陣圖交進來 (開始捲動) 時才算捲動中。
+        /// 可能在 UI、動畫 (mpv-osd) 或背景繪圖 (mpv-osd-render) 執行緒呼叫。
+        /// </summary>
         public event Action<bool>? ScrollingChanged;
 
         /// <summary>目前是否有捲動中的跑馬燈。</summary>
@@ -246,25 +303,66 @@ namespace UltimateKtv
             return item;
         }
 
-        /// <param name="phases">次像素相位圖 (等分 0~1 像素的偏移)；overlay 位置只能是整數，慢速捲動時
-        /// 1px/2px 交錯會看得出頓挫，依位置小數挑最接近的相位即可接近 WPF 的次像素移動。</param>
-        public OsdItem? StartScroll(OsdBitmap[] phases, int y, double startX, double endX, double durationMs,
+        /// <summary>
+        /// 先登記一個捲動項目，點陣圖之後再由 <see cref="CompleteScroll"/> 交進來 (可在任何執行緒)。
+        /// 讓文字在背景執行緒點陣化，UI 執行緒不必等 (長跑馬燈 4 張相位圖約 100~170ms)。
+        /// 交進來之前項目不顯示也不計時；期間被 Remove 時，之後交進來的點陣圖直接釋放。
+        /// </summary>
+        public OsdItem? BeginScroll(int y, double startX, double endX, double durationMs,
             int clipLeft, int clipRight, int repeatCount, int holdMs, Dispatcher dispatcher, Action onFinished)
         {
             var item = new OsdItem
             {
-                Bitmap = phases[0], Phases = phases, Y = y, IsScrolling = true,
+                Y = y, IsScrolling = true, Ready = false,
                 StartX = startX, EndX = endX, DurationMs = Math.Max(1, durationMs),
                 ClipLeft = clipLeft, ClipRight = clipRight,
                 RepeatCount = Math.Max(1, repeatCount), HoldMs = Math.Max(50, holdMs),
-                CycleStartTicks = Stopwatch.GetTimestamp(),
                 Dispatcher = dispatcher, OnFinished = onFinished
             };
-            if (!Register(item)) { foreach (var b in phases) b.Dispose(); return null; }
-            item.CountedAsScrolling = 1;
-            if (Interlocked.Increment(ref _scrollingCount) == 1) ScrollingChanged?.Invoke(true);
+            return Register(item) ? item : null;
+        }
+
+        /// <summary>
+        /// 交入 BeginScroll 項目的相位圖並開始捲動 (從這一刻起計時)。phases 為 null 表示點陣化失敗：
+        /// 項目直接結束並通知 onFinished (跑馬燈視為播完)。
+        /// </summary>
+        /// <param name="phases">次像素相位圖 (等分 0~1 像素的偏移)；overlay 位置只能是整數，慢速捲動時
+        /// 1px/2px 交錯會看得出頓挫，依位置小數挑最接近的相位即可接近 WPF 的次像素移動。</param>
+        public void CompleteScroll(OsdItem item, OsdBitmap[]? phases)
+        {
+            bool failed = false, firstScrolling = false;
+            lock (item)
+            {
+                if (item.Finished)
+                {
+                    // 繪製期間已被移除
+                    if (phases != null) foreach (var b in phases) b.Dispose();
+                    return;
+                }
+                if (phases == null || phases.Length == 0)
+                {
+                    failed = true;
+                }
+                else
+                {
+                    item.Phases = phases;
+                    item.Bitmap = phases[0];
+                    item.CycleStartTicks = Stopwatch.GetTimestamp();
+                    item.Ready = true;
+                    item.CountedAsScrolling = 1;
+                    firstScrolling = Interlocked.Increment(ref _scrollingCount) == 1;
+                }
+            }
+
+            if (failed)
+            {
+                Remove(item);
+                var cb = item.OnFinished;
+                if (cb != null) item.Dispatcher?.BeginInvoke(cb);
+                return;
+            }
+            if (firstScrolling) ScrollingChanged?.Invoke(true);
             _wake.Set();
-            return item;
         }
 
         public void Remove(OsdItem? item)
@@ -313,7 +411,7 @@ namespace UltimateKtv
                     {
                         item.Id = id;
                         _items[id] = item;
-                        if (MpvNative.Trace) AppLogger.Log($"[mpv-trace] osd add id={id} scroll={item.IsScrolling} {item.Bitmap.Width}x{item.Bitmap.Height} t={DateTime.Now:HH:mm:ss.fff}");
+                        if (MpvNative.Trace) AppLogger.Log($"[mpv-trace] osd add id={id} scroll={item.IsScrolling} {(item.Bitmap == null ? "pending" : $"{item.Bitmap.Width}x{item.Bitmap.Height}")} t={DateTime.Now:HH:mm:ss.fff}");
                         return true;
                     }
                 }
@@ -364,7 +462,7 @@ namespace UltimateKtv
                 lock (_lock)
                 {
                     foreach (var it in _items.Values)
-                        if (it.IsScrolling && !it.Finished) active.Add(it);
+                        if (it.IsScrolling && !it.Finished && it.Ready) active.Add(it);
                 }
 
                 if (active.Count == 0)
@@ -406,7 +504,7 @@ namespace UltimateKtv
                 if (it.CompletedCycles < it.RepeatCount)
                 {
                     // 本輪結束 (文字已移出畫面)，停頓後重新從右邊進來
-                    Apply(it, it.Bitmap, 0, 0, 0);
+                    Apply(it, it.Bitmap!, 0, 0, 0); // 只有 Ready 的項目會走到這裡
                     it.Holding = true;
                     it.HoldUntilTicks = now + (long)(it.HoldMs * Stopwatch.Frequency / 1000.0);
                     return;
@@ -429,7 +527,7 @@ namespace UltimateKtv
 
             double x = it.StartX + (it.EndX - it.StartX) * (elapsedMs / it.DurationMs);
             int left = (int)Math.Floor(x);
-            var bmp = it.Bitmap;
+            var bmp = it.Bitmap!;
             if (it.Phases != null && it.Phases.Length > 1)
             {
                 int phase = (int)Math.Round((x - left) * it.Phases.Length);
@@ -452,7 +550,7 @@ namespace UltimateKtv
             lock (_pendingFree)
             {
                 if (item.Phases != null) foreach (var b in item.Phases) _pendingFree.Add((b, now));
-                else _pendingFree.Add((item.Bitmap, now));
+                else if (item.Bitmap != null) _pendingFree.Add((item.Bitmap, now)); // 背景繪製中被移除的捲動項目還沒有點陣圖
             }
         }
 

@@ -68,6 +68,9 @@ namespace UltimateKtv
             UpdateCurrentPlayingDisplay();
         }
 
+        // 正在播放列的歌手最多佔幾個中文字寬，其餘留給歌名
+        private const int NowPlayingSingerMaxChars = 4;
+
         /// <summary>
         /// Updates the currently playing song/singer display bar above the media player panel.
         /// </summary>
@@ -150,6 +153,8 @@ namespace UltimateKtv
                     NowPlayingSeparator.Visibility = Visibility.Visible;
                     NowPlayingSingerText.Text = singerName;
                     NowPlayingSingerText.FontWeight = FontWeights.SemiBold;
+                    // 歌手最多佔 4 個中文字寬 (中文字寬 = 字級；多留一點避免剛好 4 個字也被截斷)，其餘留給歌名
+                    NowPlayingSingerText.MaxWidth = NowPlayingSingerText.FontSize * NowPlayingSingerMaxChars + 2;
                     NowPlayingSingerText.SetResourceReference(TextBlock.ForegroundProperty, "PrimaryLightBrush");
                     NowPlayingBorder.ToolTip = $"{songName} / {singerName}";
                 }
@@ -271,7 +276,8 @@ namespace UltimateKtv
         private void UpdateWaitingListDisplay()
         {
             // Calculate pagination
-            var nonEmptySongs = _playback.Snapshot.Select(ToWaitingListItem).ToList();
+            var waitingSongs = _playback.Snapshot;
+            var nonEmptySongs = waitingSongs.Select(ToWaitingListItem).ToList();
             _totalWaitingListPages = Math.Max(1, (int)Math.Ceiling((double)nonEmptySongs.Count / WaitingListPageSize));
 
             // Ensure current page is valid
@@ -298,7 +304,9 @@ namespace UltimateKtv
             ShowPageItems(WaitingListGrid, _waitingListPageItems, displayList);
 
             // Update pagination info (2 lines)
-            SetWaitListPageInfo(Loc.T("Wait.PageInfo", nonEmptySongs.Count, _currentWaitingListPage, _totalWaitingListPages));
+            string pageInfo = Loc.T("Wait.PageInfo", nonEmptySongs.Count, _currentWaitingListPage, _totalWaitingListPages);
+            SetWaitListPageInfo(pageInfo);
+            OnWaitListShown(new WaitListView(waitingSongs.Select(q => q.Id).ToArray(), _currentWaitingListPage, pageInfo));
 
             // Enable/disable pagination buttons
             WaitListPageUp.IsEnabled = _currentWaitingListPage > 1;
@@ -637,8 +645,8 @@ namespace UltimateKtv
             bool cutsOffRandom = source != OrderSource.Random && _playback.Current?.IsRandom == true;
             // 「已點歌」通知會把播放中跑馬燈移到 pending，先記下原本是否在播
             bool wasPlaybackActive = MarqueeAPI.IsSongPlaybackMarqueeActiveOrPending(Enums.MarqueeDisplayDevice.PlayerScreen);
-            // 點歌動畫飛行期間「已點 N 首」維持點歌前的數字
-            string pageInfoBefore = WaitListPageInfo.Text;
+            // 點歌動畫飛行期間待播清單與「已點 N 首」維持點歌前的樣子 (正常以清單變動當下記的為準，這裡是備用)
+            var viewBefore = _waitListView;
 
             var result = await _playback.EnqueueAsync(queued, source, insertFirst);
 
@@ -654,11 +662,11 @@ namespace UltimateKtv
 
                 case EnqueueResult.MovedToFirst:
                     RefreshCurrentPlaybackMarquee(onlyIfActiveOrPending: true);
-                    AnimateSongOrdered(queued, source, toFirst: true, pageInfoBefore, origin);
+                    AnimateSongOrdered(queued, source, toFirst: true, viewBefore, origin);
                     return result;
 
                 case EnqueueResult.Added when source != OrderSource.Random:
-                    AnimateSongOrdered(queued, source, insertFirst, pageInfoBefore, origin);
+                    AnimateSongOrdered(queued, source, insertFirst, viewBefore, origin);
                     break;
 
                 default:

@@ -582,5 +582,5 @@
   "ThemeDesc.AccentColor": "Accent color for button glow and active highlights. Default is empty (derived from PrimaryColor).",
   "ThemeDesc.SongListRowStyle": "Song list row style: 1=soft glow, 2=capsule outline, 3=left accent bar card, 4=modern floating card.",
   "ThemeDesc.NavMenuOrder": "Left menu order (comma separated; Settings is always last): Singer, Fav, Num, Language, New, Rank, Input, Youtube.",
-  "ThemeDesc.VisualEffects": "Visual effects: true=drifting background glow (color per category, breathes while playing, dims when paused, light sweep on song start), translucent glass panels, ordered song title flies to the queue; false=all off (solid background, opaque panels, no animation). Restart required."
+  "ThemeDesc.VisualEffects": "Visual effects: true=drifting background glow (color per category, breathes while playing, dims when paused, light sweep on song start), translucent glass panels, ordered song title flies to the waiting list; false=all off (solid background, opaque panels, no animation). Restart required."
 }

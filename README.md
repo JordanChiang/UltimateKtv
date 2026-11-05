@@ -14,7 +14,7 @@ UltimateKtv 是一套針對 Windows 平台開發的專業 KTV 點歌與播放系
 - **隨機播放**：待播清單沒歌時，自動從排行、新進或我的最愛挑歌。
 - **跑馬燈與歌詞**：電視畫面顯示播放資訊與點歌提示；歌曲旁有同名 `.lrc` 檔時顯示歌詞。
 - **錄音**：播放時同步錄下歌聲。
-- **兩種播放引擎**：DirectShow (預設) 或 libmpv，皆支援硬體解碼。
+- **兩種播放引擎**：libmpv (預設) 或 DirectShow，皆支援硬體解碼。
 - **歌庫**：Access (`CrazySong.mdb`)，之後會支援 SQLite。
 - **配色與多國語言**：可自訂配色 (`SampleSettings/` 有範本)；介面語言檔放在 `Languages/`，可自行新增。
 - **自動更新**：從 GitHub Release 檢查並套用新版本。
@@ -64,7 +64,7 @@ UltimateKtv 是一套針對 Windows 平台開發的專業 KTV 點歌與播放系
 
 **影音硬體**
 - **音響增益值**：全域音量增益 (100 - 500)，整體音量偏小時可調高。
-- **播放引擎**：DirectShow (預設) 或 libmpv。找不到 `libmpv-2.dll` 時自動改用 DirectShow；變更後需重新啟動。
+- **播放引擎**：libmpv (預設) 或 DirectShow。找不到 `libmpv-2.dll` 時自動改用 DirectShow；變更後需重新啟動。
 - **視訊渲染器** (DirectShow)：VMR9 相容性較佳；EVR 效能與畫質較佳，Windows 10/11 建議使用。
 - **音訊輸出裝置**：有多個音效輸出時，選擇接擴大機或喇叭的裝置。
 - **啟用硬體解碼**：用顯示卡協助解碼，大幅降低 CPU 使用率。
@@ -157,8 +157,8 @@ C. 系統廣播 (音量 / 音調 / 聲道 / 狀態) 提示
 | **目標平台 (Platform)** | x86 / x64 |
 | **開發工具 (IDE)** | Visual Studio 2022 |
 | **核心套件 (NuGet)** | <ul><li>`MaterialDesignThemes` / `MaterialDesignColors` (UI 視覺框架)</li><li>`Microsoft.AspNetCore.Server.Kestrel` (內建網頁伺服器)</li><li>`System.Data.OleDb` (Access 歌庫存取)；`System.Data.SQLite` (SQLite 歌庫，之後支援)</li><li>`YoutubeExplode` (YouTube 解析，yt-dlp 失敗時的退路)</li><li>`NAudio` (錄音)</li><li>`Newtonsoft.Json` (網頁點歌 API、更新檢查)</li><li>`QRCoder` (網頁點歌 QR Code 產生)</li></ul> |
-| **播放引擎 (DirectShow，預設)** | `CrazyKTV_MediaKit`、`DirectShowLib-2005`、LAV Filters (分離/影像/音訊解碼)、`SoundTouchDS` (升降調)、`AudioMixerDS` (消人聲、增益、限制器)，放在 `Codec/` (x64) 與 `Codec_x86/` (x86) |
-| **播放引擎 (libmpv)** | `libmpv-2.dll` 超過 GitHub 檔案上限不在 repo 中，建置時由 `Tools/Get-Libmpv.ps1` 自動下載 (x86 固定 20260412 版) |
+| **播放引擎 (DirectShow)** | `CrazyKTV_MediaKit`、`DirectShowLib-2005`、LAV Filters (分離/影像/音訊解碼)、`SoundTouchDS` (升降調)、`AudioMixerDS` (消人聲、增益、限制器)，放在 `Codec/` (x64) 與 `Codec_x86/` (x86) |
+| **播放引擎 (libmpv，預設)** | `libmpv-2.dll` 超過 GitHub 檔案上限不在 repo 中，建置時由 `Tools/Get-Libmpv.ps1` 自動下載 (x86 固定 20260412 版) |
 | **外部工具** | `Tools/yt-dlp.exe` (YouTube 下載)、`Tools/ffmpeg.exe` (影像與音訊合併) |
 | **執行需求** | x64 版讀取 Access 歌庫需安裝 Microsoft Access Database Engine (ACE.OLEDB.12.0)；x86 版使用 Windows 內建的 Jet 4.0 |
 | **測試** | xUnit (`Tests/UltimateKtv.Tests`) |

@@ -39,6 +39,7 @@
   <ItemGroup>
     <Compile Include="..\Settings\AppSettings.cs" Link="Shared\AppSettings.cs" />
     <Compile Include="..\Themes\ThemeSettings.cs" Link="Shared\ThemeSettings.cs" />
+    <Compile Include="..\Themes\NavMenu.cs" Link="Shared\NavMenu.cs" />
     <Compile Include="..\Themes\RowStyleBrushes.cs" Link="Shared\RowStyleBrushes.cs" />
     <Compile Include="..\Themes\AmbientBackground.cs" Link="Shared\AmbientBackground.cs" />
     <Compile Include="..\Themes\MicroFx.cs" Link="Shared\MicroFx.cs" />

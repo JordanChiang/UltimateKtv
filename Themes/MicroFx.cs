@@ -19,12 +19,39 @@ namespace UltimateKtv
         private static readonly TimeSpan RowFadeIn = TimeSpan.FromMilliseconds(220);
         private static readonly TimeSpan SlideDuration = TimeSpan.FromMilliseconds(350);
         private static readonly TimeSpan FlashDuration = TimeSpan.FromMilliseconds(700);
+        private static readonly TimeSpan CancelFade = TimeSpan.FromMilliseconds(150);
+
+        /// <summary>FlyTo 的標籤與閃光；目標位置已不是這首歌時 (清單又變了) 用 Cancel 提早結束。</summary>
+        public sealed class Flight
+        {
+            private readonly Canvas _layer;
+            private readonly UIElement[] _elements;
+
+            internal Flight(Canvas layer, params UIElement[] elements)
+            {
+                _layer = layer;
+                _elements = elements;
+            }
+
+            /// <summary>標籤與閃光從目前的透明度淡出後移除 (已結束的不動)。</summary>
+            public void Cancel()
+            {
+                foreach (var element in _elements)
+                {
+                    if (!_layer.Children.Contains(element)) continue;
+                    var fade = new DoubleAnimation(0, CancelFade);
+                    fade.Completed += (_, _) => _layer.Children.Remove(element);
+                    element.BeginAnimation(UIElement.OpacityProperty, fade);
+                }
+            }
+        }
 
         /// <summary>歌名標籤從 from 以弧線飛到 target (都是 layer 座標)，抵達時 target 用主題色亮一下。</summary>
-        public static void FlyTo(Canvas layer, string text, Point from, Rect target)
+        public static Flight FlyTo(Canvas layer, string text, Point from, Rect target)
         {
-            FlyLabel(layer, text, from, target);
-            Flash(layer, target, FlyDuration);
+            var label = FlyLabel(layer, text, from, target);
+            var flash = Flash(layer, target, FlyDuration);
+            return new Flight(layer, label, flash);
         }
 
         /// <summary>
@@ -39,6 +66,7 @@ namespace UltimateKtv
         /// <summary>
         /// 插播：清單內容已經換好 (新歌在第 1 列)。標籤飛行期間第 2 列之後往上錯一格，看起來仍是插播前的清單；
         /// 標籤抵達時再一起往下滑一格，第 1 列同時淡入。
+        /// rows 只傳插播後位置真的往後移的列 (第 1 列到這首歌原本的位置)；更後面的列沒有移動，不要傳。
         /// </summary>
         public static void SlideDownAfterFly(IReadOnlyList<UIElement> rows, double rowHeight)
         {
@@ -54,11 +82,24 @@ namespace UltimateKtv
             }
         }
 
+        /// <summary>
+        /// 立即結束 RevealAfterFly / SlideDownAfterFly 在這一列的效果，回到原本的透明度與位置。
+        /// 這些效果是套在固定的列上，飛行期間這一列換成別首歌 (插播、切歌、刪歌、換頁) 就對不上，要取消。
+        /// </summary>
+        public static void StopRowEffects(UIElement row)
+        {
+            row.BeginAnimation(UIElement.OpacityProperty, null);
+            if (row.RenderTransform is TranslateTransform t && !t.IsFrozen)
+            {
+                t.BeginAnimation(TranslateTransform.YProperty, null);
+            }
+        }
+
         /// <summary>元素在 layer 座標中的範圍。</summary>
         public static Rect Bounds(FrameworkElement element, Visual layer) =>
             element.TransformToVisual(layer).TransformBounds(new Rect(element.RenderSize));
 
-        private static void FlyLabel(Canvas layer, string text, Point from, Rect target)
+        private static UIElement FlyLabel(Canvas layer, string text, Point from, Rect target)
         {
             // YouTube 影片標題常很長，限制寬度，超出以 … 截斷
             var textBlock = new TextBlock { Text = text, FontSize = 30, FontWeight = FontWeights.Bold, MaxWidth = 560, TextTrimming = TextTrimming.CharacterEllipsis };
@@ -97,9 +138,10 @@ namespace UltimateKtv
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, shrink);
             scale.BeginAnimation(ScaleTransform.ScaleYProperty, shrink);
             label.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            return label;
         }
 
-        private static void Flash(Canvas layer, Rect target, TimeSpan delay)
+        private static UIElement Flash(Canvas layer, Rect target, TimeSpan delay)
         {
             var flash = new Border
             {
@@ -122,6 +164,7 @@ namespace UltimateKtv
                 new QuadraticEase { EasingMode = EasingMode.EaseIn }));
             anim.Completed += (_, _) => layer.Children.Remove(flash);
             flash.BeginAnimation(UIElement.OpacityProperty, anim);
+            return flash;
         }
 
         /// <summary>

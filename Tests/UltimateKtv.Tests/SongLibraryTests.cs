@@ -90,7 +90,7 @@ namespace UltimateKtv.Tests
         {
             CreateFullYoutubeTable();
             Db.ExecuteNonQuery("INSERT INTO YoutubeSongList (Id, CreatDate) VALUES ('Y0001', '2026-08-16 00:45:08')");
-            SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "新歌", @"D:\yt\新歌_aaaaaaaaaaa.mp4", "", 30, 3);
+            SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "新歌", @"D:\yt\新歌_aaaaaaaaaaa.mp4", "", 30, AudioChannel.NoVocal);
 
             // SELECT * 讀整張表 (YouTube 紀錄清單的讀法)：任何一筆日期解析失敗都會讓整份清單讀不出來
             var dates = Db.GetDataTable("SELECT * FROM YoutubeSongList ORDER BY CreatDate DESC").Rows.Cast<DataRow>()
@@ -117,9 +117,9 @@ namespace UltimateKtv.Tests
         {
             CreateFullYoutubeTable();
 
-            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "第一首", @"D:\yt\第一首_aaaaaaaaaaa.mp4", "", 30, 3));
-            Assert.Equal("Y0002", SongLibrary.RecordYoutubeSong("bbbbbbbbbbb", "第二首", @"D:\yt\第二首_bbbbbbbbbbb.mp4", "", 30, 3));
-            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "第一首", @"D:\other\x.mp4", "", 30, 3));
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "第一首", @"D:\yt\第一首_aaaaaaaaaaa.mp4", "", 30, AudioChannel.NoVocal));
+            Assert.Equal("Y0002", SongLibrary.RecordYoutubeSong("bbbbbbbbbbb", "第二首", @"D:\yt\第二首_bbbbbbbbbbb.mp4", "", 30, AudioChannel.NoVocal));
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "第一首", @"D:\other\x.mp4", "", 30, AudioChannel.NoVocal));
             Assert.Equal(2L, Scalar("SELECT COUNT(*) FROM YoutubeSongList"));
         }
 
@@ -127,9 +127,9 @@ namespace UltimateKtv.Tests
         public void Record_youtube_song_fills_the_missing_video_id_of_an_imported_file()
         {
             CreateFullYoutubeTable();
-            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("", "匯入", @"D:\yt\匯入.mp4", "", 30, 3));
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("", "匯入", @"D:\yt\匯入.mp4", "", 30, AudioChannel.NoVocal));
 
-            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("ccccccccccc", "匯入", @"D:\yt\匯入.mp4", "", 30, 3));
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("ccccccccccc", "匯入", @"D:\yt\匯入.mp4", "", 30, AudioChannel.NoVocal));
             Assert.Equal("ccccccccccc", Scalar("SELECT Url FROM YoutubeSongList WHERE Id = 'Y0001'"));
         }
 
@@ -137,7 +137,7 @@ namespace UltimateKtv.Tests
         public void Youtube_length_is_written_only_once()
         {
             CreateFullYoutubeTable();
-            SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "A", @"D:\yt\A_aaaaaaaaaaa.mp4", "", 30, 3);
+            SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "A", @"D:\yt\A_aaaaaaaaaaa.mp4", "", 30, AudioChannel.NoVocal);
 
             Assert.True(SongLibrary.UpdateYoutubeSongLength("aaaaaaaaaaa", 200));
             Assert.False(SongLibrary.UpdateYoutubeSongLength("Y0001", 300));
@@ -148,11 +148,11 @@ namespace UltimateKtv.Tests
         public void Youtube_track_is_recorded_and_read_by_record_id_or_video_id()
         {
             CreateFullYoutubeTable();
-            SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "A", @"D:\yt\A_aaaaaaaaaaa.mp4", "", 30, 0);
+            SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "A", @"D:\yt\A_aaaaaaaaaaa.mp4", "", 30, AudioChannel.Stereo);
 
-            Assert.Equal(0, SongLibrary.GetYoutubeTrack("Y0001"));
+            Assert.Equal(AudioChannel.Stereo, SongLibrary.GetYoutubeTrack("Y0001"));
             Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Track = 2 WHERE Id = 'Y0001'"); // SongMgr 修改
-            Assert.Equal(2, SongLibrary.GetYoutubeTrack("aaaaaaaaaaa"));
+            Assert.Equal(AudioChannel.Right, SongLibrary.GetYoutubeTrack("aaaaaaaaaaa"));
             Assert.Null(SongLibrary.GetYoutubeTrack("bbbbbbbbbbb"));
 
             Db.ExecuteNonQuery("UPDATE YoutubeSongList SET Track = NULL WHERE Id = 'Y0001'");

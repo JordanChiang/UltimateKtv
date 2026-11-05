@@ -37,8 +37,8 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | 專案 | 連結的檔案 |
 | :--- | :--- |
 | `Updater` (net471, 一律 x86) | `Update/ZipHelper.cs` |
-| `StyleSimulator` | `Settings/AppSettings.cs`, `Themes/ThemeSettings.cs`, `Themes/RowStyleBrushes.cs`, `Themes/AmbientBackground.cs`, `Themes/MicroFx.cs` |
-| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`SongLibrary.cs`、`Song.cs`、`Singer.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Remote/WebCultureMatcher.cs`, `Remote/RemoteCommands.cs` |
+| `StyleSimulator` | `Settings/AppSettings.cs`, `Themes/ThemeSettings.cs`, `Themes/NavMenu.cs`, `Themes/RowStyleBrushes.cs`, `Themes/AmbientBackground.cs`, `Themes/MicroFx.cs` |
+| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`AudioChannel.cs`、`SongLibrary.cs`、`Song.cs`、`Singer.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Themes/NavMenu.cs`, `Remote/WebCultureMatcher.cs`, `Remote/RemoteCommands.cs` |
 
 搬移或改名這些檔案時，要一併改上述專案 csproj 的 `Include` 路徑。
 
@@ -71,7 +71,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
    開播後要做的紀錄在 **`Playback/PlayRecorder`** (第一首清空今日點唱、記錄點唱、播放進度過門檻加播放次數、YouTube 長度，隨機歌不記)；錄音的開始/停止也是訂閱場次事件 (`MainWindow.Player.cs`)。
    主控台音量滑桿的規則 (開播音量、音量鎖定、靜音、播完存回歌庫) 在 **`Playback/SongVolume`**，滑桿只顯示它的 `Level`。
 2. **`MainWindow.Player.cs` 的 `PlayerTarget`** — `IPlaybackTarget` 的實作，開檔前套用音量/聲道設定，並把引擎事件帶回 UI 執行緒。
-3. **`Player/UKtvPlayer`** — 播放引擎介面，兩個實作：`DirectShowPlayer` (預設，CrazyKTV_MediaKit + LAV filters) 與 `MpvPlayer` (libmpv，`PlayerEngine=1`)。`MediaHostManager` 是全程式唯一 player 的 singleton，libmpv 載入失敗時退回 DirectShow。
+3. **`Player/UKtvPlayer`** — 播放引擎介面，兩個實作：`MpvPlayer` (預設，libmpv，`PlayerEngine=1`) 與 `DirectShowPlayer` (CrazyKTV_MediaKit + LAV filters，`PlayerEngine=0`)。`MediaHostManager` 是全程式唯一 player 的 singleton，libmpv 載入失敗時退回 DirectShow。
 
 libmpv 的影片是原生視窗，WPF 元素疊不上去：電視畫面的跑馬燈/歌詞由 `ITvOverlay` 處理 (`Player/MpvOsd.cs` 用 mpv overlay 合成；DirectShow 直接用 WPF 疊加)，主控台預覽是第二個 mpv 軟體渲染實例 (`MpvPreview` → `D3DImageSurface`)。兩個引擎的音訊處理 (消人聲、增益、限制器、音量) 必須與 MediaKit 一致。
 

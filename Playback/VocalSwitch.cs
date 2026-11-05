@@ -4,13 +4,13 @@ using System.Linq;
 namespace UltimateKtv.Playback
 {
     /// <summary>
-    /// player 的音軌/聲道旋鈕。Channel：0=立體聲, 1=左聲道, 2=右聲道, 3=消人聲。
+    /// player 的音軌/聲道旋鈕。
     /// </summary>
     public interface IAudioTracks
     {
         IReadOnlyList<int> Streams { get; }
         int Track { get; set; }
-        int Channel { get; set; }
+        AudioChannel Channel { get; set; }
     }
 
     /// <summary>人聲/伴唱按鈕應顯示的狀態。</summary>
@@ -60,11 +60,11 @@ namespace UltimateKtv.Playback
             get
             {
                 // YouTube 只有兩種狀態：立體聲 = 人聲，其餘 = 伴唱
-                if (IsYoutube) return _audio.Channel == 0 ? VocalMode.Vocal : VocalMode.Music;
+                if (IsYoutube) return _audio.Channel == AudioChannel.Stereo ? VocalMode.Vocal : VocalMode.Music;
                 if (IsFixed) return VocalMode.Fixed;
                 bool musicActive = StreamCount > 1
                     ? _audio.Track == MusicTrack
-                    : _audio.Channel == MusicTrack;
+                    : (int)_audio.Channel == MusicTrack;
                 return musicActive ? VocalMode.Music : VocalMode.Vocal;
             }
         }
@@ -95,11 +95,11 @@ namespace UltimateKtv.Playback
                 {
                     // 單音軌：人聲在伴唱的另一個聲道
                     if (streams.Count > 0) _audio.Track = streams[0];
-                    _audio.Channel = MusicTrack == 1 ? 2 : 1;
+                    _audio.Channel = AudioChannels.OppositeSide(MusicTrack);
                 }
                 else
                 {
-                    _audio.Channel = 0; // Stereo
+                    _audio.Channel = AudioChannel.Stereo;
                     if (streams.Count >= 3 && streams.Contains(FixedTrack))
                     {
                         _audio.Track = FixedTrack;
@@ -115,7 +115,7 @@ namespace UltimateKtv.Playback
             }
             else if (streams.Count == 1)
             {
-                _audio.Channel = MusicTrack;
+                _audio.Channel = (AudioChannel)MusicTrack;
                 _audio.Track = streams[0];
             }
             else if (streams.Contains(MusicTrack))
@@ -129,13 +129,14 @@ namespace UltimateKtv.Playback
 
             if (isYoutube)
             {
-                // YouTube 的 songTrack 是點唱紀錄的 Track (聲道 0~3)；沒有或不合法時依預設
-                _audio.Channel = songTrack is >= 0 and <= 3 ? songTrack.Value : YoutubeDefaultChannel(youtubeDefaultNoVocal);
+                // YouTube 的 songTrack 是點唱紀錄的 Track (聲道)；沒有或不合法時依預設
+                _audio.Channel = AudioChannels.FromValue(songTrack) ?? YoutubeDefaultChannel(youtubeDefaultNoVocal);
             }
         }
 
-        /// <summary>YouTube 預設聲道：消人聲 (3) 或立體聲 (0)。新的點唱紀錄以此寫入 Track。</summary>
-        public static int YoutubeDefaultChannel(bool youtubeDefaultNoVocal) => youtubeDefaultNoVocal ? 3 : 0;
+        /// <summary>YouTube 預設聲道：消人聲或立體聲。新的點唱紀錄以此寫入 Track。</summary>
+        public static AudioChannel YoutubeDefaultChannel(bool youtubeDefaultNoVocal) =>
+            youtubeDefaultNoVocal ? AudioChannel.NoVocal : AudioChannel.Stereo;
 
         /// <summary>人聲鈕：單音軌換到人聲聲道；多音軌輪流切換音軌。固定人聲時只解除固定。</summary>
         public VocalSwitchResult SwitchToVocal()
@@ -148,14 +149,14 @@ namespace UltimateKtv.Playback
 
             if (IsYoutube)
             {
-                _audio.Channel = 0;
+                _audio.Channel = AudioChannel.Stereo;
                 return VocalSwitchResult.Switched;
             }
 
             var streams = _audio.Streams;
             if (streams.Count == 1)
             {
-                _audio.Channel = MusicTrack == 1 ? 2 : 1;
+                _audio.Channel = AudioChannels.OppositeSide(MusicTrack);
                 return VocalSwitchResult.Switched;
             }
 
@@ -180,7 +181,7 @@ namespace UltimateKtv.Playback
         {
             if (IsYoutube)
             {
-                _audio.Channel = 3;
+                _audio.Channel = AudioChannel.NoVocal;
                 return VocalSwitchResult.Switched;
             }
 
@@ -194,7 +195,7 @@ namespace UltimateKtv.Playback
 
             if (StreamCount <= 1)
             {
-                _audio.Channel = MusicTrack;
+                _audio.Channel = (AudioChannel)MusicTrack;
             }
             else if (_audio.Track != MusicTrack)
             {
@@ -210,7 +211,7 @@ namespace UltimateKtv.Playback
         /// <returns>新的伴唱位置 (要寫回歌庫的 Song_Track)。</returns>
         public int SetAsMusic(int currentTrack)
         {
-            MusicTrack = StreamCount <= 1 ? (MusicTrack == 1 ? 2 : 1) : currentTrack;
+            MusicTrack = StreamCount <= 1 ? (int)AudioChannels.OppositeSide(MusicTrack) : currentTrack;
             SwitchToMusic();
             return MusicTrack;
         }
@@ -219,7 +220,7 @@ namespace UltimateKtv.Playback
         /// <param name="currentTrack">選單打開時正在播的音軌。</param>
         public int Fix(int currentTrack)
         {
-            FixedTrack = StreamCount <= 1 ? _audio.Channel : currentTrack;
+            FixedTrack = StreamCount <= 1 ? (int)_audio.Channel : currentTrack;
             return FixedTrack;
         }
 
