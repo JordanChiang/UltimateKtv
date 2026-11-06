@@ -78,6 +78,7 @@ namespace UltimateKtv
         private bool _smoothMotion;
         private int _smoothCheckTicks;
         private long _lastBadFrames = -1;
+        private long _lastDelayedFrames = -1;
         private int _smoothBadWindows; // 連續超標的檢查次數
 
         // 主視窗預覽 (第二個 libmpv 實例)
@@ -449,6 +450,7 @@ namespace UltimateKtv
             _smoothMotion = true;
             _smoothCheckTicks = 0;
             _lastBadFrames = -1;
+            _lastDelayedFrames = -1;
             _smoothBadWindows = 0;
             SetProperty("video-sync", "display-resample"); // 黑畫面期間改成 display-desync，載入歌曲時還原
             SetProperty("speed", "1"); // 黑畫面閒置時會調成極慢速
@@ -768,12 +770,22 @@ namespace UltimateKtv
             long bad = 0;
             foreach (var name in new[] { "frame-drop-count", "vo-delayed-frame-count", "mistimed-frame-count" })
                 if (long.TryParse(GetString(name), out long n)) bad += n;
+            long delayed = long.TryParse(GetString("vo-delayed-frame-count"), out long dl) ? dl : 0;
 
-            if (_lastBadFrames < 0 || bad < _lastBadFrames) { _lastBadFrames = bad; return; } // 開歌後的基準 / 計數被 mpv 歸零
+            if (_lastBadFrames < 0 || bad < _lastBadFrames || delayed < _lastDelayedFrames)
+            {
+                _lastBadFrames = bad; _lastDelayedFrames = delayed; // 開歌後的基準 / 計數被 mpv 歸零
+                return;
+            }
             long delta = bad - _lastBadFrames;
+            long delayedDelta = delayed - _lastDelayedFrames;
             _lastBadFrames = bad;
+            _lastDelayedFrames = delayed;
 
-            if (delta <= 15)
+            // 這 5 秒內沒有任何影格因顯示跟不上而延遲 (vo-delayed) → 不是顯示卡的問題：
+            // 影格時間戳錯亂的檔案 (例如部分 MPEG-2 檔每秒約 2 對影格的時間互換) 會穩定產生
+            // drop/mistimed，實測 5 秒 44 格、delayed 一直是 0；若照算會在 15 秒後降級，整首跑馬燈只剩 30 次/秒、一跳一跳
+            if (delta <= 15 || delayedDelta == 0)
             {
                 _smoothBadWindows = 0;
                 return;
@@ -894,6 +906,8 @@ namespace UltimateKtv
             if (_seekStep == 0) _resumeAfterSeek = !_paused;
             _seekTarget = Math.Max(0, seconds);
             SetProperty("pause", "yes");
+            // 同 Pause()：暫停時 mpv 限制手動重畫間隔，跑馬燈會掉到 ~30~40 次/秒；seek 這 0.2 秒也一樣要解除 (實測 OSD 間隔 33ms)
+            SetProperty("display-fps-override", "1000");
             _seekTimeout.Stop();
             _seekTimeout.Start();
             string unaligned = BuildMergedGraph(_mergedTracks!, _mergedDuration, -1);
@@ -947,7 +961,11 @@ namespace UltimateKtv
             if (_seekStep == 0) return;
             _seekStep = 0;
             _seekTimeout.Stop();
-            if (_resumeAfterSeek && _fileLoaded) SetProperty("pause", "no");
+            if (_resumeAfterSeek && _fileLoaded)
+            {
+                SetProperty("display-fps-override", "0"); // 使用者原本就暫停時保留 Pause() 的設定
+                SetProperty("pause", "no");
+            }
         }
 
         /// <summary>換歌/停止時中止進行中的多音軌 seek (不恢復播放，由換歌流程決定)。</summary>
