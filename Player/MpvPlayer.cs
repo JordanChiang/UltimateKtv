@@ -375,13 +375,15 @@ namespace UltimateKtv
                 LoadCurrentSource(); // Stop() 之後再 Play()：重新載入 (同 DirectShow 從頭播放)
                 return;
             }
-            SetProperty("display-fps-override", "0");
             if (_seekStep != 0)
             {
-                _resumeAfterSeek = true; // 多音軌 seek 中：完成後才恢復播放
+                // 多音軌 seek 中：完成後才恢復播放；display-fps-override 由 FinishMergedSeek 改回 0，
+                // 這裡先改回會讓 seek 那段暫停的跑馬燈又掉到 ~30 次/秒
+                _resumeAfterSeek = true;
             }
             else
             {
+                SetProperty("display-fps-override", "0");
                 SetProperty("pause", "no");
             }
             if (_previewEnabled) _preview?.SetPaused(false);
