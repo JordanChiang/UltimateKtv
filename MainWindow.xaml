@@ -51,6 +51,7 @@
         <local:NotEqualConverter x:Key="NotEqualConverter" />
         <local:SongLanguageDisplayConverter x:Key="SongLanguageDisplayConverter" />
         <local:OrderedByDisplayConverter x:Key="OrderedByDisplayConverter" />
+        <local:TextWidthLimitConverter x:Key="TextWidthLimitConverter" />
 
         <!-- Custom style to increase the height of the slider track -->
         <Style x:Key="ThickSliderStyle" TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
@@ -1296,8 +1297,15 @@
                                                     <DataGridTemplateColumn local:Loc.HeaderKey="Col.Singer" Width="*" CanUserSort="False">
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
+                                                                <!-- 歌手最多 7 個中文字寬，超過截斷加「…」；欄寬不夠時再整體縮小 -->
                                                                 <Viewbox StretchDirection="DownOnly" HorizontalAlignment="Left" Margin="0">
-                                                                    <TextBlock Text="{Binding WaitingListSingerName}" VerticalAlignment="Center">
+                                                                    <TextBlock VerticalAlignment="Center">
+                                                                        <TextBlock.Text>
+                                                                            <MultiBinding Converter="{StaticResource TextWidthLimitConverter}" ConverterParameter="7">
+                                                                                <Binding Path="WaitingListSingerName"/>
+                                                                                <Binding Path="FontFamily" RelativeSource="{RelativeSource Self}"/>
+                                                                            </MultiBinding>
+                                                                        </TextBlock.Text>
                                                                         <TextBlock.Style>
                                                                             <Style TargetType="TextBlock">
                                                                                 <Setter Property="Foreground" Value="{DynamicResource BrushTextDim}"/>
@@ -1374,19 +1382,13 @@
                                         </Border>
 
                                         <!-- Currently Playing Song and Singer Display -->
-                                        <!-- 字級固定不縮小；歌手最多佔 4 個中文字寬 (超過以 … 截斷，寬度在 UpdateCurrentPlayingDisplay 依字級設定)，
-                                             其餘空間給歌名，放不下時歌名以 … 截斷。
-                                             Left 對齊的 Grid 在空間足夠時貼合內容寬度，不足時 * 欄才被壓縮 -->
-                                        <Grid x:Name="NowPlayingInfoPanel" Grid.Column="1"
+                                        <!-- 字級固定不縮小；放得下就完整顯示。放不下時歌手至少保留 4 個中文字寬，
+                                             歌名短而有剩餘空間時歌手可再加寬，其餘給歌名，各自以 … 截斷 (NowPlayingTitlePanel) -->
+                                        <local:NowPlayingTitlePanel x:Name="NowPlayingInfoPanel" Grid.Column="1"
+                                              SingerReservedChars="4"
                                               HorizontalAlignment="Left" VerticalAlignment="Center"
                                               ClipToBounds="True">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
                                             <TextBlock x:Name="NowPlayingSongText"
-                                                       Grid.Column="0"
                                                        Text="{DynamicResource Str.NowPlaying.None}"
                                                        FontSize="{StaticResource FontSizeL}"
                                                        FontWeight="Normal"
@@ -1394,21 +1396,19 @@
                                                        Foreground="{DynamicResource BrushTextMuted}"
                                                        VerticalAlignment="Center"/>
                                             <TextBlock x:Name="NowPlayingSeparator"
-                                                       Grid.Column="1"
                                                        Text=" / "
                                                        FontSize="{StaticResource FontSizeL}"
                                                        Foreground="{DynamicResource BrushTextMuted}"
                                                        VerticalAlignment="Center"
                                                        Visibility="Collapsed"/>
                                             <TextBlock x:Name="NowPlayingSingerText"
-                                                       Grid.Column="2"
                                                        Text=""
                                                        FontSize="{StaticResource FontSizeL}"
                                                        FontWeight="SemiBold"
                                                        TextTrimming="CharacterEllipsis"
                                                        Foreground="{DynamicResource PrimaryLightBrush}"
                                                        VerticalAlignment="Center"/>
-                                        </Grid>
+                                        </local:NowPlayingTitlePanel>
                                     </Grid>
                                 </Border>
 

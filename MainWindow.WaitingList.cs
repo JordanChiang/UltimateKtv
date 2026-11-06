@@ -68,9 +68,6 @@ namespace UltimateKtv
             UpdateCurrentPlayingDisplay();
         }
 
-        // 正在播放列的歌手最多佔幾個中文字寬，其餘留給歌名
-        private const int NowPlayingSingerMaxChars = 4;
-
         /// <summary>
         /// Updates the currently playing song/singer display bar above the media player panel.
         /// </summary>
@@ -153,8 +150,6 @@ namespace UltimateKtv
                     NowPlayingSeparator.Visibility = Visibility.Visible;
                     NowPlayingSingerText.Text = singerName;
                     NowPlayingSingerText.FontWeight = FontWeights.SemiBold;
-                    // 歌手最多佔 4 個中文字寬 (中文字寬 = 字級；多留一點避免剛好 4 個字也被截斷)，其餘留給歌名
-                    NowPlayingSingerText.MaxWidth = NowPlayingSingerText.FontSize * NowPlayingSingerMaxChars + 2;
                     NowPlayingSingerText.SetResourceReference(TextBlock.ForegroundProperty, "PrimaryLightBrush");
                     NowPlayingBorder.ToolTip = $"{songName} / {singerName}";
                 }
