@@ -12,7 +12,7 @@ namespace UltimateKtv
     /// <summary>
     /// 以 libmpv 實作的播放引擎 (原型：HwndHost 嵌入)。
     /// 語意盡量對齊 DirectShowPlayer：
-    /// - 音軌編號 = mpv aid (從 1 開始)，與 MediaKit 相同
+    /// - 音軌編號 = mpv aid (從 1 開始)，與 MediaKit 相同。多音軌歌曲比照 MediaKit 把所有音軌一起解碼、只聽選取的那條 (見 OnPreloaded)
     /// - AudioChannel 0/1/2/3 = 立體聲/左/右/消人聲，以 lavfi pan 濾鏡實作 (消人聲另加 lowpass/highpass 分頻)
     /// - AudioPitch 以 rubberband 濾鏡實作 (需 libmpv 編入 librubberband)
     /// - Volume 0..1 視為 -100dB..0dB (同 DirectShow IBasicAudio)，再乘上 AudioAmplify%
@@ -46,6 +46,26 @@ namespace UltimateKtv
         private long _durationTicks;
         private bool _hasVideo;
         private List<int> _audioStreams = new();
+
+        // 多音軌：所有音軌一起解碼 (MediaKit 作法，見 OnPreloaded)。null = 單音軌，照一般方式用 aid 選音軌
+        private const ulong HookPreloaded = 100;
+        private const int MergedSampleRate = 48000;
+        private volatile int[]? _mergedTracks;
+        // 程式要求播放歌曲中 (Source 已設定、還沒停止或播完)。只在 UI 執行緒讀寫；
+        // mpv 進入閒置時據此決定要不要載入黑畫面 (見 OnIdle)
+        private bool _songRequested;
+        // 歌曲播完/開檔失敗時只清掉「最新一次載入」的要求：舊歌的結束事件晚到 UI 時不能清掉新歌的
+        private int _loadGeneration;                 // UI 執行緒每次載入歌曲 +1
+        private long _songEntryId = -1;              // 最近開始的歌曲的 mpv playlist entry (事件執行緒寫)
+        private volatile int _songEntryGeneration = -1;
+        private double _mergedDuration;
+        private volatile int _selectedTrack;
+        private string? _currentGraph;
+        // 多音軌時使用者 seek 的步驟 (見 StartMergedSeek)；0 = 沒有在 seek
+        private int _seekStep;
+        private double _seekTarget;
+        private bool _resumeAfterSeek;
+        private readonly DispatcherTimer _seekTimeout;
 
         private double _volume = 1.0;
         private int _audioAmplify = 100;
@@ -97,6 +117,24 @@ namespace UltimateKtv
             SetOption("volume-max", "1000");
             SetOption("audio-client-name", "UltimateKtv");
             SetOption("background-color", "#000000");
+            // 精確 seek 時 demuxer 先退 1 秒再解到目標：lavf 對 MPEG-PS 的 seek 會落在目標之後 (實測晚 0.5 秒，等於跳過半秒歌)
+            SetOption("hr-seek-demuxer-offset", "1");
+            // 診斷用：設環境變數 KTV_MPV_LOG=<檔案路徑> 時寫出 mpv 自己的詳細 log (換音軌、濾鏡、demuxer 等問題只看得到這裡)
+            string? mpvLog = Environment.GetEnvironmentVariable("KTV_MPV_LOG");
+            if (!string.IsNullOrWhiteSpace(mpvLog))
+            {
+                SetOption("log-file", mpvLog);
+                SetOption("msg-level", "all=v");
+            }
+            // 診斷用：KTV_MPV_AO_PCM=<wav 路徑> 時聲音不送音效卡，改寫成 wav 檔 (錄下實際輸出比對音軌/聲道)。
+            // 注意 ao=pcm 的緩衝在 seek 時已寫入檔案，量 seek 前後的斷音/跳秒要看 mpv log，不要看這個錄音
+            string? pcmOut = Environment.GetEnvironmentVariable("KTV_MPV_AO_PCM");
+            if (!string.IsNullOrWhiteSpace(pcmOut))
+            {
+                SetOption("ao", "pcm");
+                SetOption("ao-pcm-file", pcmOut);
+                SetOption("audio-channels", "stereo");
+            }
             // config=no 時沒有預設快取目錄：指定著色器快取，避免每次啟動第一次顯示 OSD/影片時現場編譯造成掉格
             try
             {
@@ -130,6 +168,10 @@ namespace UltimateKtv
             Observe(ObsDuration, "duration", MpvNative.FORMAT_DOUBLE);
             Observe(ObsMousePos, "mouse-pos", 0); // MPV_FORMAT_NONE：只要變更通知
             Observe(ObsIdle, "idle-active", MpvNative.FORMAT_FLAG);
+            // 多音軌歌曲要在建立解碼器之前設好 lavfi-complex (見 OnPreloaded)
+            IntPtr hookName = MpvNative.Utf8("on_preloaded");
+            try { MpvNative.HookAdd!(_ctx, HookPreloaded, hookName, 0); }
+            finally { Marshal.FreeCoTaskMem(hookName); }
             Command("keybind", "MBTN_LEFT_DBL", "script-message " + DoubleClickMessage);
 
             Osd = new MpvOsd(args => Command(args), name => GetString(name), () => _host.VideoHwnd);
@@ -157,6 +199,14 @@ namespace UltimateKtv
                     CheckSmoothMotion();
                     SyncPreview();
                 }
+            };
+
+            // 多音軌 seek 的每一步都在等 mpv 的 PLAYBACK_RESTART；等不到時 (例如 mpv 沒有重建) 不要一直停在暫停
+            _seekTimeout = new DispatcherTimer(DispatcherPriority.Normal, _dispatcher) { Interval = TimeSpan.FromSeconds(2) };
+            _seekTimeout.Tick += (_, _) =>
+            {
+                AppLogger.Log($"[mpv] multi-track seek step {_seekStep} timed out (target={_seekTarget:F2}); resuming.");
+                FinishMergedSeek();
             };
 
             _eventThread = new Thread(EventLoop) { IsBackground = true, Name = "mpv-events" };
@@ -196,6 +246,7 @@ namespace UltimateKtv
                 _source = value;
                 if (value == null)
                 {
+                    _songRequested = false;
                     Command("stop");
                     _currentTarget = null;
                     _preview?.Stop();
@@ -205,7 +256,8 @@ namespace UltimateKtv
             }
         }
 
-        public bool IsPlaying => _fileLoaded && !_paused;
+        // 多音軌 seek 期間內部會暫停；對外回報 seek 完成後的狀態，播放/暫停鍵與升降 Key 不會因此閃一下
+        public bool IsPlaying => _fileLoaded && (_seekStep != 0 ? _resumeAfterSeek : !_paused);
         public bool HasVideo => _fileLoaded && _hasVideo;
 
         public long MediaPosition
@@ -216,7 +268,8 @@ namespace UltimateKtv
                 if (!_fileLoaded) return; // SafeStop 會在停止後設 0，無檔案時忽略
                 Interlocked.Exchange(ref _positionTicks, value);
                 double seconds = value / (double)TimeSpan.TicksPerSecond;
-                Command("seek", seconds.ToString("0.###", CultureInfo.InvariantCulture), "absolute");
+                if (_mergedTracks != null) StartMergedSeek(seconds);
+                else Command("seek", seconds.ToString("0.###", CultureInfo.InvariantCulture), "absolute");
                 if (_previewEnabled) _preview?.Seek(seconds);
             }
         }
@@ -256,8 +309,20 @@ namespace UltimateKtv
 
         public int AudioTrack
         {
-            get => int.TryParse(GetString("aid"), out int id) ? id : 0;
-            set => SetProperty("aid", value.ToString(CultureInfo.InvariantCulture));
+            get => _mergedTracks != null ? _selectedTrack : int.TryParse(GetString("aid"), out int id) ? id : 0;
+            set
+            {
+                var merged = _mergedTracks;
+                if (merged == null)
+                {
+                    SetProperty("aid", value.ToString(CultureInfo.InvariantCulture));
+                    return;
+                }
+                // 所有音軌都在解碼：只改 af 最前面選聲道的 pan，不必 seek (同 MediaKit 把其他音軌的音量設為 0)
+                if (Array.IndexOf(merged, value) < 0 || value == _selectedTrack) return;
+                _selectedTrack = value;
+                ApplyAudioFilters();
+            }
         }
 
         public int AudioChannel
@@ -310,12 +375,20 @@ namespace UltimateKtv
                 return;
             }
             SetProperty("display-fps-override", "0");
-            SetProperty("pause", "no");
+            if (_seekStep != 0)
+            {
+                _resumeAfterSeek = true; // 多音軌 seek 中：完成後才恢復播放
+            }
+            else
+            {
+                SetProperty("pause", "no");
+            }
             if (_previewEnabled) _preview?.SetPaused(false);
         }
 
         public void Pause()
         {
+            _resumeAfterSeek = false;
             SetProperty("pause", "yes");
             // 暫停時 mpv 只在 OSD 變動時重畫，且限制「兩次重畫至少相隔一個螢幕週期」(vo.c: manual redraws at most at display fps)。
             // 它估的週期 (例如 59.82fps = 16.72ms) 只要比實際長一點，每格送來的跑馬燈更新就被判定太早、延到下一格 → 只剩 ~40fps (實測)。
@@ -326,6 +399,8 @@ namespace UltimateKtv
 
         public void Stop()
         {
+            CancelMergedSeek();
+            _songRequested = false;
             _fileLoaded = false;
             _positionTimer.Stop();
             Command("stop");
@@ -356,6 +431,10 @@ namespace UltimateKtv
         private void LoadCurrentSource()
         {
             if (_source == null) return;
+            _songRequested = true;
+            Interlocked.Increment(ref _loadGeneration);
+            CancelMergedSeek();
+            _mergedTracks = null; // 新檔案的音軌組成由 on_preloaded 決定；之前套用 af 不可沿用上一首的選聲道
             _fileLoaded = false;
             Interlocked.Exchange(ref _positionTicks, 0);
             Interlocked.Exchange(ref _durationTicks, 0);
@@ -378,6 +457,7 @@ namespace UltimateKtv
             int err = Command("loadfile", target, "replace");
             if (err < 0)
             {
+                _songRequested = false;
                 RaiseFailed($"loadfile failed: {MpvNative.Error(err)}");
             }
         }
@@ -428,12 +508,41 @@ namespace UltimateKtv
                     else if (ev.reply_userdata == ObsDuration && prop.format == MpvNative.FORMAT_DOUBLE)
                         Interlocked.Exchange(ref _durationTicks, SecondsToTicks(ReadDouble(prop.data)));
                     else if (ev.reply_userdata == ObsIdle && prop.format == MpvNative.FORMAT_FLAG && Marshal.ReadInt32(prop.data) != 0)
-                        ShowIdleSource(); // 開機或歌曲結束：載入黑畫面 (沒有捲動時暫停)
+                        _dispatcher.InvokeAsync(OnIdle); // 開機或歌曲結束：載入黑畫面 (沒有捲動時暫停)
+                    break;
+
+                case MpvNative.EVENT_HOOK:
+                    var hook = Marshal.PtrToStructure<MpvNative.mpv_event_hook>(ev.data);
+                    try
+                    {
+                        if (ev.reply_userdata == HookPreloaded) OnPreloaded();
+                    }
+                    catch (Exception ex)
+                    {
+                        AppLogger.LogError("[mpv] on_preloaded hook failed", ex);
+                    }
+                    finally
+                    {
+                        MpvNative.HookContinue!(_ctx, hook.id); // 一定要放行，否則 mpv 會一直等這個 hook
+                    }
+                    break;
+
+                case MpvNative.EVENT_PLAYBACK_RESTART:
+                    if (Volatile.Read(ref _seekStep) != 0) _dispatcher.InvokeAsync(OnMergedSeekRestart);
                     break;
 
                 case MpvNative.EVENT_START_FILE:
                     // mpv_event_start_file { int64 playlist_entry_id; }
-                    if (GetString("path") == IdleSource) _idleEntryId = Marshal.ReadInt64(ev.data);
+                    long entryId = Marshal.ReadInt64(ev.data);
+                    if (GetString("path") == IdleSource)
+                    {
+                        _idleEntryId = entryId;
+                    }
+                    else
+                    {
+                        _songEntryGeneration = Volatile.Read(ref _loadGeneration);
+                        Interlocked.Exchange(ref _songEntryId, entryId);
+                    }
                     break;
 
                 case EVENT_CLIENT_MESSAGE:
@@ -453,13 +562,15 @@ namespace UltimateKtv
                         _fileLoaded = true;
                         // 同 MediaKit (MediaElementBase 開檔時 AudioChannel = 0)：每首新歌先回到立體聲，
                         // 單音軌歌曲再由 MediaOpened 的處理者改成左/右聲道。否則多音軌歌曲會沿用上一首的左/右聲道
-                        AudioChannel = 0;
+                        // 多音軌歌曲也要在這裡套用一次 af (選取音軌的 pan)，所以不經過 AudioChannel 的「沒變就不套用」
+                        _audioChannel = 0;
+                        ApplyAudioFilters();
                         MediaOpened?.Invoke(this, EventArgs.Empty);
                         SetProperty("pause", "no"); // 設定都套用後才開始播放
                         if (_previewEnabled) _preview?.SetPaused(false);
                         _positionTimer.Start();
                         AppLogger.Log($"[mpv] opened: vo={GetString("current-vo")}, ao={GetString("current-ao")}, " +
-                                      $"aid={GetString("aid")}, speed={GetString("speed")}, volume={GetString("volume")}, mute={GetString("mute")}, af={GetString("af")}");
+                                      $"aid={GetString("aid")}, merged={(_mergedTracks == null ? "no" : $"{_mergedTracks.Length} tracks, play {_selectedTrack}")}, speed={GetString("speed")}, volume={GetString("volume")}, mute={GetString("mute")}, af={GetString("af")}");
                     });
                     break;
 
@@ -469,8 +580,16 @@ namespace UltimateKtv
                     _dispatcher.InvokeAsync(() =>
                     {
                         if (_closing) return;
+                        CancelMergedSeek();
                         _fileLoaded = false;
                         _positionTimer.Stop();
+                        // 播完或失敗：沒有要播的歌了 (之後 mpv 閒置時才載入黑畫面)。STOP/REDIRECT 是被停止或被新歌取代，不清
+                        if ((end.reason == MpvNative.END_FILE_REASON_EOF || end.reason == MpvNative.END_FILE_REASON_ERROR) &&
+                            end.playlist_entry_id == Interlocked.Read(ref _songEntryId) &&
+                            _songEntryGeneration == Volatile.Read(ref _loadGeneration))
+                        {
+                            _songRequested = false;
+                        }
                         switch (end.reason)
                         {
                             case MpvNative.END_FILE_REASON_EOF:
@@ -501,6 +620,18 @@ namespace UltimateKtv
 
         // 沒有捲動時以極慢速播放 (每秒不到一格新畫面 → 幾乎不重畫)；捲動時恢復 60fps。播放不中斷，只改速度
         private static string IdleSpeed(bool scrolling) => scrolling ? "1" : "0.01";
+
+        /// <summary>
+        /// mpv 進入閒置 (沒有檔案)。在 UI 執行緒決定要不要載入黑畫面：
+        /// 停止後立刻載入同一首/下一首 (重播) 時，mpv 仍會先回報閒置；若在 mpv 事件執行緒直接載入黑畫面，
+        /// 它和 UI 載入歌曲的 loadfile 只差 1ms，黑畫面較晚送出就會取代剛載入的歌 → 重播後完全沒有動作。
+        /// 載入歌曲一律在 UI 執行緒，所以在這裡檢查「是否已要求播放歌曲」就能確定先後。
+        /// </summary>
+        private void OnIdle()
+        {
+            if (_closing || _songRequested) return;
+            ShowIdleSource();
+        }
 
         private void ShowIdleSource()
         {
@@ -666,9 +797,176 @@ namespace UltimateKtv
             SetProperty("volume", mpvVolume.ToString("0.##", CultureInfo.InvariantCulture));
         }
 
+        // ---------- 多音軌：所有音軌一起解碼 (MediaKit 作法) ----------
+        //
+        // mpv 預設只解多工選取的音軌。換音軌時要回頭補讀新音軌，部分檔案做不到 (MPEG-PS 的時間戳不符合 mpv 的條件時：
+        // "can't issue refresh seek" → 整首沒聲音)，就算做得到也要 seek，畫面會頓一下、關鍵影格稀疏的檔會跳秒。
+        // 改成比照 MediaKit：每條音軌都解碼 (轉成立體聲後以 amerge 併成 2N 聲道)，換音軌只改 af 最前面的 pan，
+        // 不 seek、不斷音。以 2~5 音軌、5.1、mp2/ac3/pcm/aac 混合的測試檔錄音比對驗證。
+        //
+        // amerge 是逐樣本對齊、不看時間戳，而各音軌解碼器的第一個樣本時間不同 (pcm/ac3 混合的 DVD 檔實測差 128ms)，
+        // 所以每條音軌先用 aresample 的 first_pts 依時間戳補齊/裁切到同一起點。濾鏡圖在每次 seek 都會由 mpv 重建，
+        // 起點必須是那次 seek 的位置 (見 StartMergedSeek)。
+        // apad + atrim=end：音軌長度不同時 amerge 會在最短的音軌結束時停止，先補靜音到片長。
+
+        /// <summary>
+        /// on_preloaded：檔案已開啟、還沒選音軌與建立解碼器。lavfi-complex 要在這裡設定 —
+        /// 開檔後才設會觸發重建與原地 seek，實測每首歌開頭被跳過 0.4~0.8 秒 (關鍵影格稀疏的 mkv 跳過 5.3 秒)。
+        /// lavfi-complex 是跨檔案保留的選項，單音軌歌曲與閒置黑畫面要清掉。在 mpv 事件執行緒上執行。
+        /// </summary>
+        private void OnPreloaded()
+        {
+            int[]? merged = null;
+            if (GetString("path") != IdleSource)
+            {
+                var ids = new List<int>();
+                int count = int.TryParse(GetString("track-list/count"), out int c) ? c : 0;
+                for (int i = 0; i < count; i++)
+                {
+                    if (GetString($"track-list/{i}/type") == "audio" && int.TryParse(GetString($"track-list/{i}/id"), out int id))
+                        ids.Add(id);
+                }
+                // amerge 最多 64 聲道 = 32 條立體聲音軌
+                if (ids.Count >= 2 && ids.Count <= 32) merged = ids.ToArray();
+            }
+
+            string graph = "";
+            if (merged != null)
+            {
+                _mergedDuration = double.TryParse(GetString("duration"), NumberStyles.Float, CultureInfo.InvariantCulture, out double d) && d > 0 ? d : 0;
+                _selectedTrack = merged[0]; // 同 MediaKit：新檔案先聽第一條音軌，再由 MediaOpened 的處理者選
+                graph = BuildMergedGraph(merged, _mergedDuration, 0);
+            }
+            _mergedTracks = merged;
+            _currentGraph = graph;
+            int err = SetProperty("lavfi-complex", graph);
+            if (err < 0 && merged != null)
+            {
+                // 退回一般方式 (只解選取的音軌)
+                _mergedTracks = null;
+                _currentGraph = "";
+                SetProperty("lavfi-complex", "");
+            }
+        }
+
+        /// <summary>
+        /// 多音軌的 lavfi-complex。alignAt = 各音軌對齊的起點 (秒，應為濾鏡圖建立時的播放位置)；小於 0 = 不對齊
+        /// (seek 途中的暫時濾鏡圖：起點與實際位置差很多時，first_pts 會補上或解碼丟掉一大段，seek 到 280 秒實測要 2.4 秒)。
+        /// </summary>
+        private static string BuildMergedGraph(int[] tracks, double duration, double alignAt)
+        {
+            var sb = new System.Text.StringBuilder();
+            // first_pts 以輸入的取樣率計 → 先統一成 48kHz 再對齊 (44.1kHz 的歌直接用會差 8.8%)
+            string align = alignAt >= 0
+                ? ":first_pts=" + ((long)Math.Round(alignAt * MergedSampleRate)).ToString(CultureInfo.InvariantCulture)
+                : "";
+            // 片長不明時不補靜音：apad 沒有 atrim 會一直輸出，歌曲不會結束
+            string pad = duration > 0 ? ",apad,atrim=end=" + duration.ToString("0.###", CultureInfo.InvariantCulture) : "";
+            for (int i = 0; i < tracks.Length; i++)
+            {
+                sb.Append($"[aid{tracks[i]}]aresample={MergedSampleRate},aresample=async=1{align}," +
+                          $"aformat=sample_fmts=fltp:channel_layouts=stereo{pad}[a{i}];");
+            }
+            for (int i = 0; i < tracks.Length; i++) sb.Append($"[a{i}]");
+            sb.Append($"amerge=inputs={tracks.Length}[ao]");
+            return sb.ToString();
+        }
+
+        private void SetMergedGraph(double alignAt)
+        {
+            var merged = _mergedTracks;
+            if (merged == null) return;
+            string graph = BuildMergedGraph(merged, _mergedDuration, alignAt);
+            _currentGraph = graph;
+            SetProperty("lavfi-complex", graph);
+        }
+
+        /// <summary>
+        /// 多音軌的使用者 seek (拖曳進度條)。濾鏡圖的對齊起點要等於 seek 的位置，而且每一步都要等前一步完成：
+        /// 1. 換成不對齊的濾鏡圖 (mpv 會原地重建)   2. seek 到目標
+        /// 3. 換成以目標對齊的濾鏡圖 (原地重建)      4. 再精確 seek 到目標一次
+        /// 不等前一步完成就下一步時，mpv 會先用新的濾鏡圖從舊位置處理到目標 (實測 200 秒要 0.3 秒)；
+        /// mkv 在重建後緊接著 seek 會落到下一個關鍵影格 (實測跳過 3 秒)。第 4 步就是修正第 3 步重建的落點。
+        /// 全程暫停 (實測 150~270ms)，完成後恢復原本的播放狀態。
+        /// </summary>
+        private void StartMergedSeek(double seconds)
+        {
+            if (_seekStep == 0) _resumeAfterSeek = !_paused;
+            _seekTarget = Math.Max(0, seconds);
+            SetProperty("pause", "yes");
+            _seekTimeout.Stop();
+            _seekTimeout.Start();
+            string unaligned = BuildMergedGraph(_mergedTracks!, _mergedDuration, -1);
+            if (_currentGraph == unaligned)
+            {
+                // 已經是不對齊的濾鏡圖 (seek 途中又 seek)：mpv 不會重建，直接 seek
+                _seekStep = 2;
+                SeekExact(_seekTarget);
+                return;
+            }
+            _seekStep = 1;
+            SetMergedGraph(-1);
+        }
+
+        private void OnMergedSeekRestart()
+        {
+            if (_seekStep == 0 || _closing) return;
+            _seekTimeout.Stop();
+            _seekTimeout.Start();
+            switch (_seekStep)
+            {
+                case 1:
+                    _seekStep = 2;
+                    SeekExact(_seekTarget);
+                    break;
+                case 2:
+                    // 中途又 seek 時可能收到上一個步驟的 restart：位置還沒到就繼續等
+                    if (!NearTarget()) break;
+                    _seekStep = 3;
+                    SetMergedGraph(_seekTarget);
+                    break;
+                case 3:
+                    _seekStep = 4;
+                    SeekExact(_seekTarget);
+                    break;
+                case 4:
+                    if (!NearTarget()) { SeekExact(_seekTarget); break; }
+                    FinishMergedSeek();
+                    break;
+            }
+        }
+
+        private bool NearTarget() =>
+            double.TryParse(GetString("time-pos"), NumberStyles.Float, CultureInfo.InvariantCulture, out double pos) && Math.Abs(pos - _seekTarget) < 1.0;
+
+        private void SeekExact(double seconds) =>
+            Command("seek", seconds.ToString("0.######", CultureInfo.InvariantCulture), "absolute+exact");
+
+        private void FinishMergedSeek()
+        {
+            if (_seekStep == 0) return;
+            _seekStep = 0;
+            _seekTimeout.Stop();
+            if (_resumeAfterSeek && _fileLoaded) SetProperty("pause", "no");
+        }
+
+        /// <summary>換歌/停止時中止進行中的多音軌 seek (不恢復播放，由換歌流程決定)。</summary>
+        private void CancelMergedSeek()
+        {
+            _seekStep = 0;
+            _seekTimeout.Stop();
+        }
+
         private void ApplyAudioFilters()
         {
             var filters = new List<string>();
+            var merged = _mergedTracks;
+            if (merged != null)
+            {
+                // 多音軌：amerge 後音軌 i 的左右聲道是 c(2i)、c(2i+1)，先選出要聽的那一對 (其他音軌等於音量 0)
+                int i = Math.Max(0, Array.IndexOf(merged, _selectedTrack));
+                filters.Add($"lavfi=[pan=stereo|c0=c{2 * i}|c1=c{2 * i + 1}]");
+            }
             if (Math.Abs(_audioPitch - 1.0) > 0.0001)
                 filters.Add("rubberband=pitch-scale=" + _audioPitch.ToString("0.####", CultureInfo.InvariantCulture));
             switch (_audioChannel)

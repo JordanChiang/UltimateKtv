@@ -22,7 +22,9 @@ namespace UltimateKtv
         public const int EVENT_START_FILE = 6;
         public const int EVENT_END_FILE = 7;
         public const int EVENT_FILE_LOADED = 8;
+        public const int EVENT_PLAYBACK_RESTART = 21;
         public const int EVENT_PROPERTY_CHANGE = 22;
+        public const int EVENT_HOOK = 25;
 
         public const int END_FILE_REASON_EOF = 0;
         public const int END_FILE_REASON_STOP = 2;
@@ -67,6 +69,16 @@ namespace UltimateKtv
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void WakeupFn(IntPtr ctx);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void FreeFn(IntPtr data);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate IntPtr ErrorStringFn(int error);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int HookAddFn(IntPtr ctx, ulong reply, IntPtr name, int priority);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int HookContinueFn(IntPtr ctx, ulong id);
+
+        /// <summary>mpv_event_hook { const char *name; uint64_t id; }</summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct mpv_event_hook
+        {
+            public IntPtr name;
+            public ulong id;
+        }
 
         // ---- render API (軟體渲染，給主視窗預覽用) ----
         public const int RENDER_PARAM_INVALID = 0;
@@ -114,6 +126,8 @@ namespace UltimateKtv
         public static WakeupFn? Wakeup;
         public static FreeFn? Free;
         public static ErrorStringFn? ErrorString;
+        public static HookAddFn? HookAdd;
+        public static HookContinueFn? HookContinue;
 
         private static readonly object _loadLock = new();
         private static bool _loadAttempted;
@@ -172,6 +186,8 @@ namespace UltimateKtv
                     Wakeup = Get<WakeupFn>(lib, "mpv_wakeup");
                     Free = Get<FreeFn>(lib, "mpv_free");
                     ErrorString = Get<ErrorStringFn>(lib, "mpv_error_string");
+                    HookAdd = Get<HookAddFn>(lib, "mpv_hook_add");
+                    HookContinue = Get<HookContinueFn>(lib, "mpv_hook_continue");
 
                     LoadedPath = path;
                     IsAvailable = true;
