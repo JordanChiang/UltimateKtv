@@ -310,8 +310,9 @@ namespace UltimateKtv
                 _randomPlayDelayTimer?.Stop();
                 _randomPlayDelayTimer = null;
                 
-                // Check if waiting list is still empty
-                if (_playback.Snapshot.Count == 0)
+                // 待播清單仍是空的、且目前沒有在播歌時才補隨機歌；
+                // 播歌中 (點播歌曲播放中) 開啟隨機點歌不應立即插入，等該歌播完閒置時再補
+                if (_playback.Snapshot.Count == 0 && _playback.Current == null)
                 {
                     TryPlayRandomSong();
                 }
