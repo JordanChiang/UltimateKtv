@@ -92,10 +92,6 @@
     <None Update="CrazySong.mdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
     <!-- zh-TW 基準語言檔同時內嵌進程式，外部檔案遺失時仍可顯示 (Loc.LoadEmbeddedDefault) -->
     <EmbeddedResource Include="Languages\zh-TW.json" LogicalName="UltimateKtv.Languages.zh-TW.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -128,14 +124,6 @@
     </Reference>
   </ItemGroup>
 
-
-  <ItemGroup>
-    <Compile Update="Properties\Settings.Designer.cs">
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-  </ItemGroup>
 
   <!-- libmpv-2.dll 超過 GitHub 單檔 100MB 限制，不放進 repo；缺少時從 GitHub Release 下載 (見 Tools\Get-Libmpv.ps1) -->
   <Target Name="FetchLibmpv" BeforeTargets="BeforeBuild" Condition="'$(CodecDir)' != '' And !Exists('$(ProjectDir)$(CodecDir)\libmpv-2.dll')">
