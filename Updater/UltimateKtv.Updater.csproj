@@ -14,6 +14,11 @@
     <Delete Files="$(TargetDir)$(TargetFileName).config" />
   </Target>
 
+  <!-- publish 會從 obj 另外複製一份 .exe.config 到 PublishDir，上面的 build 刪除管不到，publish 後也要刪 -->
+  <Target Name="DeletePublishedConfig" AfterTargets="Publish">
+    <Delete Files="$(PublishDir)$(TargetFileName).config" />
+  </Target>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <DebugType>none</DebugType>
   </PropertyGroup>
