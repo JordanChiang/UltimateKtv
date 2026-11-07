@@ -13,11 +13,12 @@ UltimateKtv 是一套針對 Windows 平台開發的專業 KTV 點歌與播放系
 - **YouTube 即時消除人聲**：任何 YouTube 原唱 MV 都能當伴唱帶唱，播放時即時消去人聲，不需另找 KTV 版；線上搜尋、下載至歌庫 (預設高畫質優先)，下載完自動點歌。
 - **隨機播放**：待播清單沒歌時，自動從排行、新進或我的最愛挑歌。
 - **跑馬燈與歌詞**：電視畫面顯示播放資訊與點歌提示；歌曲旁有同名 `.lrc` 檔時顯示歌詞。
-- **錄音**：播放時同步錄下歌聲。
-- **兩種播放引擎**：libmpv (預設) 或 DirectShow，皆支援硬體解碼。
-- **歌庫**：Access (`CrazySong.mdb`)，之後會支援 SQLite。
-- **配色與多國語言**：可自訂配色 (`SampleSettings/` 有範本)；介面語言檔放在 `Languages/`，可自行新增。
-- **自動更新**：從 GitHub Release 檢查並套用新版本。
+- **錄音**：播放時把麥克風與播放的聲音混成 MP3 (320kbps)；隨機播放的歌不錄，開始錄音時剩餘空間不到 1 GB 則該首不錄。
+- **兩種播放引擎**：libmpv (預設) 或 DirectShow，皆支援硬體解碼。使用 DirectShow 且開啟動態效果時，電視畫面的跑馬燈會有跳動，改用 libmpv (或關閉動態效果) 可改善。
+- **動態效果**：背景流動光暈 (切換分類換色、播放時呼吸、暫停時變暗、切歌時掃光)、玻璃質感半透明面板、點歌時歌名飛入待播清單；可用 `themesettings.json` 的 `VisualEffects` 一次關閉 (改了要重新啟動)。
+- **歌庫**：Access (`CrazySong.mdb`) 或 SQLite (`CrazySong.db`)。執行目錄有 `CrazySong.db` 時優先使用 SQLite；`CrazySong.db` 由 CrazyKTV 加歌程式 (SongMgr) 的「匯出 SQLite 資料庫」產生。
+- **配色與多國語言**：可自訂配色 (`SampleSettings/` 有範本，`StyleSimulator.exe` 可即時預覽)；介面語言檔放在 `Languages/`，可自行新增。
+- **自動更新**：從 GitHub Release 檢查並套用新版本；也可直接執行 `UltimateKtv.Updater.exe` 手動檢查 (x64 / x86 放在同一個資料夾時，依作業系統位元選擇要更新與啟動的主程式)。
 
 ---
 
@@ -64,7 +65,7 @@ UltimateKtv 是一套針對 Windows 平台開發的專業 KTV 點歌與播放系
 
 **影音硬體**
 - **音響增益值**：全域音量增益 (100 - 500)，整體音量偏小時可調高。
-- **播放引擎**：libmpv (預設) 或 DirectShow。找不到 `libmpv-2.dll` 時自動改用 DirectShow；變更後需重新啟動。
+- **播放引擎**：libmpv (預設) 或 DirectShow。找不到 `libmpv-2.dll` 時自動改用 DirectShow；變更後需重新啟動。DirectShow 在開啟動態效果時，電視畫面的跑馬燈會有跳動，建議使用 libmpv。
 - **視訊渲染器** (DirectShow)：VMR9 相容性較佳；EVR 效能與畫質較佳，Windows 10/11 建議使用。
 - **音訊輸出裝置**：有多個音效輸出時，選擇接擴大機或喇叭的裝置。
 - **啟用硬體解碼**：用顯示卡協助解碼，大幅降低 CPU 使用率。
@@ -156,11 +157,11 @@ C. 系統廣播 (音量 / 音調 / 聲道 / 狀態) 提示
 | **使用者介面 (UI)** | WPF (Windows Presentation Foundation) |
 | **目標平台 (Platform)** | x86 / x64 |
 | **開發工具 (IDE)** | Visual Studio 2022 |
-| **核心套件 (NuGet)** | <ul><li>`MaterialDesignThemes` / `MaterialDesignColors` (UI 視覺框架)</li><li>`Microsoft.AspNetCore.Server.Kestrel` (內建網頁伺服器)</li><li>`System.Data.OleDb` (Access 歌庫存取)；`System.Data.SQLite` (SQLite 歌庫，之後支援)</li><li>`YoutubeExplode` (YouTube 解析，yt-dlp 失敗時的退路)</li><li>`NAudio` (錄音)</li><li>`Newtonsoft.Json` (網頁點歌 API、更新檢查)</li><li>`QRCoder` (網頁點歌 QR Code 產生)</li></ul> |
+| **核心套件 (NuGet)** | <ul><li>`MaterialDesignThemes` / `MaterialDesignColors` (UI 視覺框架)</li><li>`Microsoft.AspNetCore.Server.Kestrel` (內建網頁伺服器)</li><li>`System.Data.OleDb` (Access 歌庫存取)；`System.Data.SQLite` + `SQLitePCLRaw.lib.e_sqlite3` (SQLite 歌庫)</li><li>`YoutubeExplode` (YouTube 解析，yt-dlp 失敗時的退路)</li><li>`NAudio` (錄音)</li><li>`Newtonsoft.Json` (網頁點歌 API、更新檢查)</li><li>`QRCoder` (網頁點歌 QR Code 產生)</li></ul> |
 | **播放引擎 (DirectShow)** | `CrazyKTV_MediaKit`、`DirectShowLib-2005`、LAV Filters (分離/影像/音訊解碼)、`SoundTouchDS` (升降調)、`AudioMixerDS` (消人聲、增益、限制器)，放在 `Codec/` (x64) 與 `Codec_x86/` (x86) |
 | **播放引擎 (libmpv，預設)** | `libmpv-2.dll` 超過 GitHub 檔案上限不在 repo 中，建置時由 `Tools/Get-Libmpv.ps1` 自動下載 (x86 固定 20260412 版) |
-| **外部工具** | `Tools/yt-dlp.exe` (YouTube 下載)、`Tools/ffmpeg.exe` (影像與音訊合併) |
-| **執行需求** | x64 版讀取 Access 歌庫需安裝 Microsoft Access Database Engine (ACE.OLEDB.12.0)；x86 版使用 Windows 內建的 Jet 4.0 |
+| **外部工具** | `Tools/yt-dlp.exe` (x64 版用) 與 `Tools/yt-dlp_x86.exe` (x86 版用，32 位元 Windows 也能執行) 下載 YouTube、`Tools/ffmpeg.exe` (影像與音訊合併) |
+| **執行需求** | 需安裝 .NET 8 Desktop Runtime (x64 版用 x64、x86 版用 x86 的 Runtime)；x64 版讀取 Access 歌庫需安裝 Microsoft Access Database Engine (ACE.OLEDB.12.0)，x86 版使用 Windows 內建的 Jet 4.0；使用 SQLite 歌庫時兩者都不需要 |
 | **測試** | xUnit (`Tests/UltimateKtv.Tests`) |
 
 **建置與測試**
@@ -172,6 +173,19 @@ dotnet build UltimateKtv.sln -p:Platform=x64
 dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --filter "Category!=Network"
 ```
 x64 輸出 `UltimateKtv.exe`，x86 輸出 `UltimateKtv_x86.exe`；相依 DLL 會在建置後搬到輸出目錄的 `libs\`。
+
+**發佈 (Publish)**
+
+發佈設定 (`Properties/PublishProfiles/FolderProfile.pubxml`) 為單一檔案 (`PublishSingleFile`)、framework-dependent、ReadyToRun。x64 與 x86 各發佈一次，可以發佈到同一個資料夾，兩者互不覆蓋：
+
+```
+UltimateKtv.exe / UltimateKtv_x86.exe       主程式 (受控 DLL 已包進 exe)
+Codec\ / Codec_x86\                         各自的播放引擎 (不包進 exe，MediaKit 需以實體檔存在)
+runtimes\win-x64\ / win-x86\                各自的 SQLite 原生檔 (e_sqlite3.dll)
+Tools\  Languages\  wwwroot\                兩者共用
+```
+
+`Images\`、`UltimateKtv.Updater.exe` (`Updater/` 另外發佈)、`StyleSimulator.exe` 等不在主程式的發佈輸出中，打包時需另外放入。舊版安裝資料夾留下的 `UltimateKtv.dll`、`*.deps.json`、`*.runtimeconfig.json`、`*.dll.config`、`libs\` 不會被新版讀取，可保留或刪除。
 
 ---
 
@@ -195,9 +209,9 @@ x64 輸出 `UltimateKtv.exe`，x86 輸出 `UltimateKtv_x86.exe`；相依 DLL 會
 | `Update/` | 檢查與下載更新 (套用更新的 `Updater/` 是獨立程式) |
 | `Infrastructure/` | 記錄檔、資源監控、電源管理等共用元件 |
 | `Tests/` | 單元測試 (xUnit) |
-| `StyleSimulator/` | 獨立的配色預覽工具 |
+| `StyleSimulator/` | 獨立的配色預覽工具 (讀寫自己所在資料夾的 `settings.json` / `themesettings.json`，與主程式放在同一個資料夾使用，或用「選擇 UltimateKtv 程式目錄」指定) |
 
-`Codec*`、`Images`、`Languages`、`Tools`、`wwwroot`、`SampleSettings` 與歌庫 `CrazySong.mdb` 是執行時使用的資料與範本，保留在根目錄。
+`Codec*`、`Images`、`Languages`、`Tools`、`wwwroot`、`SampleSettings` 與歌庫 `CrazySong.mdb` / `CrazySong.db` 是執行時使用的資料與範本，保留在根目錄。
 
 ---
 
