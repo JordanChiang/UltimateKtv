@@ -79,16 +79,19 @@ namespace UltimateKtv.Updater
             string repoPath = "JordanChiang/UltimateKtv"; // Use default repo when launched standalone
 
             // 1. Detect Main EXE
-            string targetExe = Path.Combine(currentDir, "UltimateKtv.exe");
-            if (!File.Exists(targetExe)) targetExe = Path.Combine(currentDir, "UltimateKtv_x86.exe");
-            
+            // x86/x64 放在同一個資料夾：依作業系統位元選 (本程式固定是 x86 行程，不能看 Is64BitProcess)；
+            // 32 位元 Windows 只能跑 UltimateKtv_x86.exe。偏好的不存在時才用另一個 (例如只裝了 x86 版的 64 位元電腦)
+            string preferredExe = Path.Combine(currentDir, Environment.Is64BitOperatingSystem ? "UltimateKtv.exe" : "UltimateKtv_x86.exe");
+            string x86Exe = Path.Combine(currentDir, "UltimateKtv_x86.exe");
+            string targetExe = File.Exists(preferredExe) || !File.Exists(x86Exe) ? preferredExe : x86Exe;
+
             bool isFreshInstall = !File.Exists(targetExe);
             if (isFreshInstall)
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("[資訊] 找不到主程式，將為您執行完整下載與安裝。");
                 Console.ResetColor();
-                targetExe = Path.Combine(currentDir, "UltimateKtv.exe"); // Default for new install
+                targetExe = preferredExe; // 全新安裝：依作業系統位元預設
             }
 
             Console.WriteLine($"[1/5] 正在從預設來源檢查更新 ({repoPath})...");
