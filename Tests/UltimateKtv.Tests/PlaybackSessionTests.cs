@@ -106,6 +106,18 @@ namespace UltimateKtv.Tests
         }
 
         [Fact]
+        public void Playing_with_empty_list_is_not_idle()
+        {
+            // 點播歌曲播放中、待播清單是空的：Snapshot.Count 為 0 無法區分「真的閒置」，
+            // 要靠 Current / State 才知道還有歌在播 (隨機點歌補歌判斷依賴此區別)
+            PlayNow(Song("A"));
+
+            Assert.Empty(_session.Snapshot);
+            Assert.NotNull(_session.Current);
+            Assert.Equal(PlaybackState.Playing, _session.State);
+        }
+
+        [Fact]
         public void Order_while_opening_is_added_immediately_and_not_opened()
         {
             Order(Song("A"));
