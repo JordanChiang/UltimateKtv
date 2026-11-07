@@ -52,8 +52,10 @@
 
   <ItemGroup>
     <!-- Include the Codec folder and its contents in the publish output -->
-    <Content Include="Codec\**" Condition="'$(Platform)' == 'x64'" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="Codec_x86\**" Condition="'$(Platform)' != 'x64'" CopyToPublishDirectory="PreserveNewest" />
+    <!-- ExcludeFromSingleFile：單一檔案 publish 會把 Codec 裡的受控 DLL (MediaKit、DirectShowLib) 包進 exe，
+         但 App.CheckRequiredFiles 與 DirectShow 需要它們以實體檔留在 Codec 資料夾 -->
+    <Content Include="Codec\**" Condition="'$(Platform)' == 'x64'" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <Content Include="Codec_x86\**" Condition="'$(Platform)' != 'x64'" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
   <ItemGroup>
@@ -172,11 +174,16 @@
   </Target>
 
 <Target Name="MovePublishedFiles" AfterTargets="Publish">
+  <!-- e_sqlite3.dll 是原生檔，System.Data.SQLite 只會在 exe 旁依架構分開的資料夾找 (libs\ 找不到)；
+       放 runtimes\win-x86|x64\native\，x86 與 x64 publish 到同一個資料夾也不互相覆蓋 -->
   <ItemGroup>
-    <LibFiles Include="$(PublishDir)*.dll" Exclude="$(PublishDir)$(AssemblyName).dll" />
+    <SqliteNative Include="$(PublishDir)e_sqlite3.dll" Condition="Exists('$(PublishDir)e_sqlite3.dll')" />
+    <!-- 項目名不可與 PostBuild 的 LibFiles 相同：命令列 publish 時 PostBuild 也會跑，同名項目會累加成已搬走的 bin 檔 -->
+    <PublishedLibFiles Include="$(PublishDir)*.dll" Exclude="$(PublishDir)$(AssemblyName).dll;@(SqliteNative)" />
   </ItemGroup>
+  <Move SourceFiles="@(SqliteNative)" DestinationFolder="$(PublishDir)runtimes\win-$(Platform)\native\" />
   <MakeDir Directories="$(PublishDir)libs" />
-  <Move SourceFiles="@(LibFiles)" DestinationFolder="$(PublishDir)libs\" />
+  <Move SourceFiles="@(PublishedLibFiles)" DestinationFolder="$(PublishDir)libs\" />
 </Target>
 
 </Project>

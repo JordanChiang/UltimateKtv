@@ -14,7 +14,13 @@ namespace UltimateKtv
         private static readonly Regex ProgressRegex = new(@"\[download\]\s+(\d+(?:\.\d+)?)%", RegexOptions.Compiled);
         private static readonly SemaphoreSlim DownloadLock = new(1, 1);
         private const string LatestReleaseUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest";
-        private const string LatestDownloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
+
+        /// <summary>
+        /// 依行程位元選 yt-dlp (與 Codec / Codec_x86 相同規則)：x86 版程式用 yt-dlp_x86.exe，32 位元 Windows 才跑得動；
+        /// x86/x64 放同一個資料夾時共用 Tools\，兩個檔都在。yt-dlp -U 會更新成同一種變體。
+        /// </summary>
+        private static readonly string YtDlpFileName = Environment.Is64BitProcess ? "yt-dlp.exe" : "yt-dlp_x86.exe";
+        private static readonly string LatestDownloadUrl = $"https://github.com/yt-dlp/yt-dlp/releases/latest/download/{YtDlpFileName}";
 
         // yt-dlp errors that will never succeed by updating yt-dlp and retrying
         private static readonly string[] PermanentErrorMarkers =
@@ -54,24 +60,24 @@ namespace UltimateKtv
             }
 
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string toolsYtDlp = Path.Combine(baseDir, "Tools", "yt-dlp.exe");
+            string toolsYtDlp = Path.Combine(baseDir, "Tools", YtDlpFileName);
             if (File.Exists(toolsYtDlp)) return _cachedYtDlpPath = toolsYtDlp;
 
             string currentDir = Directory.GetCurrentDirectory();
-            string currentToolsYtDlp = Path.Combine(currentDir, "Tools", "yt-dlp.exe");
+            string currentToolsYtDlp = Path.Combine(currentDir, "Tools", YtDlpFileName);
             if (File.Exists(currentToolsYtDlp)) return _cachedYtDlpPath = currentToolsYtDlp;
 
             var dirInfo = new DirectoryInfo(baseDir);
             for (int i = 0; i < 6 && dirInfo != null; i++)
             {
-                string toolsPath = Path.Combine(dirInfo.FullName, "Tools", "yt-dlp.exe");
+                string toolsPath = Path.Combine(dirInfo.FullName, "Tools", YtDlpFileName);
                 if (File.Exists(toolsPath)) return _cachedYtDlpPath = toolsPath;
                 dirInfo = dirInfo.Parent;
             }
 
             string targetDir = Path.Combine(baseDir, "Tools");
             if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
-            return _cachedYtDlpPath = Path.Combine(targetDir, "yt-dlp.exe");
+            return _cachedYtDlpPath = Path.Combine(targetDir, YtDlpFileName);
         }
 
         private static DateTime _lastUpdateCheck = DateTime.MinValue;
@@ -291,7 +297,7 @@ namespace UltimateKtv
                 var dirInfo = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
                 for (int i = 0; i < 6 && dirInfo != null; i++)
                 {
-                    string rootTools = Path.Combine(dirInfo.FullName, "Tools", "yt-dlp.exe");
+                    string rootTools = Path.Combine(dirInfo.FullName, "Tools", YtDlpFileName);
                     if (File.Exists(rootTools) && !string.Equals(Path.GetFullPath(rootTools), Path.GetFullPath(updatedPath), StringComparison.OrdinalIgnoreCase))
                     {
                         File.Copy(updatedPath, rootTools, true);
