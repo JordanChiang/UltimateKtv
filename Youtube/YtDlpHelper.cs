@@ -29,55 +29,16 @@ namespace UltimateKtv
             "Video unavailable", "Private video", "has been removed", "account associated with this video has been terminated"
         };
 
-        public static string GetFFmpegDir()
-        {
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string toolsDir = Path.Combine(baseDir, "Tools");
-            if (File.Exists(Path.Combine(toolsDir, "ffmpeg.exe"))) return toolsDir;
+        // Tools\ 一律在執行目錄 (build 與 publish 都會複製 Tools\**)；不往上層找，以免用到或覆蓋別的資料夾裡同名的工具
+        private static string ToolsDir => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools");
 
-            string currentDir = Directory.GetCurrentDirectory();
-            string currentToolsDir = Path.Combine(currentDir, "Tools");
-            if (File.Exists(Path.Combine(currentToolsDir, "ffmpeg.exe"))) return currentToolsDir;
-
-            var dirInfo = new DirectoryInfo(baseDir);
-            for (int i = 0; i < 6 && dirInfo != null; i++)
-            {
-                string toolsPath = Path.Combine(dirInfo.FullName, "Tools", "ffmpeg.exe");
-                if (File.Exists(toolsPath)) return Path.Combine(dirInfo.FullName, "Tools");
-                dirInfo = dirInfo.Parent;
-            }
-
-            return toolsDir;
-        }
-
-        private static string? _cachedYtDlpPath;
+        public static string GetFFmpegDir() => ToolsDir;
 
         public static string GetYtDlpPath()
         {
-            if (!string.IsNullOrEmpty(_cachedYtDlpPath) && File.Exists(_cachedYtDlpPath))
-            {
-                return _cachedYtDlpPath;
-            }
-
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string toolsYtDlp = Path.Combine(baseDir, "Tools", YtDlpFileName);
-            if (File.Exists(toolsYtDlp)) return _cachedYtDlpPath = toolsYtDlp;
-
-            string currentDir = Directory.GetCurrentDirectory();
-            string currentToolsYtDlp = Path.Combine(currentDir, "Tools", YtDlpFileName);
-            if (File.Exists(currentToolsYtDlp)) return _cachedYtDlpPath = currentToolsYtDlp;
-
-            var dirInfo = new DirectoryInfo(baseDir);
-            for (int i = 0; i < 6 && dirInfo != null; i++)
-            {
-                string toolsPath = Path.Combine(dirInfo.FullName, "Tools", YtDlpFileName);
-                if (File.Exists(toolsPath)) return _cachedYtDlpPath = toolsPath;
-                dirInfo = dirInfo.Parent;
-            }
-
-            string targetDir = Path.Combine(baseDir, "Tools");
-            if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
-            return _cachedYtDlpPath = Path.Combine(targetDir, YtDlpFileName);
+            string toolsDir = ToolsDir;
+            if (!Directory.Exists(toolsDir)) Directory.CreateDirectory(toolsDir);
+            return Path.Combine(toolsDir, YtDlpFileName);
         }
 
         private static DateTime _lastUpdateCheck = DateTime.MinValue;
@@ -159,7 +120,6 @@ namespace UltimateKtv
 
                     AppLogger.LogInfo($"[YouTube] yt-dlp updated to a new version: {stdOut.Trim()}");
                     _lastConfirmedUpToDate = DateTime.Now;
-                    SyncToProjectRootIfApplicable(ytDlpPath);
                     return true;
                 }
                 else
@@ -194,7 +154,6 @@ namespace UltimateKtv
                         File.Move(tempPath, ytDlpPath, true);
                         _lastConfirmedUpToDate = DateTime.Now;
                         AppLogger.LogInfo("[YouTube] Direct download of yt-dlp succeeded.");
-                        SyncToProjectRootIfApplicable(ytDlpPath);
                         return true;
                     }
                 }
@@ -288,26 +247,6 @@ namespace UltimateKtv
             {
                 return "";
             }
-        }
-
-        private static void SyncToProjectRootIfApplicable(string updatedPath)
-        {
-            try
-            {
-                var dirInfo = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-                for (int i = 0; i < 6 && dirInfo != null; i++)
-                {
-                    string rootTools = Path.Combine(dirInfo.FullName, "Tools", YtDlpFileName);
-                    if (File.Exists(rootTools) && !string.Equals(Path.GetFullPath(rootTools), Path.GetFullPath(updatedPath), StringComparison.OrdinalIgnoreCase))
-                    {
-                        File.Copy(updatedPath, rootTools, true);
-                        AppLogger.LogInfo($"[YouTube] Synchronized updated yt-dlp to project root: {rootTools}");
-                        break;
-                    }
-                    dirInfo = dirInfo.Parent;
-                }
-            }
-            catch { }
         }
 
         public static async Task EnsureYtDlpAsync()

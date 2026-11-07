@@ -44,30 +44,9 @@ namespace StyleSimulator
 
         public static string FindConfigFile(string fileName)
         {
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string[] searchPaths = new[]
-            {
-                Path.Combine(baseDir, "..", "..", "..", "..", "bin", "x64", "Debug", "net8.0-windows", fileName),
-                Path.Combine(baseDir, "..", "..", "..", "..", "bin", "x86", "Release", "net8.0-windows", fileName),
-                Path.Combine(baseDir, "..", "..", "..", "..", fileName),
-                Path.Combine(baseDir, fileName),
-                Path.Combine(baseDir, "..", fileName),
-                Path.Combine(baseDir, "..", "..", fileName),
-                Path.Combine(baseDir, "..", "..", "..", fileName)
-            };
-
-            foreach (var path in searchPaths)
-            {
-                try
-                {
-                    string fullPath = Path.GetFullPath(path);
-                    if (File.Exists(fullPath))
-                        return fullPath;
-                }
-                catch { }
-            }
-
-            return Path.Combine(baseDir, fileName);
+            // 只用自己所在的資料夾 (與主程式放在一起)；不往上層找，以免讀寫到別的資料夾 (甚至磁碟根目錄) 碰巧同名的設定檔。
+            // 要編輯別處的設定，用「選擇 UltimateKtv 程式目錄」
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
         }
         #endregion
 

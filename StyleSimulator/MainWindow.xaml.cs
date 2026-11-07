@@ -2564,16 +2564,9 @@ namespace StyleSimulator
 
         public static string? FindSampleSettingsDirectory()
         {
-            string? dir = AppDomain.CurrentDomain.BaseDirectory;
-            while (!string.IsNullOrEmpty(dir))
-            {
-                string candidate = Path.Combine(dir, "SampleSettings");
-                if (Directory.Exists(candidate)) return candidate;
-                string? parent = Directory.GetParent(dir)?.FullName;
-                if (parent == dir) break;
-                dir = parent;
-            }
-            return null;
+            // 範本已內嵌在 exe；外部資料夾只認執行目錄下的 SampleSettings (不往上層找)
+            string candidate = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SampleSettings");
+            return Directory.Exists(candidate) ? candidate : null;
         }
 
         private void CboThemePresets_SelectionChanged(object sender, SelectionChangedEventArgs e)
