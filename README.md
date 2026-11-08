@@ -18,7 +18,7 @@ UltimateKtv 是一套針對 Windows 平台開發的專業 KTV 點歌與播放系
 - **動態效果**：背景流動光暈 (切換分類換色、播放時呼吸、暫停時變暗、切歌時掃光)、玻璃質感半透明面板、點歌時歌名飛入待播清單；可用 `themesettings.json` 的 `VisualEffects` 一次關閉 (改了要重新啟動)。
 - **歌庫**：Access (`CrazySong.mdb`) 或 SQLite (`CrazySong.db`)。執行目錄有 `CrazySong.db` 時優先使用 SQLite；`CrazySong.db` 由 CrazyKTV 加歌程式 (SongMgr) 的「匯出 SQLite 資料庫」產生。
 - **配色與多國語言**：可自訂配色 (`SampleSettings/` 有範本，`StyleSimulator.exe` 可即時預覽)；介面語言檔放在 `Languages/`，可自行新增。
-- **自動更新**：從 GitHub Release 檢查並套用新版本；也可直接執行 `UltimateKtv.Updater.exe` 手動檢查 (x64 / x86 放在同一個資料夾時，依作業系統位元選擇要更新與啟動的主程式)。
+- **自動更新**：從 GitHub Release 檢查並套用新版本。Release 附一份 `update.json` 清單，把發佈檔案分成主程式、Codec、Codec_x86、Tools 四個元件 (若與加歌程式 SongMgr 一起發佈則多一個 SongMgr 元件)；更新時依檔案 SHA256 比對，只下載有變動的元件 (例如只改主程式時不必重抓解碼器與工具)，歌庫與 SongMgr 的歌庫/自訂語系等使用者檔案會保留不覆蓋。也可直接執行 `UltimateKtv.Updater.exe` 手動檢查 (x64 / x86 放在同一個資料夾時，依作業系統位元選擇要更新與啟動的主程式)。
 
 ---
 
@@ -186,6 +186,18 @@ Tools\  Languages\  wwwroot\                兩者共用
 ```
 
 `Images\`、`UltimateKtv.Updater.exe` (`Updater/` 另外發佈)、`StyleSimulator.exe` 等不在主程式的發佈輸出中，打包時需另外放入。舊版安裝資料夾留下的 `UltimateKtv.dll`、`*.deps.json`、`*.runtimeconfig.json`、`*.dll.config`、`libs\` 不會被新版讀取，可保留或刪除。
+
+**產生 Release 附檔**
+
+把 x64、x86 與執行期資產都放進同一個發佈資料夾後，執行 `scripts/pack-release.ps1` 產生要上傳到 GitHub Release 的附檔：
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts\pack-release.ps1 -PublishDir <發佈資料夾>
+```
+
+會輸出 `update.json` (更新清單)、各元件 zip (`UltimateKtv_App_*`、`Codec_*`、`Codec_x86_*`、`Tools_*`) 與完整安裝包 (`UltimateKtv_<版本>.zip`)。
+
+> **一起發佈 SongMgr (加歌程式，可選)**：先把 SongMgr 的發佈內容也複製進同一個發佈資料夾 (`CrazyKTV_SongMgr.exe` 攤在根目錄、資料在 `SongMgr\`)，腳本就會多產生一包 `SongMgr_*.zip` 元件。SongMgr 與 UltimateKtv 共用 `Codec_x86\`、`Tools\` (版本相容時不必重複放；SongMgr 需要的額外工具如 `ffplay`/`ffprobe` 再併入 `Tools\`)。沒有複製 SongMgr 時該元件會自動略過，照常只發 UltimateKtv。與上一版清單相同的元件不會重新打包、直接沿用舊 Release 的下載網址，所以 Codec / Tools 沒變時只需上傳主程式那一包；也因此**舊 Release 的附檔不能刪除**。建立 tag 為版本號的 Release 時，`update.json` 與完整包一定要上傳。沒有 `update.json` 的舊 Release 會退回下載完整包。
 
 ---
 

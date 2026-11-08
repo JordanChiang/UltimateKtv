@@ -307,10 +307,14 @@ namespace UltimateKtv.Updater
                 string relativePath = GetRelativePath(sourceDir, file);
                 string destFile = Path.Combine(destDir, relativePath);
 
-                // Skip database if it already exists to preserve user data
+                // Skip user data if it already exists (歌庫、SongMgr 的歌庫/自訂語系)。
+                // 與主程式 Update\UpdateManifest.cs 的 KeepExisting 對應，兩邊要一起維護。
+                string relForSkip = relativePath.Replace('/', '\\');
                 if ((fileName.Equals("CrazySong.mdb", StringComparison.OrdinalIgnoreCase) ||
                      fileName.Equals("CrazySong.db", StringComparison.OrdinalIgnoreCase) ||
-                     relativePath.Replace('/', '\\').Equals(@"SongMgr\CrazySongMgr.mdb", StringComparison.OrdinalIgnoreCase)) && File.Exists(destFile))
+                     relForSkip.Equals(@"SongMgr\CrazySongMgr.mdb", StringComparison.OrdinalIgnoreCase) ||
+                     relForSkip.Equals(@"SongMgr\CrazySongMgr.db", StringComparison.OrdinalIgnoreCase) ||
+                     relForSkip.Equals(@"SongMgr\Custom.lang", StringComparison.OrdinalIgnoreCase)) && File.Exists(destFile))
                 {
                     continue;
                 }

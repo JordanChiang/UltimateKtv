@@ -96,7 +96,7 @@ HTTP 請求在 Kestrel 執行緒上；需要碰主程式 (點歌、播放控制�
 ### 其他模組
 - `Marquee/` — 跑馬燈 (`MarqueeAPI` → `MarqueeManager` → `MarqueeControl`)，用法見 `Marquee/MARQUEE_USAGE.md`、`STATIC_TEXT_USAGE.md`。
 - YouTube — `Youtube/YoutubeDownloadQueue` 是下載佇列 (以影片 ID 去重、一次一部、失敗不中斷、可取消)，下載器在 `IYoutubeDownloader` 後面 (`YtDlpDownloader`：`Tools/yt-dlp.exe` 失敗改用 YoutubeExplode 分別下載影像/音訊再以 ffmpeg 合併)，要抓哪種格式 (客戶端、H.264 + AAC-LC 128k) 集中在 `YoutubeFormat`；`YoutubeVideoId` 是影片 ID 與快取檔名「{歌名}_{videoId}.mp4」的規則。`MainWindow.Youtube.cs` 訂閱佇列事件更新畫面、下載完點歌。點唱紀錄的 SongId 可能是紀錄 Id (`Y0017`) 或影片 ID，比對同一部影片一律用 `YoutubeVideoId.Resolve`。
-- `Update/UpdateManager` + `Updater/` — 從 GitHub Release 檢查與套用更新；Updater 是獨立 net471 x86 exe。
+- `Update/UpdateManager` + `Updater/` — 從 GitHub Release 檢查與套用更新；Updater 是獨立 net471 x86 exe。Release 附 `update.json` 清單把發佈檔分成 `App`/`Codec`/`Codec_x86`/`Tools` 四個元件 (各一個 zip)，與加歌程式 SongMgr 一起發佈時再多一個可選的 `SongMgr` 元件 (`CrazyKTV_SongMgr.exe` 攤在根目錄 + `SongMgr\` 資料，共用 `Codec_x86\`/`Tools\`；SongMgr 是獨立方案，發佈時手動把它的 publish 併進同一資料夾，沒放就自動略過)。`UpdateManager` 依每個檔案的 SHA256 比對本機，只下載有變動的元件 (全解到同一暫存夾再交給 Updater 覆蓋)；沒有 `update.json` 的舊 release 退回下載完整包。清單模型與雜湊/比對的純函式在 `Update/UpdateManifest.cs`；`KeepExisting` (歌庫、`SongMgr\CrazySongMgr.mdb/.db`、`SongMgr\Custom.lang`) 的使用者檔案不列入變動判斷，**同一份跳過清單在 `Updater/Program.cs` 也有一份，兩邊要一起維護**。元件定義與各 zip 由 `scripts/pack-release.ps1` 產生 (與上一版相同的元件沿用舊網址，故舊 release 附檔不可刪)。腳本含中文註解，須存成 UTF-8 **with BOM**，否則 Windows PowerShell 5.1 會以 ANSI 解讀而解析失敗。
 - `ResourceMonitor` — 每 5 分鐘與每首歌開播時把記憶體/Handle/GDI 用量寫進 `UltimateKtv_Log.txt`，用來追資源洩漏 (欄位說明見 README)。
 
 ## UI 規則
