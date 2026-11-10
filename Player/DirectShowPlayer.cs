@@ -125,6 +125,10 @@ namespace UltimateKtv
             {
                 _element.AudioRenderer = settings.AudioRendererDevice;
             }
+            else
+            {
+                _element.AudioRenderer = null;
+            }
 
             // HW Acceleration
             _element.EnableHWAccel = settings.EnableHWAccel;
