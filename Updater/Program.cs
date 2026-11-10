@@ -34,7 +34,7 @@ namespace UltimateKtv.Updater
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("====================================================");
-            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.7 =");
+            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.8 =");
             Console.WriteLine("====================================================");
             Console.ResetColor();
             Console.WriteLine();
