@@ -73,6 +73,7 @@ namespace UltimateKtv
         private int _audioChannel;
         private Stretch _stretch = Stretch.Uniform;
         private string _hwdec = "no";
+        private string? _audioDevice;
 
         // 60fps 平滑 (display-resample)；持續掉格時當首歌降級，下一首歌重新嘗試
         private bool _smoothMotion;
@@ -365,7 +366,72 @@ namespace UltimateKtv
                 _hwdec = hwdec;
                 SetProperty("hwdec", hwdec);
             }
-            // 音訊輸出裝置：DirectShow 裝置名稱與 mpv (wasapi) 不相容，原型先用系統預設裝置
+            ApplyAudioDevice(settings.AudioRendererDevice);
+        }
+
+        private void ApplyAudioDevice(string? deviceName)
+        {
+            string targetDevice = MatchMpvAudioDevice(deviceName);
+            if (targetDevice != _audioDevice)
+            {
+                _audioDevice = targetDevice;
+                SetProperty("audio-device", targetDevice);
+                AppLogger.Log($"[mpv] audio-device set to: {targetDevice} (setting: '{deviceName}')");
+            }
+        }
+
+        private string MatchMpvAudioDevice(string? targetDevice)
+        {
+            if (string.IsNullOrWhiteSpace(targetDevice) ||
+                targetDevice.Equals("Default DirectSound Device", StringComparison.OrdinalIgnoreCase) ||
+                targetDevice.Equals("Default WaveOut Device", StringComparison.OrdinalIgnoreCase))
+            {
+                return "auto";
+            }
+
+            string cleanTarget = targetDevice.Trim();
+            if (cleanTarget.StartsWith("DirectSound: ", StringComparison.OrdinalIgnoreCase))
+            {
+                cleanTarget = cleanTarget.Substring("DirectSound: ".Length).Trim();
+            }
+            else if (cleanTarget.StartsWith("WaveOut: ", StringComparison.OrdinalIgnoreCase))
+            {
+                cleanTarget = cleanTarget.Substring("WaveOut: ".Length).Trim();
+            }
+
+            int count = int.TryParse(GetString("audio-device-list/count"), out int c) ? c : 0;
+            if (count <= 0) return "auto";
+
+            // 1. 完全比對 (比對 description 或 name)
+            for (int i = 0; i < count; i++)
+            {
+                string? name = GetString($"audio-device-list/{i}/name");
+                string? desc = GetString($"audio-device-list/{i}/description");
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                if (string.Equals(desc, cleanTarget, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(name, cleanTarget, StringComparison.OrdinalIgnoreCase))
+                {
+                    return name;
+                }
+            }
+
+            // 2. 部分包含比對 (忽略大小寫)
+            for (int i = 0; i < count; i++)
+            {
+                string? name = GetString($"audio-device-list/{i}/name");
+                string? desc = GetString($"audio-device-list/{i}/description");
+                if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(desc)) continue;
+
+                if (desc.Contains(cleanTarget, StringComparison.OrdinalIgnoreCase) ||
+                    cleanTarget.Contains(desc, StringComparison.OrdinalIgnoreCase))
+                {
+                    return name;
+                }
+            }
+
+            AppLogger.Log($"[mpv] audio device '{targetDevice}' not found in mpv device list; using auto.");
+            return "auto";
         }
 
         public void Play()

@@ -310,6 +310,7 @@ namespace UltimateKtv
 
             // Set Video Renderer
             VideoRendererComboBox.SelectedIndex = settings.VideoRendererType;
+            UpdateVideoRendererEnabledState();
 
             // Set Audio Renderer
             AudioRendererComboBox.SelectedItem = settings.AudioRendererDevice;
@@ -467,6 +468,27 @@ namespace UltimateKtv
                 ? Loc.T("Options.PlayerEngineMpvFound")
                 : Loc.T("Options.PlayerEngineMpvMissing", Environment.Is64BitProcess ? "Codec" : "Codec_x86");
             PlayerEngineStatusText.Text = Loc.T("Options.PlayerEngineCurrent", current) + Environment.NewLine + dll;
+        }
+
+        private void PlayerEngineComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateVideoRendererEnabledState();
+            if (_isInitializing) return;
+            if (PlayerEngineComboBox.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out int engine))
+            {
+                AppLogger.Log($"User setting changed: PlayerEngine = {engine}");
+            }
+        }
+
+        private void UpdateVideoRendererEnabledState()
+        {
+            bool isLibMpv = PlayerEngineComboBox.SelectedItem is ComboBoxItem item &&
+                            int.TryParse(item.Tag?.ToString(), out int engine) && engine == 1;
+
+            VideoRendererComboBox.IsEnabled = !isLibMpv;
+            VideoRendererComboBox.ToolTip = isLibMpv
+                ? (Loc.Find("Options.VideoRendererMpvDisabledHint") ?? "libmpv 使用內建 GPU 渲染，不適用 DirectShow 視訊渲染器")
+                : null;
         }
 
         private void NewSongDaysTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)

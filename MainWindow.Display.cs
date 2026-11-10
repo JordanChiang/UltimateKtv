@@ -217,6 +217,9 @@ namespace UltimateKtv
 
             // 開啟隨機播放時，若待播清單是空的且沒有在播歌，延遲後開始隨機播放
             if (current.RandomPlayEnabled) StartDelayedRandomPlayWhenEmpty();
+
+            // 套用播放引擎設定 (例如切換音訊輸出裝置、硬體加速)
+            ktvPlayer.ApplySettings(current);
         }
 
         /// <summary>

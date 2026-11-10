@@ -72,6 +72,7 @@
   "Options.PlayerEngineMpvFound": "libmpv found",
   "Options.PlayerEngineMpvMissing": "libmpv-2.dll not found (put it in the {0} folder)",
   "Options.VideoRenderer": "Video Renderer",
+  "Options.VideoRendererMpvDisabledHint": "libmpv uses its built-in GPU renderer; DirectShow video renderer does not apply.",
   "Options.AudioRenderer": "Audio Output",
   "Options.HwAccel": "Hardware Decoding",
   "Options.HwAccelMode": "Decoding Mode",

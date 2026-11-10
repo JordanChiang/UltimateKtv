@@ -647,7 +647,8 @@
                                          FontSize="{StaticResource OptionsItemButtonFontSize}"
                                          Foreground="{DynamicResource MaterialDesignBody}"
                                          VerticalAlignment="Center"
-                                         VerticalContentAlignment="Center">
+                                         VerticalContentAlignment="Center"
+                                         SelectionChanged="PlayerEngineComboBox_SelectionChanged">
                                     <ComboBoxItem Content="DirectShow" Tag="0"/>
                                     <ComboBoxItem Content="libmpv" Tag="1"/>
                                 </ComboBox>
@@ -687,6 +688,7 @@
                                          Foreground="{DynamicResource MaterialDesignBody}"
                                          VerticalAlignment="Center"
                                          VerticalContentAlignment="Center"
+                                         ToolTipService.ShowOnDisabled="True"
                                          SelectionChanged="VideoRendererComboBox_SelectionChanged">
                                     <ComboBoxItem Content="VMR9" Tag="0"/>
                                     <ComboBoxItem Content="EVR" Tag="1"/>

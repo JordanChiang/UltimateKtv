@@ -80,6 +80,7 @@
   "Options.PlayerEngineMpvFound": "已找到 libmpv",
   "Options.PlayerEngineMpvMissing": "找不到 libmpv-2.dll (請放到 {0} 資料夾)",
   "Options.VideoRenderer": "視訊渲染器",
+  "Options.VideoRendererMpvDisabledHint": "libmpv 使用內建 GPU 渲染，不適用 DirectShow 視訊渲染器",
   "Options.AudioRenderer": "音訊輸出裝置",
   "Options.HwAccel": "啟用硬體解碼",
   "Options.HwAccelMode": "硬體解碼方式",

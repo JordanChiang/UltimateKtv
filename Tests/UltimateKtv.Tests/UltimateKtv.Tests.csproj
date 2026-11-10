@@ -30,6 +30,7 @@
     <Compile Include="..\..\Settings\SettingsJson.cs" Link="Linked\Settings\SettingsJson.cs" />
     <Compile Include="..\..\Remote\WebCultureMatcher.cs" Link="Linked\Remote\WebCultureMatcher.cs" />
     <Compile Include="..\..\Remote\RemoteCommands.cs" Link="Linked\Remote\RemoteCommands.cs" />
+    <Compile Include="..\..\Player\MpvNative.cs" Link="Linked\Player\MpvNative.cs" />
   </ItemGroup>
 
   <ItemGroup>
