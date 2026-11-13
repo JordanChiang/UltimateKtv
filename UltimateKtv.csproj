@@ -172,6 +172,18 @@
     <Move SourceFiles="@(LibFiles)" DestinationFolder="$(TargetDir)libs\" />
   </Target>
 
+<!-- MaterialDesignThemes.Wpf.dll 不包進單一檔案 exe：它的圖示名 (AlphaMCircle…) 含 "MCircle"，
+     與 UltimateKtv.dll 裡的 DownloadProgress / DownloadError / UserControl 等一般字串湊在同一個檔案時，
+     會符合 2013 年的社群 YARA 規則 Hangover_Smackdown_Downloader，Hybrid Analysis 因此把 exe 判成 malicious。
+     排除後由下方 MovePublishedFiles 移到 libs\，執行時由 App.OnAssemblyResolve 載入。 -->
+<Target Name="ExcludeMaterialDesignFromSingleFile" BeforeTargets="_ComputeFilesToBundle" Condition="'$(PublishSingleFile)' == 'true'">
+  <ItemGroup>
+    <_MaterialDesignNotBundled Include="@(ResolvedFileToPublish)" Condition="'%(Filename)%(Extension)' == 'MaterialDesignThemes.Wpf.dll'" />
+    <ResolvedFileToPublish Remove="@(_MaterialDesignNotBundled)" />
+    <ResolvedFileToPublish Include="@(_MaterialDesignNotBundled)" ExcludeFromSingleFile="true" />
+  </ItemGroup>
+</Target>
+
 <Target Name="MovePublishedFiles" AfterTargets="Publish">
   <!-- e_sqlite3.dll 是原生檔，System.Data.SQLite 只會在 exe 旁依架構分開的資料夾找 (libs\ 找不到)；
        放 runtimes\win-x86|x64\native\，x86 與 x64 publish 到同一個資料夾也不互相覆蓋 -->
@@ -181,8 +193,11 @@
     <PublishedLibFiles Include="$(PublishDir)*.dll" Exclude="$(PublishDir)$(AssemblyName).dll;@(SqliteNative)" />
   </ItemGroup>
   <Move SourceFiles="@(SqliteNative)" DestinationFolder="$(PublishDir)runtimes\win-$(Platform)\native\" />
-  <MakeDir Directories="$(PublishDir)libs" />
-  <Move SourceFiles="@(PublishedLibFiles)" DestinationFolder="$(PublishDir)libs\" />
+  <!-- 沒包進 exe 的受控 DLL (目前是 MaterialDesignThemes.Wpf.dll) 經 ReadyToRun 編譯後依架構不同，
+       放 libs\win-x86|x64\：x86 與 x64 publish 到同一個資料夾不互相覆蓋；App.OnAssemblyResolve 先找這裡，
+       也避免載到舊版安裝留在 libs\ 根目錄的同名舊檔 -->
+  <MakeDir Directories="$(PublishDir)libs\win-$(Platform)" />
+  <Move SourceFiles="@(PublishedLibFiles)" DestinationFolder="$(PublishDir)libs\win-$(Platform)\" />
 </Target>
 
 </Project>

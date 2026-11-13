@@ -179,13 +179,14 @@ x64 輸出 `UltimateKtv.exe`，x86 輸出 `UltimateKtv_x86.exe`；相依 DLL 會
 發佈設定 (`Properties/PublishProfiles/FolderProfile.pubxml`) 為單一檔案 (`PublishSingleFile`)、framework-dependent、ReadyToRun。x64 與 x86 各發佈一次，可以發佈到同一個資料夾，兩者互不覆蓋：
 
 ```
-UltimateKtv.exe / UltimateKtv_x86.exe       主程式 (受控 DLL 已包進 exe)
+UltimateKtv.exe / UltimateKtv_x86.exe       主程式 (受控 DLL 大多已包進 exe)
 Codec\ / Codec_x86\                         各自的播放引擎 (不包進 exe，MediaKit 需以實體檔存在)
 runtimes\win-x64\ / win-x86\                各自的 SQLite 原生檔 (e_sqlite3.dll)
+libs\win-x64\ / win-x86\                    各自未包進 exe 的相依 DLL (目前為 MaterialDesign)
 Tools\  Languages\  wwwroot\                兩者共用
 ```
 
-`Images\`、`UltimateKtv.Updater.exe` (`Updater/` 另外發佈)、`StyleSimulator.exe` 等不在主程式的發佈輸出中，打包時需另外放入。舊版安裝資料夾留下的 `UltimateKtv.dll`、`*.deps.json`、`*.runtimeconfig.json`、`*.dll.config`、`libs\` 不會被新版讀取，可保留或刪除。
+`Images\`、`UltimateKtv.Updater.exe` (`Updater/` 另外發佈)、`StyleSimulator.exe` 等不在主程式的發佈輸出中，打包時需另外放入。舊版安裝資料夾留下的 `UltimateKtv.dll`、`*.deps.json`、`*.runtimeconfig.json`、`*.dll.config`，以及 `libs\` 根目錄的 DLL 不會被新版讀取，可保留或刪除 (`libs\win-x64\`、`libs\win-x86\` 是新版使用的，不可刪)。
 
 **產生 Release 附檔**
 

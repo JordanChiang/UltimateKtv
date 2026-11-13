@@ -56,10 +56,13 @@ namespace UltimateKtv
             string assemblyName = name.Name + ".dll";
             
             string codecFolderName = Environment.Is64BitProcess ? "Codec" : "Codec_x86";
-            
+
             // Define all paths to check
+            // libs\win-x64|win-x86\：發佈版沒包進單一檔案 exe 的 DLL (依架構 ReadyToRun，見 csproj 的 MovePublishedFiles)；
+            // 要排在 libs\ 根目錄 (建置輸出用) 之前，才不會載到舊版安裝留下的同名舊檔。
             string[] searchPaths = new[]
             {
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs", Environment.Is64BitProcess ? "win-x64" : "win-x86", assemblyName),
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs", assemblyName),
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, codecFolderName, assemblyName)
             };
