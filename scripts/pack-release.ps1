@@ -68,18 +68,23 @@ $OutDir = [IO.Path]::GetFullPath($OutDir).TrimEnd('\')
 # App 收 Codec\ / Codec_x86\ / Tools\ 以外的所有檔案 (不含 .pdb)，含兩個 exe、libs\、Images\、
 # Languages\、wwwroot\、SampleSettings\、UltimateKtv.Updater.* 與歌庫 (歌庫為保留檔，僅首次安裝用)。
 $components = @(
-    @{ Name = 'App';       Desc = '主程式';                  Zip = "UltimateKtv_App_$version.zip"
-       Match = { param($rel) -not ($rel.StartsWith('Codec\', 'OrdinalIgnoreCase') -or $rel.StartsWith('Codec_x86\', 'OrdinalIgnoreCase') -or $rel.StartsWith('Tools\', 'OrdinalIgnoreCase') -or $rel.StartsWith('SongMgr\', 'OrdinalIgnoreCase') -or ($rel -match '^(?i)CrazyKTV_SongMgr\.')) -and ($rel -notmatch '\.pdb$') } },
-    @{ Name = 'Codec';     Desc = '影音解碼器 (Codec)';      Zip = "Codec_$version.zip"
-       Match = { param($rel) $rel.StartsWith('Codec\', 'OrdinalIgnoreCase') } },
-    @{ Name = 'Codec_x86'; Desc = '影音解碼器 (Codec_x86)';  Zip = "Codec_x86_$version.zip"
-       Match = { param($rel) $rel.StartsWith('Codec_x86\', 'OrdinalIgnoreCase') } },
-    @{ Name = 'Tools';     Desc = 'yt-dlp / ffmpeg (Tools)'; Zip = "Tools_$version.zip"
-       Match = { param($rel) $rel.StartsWith('Tools\', 'OrdinalIgnoreCase') } },
+    @{ Name = 'App'; Desc = '主程式'; Zip = "UltimateKtv_App_$version.zip"
+        Match = { param($rel) -not ($rel.StartsWith('Codec\', 'OrdinalIgnoreCase') -or $rel.StartsWith('Codec_x86\', 'OrdinalIgnoreCase') -or $rel.StartsWith('Tools\', 'OrdinalIgnoreCase') -or $rel.StartsWith('SongMgr\', 'OrdinalIgnoreCase') -or ($rel -match '^(?i)CrazyKTV_SongMgr\.')) -and ($rel -notmatch '\.pdb$') } 
+    },
+    @{ Name = 'Codec'; Desc = '影音解碼器 (Codec)'; Zip = "UltimateKtv_Codec_$version.zip"
+        Match = { param($rel) $rel.StartsWith('Codec\', 'OrdinalIgnoreCase') } 
+    },
+    @{ Name = 'Codec_x86'; Desc = '影音解碼器 (Codec_x86)'; Zip = "UltimateKtv_Codec_x86_$version.zip"
+        Match = { param($rel) $rel.StartsWith('Codec_x86\', 'OrdinalIgnoreCase') } 
+    },
+    @{ Name = 'Tools'; Desc = 'yt-dlp / ffmpeg (Tools)'; Zip = "UltimateKtv_Tools_$version.zip"
+        Match = { param($rel) $rel.StartsWith('Tools\', 'OrdinalIgnoreCase') } 
+    },
     # SongMgr (加歌程式) 一起發佈時才有：單檔 exe 攤在根目錄，資料在 SongMgr\，共用 Codec_x86\ / Tools\。
     # 沒把 SongMgr 複製進發佈夾時 (0 個檔案) 自動略過，仍可單獨發 UltimateKtv (Optional)。
-    @{ Name = 'SongMgr';   Desc = '加歌程式 (SongMgr)';      Zip = "SongMgr_$version.zip"; Optional = $true
-       Match = { param($rel) $rel.StartsWith('SongMgr\', 'OrdinalIgnoreCase') -or ($rel -match '^(?i)CrazyKTV_SongMgr\.') } }
+    @{ Name = 'SongMgr'; Desc = '加歌程式 (SongMgr)'; Zip = "UltimateKtv_SongMgr_$version.zip"; Optional = $true
+        Match = { param($rel) $rel.StartsWith('SongMgr\', 'OrdinalIgnoreCase') -or ($rel -match '^(?i)CrazyKTV_SongMgr\.') } 
+    }
 )
 
 # --- 讀取上一版 update.json ---
@@ -88,14 +93,16 @@ function Get-PreviousManifest {
     try {
         if (Test-Path $PreviousManifest) {
             $text = [IO.File]::ReadAllText((Resolve-Path $PreviousManifest).Path, [Text.Encoding]::UTF8)
-        } else {
+        }
+        else {
             $r = Invoke-WebRequest -UseBasicParsing -Uri $PreviousManifest -Headers @{ 'User-Agent' = 'UltimateKtv-PackRelease' }
             $text = if ($r.Content -is [byte[]]) { [Text.Encoding]::UTF8.GetString($r.Content) } else { [string]$r.Content }
         }
         $m = $text.TrimStart([char]0xFEFF) | ConvertFrom-Json
         Write-Host "上一版清單: $($m.tag)"
         return $m
-    } catch {
+    }
+    catch {
         Write-Host "沒有取得上一版 update.json，所有元件都重新打包。($($_.Exception.Message))"
         return $null
     }
@@ -121,17 +128,19 @@ function New-Zip([string]$path, [string[]]$rels) {
             foreach ($rel in $rels) {
                 [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, (Join-Path $PublishDir $rel), $rel.Replace('\', '/'), [IO.Compression.CompressionLevel]::Optimal)
             }
-        } finally { $zip.Dispose() }
-    } finally { $fs.Dispose() }
+        }
+        finally { $zip.Dispose() }
+    }
+    finally { $fs.Dispose() }
 }
 
 # --- 列出發佈檔案 (排除輸出資料夾與執行期產生的檔案) ---
 $assetsRoot = Join-Path $PublishDir 'ReleaseAssets'
 $allRels = Get-ChildItem -LiteralPath $PublishDir -Recurse -File |
-    Where-Object { -not $_.FullName.StartsWith($assetsRoot + '\', 'OrdinalIgnoreCase') -and -not $_.FullName.StartsWith($OutDir + '\', 'OrdinalIgnoreCase') } |
-    ForEach-Object { $_.FullName.Substring($PublishDir.Length + 1) } |
-    Where-Object { $_ -notmatch '\.(pdb|log|cfg)$' -and $_ -ne 'settings.json' -and $_ -notmatch '^UltimateKtv_Log.*\.txt$' } |
-    Sort-Object
+Where-Object { -not $_.FullName.StartsWith($assetsRoot + '\', 'OrdinalIgnoreCase') -and -not $_.FullName.StartsWith($OutDir + '\', 'OrdinalIgnoreCase') } |
+ForEach-Object { $_.FullName.Substring($PublishDir.Length + 1) } |
+Where-Object { $_ -notmatch '\.(pdb|log|cfg)$' -and $_ -ne 'settings.json' -and $_ -ne 'update-baseline.json' -and $_ -notmatch '^UltimateKtv_Log.*\.txt$' } |
+Sort-Object
 
 if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
 New-Item -ItemType Directory -Force $OutDir | Out-Null
@@ -158,7 +167,8 @@ foreach ($c in $components) {
     if ($prev -and (Test-SameFiles $prev.files $files)) {
         $url = $prev.url; $size = [long]$prev.size
         Write-Host ("{0,-10} 沒有變動，沿用 {1}" -f $c.Name, $url)
-    } else {
+    }
+    else {
         $zipPath = Join-Path $OutDir $c.Zip
         New-Zip $zipPath $rels
         $url = "https://github.com/$Repo/releases/download/$Tag/$($c.Zip)"
