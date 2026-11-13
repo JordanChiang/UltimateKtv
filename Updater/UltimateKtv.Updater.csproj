@@ -12,6 +12,9 @@
     <!-- 不論用 VS (帶 Platform=x86) 或 dotnet CLI 發佈都不產生 pdb，維持單一 exe -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
+    <!-- 確定性建置會把 PE 標頭時間戳記填成雜湊值 (例如 2052 年)。「未來的編譯時間」是防毒 ML 的可疑特徵：
+         實測 CrowdStrike 因此以 60% 判為惡意、Hybrid Analysis 75 分；改用真實時間戳記後為 no specific threat。 -->
+    <Deterministic>false</Deterministic>
   </PropertyGroup>
 
   <!-- Delete the .config file after build to maintain a single-file distribution -->

@@ -28,6 +28,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 - PostBuild 會把輸出目錄的 `*.dll` 搬到 `libs\`，並複製 Codec、Images 與 Updater exe；輸出根目錄看不到相依 DLL 是正常的。
 - 單一檔案發佈時 `MaterialDesignThemes.Wpf.dll` 刻意不包進 exe，放在 `libs\win-x64\` / `libs\win-x86\` (csproj 的 `ExcludeMaterialDesignFromSingleFile` + `MovePublishedFiles`，`App.OnAssemblyResolve` 先找這裡)：它的圖示名 `MCircle` 和 `UltimateKtv.dll` 的 `DownloadProgress` / `DownloadError` / `UserControl` 等字串湊在同一個檔案時，會符合社群 YARA 規則 `Hangover_Smackdown_Downloader`，Hybrid Analysis 會把 exe 判成 malicious。之後要讓其他 DLL 不包進 exe 也走同一條路徑。
 - `icon.ico`、`Updater/UpdaterIcon.ico` 的每個尺寸都是**未壓縮的 32bpp BMP**，不要換回 PNG 壓縮：全 PNG 的圖示會讓 exe 的 `.rsrc` 熵接近 8，Hybrid Analysis 標「高熵區段 / 資源熵異常」、VirusTotal 的 ML 引擎 (Cylance、Malwarebytes) 判為異常 (x86 apphost 因此 44 分)。換圖示時用 `python scripts/ico-png-to-bmp.py <原.ico> <新.ico>` 重新封裝 (像素不變)。
+- Updater 刻意關閉確定性建置 (`Deterministic=false`)：確定性建置的 PE 時間戳記是雜湊值 (落在 2050 年代)，「未來的編譯時間」讓 CrowdStrike ML 以 60% 判為惡意、Hybrid Analysis 75 分；改真實時間戳記後為 no specific threat。主程式 exe 的標頭來自 apphost 範本，本來就是真實時間戳記，不受影響。
 - 主程式執行中會鎖住 bin 內的 exe；驗證 build 時可加 `-p:OutDir=<其他資料夾>/`。
 - XAML 的 `StaticResource` 缺漏、資源型別錯誤只會在執行時爆 (build 會過)。改了 XAML 資源要實際啟動並查看執行目錄的 `UltimateKtv_Log.txt`。
 - 未啟用分析器 (`RunAnalyzersDuringBuild=False`)，沒有 lint 步驟。
