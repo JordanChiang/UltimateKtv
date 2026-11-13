@@ -6,9 +6,9 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 
 namespace UltimateKtv.Updater
 {
@@ -109,7 +109,7 @@ namespace UltimateKtv.Updater
             }
 
             var content = await response.Content.ReadAsStringAsync();
-            var release = JsonSerializer.Deserialize<ReleaseInfo>(content);
+            var release = ParseRelease(content);
 
             if (release == null || string.IsNullOrEmpty(release.TagName))
             {
@@ -151,8 +151,8 @@ namespace UltimateKtv.Updater
             if (key.Key != ConsoleKey.Y) return;
             Console.WriteLine();
 
-            // 4. Download
-            var zipAsset = release.Assets.FirstOrDefault(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+            // 4. Download (明確挑完整安裝包，不靠附檔回傳順序)
+            var zipAsset = PickFullPackage(release.Assets);
             if (zipAsset == null)
             {
                 Console.WriteLine("      [失敗] 找不到更新壓縮檔。");
@@ -207,15 +207,65 @@ namespace UltimateKtv.Updater
 
         public class ReleaseInfo
         {
-            [JsonPropertyName("tag_name")] public string TagName { get; set; } = "";
-            [JsonPropertyName("body")] public string Body { get; set; } = "";
-            [JsonPropertyName("assets")] public List<AssetInfo> Assets { get; set; } = new List<AssetInfo>();
+            public string TagName { get; set; } = "";
+            public string Body { get; set; } = "";
+            public List<AssetInfo> Assets { get; set; } = new List<AssetInfo>();
         }
 
         public class AssetInfo
         {
-            [JsonPropertyName("name")] public string Name { get; set; } = "";
-            [JsonPropertyName("browser_download_url")] public string BrowserDownloadUrl { get; set; } = "";
+            public string Name { get; set; } = "";
+            public string BrowserDownloadUrl { get; set; } = "";
+        }
+
+        /// <summary>
+        /// 解析 GitHub releases/latest 的回應。改用 .NET Framework 內建的 JavaScriptSerializer
+        /// (GAC 的 System.Web.Extensions)，不必相依 System.Text.Json，Updater 才能維持零外部 DLL。
+        /// 只取需要的欄位，其餘一律忽略。
+        /// </summary>
+        static ReleaseInfo ParseRelease(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return null;
+            var serializer = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
+            if (!(serializer.DeserializeObject(json) is Dictionary<string, object> root)) return null;
+
+            var info = new ReleaseInfo
+            {
+                TagName = GetString(root, "tag_name"),
+                Body = GetString(root, "body")
+            };
+
+            if (root.TryGetValue("assets", out var assetsObj) && assetsObj is object[] assets)
+            {
+                foreach (var a in assets)
+                {
+                    if (a is Dictionary<string, object> ad)
+                    {
+                        info.Assets.Add(new AssetInfo
+                        {
+                            Name = GetString(ad, "name"),
+                            BrowserDownloadUrl = GetString(ad, "browser_download_url")
+                        });
+                    }
+                }
+            }
+            return info;
+        }
+
+        static string GetString(Dictionary<string, object> obj, string key)
+            => obj.TryGetValue(key, out var v) && v != null ? v.ToString() : "";
+
+        /// <summary>
+        /// 選完整安裝包 zip。GitHub 依檔名回傳附檔，完整包 UltimateKtv_(版本).zip 底線後是數字，
+        /// 通常排在各元件 zip (UltimateKtv_App_… 等字母開頭) 之前，但不保證 (完整包沒上傳或改名時就會抓到元件 zip)，
+        /// 所以明確用 regex 認完整包，認不到才退回第一個 .zip。與主程式 UpdateManager.PickFullPackage 一致。
+        /// </summary>
+        static AssetInfo PickFullPackage(List<AssetInfo> assets)
+        {
+            var full = assets.FirstOrDefault(
+                a => Regex.IsMatch(a.Name ?? "", @"^UltimateKtv_[\d.]+\.zip$", RegexOptions.IgnoreCase));
+            if (full != null) return full;
+            return assets.FirstOrDefault(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
         }
 
         static bool TryParseArgs(string[] args, out int targetPid, out string sourceDir, out string destDir, out string targetExe)

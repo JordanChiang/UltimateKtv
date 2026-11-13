@@ -27,18 +27,13 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
 
+  <!-- 皆為 .NET Framework GAC 內建組件 (CopyLocal=false)，不會多出可散佈 DLL；
+       System.Web.Extensions 提供 JavaScriptSerializer，取代 System.Text.Json，讓 Updater 維持單一 exe。 -->
   <ItemGroup>
     <Reference Include="System.Net.Http" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="6.2.0">
-      <PrivateAssets>All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Fody" Version="6.9.3">
-      <PrivateAssets>All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="System.Text.Json" Version="10.0.13" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
   </ItemGroup>
 
   <ItemGroup>
