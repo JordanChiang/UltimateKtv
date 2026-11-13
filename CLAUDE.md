@@ -38,7 +38,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | :--- | :--- |
 | `Updater` (net471, 一律 x86) | `Update/ZipHelper.cs` |
 | `StyleSimulator` | `Settings/AppSettings.cs`, `Themes/ThemeSettings.cs`, `Themes/NavMenu.cs`, `Themes/RowStyleBrushes.cs`, `Themes/AmbientBackground.cs`, `Themes/MicroFx.cs` |
-| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`AudioChannel.cs`、`SongLibrary.cs`、`Song.cs`、`Singer.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Themes/NavMenu.cs`, `Remote/WebCultureMatcher.cs`, `Remote/RemoteCommands.cs` |
+| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`AudioChannel.cs`、`SongLibrary.cs`、`Song.cs`、`Singer.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Themes/NavMenu.cs`, `Remote/WebCultureMatcher.cs`, `Remote/RemoteCommands.cs`, `Player/MpvNative.cs`, `Player/DirectShowAudioRenderer.cs` |
 
 搬移或改名這些檔案時，要一併改上述專案 csproj 的 `Include` 路徑。
 

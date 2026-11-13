@@ -120,15 +120,8 @@ namespace UltimateKtv
                 ? VideoRendererType.EnhancedVideoRenderer
                 : VideoRendererType.VideoMixingRenderer9;
 
-            // Audio Renderer
-            if (!string.IsNullOrEmpty(settings.AudioRendererDevice) && settings.AudioRendererDevice != "Default DirectSound Device")
-            {
-                _element.AudioRenderer = settings.AudioRendererDevice;
-            }
-            else
-            {
-                _element.AudioRenderer = null;
-            }
+            // Audio Renderer：預設音效卡要設回 MediaKit 認得的預設裝置名稱 (不可是 null，否則開檔會爆 E_POINTER)
+            _element.AudioRenderer = DirectShowAudioRenderer.Resolve(settings.AudioRendererDevice);
 
             // HW Acceleration
             _element.EnableHWAccel = settings.EnableHWAccel;
