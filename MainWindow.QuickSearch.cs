@@ -94,26 +94,30 @@ namespace UltimateKtv
         private List<string> EngAndNumList = null!;
         private List<string> SongIdStyleList = null!;
 
+        // 輸入按鈕格固定 5 列，欄數由項目數決定 (UniformGrid 只設 Rows)：注音 9x5 = 45，其他 8x5 = 40
+        private const int QuickWordCount = 40;
+        private const int BopomofoWordCount = 45;
+
         /// <summary>
-        /// Initialize the data sets for the 40 quick word buttons.
-        /// Ensures each list has exactly 40 items (pads with blanks if needed).
+        /// Initialize the data sets for the quick word buttons.
+        /// 注音 45 個 (9x5)，其他 40 個 (8x5)，不足補空白。
         /// </summary>
         private void InitializeQuickWordSets()
         {
-            // Bopomofo core (36) + ㄦ + 3 tone marks to reach 40
+            // 注音 9x5 (每欄由上往下依序)；歌庫的注音欄位沒有聲調，所以不放聲調鍵
             BopomofoList = new List<string>
             {
-//                "ㄅ","ㄆ","ㄇ","ㄈ","ㄉ","ㄊ","ㄋ","ㄌ",
-//                "ㄍ","ㄎ","ㄏ","ㄐ","ㄑ","ㄒ","ㄓ","ㄔ",
-//                "ㄕ","ㄖ","ㄗ","ㄘ","ㄙ","ㄧ","ㄨ","ㄩ",
-//                "ㄚ","ㄛ","ㄜ","ㄝ","ㄞ","ㄟ","ㄠ","ㄡ",
-//                "ㄢ","ㄣ","ㄤ","ㄥ","ㄦ","ˊ","ˇ","ˋ"
+//                "ㄅ", "ㄊ", "ㄏ", "ㄔ", "ㄙ", "ㄛ", "ㄠ", "ㄥ",
+//                "ㄆ", "ㄋ", "ㄐ", "ㄕ", "ㄧ", "ㄜ", "ㄡ", "ㄦ",
+//                "ㄇ", "ㄌ", "ㄑ", "ㄖ", "ㄨ", "ㄝ", "ㄢ", "",
+//                "ㄈ", "ㄍ", "ㄒ", "ㄗ", "ㄩ", "ㄞ", "ㄣ", "",
+//                "ㄉ", "ㄎ", "ㄓ", "ㄘ", "ㄚ", "ㄟ", "ㄤ", ""
 
-                "ㄅ", "ㄊ", "ㄏ", "ㄔ", "ㄙ", "ㄛ", "ㄠ", "ㄥ",
-                "ㄆ", "ㄋ", "ㄐ", "ㄕ", "ㄧ", "ㄜ", "ㄡ", "ㄦ",
-                "ㄇ", "ㄌ", "ㄑ", "ㄖ", "ㄨ", "ㄝ", "ㄢ", "ˊ",
-                "ㄈ", "ㄍ", "ㄒ", "ㄗ", "ㄩ", "ㄞ", "ㄣ", "ˇ",
-                "ㄉ", "ㄎ", "ㄓ", "ㄘ", "ㄚ", "ㄟ", "ㄤ", "ˋ" 
+                "ㄅ", "ㄉ", "ㄍ", "ㄑ", "ㄕ", "ㄙ", "ㄚ", "ㄞ", "ㄢ",
+                "ㄆ", "ㄊ", "ㄎ", "ㄒ", "ㄖ", "ㄧ", "ㄛ", "ㄟ", "ㄣ",
+                "ㄇ", "ㄋ", "ㄏ", "ㄓ", "ㄗ", "ㄨ", "ㄜ", "ㄠ", "ㄤ",
+                "ㄈ", "ㄌ", "ㄐ", "ㄔ", "ㄘ", "ㄩ", "ㄝ", "ㄡ", "ㄥ",
+                "  ", "  ", "  ", " ", "  ", "  ", "  ", "  ", "ㄦ"
             };
 
             // English letters + digits (36) + 4 symbols to reach 40
@@ -141,48 +145,42 @@ namespace UltimateKtv
                 " ","0"," "," "," "," "," "," ",
             };
 
-            // Ensure lists are exactly 40 items
-            BopomofoList = PadTo40(BopomofoList);
-            EngAndNumList = PadTo40(EngAndNumList);
-            PenStyleList = PadTo40(PenStyleList);
-            SongIdStyleList = PadTo40(SongIdStyleList);
+            // 固定項目數，按鈕格的欄數由此決定
+            BopomofoList = PadTo(BopomofoList, BopomofoWordCount);
+            EngAndNumList = PadTo(EngAndNumList, QuickWordCount);
+            PenStyleList = PadTo(PenStyleList, QuickWordCount);
+            SongIdStyleList = PadTo(SongIdStyleList, QuickWordCount);
         }
 
-        private static List<string> PadTo40(List<string> src)
+        private static List<string> PadTo(List<string> src, int count)
         {
             var list = new List<string>(src);
-            while (list.Count < 40) list.Add(string.Empty);
-            if (list.Count > 40) list = list.Take(40).ToList();
+            while (list.Count < count) list.Add(string.Empty);
+            if (list.Count > count) list = list.Take(count).ToList();
             return list;
         }
 
         /// <summary>
-        /// Binds the provided list to the 40 quick word buttons.
+        /// Binds the provided list to the quick word buttons (注音 45 個，其他 40 個)。
         /// </summary>
         private void SetQuickWordSet(List<string> items)
         {
             try
             {
-                var count = items?.Count ?? 0;
                 using (Dispatcher.DisableProcessing())
                 {
+                    var list = items ?? new List<string>();
+                    if (list.Count == 0) list = PadTo(list, QuickWordCount);
 
-                    // Ensure we have exactly 40 entries to display
-                    var list = PadTo40(items ?? new List<string>());
-
-                    // Initialize collection once to exactly 40 placeholders
-                    if (_quickWords.Count == 0)
-                    {
-                        for (int i = 0; i < 40; i++) _quickWords.Add(string.Empty);
-                    }
-
-                    // Update in place to avoid regenerating containers
-                    int n = Math.Min(40, list.Count);
+                    // 原地更新避免重建按鈕；項目數不同 (注音 45 ↔ 其他 40) 時只增減尾端
+                    int n = Math.Min(_quickWords.Count, list.Count);
                     for (int i = 0; i < n; i++)
                     {
                         if (!string.Equals(_quickWords[i], list[i]))
                             _quickWords[i] = list[i];
                     }
+                    while (_quickWords.Count > list.Count) _quickWords.RemoveAt(_quickWords.Count - 1);
+                    for (int i = _quickWords.Count; i < list.Count; i++) _quickWords.Add(list[i]);
                 }
             }
             catch (Exception ex)

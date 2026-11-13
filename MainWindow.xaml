@@ -1614,11 +1614,11 @@
                                 <Button x:Name="KeyboardListBtn" Grid.Column="5" Content="{DynamicResource Str.Search.Keyboard}" Style="{StaticResource FunctionButtonStyle}" Click="KeyboardListBtn_Click" Margin="0"/>
                             </Grid>
 
-                            <!-- 40 single-word grid (default: Bopomofo list) -->
+                            <!-- 輸入按鈕格 (預設注音)：固定 5 列，欄數依項目數 (注音 45 → 9 欄，其他 40 → 8 欄) -->
                             <ItemsControl x:Name="SearchInputGrid" Grid.Row="4" Visibility="Collapsed">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <UniformGrid Rows="5" Columns="8"/>
+                                        <UniformGrid Rows="5"/>
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
