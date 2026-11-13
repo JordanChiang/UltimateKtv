@@ -19,7 +19,7 @@
            UltimateKtv_x86.exe + Codec_x86\，更新程式依作業系統位元選要更新/啟動的主程式)，
            並確保該資料夾已放好 Images\、Tools\、UltimateKtv.Updater.exe 等執行期資產。
         1b. (可選) 一起發佈 SongMgr：把 SongMgr 的發佈內容複製進「同一個」資料夾
-            (CrazyKTV_SongMgr.exe 攤在根目錄、資料在 SongMgr\)。SongMgr 的 Codec_x86\ 與 Tools\ 與
+            (CrazyKTV_SongMgr.exe 與 SQLite.Interop.dll 攤在根目錄、資料在 SongMgr\)。SongMgr 的 Codec_x86\ 與 Tools\ 與
             UltimateKtv 共用：版本相容時可不複製、直接用 UltimateKtv 的；若 SongMgr 需要額外檔案
             (例如 Tools\ffplay/ffprobe) 再把那些併入 (同名檔以後複製者為準，請自行確認相容)。
             不做這步就只發 UltimateKtv，SongMgr 元件會自動略過。
@@ -67,9 +67,11 @@ $OutDir = [IO.Path]::GetFullPath($OutDir).TrimEnd('\')
 # 元件清單只定義在這裡；程式端 (UpdateManager) 依 update.json 處理，不寫死元件名稱。
 # App 收 Codec\ / Codec_x86\ / Tools\ 以外的所有檔案 (不含 .pdb)，含兩個 exe、libs\、Images\、
 # Languages\、wwwroot\、SampleSettings\、UltimateKtv.Updater.* 與歌庫 (歌庫為保留檔，僅首次安裝用)。
+# SongMgr 放在根目錄的檔案：exe 與它的 SQLite 原生檔 (SongMgr 不把原生 DLL 包進 exe，UltimateKtv 用的是 runtimes\ 下的 e_sqlite3.dll)。
+$songMgrRootFile = '^(?i)(CrazyKTV_SongMgr\.|SQLite\.Interop\.dll$)'
 $components = @(
     @{ Name = 'App'; Desc = '主程式'; Zip = "UltimateKtv_App_$version.zip"
-        Match = { param($rel) -not ($rel.StartsWith('Codec\', 'OrdinalIgnoreCase') -or $rel.StartsWith('Codec_x86\', 'OrdinalIgnoreCase') -or $rel.StartsWith('Tools\', 'OrdinalIgnoreCase') -or $rel.StartsWith('SongMgr\', 'OrdinalIgnoreCase') -or ($rel -match '^(?i)CrazyKTV_SongMgr\.')) -and ($rel -notmatch '\.pdb$') } 
+        Match = { param($rel) -not ($rel.StartsWith('Codec\', 'OrdinalIgnoreCase') -or $rel.StartsWith('Codec_x86\', 'OrdinalIgnoreCase') -or $rel.StartsWith('Tools\', 'OrdinalIgnoreCase') -or $rel.StartsWith('SongMgr\', 'OrdinalIgnoreCase') -or ($rel -match $songMgrRootFile)) -and ($rel -notmatch '\.pdb$') }
     },
     @{ Name = 'Codec'; Desc = '影音解碼器 (Codec)'; Zip = "UltimateKtv_Codec_$version.zip"
         Match = { param($rel) $rel.StartsWith('Codec\', 'OrdinalIgnoreCase') } 
@@ -80,10 +82,10 @@ $components = @(
     @{ Name = 'Tools'; Desc = 'yt-dlp / ffmpeg (Tools)'; Zip = "UltimateKtv_Tools_$version.zip"
         Match = { param($rel) $rel.StartsWith('Tools\', 'OrdinalIgnoreCase') } 
     },
-    # SongMgr (加歌程式) 一起發佈時才有：單檔 exe 攤在根目錄，資料在 SongMgr\，共用 Codec_x86\ / Tools\。
+    # SongMgr (加歌程式) 一起發佈時才有：單檔 exe 與 SQLite.Interop.dll 攤在根目錄，資料在 SongMgr\，共用 Codec_x86\ / Tools\。
     # 沒把 SongMgr 複製進發佈夾時 (0 個檔案) 自動略過，仍可單獨發 UltimateKtv (Optional)。
     @{ Name = 'SongMgr'; Desc = '加歌程式 (SongMgr)'; Zip = "UltimateKtv_SongMgr_$version.zip"; Optional = $true
-        Match = { param($rel) $rel.StartsWith('SongMgr\', 'OrdinalIgnoreCase') -or ($rel -match '^(?i)CrazyKTV_SongMgr\.') } 
+        Match = { param($rel) $rel.StartsWith('SongMgr\', 'OrdinalIgnoreCase') -or ($rel -match $songMgrRootFile) }
     }
 )
 
@@ -141,6 +143,11 @@ Where-Object { -not $_.FullName.StartsWith($assetsRoot + '\', 'OrdinalIgnoreCase
 ForEach-Object { $_.FullName.Substring($PublishDir.Length + 1) } |
 Where-Object { $_ -notmatch '\.(pdb|log|cfg)$' -and $_ -ne 'settings.json' -and $_ -ne 'update-baseline.json' -and $_ -notmatch '^UltimateKtv_Log.*\.txt$' } |
 Sort-Object
+
+# 2.11.3 之後的 SongMgr 不把 SQLite.Interop.dll 包進 exe，少了它加歌程式開不了 SQLite 歌庫。
+if (($allRels -contains 'CrazyKTV_SongMgr.exe') -and -not ($allRels -contains 'SQLite.Interop.dll')) {
+    Write-Warning 'CrazyKTV_SongMgr.exe 旁邊沒有 SQLite.Interop.dll。2.11.3 之後的 SongMgr 需要它才能開 SQLite 歌庫，請從 SongMgr 的發佈資料夾一併複製 (2.11.3 以前的版本已包在 exe 內，可忽略)。'
+}
 
 if (Test-Path $OutDir) { Remove-Item $OutDir -Recurse -Force }
 New-Item -ItemType Directory -Force $OutDir | Out-Null
