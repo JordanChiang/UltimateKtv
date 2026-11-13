@@ -145,6 +145,17 @@
     </ItemGroup>
   </Target>
 
+  <!-- 主程式單獨 build (例如 dotnet build UltimateKtv.csproj) 不會自動建 Updater
+       (無 ProjectReference，走連結原始碼)，但下方 PostBuild 需要 Updater exe；缺少時先在此建好。
+       RemoveProperties 擋掉主程式的 OutDir 等傳染，讓 Updater 固定建到自己的
+       Updater\bin\x86\<cfg>\net471\，PostBuild 的來源路徑才找得到。 -->
+  <Target Name="EnsureUpdaterBuilt" BeforeTargets="PostBuildEvent"
+          Condition="'$(PublishProtocol)' == '' And !Exists('$(ProjectDir)Updater\bin\x86\$(Configuration)\net471\UltimateKtv.Updater.exe')">
+    <MSBuild Projects="$(ProjectDir)Updater\UltimateKtv.Updater.csproj"
+             Properties="Configuration=$(Configuration);Platform=x86"
+             RemoveProperties="OutDir;BaseOutputPath;IntermediateOutputPath;PublishDir;RuntimeIdentifier" />
+  </Target>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(PublishProtocol)' == ''">
     <!-- Ensure Codec and Images files are copied during build -->
     <Exec Command="if not &quot;$(CodecDir)&quot; == &quot;&quot; xcopy &quot;$(ProjectDir)$(CodecDir)&quot; &quot;$(TargetDir)$(CodecDir)\&quot; /E /I /Y /D" />
