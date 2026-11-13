@@ -1,0 +1,133 @@
+name: Release
+
+# 推送版本號 tag (例如 2.0.5) 時，自動發佈 x64 + x86 到 GitHub Release。
+#   Phase 1：發佈主程式 (x64/x86) + Updater + StyleSimulator，打包元件 zip + update.json。
+#   Phase 2：抓 SongMgr (JordanChiang/SongMgr) 最新 release 的 App 包併入 (Codec_x86/Tools 共用本體的)。
+#   Phase 3：把 exe 送 VirusTotal，結果附加到 Release notes (需 VT_API_KEY secret；失敗不中斷發佈)。
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要發佈的版本號 tag (例如 2.0.5)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: 決定 tag
+        id: ver
+        shell: pwsh
+        run: |
+          $tag = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ github.event.inputs.tag }}' } else { '${{ github.ref_name }}' }
+          "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "發佈 tag: $tag"
+
+      # 發佈佈局與本機「VS 發佈」一致：x64 / x86 主程式 + Updater + StyleSimulator 都進同一個 publish\。
+      # 各專案的 FolderProfile.pubxml 已把 PublishDir 指向 publish\，x86 另外覆寫 Platform / RID。
+      # libmpv-2.dll 不在 repo，csproj 的 FetchLibmpv target 會在 build 前抓 (x86 鎖 20260412)。
+      - name: 發佈主程式 x64
+        shell: pwsh
+        run: dotnet publish UltimateKtv.csproj -p:PublishProfile=FolderProfile --nologo -v minimal
+
+      - name: 發佈主程式 x86
+        shell: pwsh
+        run: dotnet publish UltimateKtv.csproj -p:PublishProfile=FolderProfile -p:Platform=x86 -p:RuntimeIdentifier=win-x86 --nologo -v minimal
+
+      - name: 發佈 Updater (net471 x86)
+        shell: pwsh
+        run: dotnet publish Updater/UltimateKtv.Updater.csproj -p:PublishProfile=FolderProfile --nologo -v minimal
+
+      - name: 發佈 StyleSimulator
+        shell: pwsh
+        run: dotnet publish StyleSimulator/UltimateKtv.StyleSimulator.csproj -p:PublishProfile=FolderProfile --nologo -v minimal
+
+      # Phase 2：SongMgr 以獨立 repo 的「最新 release」併入 (不在 CI 建置原始碼)。
+      # 只取 App 包 (CrazyKTV_SongMgr.exe + SongMgr\)；Codec_x86\ / Tools\ 共用本體發佈的版本。
+      - name: 併入 SongMgr 最新 release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tmp = New-Item -ItemType Directory -Force -Path "$env:RUNNER_TEMP\songmgr"
+          gh release download --repo JordanChiang/SongMgr --pattern 'SongMgr_App_*.zip' --dir $tmp.FullName
+          $zip = Get-ChildItem $tmp.FullName -Filter 'SongMgr_App_*.zip' | Select-Object -First 1
+          if (-not $zip) { throw 'SongMgr App 包下載失敗' }
+          Expand-Archive -Path $zip.FullName -DestinationPath publish -Force
+          Write-Host "已併入 SongMgr: $($zip.Name)"
+
+      # FetchLibmpv 是 ContinueOnError，下載失敗不會讓 build 失敗，必須在這裡把關，
+      # 否則會發出一個缺 libmpv、無法播放的 release。
+      - name: 驗證發佈產出完整
+        shell: pwsh
+        run: |
+          $need = @(
+            'publish/UltimateKtv.exe',
+            'publish/UltimateKtv_x86.exe',
+            'publish/UltimateKtv.Updater.exe',
+            'publish/Codec/libmpv-2.dll',
+            'publish/Codec_x86/libmpv-2.dll',
+            'publish/runtimes/win-x64/native/e_sqlite3.dll',
+            'publish/runtimes/win-x86/native/e_sqlite3.dll',
+            'publish/libs/win-x64/MaterialDesignThemes.Wpf.dll',
+            'publish/libs/win-x86/MaterialDesignThemes.Wpf.dll',
+            'publish/CrazyKTV_SongMgr.exe',
+            'publish/SongMgr/CrazySongMgr.mdb'
+          )
+          $missing = $need | Where-Object { -not (Test-Path $_) }
+          if ($missing) { throw "發佈產出缺檔:`n$($missing -join "`n")" }
+          Write-Host "發佈產出檢查通過。"
+
+      - name: 打包 Release 附檔 (元件 zip + update.json)
+        shell: pwsh
+        run: ./scripts/pack-release.ps1 -PublishDir publish -Tag ${{ steps.ver.outputs.tag }}
+
+      - name: 建立 GitHub Release 並上傳附檔
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: ${{ steps.ver.outputs.tag }}
+          files: publish/ReleaseAssets/**/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+
+      # Phase 3：exe 送 VirusTotal，結果附加到 release notes。
+      # 在 release 建立之後才跑 (檔案已公開，上傳 VT 沒有提前外洩問題)；
+      # 任何錯誤 (無 key、逾時、速率限制) 都不影響已發佈的 release。
+      - name: VirusTotal 掃描並附加到 Release notes
+        continue-on-error: true
+        shell: pwsh
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if (-not $env:VT_API_KEY) { Write-Host 'VT: 未設定 VT_API_KEY secret，略過。'; exit 0 }
+          $vt = Join-Path $env:RUNNER_TEMP 'vt.md'
+          ./scripts/vt-scan.ps1 -Files @(
+            'publish/UltimateKtv.exe',
+            'publish/UltimateKtv_x86.exe',
+            'publish/UltimateKtv.Updater.exe',
+            'publish/CrazyKTV_SongMgr.exe'
+          ) -OutFile $vt | Out-Null
+          if (-not (Test-Path $vt)) { Write-Host 'VT: 無結果，略過。'; exit 0 }
+          $tag = '${{ steps.ver.outputs.tag }}'
+          $body = gh release view $tag --json body -q .body
+          $combined = Join-Path $env:RUNNER_TEMP 'notes.md'
+          ($body + "`n`n" + (Get-Content -Raw $vt)) | Set-Content -Path $combined -Encoding utf8
+          gh release edit $tag --notes-file $combined
+          Write-Host 'VT: 已附加到 release notes。'
