@@ -57,9 +57,12 @@ jobs:
         shell: pwsh
         run: dotnet publish UltimateKtv.csproj -p:PublishProfile=FolderProfile --nologo -v minimal
 
+      # x86 關閉 ReadyToRun：x86 的 R2R 內嵌原生碼會觸發 BitDefender 系列的通用啟發式
+      # (Gen:Variant.Adware.Yogi，連帶 ALYac/Arcabit/Emsisoft/GData/eScan/VIPRE/CTX 共 8 家誤判)。
+      # 實測關掉後這 8 家全部 undetected；單檔發佈故不影響檔案佈局、只是 exe 小約 8MB、冷啟動略慢。x64 不受影響。
       - name: 發佈主程式 x86
         shell: pwsh
-        run: dotnet publish UltimateKtv.csproj -p:PublishProfile=FolderProfile -p:Platform=x86 -p:RuntimeIdentifier=win-x86 --nologo -v minimal
+        run: dotnet publish UltimateKtv.csproj -p:PublishProfile=FolderProfile -p:Platform=x86 -p:RuntimeIdentifier=win-x86 -p:PublishReadyToRun=false --nologo -v minimal
 
       - name: 發佈 Updater (net471 x86)
         shell: pwsh
