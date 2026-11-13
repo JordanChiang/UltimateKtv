@@ -17,6 +17,9 @@ namespace UltimateKtv.Services
     {
         private const string DefaultUpdateUrl = "https://api.github.com/repos/JordanChiang/UltimateKtv/releases/latest";
         private const string ManifestAssetName = "update.json";
+        // 加歌程式 SongMgr 的獨立 repo：UltimateKtv 沒 bundle SongMgr 時，從這裡補下載 (見 BuildSongMgrPlanAsync)。
+        private const string SongMgrReleaseUrl = "https://api.github.com/repos/JordanChiang/SongMgr/releases/latest";
+        private const string SongMgrComponentName = "SongMgr";
         private static readonly HttpClient _httpClient;
 
         /// <summary>要下載並套用的一包檔案 (差異更新時為一個元件，無清單時為完整包)。</summary>
@@ -114,30 +117,47 @@ namespace UltimateKtv.Services
                     }
                 }
 
-                // 5. Compare version
-                if (latestVersion <= currentVersion) return;
-                if (latestRelease == null || latestRelease.Assets.Count == 0)
+                // 5. 準備下載清單
+                //    UltimateKtv 本身：有新版才下載 (差異更新優先，無 update.json 退回完整包)。
+                //    SongMgr：UltimateKtv 沒 bundle 時，獨立從 SongMgr repo 補 (不受 UltimateKtv 是否有新版影響，
+                //    所以不在這裡用 latestVersion <= currentVersion 提早 return)。
+                string appDir = AppDomain.CurrentDomain.BaseDirectory;
+                bool ultimateKtvNewer = latestVersion > currentVersion;
+                // 受保護工具 (yt-dlp/yt-dlp_x86/ffmpeg) 的「上次安裝基準」，用於「沒動過才覆蓋」判斷。
+                var baseline = UpdateManifestHelper.LoadBaseline(appDir);
+
+                DownloadPlan plan = latestRelease != null && latestRelease.Assets.Count > 0
+                    ? await BuildDownloadPlanAsync(latestRelease, appDir, baseline)
+                    : new DownloadPlan();
+                if (plan.Abort) return; // UltimateKtv 的 update.json 壞掉，這次整個略過
+
+                var items = new List<DownloadItem>();
+                if (ultimateKtvNewer) items.AddRange(plan.Items);
+
+                // SongMgr 補充 (維持 bundled，沒 bundle 才從 repo 補)：只在 UltimateKtv 走差異更新
+                // (有 update.json) 且清單沒含 SongMgr 元件時。
+                if (plan.UsedManifest && !plan.HasSongMgrComponent)
                 {
-                    if (apiUrl == DefaultUpdateUrl)
-                        AppLogger.Log("找到了新版本，但 release 沒有可下載的附檔。");
-                    return;
+                    List<DownloadItem>? songMgr = await BuildSongMgrPlanAsync(appDir, baseline);
+                    if (songMgr != null) items.AddRange(songMgr);
                 }
 
-                // 6. Decide what to download: differential (update.json) first, else the full package zip
-                string appDir = AppDomain.CurrentDomain.BaseDirectory;
-                List<DownloadItem>? items = await BuildDownloadPlanAsync(latestRelease, appDir);
-                if (items == null || items.Count == 0)
+                if (items.Count == 0)
                 {
-                    if (apiUrl == DefaultUpdateUrl)
+                    if (ultimateKtvNewer && apiUrl == DefaultUpdateUrl)
                         AppLogger.Log("找到了新版本，但找不到可用的更新附檔 (update.json 或完整包)。");
                     return;
                 }
 
-                // 7. Ask the user, then perform the update
+                // 6. Ask the user, then perform the update
+                //    UltimateKtv 有新版就顯示新版本號與其更新說明；只有 SongMgr 要補時顯示目前版本 + SongMgr 說明。
+                string shownVersion = ultimateKtvNewer ? latestVersion!.ToString() : currentVersion.ToString();
+                string shownNotes = ultimateKtvNewer ? releaseNotes : Loc.T("Update.SongMgrNotes");
+
                 bool userWantsUpdate = false;
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    var prompt = new UpdatePromptWindow(currentVersion.ToString(), latestVersion!.ToString(), releaseNotes);
+                    var prompt = new UpdatePromptWindow(currentVersion.ToString(), shownVersion, shownNotes);
                     prompt.Owner = Application.Current.MainWindow;
                     prompt.ShowDialog();
                     userWantsUpdate = prompt.DoUpdate;
@@ -154,46 +174,109 @@ namespace UltimateKtv.Services
             }
         }
 
-        /// <summary>
-        /// 依 release 決定要下載哪些包：有 update.json 時只挑雜湊有變的元件；沒有時退回完整包。
-        /// 全部元件都已是最新 (例如只有歌庫這類保留檔不同) 時回傳空清單。
-        /// </summary>
-        private static async Task<List<DownloadItem>?> BuildDownloadPlanAsync(GitHubReleaseInfo release, string appDir)
+        /// <summary>UltimateKtv 本身的下載計畫，附帶 update.json 的狀態 (供 SongMgr 補充判斷)。</summary>
+        private sealed class DownloadPlan
         {
+            /// <summary>要下載的元件 (差異更新) 或完整包。</summary>
+            public List<DownloadItem> Items { get; } = new List<DownloadItem>();
+            /// <summary>此 release 有 update.json (走差異更新)。</summary>
+            public bool UsedManifest { get; set; }
+            /// <summary>update.json 已含 SongMgr 元件 (bundled)，不需另外從 SongMgr repo 補。</summary>
+            public bool HasSongMgrComponent { get; set; }
+            /// <summary>update.json 存在卻讀不到 / 格式錯誤：這次整個略過更新。</summary>
+            public bool Abort { get; set; }
+        }
+
+        /// <summary>
+        /// 依 release 決定 UltimateKtv 要下載哪些包：有 update.json 時只挑雜湊有變的元件；沒有時退回完整包。
+        /// 同時回報是否走差異更新、是否已 bundle SongMgr，供呼叫端決定要不要另外補 SongMgr。
+        /// </summary>
+        private static async Task<DownloadPlan> BuildDownloadPlanAsync(GitHubReleaseInfo release, string appDir, IReadOnlyDictionary<string, string> baseline)
+        {
+            var plan = new DownloadPlan();
             var manifestAsset = release.Assets.FirstOrDefault(
                 a => a.Name.Equals(ManifestAssetName, StringComparison.OrdinalIgnoreCase));
 
             if (manifestAsset != null && !string.IsNullOrEmpty(manifestAsset.BrowserDownloadUrl))
             {
+                plan.UsedManifest = true;
                 try
                 {
                     string json = await _httpClient.GetStringAsync(manifestAsset.BrowserDownloadUrl);
                     UpdateManifest? manifest = UpdateManifestHelper.Parse(json);
                     if (manifest != null)
                     {
+                        plan.HasSongMgrComponent = manifest.Components.Any(
+                            c => c.Name.Equals(SongMgrComponentName, StringComparison.OrdinalIgnoreCase));
                         // 比對檔案雜湊可能較耗時，移出 UI 執行緒
                         List<UpdateComponent> changed = await Task.Run(
-                            () => UpdateManifestHelper.ChangedComponents(manifest, appDir));
-                        return changed
-                            .Select(c => new DownloadItem(c.Url, c.DisplayName, c.Size))
-                            .ToList();
+                            () => UpdateManifestHelper.ChangedComponents(manifest, appDir, baseline));
+                        foreach (var c in changed)
+                            plan.Items.Add(new DownloadItem(c.Url, c.DisplayName, c.Size));
+                        return plan;
                     }
 
                     // 有 update.json 卻讀不到或格式錯誤：這次先不更新 (下次啟動再檢查)，不改抓完整包
                     AppLogger.Log("更新清單 update.json 格式錯誤，略過這次更新。");
-                    return null;
+                    plan.Abort = true;
+                    return plan;
                 }
                 catch (Exception ex)
                 {
                     AppLogger.Log($"無法取得更新清單 update.json：{ex.Message}");
-                    return null;
+                    plan.Abort = true;
+                    return plan;
                 }
             }
 
             // 沒有 update.json 的舊 release：下載完整包
             GitHubReleaseAsset? full = PickFullPackage(release.Assets);
-            if (full == null || string.IsNullOrEmpty(full.BrowserDownloadUrl)) return null;
-            return new List<DownloadItem> { new DownloadItem(full.BrowserDownloadUrl, full.Name, 0) };
+            if (full != null && !string.IsNullOrEmpty(full.BrowserDownloadUrl))
+                plan.Items.Add(new DownloadItem(full.BrowserDownloadUrl, full.Name, 0));
+            return plan;
+        }
+
+        /// <summary>
+        /// 從 SongMgr 自己的 repo (JordanChiang/SongMgr) 補加歌程式：讀它的 update.json，
+        /// 依雜湊挑出本機需要更新的元件 (App 與共用的 Codec_x86 / Tools)。SongMgr 與 UltimateKtv 共用
+        /// Codec_x86 / Tools，雜湊相同的會自動跳過 (沿用 UltimateKtv 的)；不同或缺檔 (例如 ffplay/ffprobe)
+        /// 才下載。使用者既有的 SongMgr 歌庫等保留檔 (KeepExisting) 不列入變動判斷、套用時也不會被覆蓋。
+        /// 取不到時回傳 null (不影響 UltimateKtv 本身的更新)。
+        /// </summary>
+        private static async Task<List<DownloadItem>?> BuildSongMgrPlanAsync(string appDir, IReadOnlyDictionary<string, string> baseline)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync(SongMgrReleaseUrl);
+                if (!response.IsSuccessStatusCode) return null;
+
+                string content = await response.Content.ReadAsStringAsync();
+                var release = JsonConvert.DeserializeObject<GitHubReleaseInfo>(content);
+                if (release == null || release.Assets.Count == 0) return null;
+
+                var manifestAsset = release.Assets.FirstOrDefault(
+                    a => a.Name.Equals(ManifestAssetName, StringComparison.OrdinalIgnoreCase));
+                if (manifestAsset == null || string.IsNullOrEmpty(manifestAsset.BrowserDownloadUrl)) return null;
+
+                string json = await _httpClient.GetStringAsync(manifestAsset.BrowserDownloadUrl);
+                UpdateManifest? manifest = UpdateManifestHelper.Parse(json);
+                if (manifest == null)
+                {
+                    AppLogger.Log("SongMgr 的 update.json 格式錯誤，這次略過補 SongMgr。");
+                    return null;
+                }
+
+                List<UpdateComponent> changed = await Task.Run(
+                    () => UpdateManifestHelper.ChangedComponents(manifest, appDir, baseline));
+                return changed
+                    .Select(c => new DownloadItem(c.Url, c.DisplayName, c.Size))
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"無法取得 SongMgr 更新：{ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>完整安裝包 zip：優先認 UltimateKtv_&lt;版本&gt;.zip，避免誤抓元件 zip (Codec_*.zip…)；舊 release 退回第一個 .zip。</summary>
@@ -203,6 +286,83 @@ namespace UltimateKtv.Services
                 a => Regex.IsMatch(a.Name ?? "", @"^UltimateKtv_[\d.]+\.zip$", RegexOptions.IgnoreCase));
             if (full != null) return full;
             return assets.FirstOrDefault(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// 套用「沒動過才覆蓋」的受保護工具 (ProtectedTools)：比對本機檔與上次安裝基準，沒動過 (本機==基準)
+        /// 才覆蓋成解壓夾裡的新版，被使用者改過就保留；無基準時保留並收當下雜湊為基準。處理完的檔案一律從解壓夾
+        /// 移除，讓後續的 Updater 不再碰這些工具。失敗 (檔案鎖定等) 時保留本機、不動基準，下次再試。
+        /// </summary>
+        private static void ApplyProtectedTools(string extractPath, string appDir)
+        {
+            Dictionary<string, string> baseline = UpdateManifestHelper.LoadBaseline(appDir);
+            bool changed = false;
+
+            foreach (string rel in UpdateManifestHelper.ProtectedTools)
+            {
+                string src = Path.Combine(extractPath, rel);
+                if (!File.Exists(src)) continue; // 這次沒下載到這個工具
+
+                string dst = Path.Combine(appDir, rel);
+                string key = UpdateManifestHelper.BaselineKey(rel);
+                string newHash;
+                try { newHash = UpdateManifestHelper.FileHash(src); }
+                catch { continue; }
+
+                bool exists = File.Exists(dst);
+                string? localHash = null;
+                if (exists)
+                {
+                    try { localHash = UpdateManifestHelper.FileHash(dst); }
+                    catch { localHash = null; }
+                }
+                baseline.TryGetValue(key, out string? baseHash);
+
+                switch (UpdateManifestHelper.DecideProtected(exists, localHash ?? "", newHash, baseHash))
+                {
+                    case UpdateManifestHelper.ProtectedAction.Install:
+                    case UpdateManifestHelper.ProtectedAction.Overwrite:
+                        try
+                        {
+                            string? dstDir = Path.GetDirectoryName(dst);
+                            if (!string.IsNullOrEmpty(dstDir)) Directory.CreateDirectory(dstDir);
+                            File.Copy(src, dst, true);
+                            baseline[key] = newHash;
+                            changed = true;
+                            TryDelete(src);
+                        }
+                        catch (Exception ex)
+                        {
+                            // 失敗就保留本機、不動基準、不刪 src (Updater 保留清單會跳過已存在的檔)，下次再試。
+                            AppLogger.Log($"更新工具 {rel} 失敗，保留現有檔：{ex.Message}");
+                        }
+                        break;
+
+                    case UpdateManifestHelper.ProtectedAction.AlreadyCurrent:
+                        baseline[key] = newHash;
+                        changed = true;
+                        TryDelete(src);
+                        break;
+
+                    case UpdateManifestHelper.ProtectedAction.Keep:
+                        // 使用者改過：保留本機。無基準時收當下本機雜湊為基準 (之後沒再動就會跟著更新)。
+                        if (baseHash == null && localHash != null)
+                        {
+                            baseline[key] = localHash;
+                            changed = true;
+                        }
+                        TryDelete(src);
+                        break;
+                }
+            }
+
+            if (changed) UpdateManifestHelper.SaveBaseline(appDir, baseline);
+        }
+
+        private static void TryDelete(string path)
+        {
+            try { if (File.Exists(path)) File.Delete(path); }
+            catch { }
         }
 
         private static async Task PerformUpdateAsync(List<DownloadItem> items)
@@ -285,6 +445,10 @@ namespace UltimateKtv.Services
                     string zip = zipFilePath;
                     await Task.Run(() => ZipHelper.SafeExtractZip(zip, extractPath, msg => AppLogger.Log(msg)));
                 }
+
+                // 受保護工具 (yt-dlp/yt-dlp_x86/ffmpeg) 的「沒動過才覆蓋」：由主程式在這裡直接處理並從解壓夾移除，
+                // 交給 Updater 的檔案就不含這些 (Updater 只負責一般檔與使用者資料的保留)。
+                await Task.Run(() => ApplyProtectedTools(extractPath, AppDomain.CurrentDomain.BaseDirectory));
 
                 progressWindow?.ReportProgress(100, Loc.T("Update.Applying"));
 

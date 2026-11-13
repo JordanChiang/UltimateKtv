@@ -322,6 +322,7 @@
   "Update.Now": "立即更新",
   "Update.Later": "稍後再說",
   "Update.NoNotes": "無詳細更新說明",
+  "Update.SongMgrNotes": "偵測到可安裝／更新的加歌程式 (SongMgr)，將一併下載並安裝，方便您新增歌曲。",
   "Update.DownloadingTitle": "下載更新中",
   "Update.DownloadingWait": "正在下載更新，請稍候...",
   "Update.Preparing": "準備下載...",

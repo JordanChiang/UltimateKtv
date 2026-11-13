@@ -34,7 +34,7 @@ namespace UltimateKtv.Updater
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("====================================================");
-            Console.WriteLine("=             UltimateKtv 更新管理系統        V1.9 =");
+            Console.WriteLine("=             UltimateKtv 更新管理系統        V2.0 =");
             Console.WriteLine("====================================================");
             Console.ResetColor();
             Console.WriteLine();
@@ -256,16 +256,14 @@ namespace UltimateKtv.Updater
             => obj.TryGetValue(key, out var v) && v != null ? v.ToString() : "";
 
         /// <summary>
-        /// 選完整安裝包 zip。GitHub 依檔名回傳附檔，完整包 UltimateKtv_(版本).zip 底線後是數字，
-        /// 通常排在各元件 zip (UltimateKtv_App_… 等字母開頭) 之前，但不保證 (完整包沒上傳或改名時就會抓到元件 zip)，
-        /// 所以明確用 regex 認完整包，認不到才退回第一個 .zip。與主程式 UpdateManager.PickFullPackage 一致。
+        /// 選完整安裝包 zip：只認 UltimateKtv_(版本).zip，認不到就回傳 null (呼叫端會報「找不到更新壓縮檔」並中止)。
+        /// 不退回「第一個 .zip」，避免完整包沒上傳時誤抓到元件 zip (UltimateKtv_App_… 等) 而只裝到一部分檔案；
+        /// 也因此不依賴 GitHub 附檔的回傳順序。手動模式一律抓 /releases/latest，新版都是這個命名。
         /// </summary>
         static AssetInfo PickFullPackage(List<AssetInfo> assets)
         {
-            var full = assets.FirstOrDefault(
+            return assets.FirstOrDefault(
                 a => Regex.IsMatch(a.Name ?? "", @"^UltimateKtv_[\d.]+\.zip$", RegexOptions.IgnoreCase));
-            if (full != null) return full;
-            return assets.FirstOrDefault(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
         }
 
         static bool TryParseArgs(string[] args, out int targetPid, out string sourceDir, out string destDir, out string targetExe)
@@ -357,14 +355,20 @@ namespace UltimateKtv.Updater
                 string relativePath = GetRelativePath(sourceDir, file);
                 string destFile = Path.Combine(destDir, relativePath);
 
-                // Skip user data if it already exists (歌庫、SongMgr 的歌庫/自訂語系)。
-                // 與主程式 Update\UpdateManifest.cs 的 KeepExisting 對應，兩邊要一起維護。
+                // 已存在就不覆蓋：歌庫、SongMgr 的歌庫/自訂語系 (對應主程式 UpdateManifest.KeepExisting)，
+                // 以及工具 exe yt-dlp/yt-dlp_x86/ffmpeg。注意：自動更新路徑的這些工具是由主程式以「沒動過才覆蓋」
+                // (UpdateManifest.ProtectedTools + update-baseline.json) 處理後、已從解壓夾移除，不會走到這裡；
+                // 這裡的工具保留只對「手動執行 Updater 下載完整包」那條路徑生效 (保守起見一律保留，不蓋使用者的)。
+                // 歌庫/語系那幾項與主程式 KeepExisting 對應，兩邊要一起維護。
                 string relForSkip = relativePath.Replace('/', '\\');
                 if ((fileName.Equals("CrazySong.mdb", StringComparison.OrdinalIgnoreCase) ||
                      fileName.Equals("CrazySong.db", StringComparison.OrdinalIgnoreCase) ||
                      relForSkip.Equals(@"SongMgr\CrazySongMgr.mdb", StringComparison.OrdinalIgnoreCase) ||
                      relForSkip.Equals(@"SongMgr\CrazySongMgr.db", StringComparison.OrdinalIgnoreCase) ||
-                     relForSkip.Equals(@"SongMgr\Custom.lang", StringComparison.OrdinalIgnoreCase)) && File.Exists(destFile))
+                     relForSkip.Equals(@"SongMgr\Custom.lang", StringComparison.OrdinalIgnoreCase) ||
+                     relForSkip.Equals(@"Tools\yt-dlp.exe", StringComparison.OrdinalIgnoreCase) ||
+                     relForSkip.Equals(@"Tools\yt-dlp_x86.exe", StringComparison.OrdinalIgnoreCase) ||
+                     relForSkip.Equals(@"Tools\ffmpeg.exe", StringComparison.OrdinalIgnoreCase)) && File.Exists(destFile))
                 {
                     continue;
                 }

@@ -54,7 +54,8 @@ namespace UltimateKtv.Services
     public static class UpdateManifestHelper
     {
         /// <summary>
-        /// 程式資料夾已有這些檔案時保留不覆蓋 (使用者的歌庫與 SongMgr 的歌庫/自訂語系)，也不列入「元件有無變動」的判斷。
+        /// 程式資料夾已有這些檔案時永遠保留不覆蓋，也不列入「元件有無變動」的判斷 (缺檔時仍會安裝一次)：
+        /// 使用者的歌庫與 SongMgr 的歌庫/自訂語系。工具 exe 的保留另走 <see cref="ProtectedTools"/> 的「沒動過才覆蓋」。
         /// 套用更新的 Updater (Updater\Program.cs) 也有一份對應的跳過清單，兩邊要一起維護。
         /// </summary>
         public static readonly string[] KeepExisting =
@@ -66,6 +67,22 @@ namespace UltimateKtv.Services
             @"SongMgr\Custom.lang",
         };
 
+        /// <summary>
+        /// 使用者可能自行更新的工具 exe，採「沒動過才覆蓋」：本機檔與「上次我們安裝的版本 (基準)」相同 (使用者沒動過)
+        /// 才更新成新版；被使用者改過 (例如 yt-dlp -U、手動換 ffmpeg) 就保留。基準記在執行目錄的
+        /// <see cref="BaselineFileName"/>。判斷與套用分別在 NeedsUpdate / DecideProtected，只走主程式自動更新路徑。
+        /// ffplay/ffprobe、Codec/Codec_x86 不在此列，維持一般雜湊同步。
+        /// </summary>
+        public static readonly string[] ProtectedTools =
+        {
+            @"Tools\yt-dlp.exe",
+            @"Tools\yt-dlp_x86.exe",
+            @"Tools\ffmpeg.exe",
+        };
+
+        /// <summary>記錄受保護工具上次安裝版本雜湊的檔案 (執行目錄；相對路徑→sha256)。pack-release 會排除、不進發佈包。</summary>
+        public const string BaselineFileName = "update-baseline.json";
+
         public static string LocalPath(string appDir, string relPath) =>
             Path.Combine(appDir, relPath.Replace('/', Path.DirectorySeparatorChar));
 
@@ -73,6 +90,66 @@ namespace UltimateKtv.Services
         {
             string rel = relPath.Replace('/', '\\');
             return KeepExisting.Any(k => string.Equals(k, rel, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static bool IsProtected(string relPath)
+        {
+            string rel = relPath.Replace('/', '\\');
+            return ProtectedTools.Any(k => string.Equals(k, rel, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>基準字典的鍵：相對路徑一律以 / 分隔、小寫。</summary>
+        public static string BaselineKey(string relPath) => relPath.Replace('\\', '/').ToLowerInvariant();
+
+        /// <summary>讀取基準檔 (相對路徑→上次安裝的 sha256)；不存在或壞掉回傳空字典。</summary>
+        public static Dictionary<string, string> LoadBaseline(string appDir)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                string path = Path.Combine(appDir, BaselineFileName);
+                if (!File.Exists(path)) return dict;
+                var parsed = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(path));
+                if (parsed != null)
+                    foreach (var kv in parsed)
+                        if (!string.IsNullOrEmpty(kv.Value))
+                            dict[BaselineKey(kv.Key)] = kv.Value.ToLowerInvariant();
+            }
+            catch { }
+            return dict;
+        }
+
+        /// <summary>寫回基準檔；失敗 (例如唯讀目錄) 時忽略，不影響更新。</summary>
+        public static void SaveBaseline(string appDir, Dictionary<string, string> baseline)
+        {
+            try
+            {
+                string path = Path.Combine(appDir, BaselineFileName);
+                File.WriteAllText(path, JsonConvert.SerializeObject(baseline, Formatting.Indented));
+            }
+            catch { }
+        }
+
+        /// <summary>套用更新時，一個受保護工具 exe 的處置。</summary>
+        public enum ProtectedAction
+        {
+            /// <summary>本機沒有 → 安裝。</summary>
+            Install,
+            /// <summary>本機 == 基準 (沒動過) 且與新版不同 → 覆蓋成新版。</summary>
+            Overwrite,
+            /// <summary>本機 == 新版 → 不用動 (只需把基準記成新版)。</summary>
+            AlreadyCurrent,
+            /// <summary>本機 ≠ 基準 (使用者改過) 或無基準 → 保留本機。</summary>
+            Keep,
+        }
+
+        /// <summary>依「沒動過才覆蓋」決定受保護工具的處置 (純函式，方便測試)。</summary>
+        public static ProtectedAction DecideProtected(bool localExists, string localHash, string newHash, string? baseHash)
+        {
+            if (!localExists) return ProtectedAction.Install;
+            if (string.Equals(localHash, newHash, StringComparison.OrdinalIgnoreCase)) return ProtectedAction.AlreadyCurrent;
+            if (baseHash != null && string.Equals(localHash, baseHash, StringComparison.OrdinalIgnoreCase)) return ProtectedAction.Overwrite;
+            return ProtectedAction.Keep;
         }
 
         public static string FileHash(string file)
@@ -83,8 +160,12 @@ namespace UltimateKtv.Services
             }
         }
 
-        /// <summary>元件裡有任何檔案不存在或雜湊值不同就需要更新 (使用者已有的保留檔案不算)。</summary>
-        public static bool NeedsUpdate(UpdateComponent comp, string appDir)
+        /// <summary>
+        /// 元件裡有任何檔案不存在或雜湊值不同就需要更新。使用者已有的保留檔案 (KeepExisting) 不算；
+        /// 受保護工具 (ProtectedTools) 只有在「本機==基準 (沒動過) 且與新版不同」時才算需要更新，
+        /// 被使用者改過時不因它下載 (否則 yt-dlp -U 後會每次重抓整包 Tools)。
+        /// </summary>
+        public static bool NeedsUpdate(UpdateComponent comp, string appDir, IReadOnlyDictionary<string, string>? baseline = null)
         {
             foreach (var f in comp.Files)
             {
@@ -94,7 +175,20 @@ namespace UltimateKtv.Services
                 if (!exists) return true;
                 try
                 {
-                    if (!string.Equals(FileHash(local), f.Value, StringComparison.OrdinalIgnoreCase)) return true;
+                    string localHash = FileHash(local);
+                    if (string.Equals(localHash, f.Value, StringComparison.OrdinalIgnoreCase)) continue; // 已是最新
+
+                    if (IsProtected(f.Key))
+                    {
+                        // 沒動過 (本機==基準) 才需要更新；被改過或沒基準則保留、不因它下載。
+                        if (baseline != null
+                            && baseline.TryGetValue(BaselineKey(f.Key), out var baseHash)
+                            && string.Equals(localHash, baseHash, StringComparison.OrdinalIgnoreCase))
+                            return true;
+                        continue;
+                    }
+
+                    return true; // 一般檔案雜湊不同 → 需更新
                 }
                 catch
                 {
@@ -123,8 +217,8 @@ namespace UltimateKtv.Services
             }
         }
 
-        /// <summary>依清單挑出本機需要更新的元件 (保持清單順序)。</summary>
-        public static List<UpdateComponent> ChangedComponents(UpdateManifest manifest, string appDir) =>
-            manifest.Components.Where(c => NeedsUpdate(c, appDir)).ToList();
+        /// <summary>依清單挑出本機需要更新的元件 (保持清單順序)。baseline 給受保護工具的「沒動過才覆蓋」判斷。</summary>
+        public static List<UpdateComponent> ChangedComponents(UpdateManifest manifest, string appDir, IReadOnlyDictionary<string, string>? baseline = null) =>
+            manifest.Components.Where(c => NeedsUpdate(c, appDir, baseline)).ToList();
     }
 }
