@@ -5,8 +5,13 @@
     <Platforms>x86</Platforms>
     <AssemblyName>UltimateKtv.Updater</AssemblyName>
     <ApplicationIcon>UpdaterIcon.ico</ApplicationIcon>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <!-- 相依只剩 GAC framework 組件，無版本衝突，不需 binding redirect；
+         留著會在 publish 產生/複製 .exe.config (相依砍光後該檔不生成，反而導致 MSB3030)。 -->
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
     <LangVersion>latest</LangVersion>
+    <!-- 不論用 VS (帶 Platform=x86) 或 dotnet CLI 發佈都不產生 pdb，維持單一 exe -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
   <!-- Delete the .config file after build to maintain a single-file distribution -->
@@ -18,14 +23,6 @@
   <Target Name="DeletePublishedConfig" AfterTargets="Publish">
     <Delete Files="$(PublishDir)$(TargetFileName).config" />
   </Target>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-    <DebugType>none</DebugType>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
-    <DebugType>none</DebugType>
-  </PropertyGroup>
 
   <!-- 皆為 .NET Framework GAC 內建組件 (CopyLocal=false)，不會多出可散佈 DLL；
        System.Web.Extensions 提供 JavaScriptSerializer，取代 System.Text.Json，讓 Updater 維持單一 exe。 -->
