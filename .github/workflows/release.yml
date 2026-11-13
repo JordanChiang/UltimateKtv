@@ -38,9 +38,21 @@ jobs:
           "tag=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           Write-Host "發佈 tag: $tag"
 
+      # libmpv-2.dll 不在 repo (超過 GitHub 單檔上限)。csproj 的 FetchLibmpv 是 ContinueOnError，
+      # 且在 dotnet publish 下，它「下載後動態加入的 Content」不保證會被帶進 publish。
+      # 因此在發佈前明確下載到 Codec\ / Codec_x86\：檔案先在磁碟上，publish 的靜態 Content glob
+      # 就會帶上它；下載失敗也在這一步大聲報錯 (x86 鎖 20260412，版本/雜湊由 Get-Libmpv.ps1 固定)。
+      - name: 下載 libmpv
+        shell: pwsh
+        run: |
+          ./Tools/Get-Libmpv.ps1 -Arch x64 -CodecDir Codec
+          ./Tools/Get-Libmpv.ps1 -Arch x86 -CodecDir Codec_x86
+          if (-not (Test-Path Codec/libmpv-2.dll))     { throw 'x64 libmpv 下載失敗 (見上方 Get-Libmpv 警告)' }
+          if (-not (Test-Path Codec_x86/libmpv-2.dll)) { throw 'x86 libmpv 下載失敗 (見上方 Get-Libmpv 警告)' }
+          Write-Host ("libmpv 就緒: x64={0:N0} bytes, x86={1:N0} bytes" -f (Get-Item Codec/libmpv-2.dll).Length, (Get-Item Codec_x86/libmpv-2.dll).Length)
+
       # 發佈佈局與本機「VS 發佈」一致：x64 / x86 主程式 + Updater + StyleSimulator 都進同一個 publish\。
       # 各專案的 FolderProfile.pubxml 已把 PublishDir 指向 publish\，x86 另外覆寫 Platform / RID。
-      # libmpv-2.dll 不在 repo，csproj 的 FetchLibmpv target 會在 build 前抓 (x86 鎖 20260412)。
       - name: 發佈主程式 x64
         shell: pwsh
         run: dotnet publish UltimateKtv.csproj -p:PublishProfile=FolderProfile --nologo -v minimal
