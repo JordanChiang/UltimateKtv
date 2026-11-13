@@ -279,11 +279,11 @@ namespace UltimateKtv.Services
             }
         }
 
-        /// <summary>完整安裝包 zip：優先認 UltimateKtv_&lt;版本&gt;.zip，避免誤抓元件 zip (Codec_*.zip…)；舊 release 退回第一個 .zip。</summary>
+        /// <summary>完整安裝包 zip：優先認 UltimateKtv&lt;版本&gt;.zip (底線可有可無：舊 release 為 UltimateKtv2.0.3.zip、新版為 UltimateKtv_2.0.4.zip)，避免誤抓元件 zip (UltimateKtv_App_*…)；都認不到才退回第一個 .zip。</summary>
         private static GitHubReleaseAsset? PickFullPackage(List<GitHubReleaseAsset> assets)
         {
             var full = assets.FirstOrDefault(
-                a => Regex.IsMatch(a.Name ?? "", @"^UltimateKtv_[\d.]+\.zip$", RegexOptions.IgnoreCase));
+                a => Regex.IsMatch(a.Name ?? "", @"^UltimateKtv_?[\d.]+\.zip$", RegexOptions.IgnoreCase));
             if (full != null) return full;
             return assets.FirstOrDefault(a => a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
         }

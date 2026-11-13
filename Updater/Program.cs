@@ -155,7 +155,9 @@ namespace UltimateKtv.Updater
             var zipAsset = PickFullPackage(release.Assets);
             if (zipAsset == null)
             {
-                Console.WriteLine("      [失敗] 找不到更新壓縮檔。");
+                Console.WriteLine("      [失敗] 找不到完整安裝包 (release 需有 UltimateKtv版本.zip)。");
+                Console.WriteLine("\n請按任意鍵退出...");
+                Console.ReadKey();
                 return;
             }
 
@@ -256,14 +258,15 @@ namespace UltimateKtv.Updater
             => obj.TryGetValue(key, out var v) && v != null ? v.ToString() : "";
 
         /// <summary>
-        /// 選完整安裝包 zip：只認 UltimateKtv_(版本).zip，認不到就回傳 null (呼叫端會報「找不到更新壓縮檔」並中止)。
-        /// 不退回「第一個 .zip」，避免完整包沒上傳時誤抓到元件 zip (UltimateKtv_App_… 等) 而只裝到一部分檔案；
-        /// 也因此不依賴 GitHub 附檔的回傳順序。手動模式一律抓 /releases/latest，新版都是這個命名。
+        /// 選完整安裝包 zip：認 UltimateKtv(版本).zip，底線可有可無 (舊 release 為 UltimateKtv2.0.3.zip、
+        /// pack-release 新版產生 UltimateKtv_2.0.4.zip)，認不到就回傳 null (呼叫端會報「找不到完整安裝包」並中止)。
+        /// 不退回「第一個 .zip」，避免完整包沒上傳時誤抓到元件 zip (UltimateKtv_App_… 等，其底線後是字母，不符 [\d.]) 而只裝到一部分檔案；
+        /// 也因此不依賴 GitHub 附檔的回傳順序。手動模式一律抓 /releases/latest。
         /// </summary>
         static AssetInfo PickFullPackage(List<AssetInfo> assets)
         {
             return assets.FirstOrDefault(
-                a => Regex.IsMatch(a.Name ?? "", @"^UltimateKtv_[\d.]+\.zip$", RegexOptions.IgnoreCase));
+                a => Regex.IsMatch(a.Name ?? "", @"^UltimateKtv_?[\d.]+\.zip$", RegexOptions.IgnoreCase));
         }
 
         static bool TryParseArgs(string[] args, out int targetPid, out string sourceDir, out string destDir, out string targetExe)
