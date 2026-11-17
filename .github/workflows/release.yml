@@ -4,6 +4,8 @@ name: Release
 #   Phase 1：發佈主程式 (x64/x86) + Updater + StyleSimulator，打包元件 zip + update.json。
 #   Phase 2：抓 SongMgr (JordanChiang/SongMgr) 最新 release 的 App 包併入 (Codec_x86/Tools 共用本體的)。
 #   Phase 3：把 exe 送 VirusTotal，結果附加到 Release notes (需 VT_API_KEY secret；失敗不中斷發佈)。
+# 手動觸發可勾 dry_run 試跑：照常 build/打包，並照樣跑 VirusTotal，但不建立或更動任何 Release；
+# VT 結果改寫進該 run 的 Summary 頁、附檔上傳為 workflow artifact (用來確認新 code commit 的 VT 掃描與產出)。
 on:
   push:
     tags:
@@ -13,6 +15,10 @@ on:
       tag:
         description: '要發佈的版本號 tag (例如 2.0.5)'
         required: true
+      dry_run:
+        description: '試跑：build/打包 + VirusTotal (結果寫在 run Summary)，但不建立或更動 Release；附檔上傳為 artifact'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -113,6 +119,7 @@ jobs:
         run: ./scripts/pack-release.ps1 -PublishDir publish -Tag ${{ steps.ver.outputs.tag }}
 
       - name: 建立 GitHub Release 並上傳附檔
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
@@ -121,10 +128,12 @@ jobs:
           fail_on_unmatched_files: true
           generate_release_notes: true
 
-      # Phase 3：exe 送 VirusTotal，結果附加到 release notes。
-      # 在 release 建立之後才跑 (檔案已公開，上傳 VT 沒有提前外洩問題)；
-      # 任何錯誤 (無 key、逾時、速率限制) 都不影響已發佈的 release。
-      - name: VirusTotal 掃描並附加到 Release notes
+      # Phase 3：exe 送 VirusTotal。結果一律寫進該 run 的 Summary 頁；
+      # 正式發佈 (非 dry_run) 時另外附加到 Release notes。錯誤 (無 key / 逾時 / 速率限制) 都不中斷。
+      # 注意：VT 上傳會讓檔案對 VT 使用者可見；dry_run 掃的是未發佈 build，等於提前公開 (內容與正式發佈幾乎一樣)。
+      # HA gate：對照 scripts/vt-baseline.json 白名單，只在某 exe 出現白名單以外的新命中時，
+      # 在 Summary 標記「建議送 Hybrid Analysis」並附上本機 scan.sh 指令 (不自動送)。
+      - name: VirusTotal 掃描
         continue-on-error: true
         shell: pwsh
         env:
@@ -133,16 +142,35 @@ jobs:
         run: |
           if (-not $env:VT_API_KEY) { Write-Host 'VT: 未設定 VT_API_KEY secret，略過。'; exit 0 }
           $vt = Join-Path $env:RUNNER_TEMP 'vt.md'
-          ./scripts/vt-scan.ps1 -Files @(
-            'publish/UltimateKtv.exe',
-            'publish/UltimateKtv_x86.exe',
-            'publish/UltimateKtv.Updater.exe',
-            'publish/CrazyKTV_SongMgr.exe'
-          ) -OutFile $vt | Out-Null
+          # 送 publish 根目錄所有自家 exe (UltimateKtv(.x86)/Updater/StyleSimulator/CrazyKTV_SongMgr…)；
+          # 新增 exe 會自動納入。Tools\ 下的第三方 ffmpeg/yt-dlp 不送 (非自家且部分 >32MB)。
+          $exes = Get-ChildItem publish -Filter *.exe -File | Select-Object -ExpandProperty FullName
+          Write-Host ("VT 掃描對象: " + (($exes | Split-Path -Leaf) -join ', '))
+          # -Baseline 啟用 HA gate (只標記、不自動送)；-FlagsOut 吐出是否有白名單外命中供 log
+          $flags = Join-Path $env:RUNNER_TEMP 'vt-flags.json'
+          ./scripts/vt-scan.ps1 -Files $exes -OutFile $vt -Baseline scripts/vt-baseline.json -FlagsOut $flags | Out-Null
           if (-not (Test-Path $vt)) { Write-Host 'VT: 無結果，略過。'; exit 0 }
+          if (Test-Path $flags) {
+            $g = Get-Content -Raw $flags | ConvertFrom-Json
+            if ($g.anyFlagged) { Write-Host ('VT gate: 有白名單外命中，建議送 HA -> ' + ($g.flagged -join ', ')) }
+            else { Write-Host 'VT gate: 無白名單外命中，不需 HA。' }
+          }
+          # 一律寫進該 run 的 Summary 頁 (dry_run 時這就是查看掃描結果的地方)
+          Get-Content -Raw $vt | Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding utf8
+          if ('${{ github.event.inputs.dry_run }}' -eq 'true') { Write-Host 'VT: dry_run，結果只寫 Summary、不動 Release。'; exit 0 }
+          # 正式發佈：附加到 Release notes
           $tag = '${{ steps.ver.outputs.tag }}'
           $body = gh release view $tag --json body -q .body
           $combined = Join-Path $env:RUNNER_TEMP 'notes.md'
           ($body + "`n`n" + (Get-Content -Raw $vt)) | Set-Content -Path $combined -Encoding utf8
           gh release edit $tag --notes-file $combined
           Write-Host 'VT: 已附加到 release notes。'
+
+      # 試跑 (dry_run)：不動任何 Release，改把打包好的附檔上傳為 workflow artifact 供下載檢查。
+      - name: 試跑：上傳附檔為 artifact
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReleaseAssets-${{ steps.ver.outputs.tag }}
+          path: publish/ReleaseAssets/
+          if-no-files-found: error
