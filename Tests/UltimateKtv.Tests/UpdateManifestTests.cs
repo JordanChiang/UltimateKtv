@@ -148,5 +148,35 @@ namespace UltimateKtv.Tests
             t.Write("CrazySong.mdb", "user-db");
             Assert.False(UpdateManifestHelper.NeedsUpdate(Comp("CrazySong.mdb", FakeNewHash), t.Dir, new Dictionary<string, string>()));
         }
+
+        // ---- FindMismatch：解壓後的元件檔案與清單比對 ----
+
+        [Fact]
+        public void FindMismatch_null_when_all_files_match() // 雜湊大小寫不敏感
+        {
+            using var t = new TempDir();
+            var c = new UpdateComponent { Name = "X", Url = "http://x" };
+            c.Files["App.exe"] = t.Write("App.exe", "a").ToUpperInvariant();
+            c.Files["libs/a.dll"] = t.Write("libs/a.dll", "b");
+            Assert.Null(UpdateManifestHelper.FindMismatch(c, t.Dir));
+        }
+
+        [Fact]
+        public void FindMismatch_reports_missing_file() // 解壓時被防毒擋下、略過的檔案
+        {
+            using var t = new TempDir();
+            var c = new UpdateComponent { Name = "X", Url = "http://x" };
+            c.Files["App.exe"] = t.Write("App.exe", "a");
+            c.Files["libs/a.dll"] = FakeNewHash;
+            Assert.Equal("libs/a.dll", UpdateManifestHelper.FindMismatch(c, t.Dir));
+        }
+
+        [Fact]
+        public void FindMismatch_reports_hash_difference() // 附檔與清單不符
+        {
+            using var t = new TempDir();
+            t.Write("App.exe", "other-build");
+            Assert.Equal("App.exe", UpdateManifestHelper.FindMismatch(Comp("App.exe", FakeNewHash), t.Dir));
+        }
     }
 }

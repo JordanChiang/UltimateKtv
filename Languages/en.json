@@ -324,6 +324,8 @@
   "Update.LaunchFailed": "Couldn't start the updater: {0}",
   "Update.ErrorTitle": "Update Error",
   "Update.Failed": "Update failed: {0}",
+  "Update.Verifying": "Checking the update files...",
+  "Update.VerifyFailed": "The {0} update is missing a file or doesn't match the update list: {1}\nThe download may be incomplete or blocked by antivirus software. Nothing was changed; the update will be checked again next time the program starts.",
 
   "Ytdlp.InvalidId": "No valid YouTube video ID ({0}); can't download again.",
   "Ytdlp.DownloadingVideo": "Downloading video...",

@@ -333,6 +333,8 @@
   "Update.LaunchFailed": "無法啟動更新管理員：{0}",
   "Update.ErrorTitle": "更新錯誤",
   "Update.Failed": "更新處理失敗：{0}",
+  "Update.Verifying": "正在檢查更新檔...",
+  "Update.VerifyFailed": "{0} 的更新檔缺少或與更新清單不符：{1}\n可能是下載不完整或被防毒軟體攔截。程式沒有做任何變更，下次啟動會再檢查。",
 
   "Ytdlp.InvalidId": "沒有有效的 YouTube 影片 ID（{0}），無法重新下載。",
   "Ytdlp.DownloadingVideo": "下載視訊中...",

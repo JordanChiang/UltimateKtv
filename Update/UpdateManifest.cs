@@ -198,6 +198,28 @@ namespace UltimateKtv.Services
             return false;
         }
 
+        /// <summary>
+        /// 確認解壓出來的元件檔案與清單一致 (下載不完整、解壓時被防毒擋下、附檔與清單不符)：
+        /// 回傳第一個缺少或雜湊不符的檔案 (清單裡的相對路徑)，全部一致回傳 null。
+        /// </summary>
+        public static string? FindMismatch(UpdateComponent comp, string extractDir)
+        {
+            foreach (var f in comp.Files)
+            {
+                string file = LocalPath(extractDir, f.Key);
+                if (!File.Exists(file)) return f.Key;
+                try
+                {
+                    if (!string.Equals(FileHash(file), f.Value, StringComparison.OrdinalIgnoreCase)) return f.Key;
+                }
+                catch
+                {
+                    return f.Key;
+                }
+            }
+            return null;
+        }
+
         /// <summary>解析 update.json；格式錯誤時回傳 null。</summary>
         public static UpdateManifest? Parse(string json)
         {

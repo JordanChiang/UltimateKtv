@@ -25,16 +25,19 @@ namespace UltimateKtv.Services
         /// <summary>要下載並套用的一包檔案 (差異更新時為一個元件，無清單時為完整包)。</summary>
         private readonly struct DownloadItem
         {
-            public DownloadItem(string url, string name, long size)
+            public DownloadItem(string url, string name, long size, UpdateComponent? component = null)
             {
                 Url = url;
                 Name = name;
                 Size = size;
+                Component = component;
             }
 
             public string Url { get; }
             public string Name { get; }
             public long Size { get; }
+            /// <summary>清單裡的元件 (解壓後用它的檔案雜湊驗證)；沒有清單的完整包為 null，不驗證。</summary>
+            public UpdateComponent? Component { get; }
         }
 
         static UpdateManager()
@@ -126,8 +129,10 @@ namespace UltimateKtv.Services
                 // 受保護工具 (yt-dlp/yt-dlp_x86/ffmpeg) 的「上次安裝基準」，用於「沒動過才覆蓋」判斷。
                 var baseline = UpdateManifestHelper.LoadBaseline(appDir);
 
+                // 沒有新版時只需要讀 update.json 判斷要不要補 SongMgr，不比對 UltimateKtv 本身的檔案雜湊
+                // (App/Codec/Codec_x86/Tools 約數百 MB，結果也用不到)。
                 DownloadPlan plan = latestRelease != null && latestRelease.Assets.Count > 0
-                    ? await BuildDownloadPlanAsync(latestRelease, appDir, baseline)
+                    ? await BuildDownloadPlanAsync(latestRelease, appDir, baseline, ultimateKtvNewer)
                     : new DownloadPlan();
                 if (plan.Abort) return; // UltimateKtv 的 update.json 壞掉，這次整個略過
 
@@ -190,8 +195,9 @@ namespace UltimateKtv.Services
         /// <summary>
         /// 依 release 決定 UltimateKtv 要下載哪些包：有 update.json 時只挑雜湊有變的元件；沒有時退回完整包。
         /// 同時回報是否走差異更新、是否已 bundle SongMgr，供呼叫端決定要不要另外補 SongMgr。
+        /// computeChanges 為 false (沒有新版) 時只讀清單、不比對雜湊，Items 為空。
         /// </summary>
-        private static async Task<DownloadPlan> BuildDownloadPlanAsync(GitHubReleaseInfo release, string appDir, IReadOnlyDictionary<string, string> baseline)
+        private static async Task<DownloadPlan> BuildDownloadPlanAsync(GitHubReleaseInfo release, string appDir, IReadOnlyDictionary<string, string> baseline, bool computeChanges)
         {
             var plan = new DownloadPlan();
             var manifestAsset = release.Assets.FirstOrDefault(
@@ -208,11 +214,13 @@ namespace UltimateKtv.Services
                     {
                         plan.HasSongMgrComponent = manifest.Components.Any(
                             c => c.Name.Equals(SongMgrComponentName, StringComparison.OrdinalIgnoreCase));
+                        if (!computeChanges) return plan;
+
                         // 比對檔案雜湊可能較耗時，移出 UI 執行緒
                         List<UpdateComponent> changed = await Task.Run(
                             () => UpdateManifestHelper.ChangedComponents(manifest, appDir, baseline));
                         foreach (var c in changed)
-                            plan.Items.Add(new DownloadItem(c.Url, c.DisplayName, c.Size));
+                            plan.Items.Add(new DownloadItem(c.Url, c.DisplayName, c.Size, c));
                         return plan;
                     }
 
@@ -230,6 +238,7 @@ namespace UltimateKtv.Services
             }
 
             // 沒有 update.json 的舊 release：下載完整包
+            if (!computeChanges) return plan;
             GitHubReleaseAsset? full = PickFullPackage(release.Assets);
             if (full != null && !string.IsNullOrEmpty(full.BrowserDownloadUrl))
                 plan.Items.Add(new DownloadItem(full.BrowserDownloadUrl, full.Name, 0));
@@ -269,7 +278,7 @@ namespace UltimateKtv.Services
                 List<UpdateComponent> changed = await Task.Run(
                     () => UpdateManifestHelper.ChangedComponents(manifest, appDir, baseline));
                 return changed
-                    .Select(c => new DownloadItem(c.Url, c.DisplayName, c.Size))
+                    .Select(c => new DownloadItem(c.Url, c.DisplayName, c.Size, c))
                     .ToList();
             }
             catch (Exception ex)
@@ -444,6 +453,17 @@ namespace UltimateKtv.Services
                     // Extract this package into the shared folder (differential: only changed components land here)
                     string zip = zipFilePath;
                     await Task.Run(() => ZipHelper.SafeExtractZip(zip, extractPath, msg => AppLogger.Log(msg)));
+
+                    // 解壓後立刻 (下一個元件可能覆蓋共用的 Codec_x86/Tools 檔) 比對清單雜湊：下載不完整、
+                    // 解壓時檔案被防毒擋下 (SafeExtractZip 只警告並略過)、附檔與清單不符時，在動到程式資料夾前中止。
+                    if (item.Component != null)
+                    {
+                        UpdateComponent comp = item.Component;
+                        progressWindow?.ReportProgress(100, Loc.T("Update.Verifying"));
+                        string? bad = await Task.Run(() => UpdateManifestHelper.FindMismatch(comp, extractPath));
+                        if (bad != null)
+                            throw new InvalidDataException(Loc.T("Update.VerifyFailed", item.Name, bad));
+                    }
                 }
 
                 // 受保護工具 (yt-dlp/yt-dlp_x86/ffmpeg) 的「沒動過才覆蓋」：由主程式在這裡直接處理並從解壓夾移除，
@@ -527,6 +547,7 @@ namespace UltimateKtv.Services
             }
             catch (Exception ex)
             {
+                AppLogger.LogError("更新失敗", ex);
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     progressWindow?.Close();
