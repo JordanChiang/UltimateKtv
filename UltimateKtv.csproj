@@ -59,8 +59,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Third party binaries (FFmpeg, yt-dlp, etc.) -->
-    <Content Include="Tools\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Third party binaries (FFmpeg, yt-dlp, etc.)；Get-Libmpv.ps1 只在 build / CI 用，不複製到輸出與發佈檔 -->
+    <Content Include="Tools\**" Exclude="Tools\*.ps1" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
