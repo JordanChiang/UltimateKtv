@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows.Controls;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Runtime.InteropServices;
 
 namespace UltimateKtv
@@ -116,6 +117,37 @@ namespace UltimateKtv
         }
 
         private ITvOverlay? _tvOverlay;
+        /// <summary>
+        /// .srt 字幕要沿用的 LRC 歌詞外觀 (字型、字級、顏色、粗體、陰影、底部距離)，以佔電視畫面高度的比例表示。
+        /// </summary>
+        public SubtitleStyle GetPlainSubtitleStyle()
+        {
+            double height = ActualHeight > 0 ? ActualHeight : (Height > 0 ? Height : 1080);
+            // FontFamily.Source 可能是「A, B」或「./Fonts/#Name」：取第一個字型的名稱
+            string family = LrcTextBlock.FontFamily?.Source ?? "";
+            family = family.Split(',')[0];
+            int hash = family.LastIndexOf('#');
+            if (hash >= 0) family = family.Substring(hash + 1);
+            family = family.Trim();
+            if (family.Length == 0) family = "Microsoft JhengHei";
+
+            // WPF 的 FontSize 是 em 大小；ASS/GDI (libass、VSFilter) 的字級是字格高度 (上緣到下緣)，要乘上字型的比例才一樣大
+            double cellHeight = 1.0;
+            var typeface = new Typeface(LrcTextBlock.FontFamily, LrcTextBlock.FontStyle, LrcTextBlock.FontWeight, LrcTextBlock.FontStretch);
+            if (typeface.TryGetGlyphTypeface(out GlyphTypeface glyphs) && glyphs.Height > 0.5 && glyphs.Height < 3)
+                cellHeight = glyphs.Height;
+
+            var effect = LrcTextBlock.Effect as DropShadowEffect;
+            return new SubtitleStyle(
+                family,
+                LrcTextBlock.FontSize * cellHeight / height,
+                LrcTextBlock.Margin.Bottom / height,
+                (effect?.ShadowDepth ?? 3) / height,
+                (LrcTextBlock.Foreground as SolidColorBrush)?.Color ?? Colors.White,
+                effect?.Color ?? Colors.Black,
+                LrcTextBlock.FontWeight.ToOpenTypeWeight() >= FontWeights.SemiBold.ToOpenTypeWeight());
+        }
+
         private TvOverlayItem? _overlayLyrics;
 
         /// <summary>電視畫面的疊加層 (跑馬燈/歌詞)，座標以 VideoContainer 為準。</summary>

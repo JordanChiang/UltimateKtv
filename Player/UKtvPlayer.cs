@@ -43,6 +43,18 @@ namespace UltimateKtv
         Stretch Stretch { get; set; }
 
         /// <summary>
+        /// 下一次設定 Source 時要載入的字幕檔 (.ass/.ssa/.srt，由呼叫端依 LyricsSource 決定)；null 不載入。
+        /// 內嵌字幕軌由引擎自動選預設軌。要在設定 Source 之前設定。
+        /// </summary>
+        string? SubtitleFile { get; set; }
+
+        /// <summary>沒有樣式的字幕 (.srt) 的外觀；.ass/.ssa 一律照檔案。要在設定 Source 之前設定。</summary>
+        SubtitleStyle? PlainSubtitleStyle { get; set; }
+
+        /// <summary>開檔後 (MediaOpened 起) 引擎是否選了內嵌字幕軌 (有字幕檔時不算)。</summary>
+        bool HasEmbeddedSubtitle { get; }
+
+        /// <summary>
         /// 建立電視畫面的疊加層 (跑馬燈/歌詞)。videoRoot 是電視視窗中與影片同大小、左上角對齊的元素。
         /// libmpv 的影片是原生視窗，WPF 元素疊不上去，由 mpv 合成；DirectShow 直接沿用 WPF 疊加。
         /// </summary>

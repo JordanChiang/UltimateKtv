@@ -45,6 +45,9 @@ namespace UltimateKtv
         private long _positionTicks;
         private long _durationTicks;
         private bool _hasVideo;
+        private volatile bool _hasEmbeddedSubtitle; // 事件執行緒在 FILE_LOADED 寫入，UI 執行緒在 MediaOpened 讀
+        private SubtitleStyle? _plainSubtitleStyle;
+        private SubtitleStyle? _appliedSubtitleStyle;
         private List<int> _audioStreams = new();
 
         // 多音軌：所有音軌一起解碼 (MediaKit 作法，見 OnPreloaded)。null = 單音軌，照一般方式用 aid 選音軌
@@ -112,8 +115,9 @@ namespace UltimateKtv
             SetOption("osc", "no");
             SetOption("osd-level", "0");
             SetOption("ytdl", "no");                 // YouTube 串流網址已由 YtDlpHelper 解析
-            SetOption("sub-auto", "no");             // 同檔名 .lrc 會被 mpv 當字幕載入，與程式自己的歌詞重複
-            SetOption("sid", "no");
+            // 字幕檔由程式依 LyricsSource 指定 (sub-files)，不讓 mpv 自己找：它會把同檔名 .lrc、歌名.zh-TW.srt 也載入
+            SetOption("sub-auto", "no");
+            SetOption("sid", "no");                  // 閒置黑畫面不選字幕；每首歌開檔時改回 auto (見 LoadCurrentSource)
             SetOption("load-scripts", "no");
             SetOption("config", "no");               // 不讀使用者的 mpv.conf，行為可預期
             SetOption("volume-max", "1000");
@@ -350,6 +354,16 @@ namespace UltimateKtv
             }
         }
 
+        public string? SubtitleFile { get; set; }
+
+        public SubtitleStyle? PlainSubtitleStyle
+        {
+            get => _plainSubtitleStyle;
+            set => _plainSubtitleStyle = value; // 下一首開檔時套用 (改 sub-* 會讓正在顯示的 .srt 重畫，沒必要)
+        }
+
+        public bool HasEmbeddedSubtitle => _hasEmbeddedSubtitle;
+
         public void ApplySettings(AppSettings settings)
         {
             // HWAccelMode: 0=自動, 1=NVIDIA, 2=Intel, 3=DXVA2(copy-back), 4=DXVA2(native), 5=D3D11
@@ -524,6 +538,11 @@ namespace UltimateKtv
             SetProperty("speed", "1"); // 黑畫面閒置時會調成極慢速
             // aid 在 mpv 是跨檔案保留的選項；每首歌重新自動選預設音軌 (同 DirectShow 重建 graph)
             SetProperty("aid", "auto");
+            _hasEmbeddedSubtitle = false;
+            SetSubtitleFiles(SubtitleFile);
+            // 有字幕檔時 mpv 選它 (只指定一個 sub-files 就預設顯示)；沒有時自動選有預設旗標的內嵌字幕軌
+            SetProperty("sid", "auto");
+            ApplyPlainSubtitleStyle();
             int err = Command("loadfile", target, "replace");
             if (err < 0)
             {
@@ -711,6 +730,8 @@ namespace UltimateKtv
             // 黑畫面沒有聲音，display-resample 無法對齊螢幕節奏；display-desync = 每次 vsync 都畫、不管影片時間
             SetProperty("video-sync", "display-desync");
             SetProperty("speed", IdleSpeed(Osd?.IsScrolling == true));
+            SetSubtitleFiles(null); // sub-files 是跨檔案保留的選項，不可沿用到黑畫面
+            SetProperty("sid", "no");
             int err = Command("loadfile", IdleSource, "replace");
             if (err < 0) AppLogger.Log("[mpv] idle source unavailable; OSD will redraw at a lower rate while idle.");
         }
@@ -725,6 +746,8 @@ namespace UltimateKtv
         {
             var audio = new List<int>();
             bool hasVideo = false;
+            bool embeddedSubtitle = false;
+            string? subtitleLog = null;
             int count = int.TryParse(GetString("track-list/count"), out int c) ? c : 0;
             for (int i = 0; i < count; i++)
             {
@@ -737,10 +760,51 @@ namespace UltimateKtv
                 {
                     hasVideo = true;
                 }
+                else if (type == "sub")
+                {
+                    bool selected = GetString($"track-list/{i}/selected") == "yes";
+                    bool external = GetString($"track-list/{i}/external") == "yes";
+                    if (selected && !external) embeddedSubtitle = true;
+                    subtitleLog += $" [{GetString($"track-list/{i}/id")} {GetString($"track-list/{i}/codec")}" +
+                                   $"{(external ? " external" : "")}{(GetString($"track-list/{i}/default") == "yes" ? " default" : "")}{(selected ? " selected" : "")}]";
+                }
             }
             _audioStreams = audio;
             _hasVideo = hasVideo;
+            _hasEmbeddedSubtitle = embeddedSubtitle;
+            if (subtitleLog != null) AppLogger.Log($"[mpv] subtitle tracks:{subtitleLog}");
         }
+
+        // ---------- 字幕 ----------
+
+        // 只放一個檔案：用 append (不拆分隔字元)，路徑裡有 ; 或 , 也不會被切開
+        private void SetSubtitleFiles(string? file)
+        {
+            Command("change-list", "sub-files", "clr", "");
+            if (!string.IsNullOrEmpty(file)) Command("change-list", "sub-files", "append", file);
+        }
+
+        // 只作用在沒有樣式的字幕 (.srt)：sub-ass-override 維持預設 (scale)，.ass/.ssa 的樣式不受影響。
+        // 數值以 720 行高為準 (sub-scale-by-window 預設會隨視窗高度縮放)
+        private void ApplyPlainSubtitleStyle()
+        {
+            var style = _plainSubtitleStyle;
+            if (style == null || style == _appliedSubtitleStyle) return;
+            _appliedSubtitleStyle = style;
+            const double scaledHeight = 720;
+            SetProperty("sub-font", style.FontFamily);
+            SetProperty("sub-font-size", (style.FontSizeRatio * scaledHeight).ToString("0.#", CultureInfo.InvariantCulture));
+            SetProperty("sub-bold", style.Bold ? "yes" : "no");
+            SetProperty("sub-color", MpvColor(style.Foreground));
+            // 同 LRC 歌詞：只有陰影沒有外框
+            // (舊名 sub-border-size / sub-shadow-color 已是 deprecated 別名)
+            SetProperty("sub-outline-size", "0");
+            SetProperty("sub-shadow-offset", (style.ShadowOffsetRatio * scaledHeight).ToString("0.#", CultureInfo.InvariantCulture));
+            SetProperty("sub-back-color", MpvColor(style.Shadow));
+            SetProperty("sub-margin-y", ((int)Math.Round(style.MarginBottomRatio * scaledHeight)).ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static string MpvColor(Color c) => $"#{c.A:X2}{c.R:X2}{c.G:X2}{c.B:X2}";
 
         // ---------- 音訊 ----------
 

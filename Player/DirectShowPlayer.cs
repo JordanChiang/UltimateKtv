@@ -101,6 +101,41 @@ namespace UltimateKtv
             set => _element.Stretch = value;
         }
 
+        // 字幕由 MediaKit 的 VSFilter 畫；開檔時 MediaKit 才讀這些值，所以要在設定 Source 前設定
+        public string? SubtitleFile
+        {
+            get => _element.MediaUriPlayer.SubtitleFile;
+            set => _element.MediaUriPlayer.SubtitleFile = value;
+        }
+
+        private SubtitleStyle? _plainSubtitleStyle;
+
+        public SubtitleStyle? PlainSubtitleStyle
+        {
+            get => _plainSubtitleStyle;
+            set
+            {
+                _plainSubtitleStyle = value;
+                _element.MediaUriPlayer.PlainSubtitleStyle = value == null ? null : new SubtitleTextStyle
+                {
+                    FontFamily = value.FontFamily,
+                    // VSFilter 的 .srt 畫面高 288 (再縮放到影片)
+                    FontSize = (int)Math.Round(value.FontSizeRatio * VsFilterPlayResY),
+                    Bold = value.Bold,
+                    Red = value.Foreground.R,
+                    Green = value.Foreground.G,
+                    Blue = value.Foreground.B,
+                    // 同 LRC 歌詞與 mpv：只有陰影沒有外框 (VSFilter 的陰影固定 2)
+                    Shadow = true,
+                    Outline = false,
+                };
+            }
+        }
+
+        private const int VsFilterPlayResY = 288;
+
+        public bool HasEmbeddedSubtitle => SubtitleFile == null && _element.MediaUriPlayer.HasEmbeddedSubtitle;
+
         public void ApplySettings(AppSettings settings)
         {
             ApplyRendererSettings(settings);

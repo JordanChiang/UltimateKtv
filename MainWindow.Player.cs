@@ -31,7 +31,8 @@ namespace UltimateKtv
             public AudioChannel Channel { get => (AudioChannel)MediaHostManager.Instance.Player.AudioChannel; set => MediaHostManager.Instance.Player.AudioChannel = (int)value; }
         }
         
-        // LRC fields
+        // 歌詞：開檔前交給引擎的字幕檔 (null = 沒有)，與 .lrc 的內容
+        private string? _subtitleFile;
         private List<LrcLine>? _currentLyrics;
         private int _currentLyricIndex = -1;
 
@@ -204,6 +205,11 @@ namespace UltimateKtv
                 w.ktvPlayer.Stretch = settings.IsMediaFullScreen ? Stretch.Fill : Stretch.Uniform;
                 w.ktvPlayer.ApplySettings(settings); // renderer / audio device / HW accel / codec directory
 
+                // 歌詞：同檔名字幕檔交給引擎 (開檔前決定)；內嵌字幕軌與 .lrc 在 MediaOpened 才決定 (見 LoadLyricsForSong)
+                w._subtitleFile = LyricsSource.FindSubtitleFile(song.FilePath, File.Exists);
+                w.ktvPlayer.SubtitleFile = w._subtitleFile;
+                if (w._videoDisplayWindow != null) w.ktvPlayer.PlainSubtitleStyle = w._videoDisplayWindow.GetPlainSubtitleStyle();
+
                 w.ktvPlayer.Source = new Uri(song.FilePath); // This triggers MediaOpened/MediaFailed.
                 DebugLog($"Main media Source set to: {song.FilePath}");
             }
@@ -353,34 +359,8 @@ namespace UltimateKtv
                     SettingsManager.Instance.CurrentSettings.YoutubeDefaultNoVocal);
                 DebugLog($"     Audio: music={_vocal.MusicTrack}, fixed={_vocal.FixedTrack}, track={player.AudioTrack}, channel={player.AudioChannel}, streams={player.AudioStreams.Count}");
 
-                // Attempt to load LRC file
-                _currentLyrics = null;
-                _currentLyricIndex = -1;
-                _videoDisplayWindow?.UpdateLyrics("", Visibility.Collapsed);
+                LoadLyricsForSong(player);
 
-                if (!string.IsNullOrEmpty(PlayingFilePath) && !IsPlayingYoutube)
-                {
-                    string lrcPath = Path.ChangeExtension(PlayingFilePath, ".lrc");
-                    DebugLog($"[LRC] Checking for LRC file at: {lrcPath}");
-                    AppLogger.Log($"[LRC] Checking for LRC file at: {lrcPath}");
-                    if (File.Exists(lrcPath))
-                    {
-                        var parsedLyrics = LrcParser.Parse(lrcPath);
-                        if (parsedLyrics != null && parsedLyrics.Count > 0)
-                        {
-                            _currentLyrics = parsedLyrics;
-                            _currentLyricIndex = 0;
-                            _videoDisplayWindow?.UpdateLyrics("", Visibility.Visible); // Show the block, even if first text is empty
-                            DebugLog($"[LRC] Loaded {parsedLyrics.Count} lyric lines from {lrcPath}");
-                            AppLogger.Log($"[LRC] Loaded {parsedLyrics.Count} lyric lines from {lrcPath}");
-                        }
-                        else
-                        {
-                            DebugLog($"[LRC] Parsed lyrics are null or empty for {lrcPath}");
-                        }
-                    }
-                }
-                
                 Debug.WriteLine($"Playing video path :      {PlayingFilePath}");
                 Debug.WriteLine($"        Audio Volume:     {_volume.OpenedLevel}");
                 Debug.WriteLine($"        Audio Track:      {player.AudioTrack}");
@@ -455,6 +435,33 @@ namespace UltimateKtv
                 SetPlayerControlsEnabled(true);
                 SetPauseButtonResume(false); // Ensure pause button text is correct for new song
             }
+        }
+
+        /// <summary>
+        /// 開檔後決定這首歌的歌詞來源 (字幕檔 &gt; 內嵌字幕軌 &gt; .lrc，一次只顯示一種)。
+        /// 字幕檔與內嵌軌由引擎畫；只有輪到 .lrc 時才由程式載入。本機歌與 YouTube 快取影片相同。
+        /// </summary>
+        private void LoadLyricsForSong(UKtvPlayer player)
+        {
+            _currentLyrics = null;
+            _currentLyricIndex = -1;
+            _videoDisplayWindow?.UpdateLyrics("", Visibility.Collapsed);
+
+            string? lrcPath = LyricsSource.FindLrcFile(PlayingFilePath, File.Exists);
+            var kind = LyricsSource.Choose(_subtitleFile != null, player.HasEmbeddedSubtitle, lrcPath != null);
+            AppLogger.Log($"[Lyrics] {kind}: subtitle={_subtitleFile ?? "-"}, embedded={player.HasEmbeddedSubtitle}, lrc={lrcPath ?? "-"}");
+            if (kind != LyricsKind.LrcFile || lrcPath == null) return;
+
+            var parsedLyrics = LrcParser.Parse(lrcPath);
+            if (parsedLyrics.Count == 0)
+            {
+                AppLogger.Log($"[LRC] Parsed lyrics are empty for {lrcPath}");
+                return;
+            }
+            _currentLyrics = parsedLyrics;
+            _currentLyricIndex = 0;
+            _videoDisplayWindow?.UpdateLyrics("", Visibility.Visible); // Show the block, even if first text is empty
+            AppLogger.Log($"[LRC] Loaded {parsedLyrics.Count} lyric lines from {lrcPath}");
         }
 
         private void MediaUriElement_MediaPositionChanged(object? sender, EventArgs e)

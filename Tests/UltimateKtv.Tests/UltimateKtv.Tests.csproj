@@ -21,6 +21,7 @@
     <Compile Include="..\..\Library\Song.cs" Link="Linked\Library\Song.cs" />
     <Compile Include="..\..\Library\Singer.cs" Link="Linked\Library\Singer.cs" />
     <Compile Include="..\..\Library\SongQuery.cs" Link="Linked\Library\SongQuery.cs" />
+    <Compile Include="..\..\Lyrics\LyricsSource.cs" Link="Linked\Lyrics\LyricsSource.cs" />
     <Compile Include="..\..\Youtube\YoutubeVideoId.cs" Link="Linked\Youtube\YoutubeVideoId.cs" />
     <Compile Include="..\..\Youtube\YoutubeDownloadQueue.cs" Link="Linked\Youtube\YoutubeDownloadQueue.cs" />
     <Compile Include="..\..\Youtube\YoutubeFormat.cs" Link="Linked\Youtube\YoutubeFormat.cs" />
