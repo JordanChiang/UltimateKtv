@@ -60,7 +60,9 @@
 
   <ItemGroup>
     <!-- Third party binaries (FFmpeg, yt-dlp, etc.)；Get-Libmpv.ps1 只在 build / CI 用，不複製到輸出與發佈檔 -->
-    <Content Include="Tools\**" Exclude="Tools\*.ps1" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- ExcludeFromSingleFile：這些 exe 要以實體檔留在 Tools\ 執行。沒標時 .NET SDK 11 會把它們排進單檔 bundle 而不複製到發佈夾，
+         bundler 又把非受控 exe 剔除 (NETSDK1236)，結果發佈夾的 Tools\ 是空的 (沒有 global.json，CI runner 會用預裝的最新 SDK) -->
+    <Content Include="Tools\**" Exclude="Tools\*.ps1" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
   <ItemGroup>
