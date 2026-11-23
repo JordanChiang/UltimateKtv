@@ -267,7 +267,7 @@
   "Marquee.FallbackRandom": "Random play: \"{1} - {0}\"",
   "Marquee.FallbackSongAdded": "Song added: \"{1} - {0}\"",
 
-  "Fav.YoutubeNotAllowed": "YouTube songs can't be added to favorites.",
+  "Fav.YoutubeSource": "Source: YouTube ({0})",
   "Fav.SongLabel": "Song: {0}",
   "Fav.SingerLabel": "Singer: {0}",
   "Fav.SelectUser": "Select user:",

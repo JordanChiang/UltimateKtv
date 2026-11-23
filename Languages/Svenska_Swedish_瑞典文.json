@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Slumpmässig uppspelning: {1} – {0}",
   "Marquee.FallbackSongAdded": "Låt tillagd: {1} – {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube-låtar kan inte läggas till i favoriter.",
   "Fav.SongLabel": "Låt: {0}",
   "Fav.SingerLabel": "Sångare: {0}",
   "Fav.SelectUser": "Välj användare:",

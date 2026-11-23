@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "ניגון אקראי: {1} - {0}",
   "Marquee.FallbackSongAdded": "השיר נוסף: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "לא ניתן להוסיף שירים מיוטיוב למועדפים.",
   "Fav.SongLabel": "שיר: {0}",
   "Fav.SingerLabel": "זמר: {0}",
   "Fav.SelectUser": "בחר משתמש:",

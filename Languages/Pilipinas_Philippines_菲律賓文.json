@@ -267,7 +267,6 @@
   "Marquee.FallbackRandom": "Random na pagpapatugtog: {1} - {0}",
   "Marquee.FallbackSongAdded": "Idinagdag na kanta: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "Hindi maidaragdag ang mga kanta sa YouTube sa mga paborito.",
   "Fav.SongLabel": "Kanta: {0}",
   "Fav.SingerLabel": "Maawit: {0}",
   "Fav.SelectUser": "Piliin ang user:",

@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Rastgele çalma: {1} - {0}",
   "Marquee.FallbackSongAdded": "Şarkı eklendi: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube şarkıları favorilere eklenemez.",
   "Fav.SongLabel": "Şarkı: {0}",
   "Fav.SingerLabel": "Şarkıcı: {0}",
   "Fav.SelectUser": "Kullanıcı seçin:",

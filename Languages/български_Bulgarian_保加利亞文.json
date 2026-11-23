@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Случайно възпроизвеждане: {1} – {0}",
   "Marquee.FallbackSongAdded": "Песента е добавена: {1} – {0}",
 
-  "Fav.YoutubeNotAllowed": "Песни от YouTube не могат да бъдат добавяни в „Любими“.",
   "Fav.SongLabel": "Песен: {0}",
   "Fav.SingerLabel": "Изпълнител: {0}",
   "Fav.SelectUser": "Изберете потребител:",

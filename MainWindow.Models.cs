@@ -132,15 +132,35 @@ namespace UltimateKtv
             };
         }
 
-        /// <summary>把秒數格式化為 H:MM:SS (不到 1 小時為 M:SS)；0 以下回傳空字串。</summary>
-        public static string FormatDuration(double totalSeconds)
+        /// <summary>
+        /// YouTube 我的最愛轉成清單項目。已下載過 (有點唱紀錄) 時沿用紀錄的檔案與音量，否則點了才下載；
+        /// 歌手欄顯示「YouTube」，與歌庫的歌混在最愛清單時看得出來源 (長度仍在 Duration，加入最愛視窗會用到)。
+        /// </summary>
+        public static SongDisplayItem FromYoutubeFavorite(YoutubeFavorite favorite, IReadOnlyDictionary<string, object?>? history)
         {
-            if (totalSeconds <= 0) return string.Empty;
-            var d = TimeSpan.FromSeconds(totalSeconds);
-            return d.TotalHours >= 1
-                ? $"{(int)d.TotalHours}:{d.Minutes:D2}:{d.Seconds:D2}"
-                : $"{d.Minutes}:{d.Seconds:D2}";
+            var item = history != null
+                ? FromYoutubeHistory(history)
+                : new SongDisplayItem
+                {
+                    SongId = favorite.VideoId,
+                    SongName = favorite.Name,
+                    FilePath = $"https://www.youtube.com/watch?v={favorite.VideoId}",
+                    IsYoutube = true,
+                    YoutubeId = favorite.VideoId,
+                    Volume = 30,
+                    ThumbnailUrl = $"https://i.ytimg.com/vi/{favorite.VideoId}/hqdefault.jpg",
+                    Duration = FormatDuration(favorite.LengthSeconds),
+                };
+            if (string.IsNullOrEmpty(item.Duration)) item.Duration = FormatDuration(favorite.LengthSeconds);
+            item.SingerName = "YouTube";
+            return item;
         }
+
+        /// <summary>把秒數格式化為 H:MM:SS (不到 1 小時為 M:SS)；0 以下回傳空字串。</summary>
+        public static string FormatDuration(double totalSeconds) => YoutubeDuration.Format(totalSeconds);
+
+        /// <summary>把 FormatDuration 的字串 (M:SS、H:MM:SS) 轉回秒數；無法解析時回傳 0。</summary>
+        public static int ParseDurationSeconds(string? text) => YoutubeDuration.ParseSeconds(text);
 
         /// <summary>把另一個項目的所有欄位複製到這個項目 (用於分頁列表的固定列)。</summary>
         public void CopyFrom(SongDisplayItem src)

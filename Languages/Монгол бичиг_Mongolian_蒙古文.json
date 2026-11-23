@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Санамсаргүй тоглуулах: {1} - {0}",
   "Marquee.FallbackSongAdded": "Дуу нэмэгдлээ: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube-ийн дууг дуртай дууны жагсаалтад нэмэх боломжгүй.",
   "Fav.SongLabel": "Дуу: {0}",
   "Fav.SingerLabel": "Дуучин: {0}",
   "Fav.SelectUser": "Хэрэглэгч сонгоно уу:",

@@ -229,7 +229,6 @@
   "Marquee.FallbackPlaying": "Po luhet: {1} - {0}",
   "Marquee.FallbackRandom": "Luajtje e rastësishme: {1} - {0}",
   "Marquee.FallbackSongAdded": "Kënga u shtua: {1} - {0}",
-  "Fav.YoutubeNotAllowed": "Këngët nga YouTube nuk mund të shtohen te të preferuarat.",
   "Fav.SongLabel": "Kënga: {0}",
   "Fav.SingerLabel": "Këngëtari: {0}",
   "Fav.SelectUser": "Zgjidhni përdoruesin:",

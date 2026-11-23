@@ -1286,9 +1286,9 @@ namespace UltimateKtv
             string? columnHeader = cell?.Column?.Header?.ToString();
 
             bool isSingerColumn = (columnHeader == Loc.T("Col.Singer") || cell?.Column?.DisplayIndex == 1);
-            if (sender == QuickSongListGrid && _searchMode == SearchMode.Youtube)
+            if (selectedSong.IsYoutube || (sender == QuickSongListGrid && _searchMode == SearchMode.Youtube))
             {
-                isSingerColumn = false; // YouTube search uses this column for duration
+                isSingerColumn = false; // YouTube 歌的這一欄是長度/來源，不是歌手 (含混在我的最愛清單的 YT 歌)
             }
 
             if (isSingerColumn && !string.IsNullOrWhiteSpace(selectedSong.SingerName))
@@ -1378,6 +1378,7 @@ namespace UltimateKtv
         private void SingerCell_MouseEnter(object sender, MouseEventArgs e)
         {
             if (_searchMode == SearchMode.Youtube) return;
+            if ((sender as FrameworkElement)?.DataContext is SongDisplayItem { IsYoutube: true }) return;
             if (sender is Border border)
             {
                 border.Background = TryFindResource("PrimaryHueLightBrush") as Brush ?? (Brush)FindResource("PrimaryLightBrush");

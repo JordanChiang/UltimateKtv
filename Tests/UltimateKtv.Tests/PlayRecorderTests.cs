@@ -23,10 +23,11 @@ namespace UltimateKtv.Tests
         {
             AppLogger.IsEnabled = false;
             Assert.Equal(DbKind.SQLite, Db.Kind);
-            foreach (var table in new[] { "ktv_Song", "ktv_Favorite", "ktv_User", "YoutubeSongList" })
+            foreach (var table in new[] { "ktv_Song", "ktv_Favorite", "ktv_User", "YoutubeSongList", SongLibrary.YoutubeFavoriteTable })
             {
                 Db.ExecuteNonQuery($"DROP TABLE IF EXISTS {table}");
             }
+            SongLibrary.EnsureYoutubeFavoriteTable();
             Db.ExecuteNonQuery("CREATE TABLE ktv_Song (Song_Id TEXT PRIMARY KEY, Song_PlayCount INTEGER, Song_Volume INTEGER, Song_Track INTEGER)");
             Db.ExecuteNonQuery("CREATE TABLE ktv_Favorite (User_Id TEXT, Song_Id TEXT)");
             Db.ExecuteNonQuery("CREATE TABLE ktv_User (User_Id TEXT PRIMARY KEY, User_Name TEXT)");
@@ -36,6 +37,7 @@ namespace UltimateKtv.Tests
             Db.ExecuteNonQuery("INSERT INTO YoutubeSongList VALUES ('Y0001', 'aaaaaaaaaaa', NULL, 0)");
             // 前一次開機留下的今日點唱
             Db.ExecuteNonQuery($"INSERT INTO ktv_Favorite VALUES ('{SongLibrary.TodayListUserId}', 'OLD')");
+            SongLibrary.AddYoutubeFavorite(SongLibrary.TodayListUserId, "oldoldoldol", "舊影片", 0);
         }
 
         private PlayRecorder Recorder()
@@ -46,7 +48,10 @@ namespace UltimateKtv.Tests
         }
 
         private static Song Local(string id, int playCount = 0) => new() { Id = id, Name = id, PlayCount = playCount };
-        private static Song Youtube(string id) => new() { Id = id, Name = "影片" };
+        private static Song Youtube(string id, string filePath = "") => new() { Id = id, Name = "影片", FilePath = filePath };
+
+        private static List<string> YoutubeList(string userId) =>
+            SongLibrary.GetYoutubeFavorites().Where(f => f.UserId == userId).Select(f => f.VideoId).OrderBy(v => v).ToList();
 
         private static List<string> TodayList() =>
             Db.GetDataTable("SELECT Song_Id FROM ktv_Favorite WHERE User_Id = ? ORDER BY Song_Id", SongLibrary.TodayListUserId)
@@ -159,7 +164,45 @@ namespace UltimateKtv.Tests
             Assert.Equal(new[] { ("Y0001", 185) }, _lengths);
             Assert.Equal(185L, Scalar("SELECT Length FROM YoutubeSongList WHERE Id = 'Y0001'"));
             Assert.Equal(1L, Scalar("SELECT PlayCount FROM YoutubeSongList WHERE Id = 'Y0001'"));
-            Assert.Equal(new[] { "OLD" }, TodayList()); // YouTube 歌不進今日點唱
+        }
+
+        [Fact]
+        public void Youtube_songs_go_to_todays_list_and_session_by_video_id()
+        {
+            var recorder = Recorder();
+
+            // 點唱紀錄 Id 由紀錄的 Url 取得影片 ID；網頁點播的 SongId 就是影片 ID
+            recorder.SongOpened(Youtube("Y0001"), isYoutube: true, isRandom: false, TimeSpan.FromSeconds(185));
+            recorder.SongOpened(Youtube("bbbbbbbbbbb"), isYoutube: true, isRandom: false, TimeSpan.Zero);
+
+            Assert.Empty(TodayList()); // 第一首 (YouTube) 開播也會清空今日點唱
+            Assert.Equal(new[] { "aaaaaaaaaaa", "bbbbbbbbbbb" }, YoutubeList(SongLibrary.TodayListUserId));
+            Assert.Equal(new[] { "aaaaaaaaaaa", "bbbbbbbbbbb" }, YoutubeList(Session));
+            Assert.Equal(185, SongLibrary.GetYoutubeFavorites().First(f => f.VideoId == "aaaaaaaaaaa").LengthSeconds);
+            Assert.Equal(1L, Scalar($"SELECT COUNT(*) FROM ktv_User WHERE User_Id = '{Session}'"));
+            Assert.Equal(2, _historyChanged);
+        }
+
+        [Fact]
+        public void Youtube_video_id_can_come_from_the_file_name()
+        {
+            var recorder = Recorder();
+
+            recorder.SongOpened(Youtube("Y0099", @"C:\YoutubeDownloads\歌名_ccccccccccc.mp4"), isYoutube: true, isRandom: false, TimeSpan.Zero);
+
+            Assert.Equal(new[] { "ccccccccccc" }, YoutubeList(Session));
+        }
+
+        [Fact]
+        public void Youtube_songs_without_a_video_id_and_random_youtube_songs_are_not_recorded()
+        {
+            var recorder = Recorder();
+
+            recorder.SongOpened(Youtube("Y0099", @"C:\Imported\歌名.mp4"), isYoutube: true, isRandom: false, TimeSpan.Zero);
+            recorder.SongOpened(Youtube("ddddddddddd"), isYoutube: true, isRandom: true, TimeSpan.Zero);
+
+            Assert.Empty(YoutubeList(Session));
+            Assert.Empty(YoutubeList(SongLibrary.TodayListUserId)); // 清空了，但沒有記錄
         }
     }
 }

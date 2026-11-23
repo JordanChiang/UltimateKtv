@@ -229,7 +229,6 @@
   "Marquee.FallbackPlaying": "Reproducíndose: {1} - {0}",
   "Marquee.FallbackRandom": "Reprodución aleatoria: {1} - {0}",
   "Marquee.FallbackSongAdded": "Canción engadida: {1} - {0}",
-  "Fav.YoutubeNotAllowed": "As cancións de YouTube non se poden engadir aos favoritos.",
   "Fav.SongLabel": "Canción: {0}",
   "Fav.SingerLabel": "Intérprete: {0}",
   "Fav.SelectUser": "Seleccionar usuario:",

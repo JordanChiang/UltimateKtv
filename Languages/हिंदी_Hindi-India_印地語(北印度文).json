@@ -267,7 +267,6 @@
   "Marquee.FallbackRandom": "रैंडम प्ले: {1} - {0}",
   "Marquee.FallbackSongAdded": "गाना जोड़ा गया: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube के गानों को पसंदीदा (favorites) में नहीं जोड़ा जा सकता।",
   "Fav.SongLabel": "गाना: {0}",
   "Fav.SingerLabel": "गायक: {0}",
   "Fav.SelectUser": "उपयोगकर्ता चुनें:",

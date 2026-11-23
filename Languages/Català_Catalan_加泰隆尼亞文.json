@@ -229,7 +229,6 @@
   "Marquee.FallbackPlaying": "S'està reproduint: {1} - {0}",
   "Marquee.FallbackRandom": "Reproducció aleatòria: {1} - {0}",
   "Marquee.FallbackSongAdded": "Cançó afegida: {1} - {0}",
-  "Fav.YoutubeNotAllowed": "No es poden afegir cançons de YouTube als preferits.",
   "Fav.SongLabel": "Cançó: {0}",
   "Fav.SingerLabel": "Cantant: {0}",
   "Fav.SelectUser": "Selecciona l'usuari:",

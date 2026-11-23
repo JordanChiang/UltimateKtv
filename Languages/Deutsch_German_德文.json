@@ -267,7 +267,6 @@
   "Marquee.FallbackRandom": "Zufallswiedergabe: {1} – {0}",
   "Marquee.FallbackSongAdded": "Song hinzugefügt: {1} – {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube-Songs können nicht zu den Favoriten hinzugefügt werden.",
   "Fav.SongLabel": "Song: {0}",
   "Fav.SingerLabel": "Interpret: {0}",
   "Fav.SelectUser": "Benutzer auswählen:",

@@ -27,7 +27,7 @@ namespace UltimateKtv.Tests
             Assert.Equal(path, Db.FilePath);
             Assert.Equal(DbKind.SQLite, Db.Kind);
 
-            foreach (var table in new[] { "ktv_Song", "ktv_Favorite", "ktv_User", "YoutubeSongList" })
+            foreach (var table in new[] { "ktv_Song", "ktv_Favorite", "ktv_User", "YoutubeSongList", SongLibrary.YoutubeFavoriteTable })
             {
                 Db.ExecuteNonQuery($"DROP TABLE IF EXISTS {table}");
             }
@@ -36,6 +36,7 @@ namespace UltimateKtv.Tests
             Db.ExecuteNonQuery("CREATE TABLE ktv_User (User_Id TEXT PRIMARY KEY, User_Name TEXT)");
             Db.ExecuteNonQuery("CREATE TABLE YoutubeSongList (Id TEXT PRIMARY KEY, Url TEXT, PlayCount INTEGER)");
             Db.ExecuteNonQuery("INSERT INTO ktv_Song VALUES ('S1', 3, 60, 1)");
+            SongLibrary.EnsureYoutubeFavoriteTable();
         }
 
         private static object? Scalar(string sql, params object?[] args) => Db.GetDataTable(sql, args).Rows[0][0];
@@ -187,6 +188,56 @@ namespace UltimateKtv.Tests
         }
 
         [Fact]
+        public void Youtube_favorite_table_is_created_once()
+        {
+            SongLibrary.EnsureYoutubeFavoriteTable();
+            Assert.True(SongLibrary.AddYoutubeFavorite("U1", "dQw4w9WgXcQ", "歌名", 212));
+            SongLibrary.EnsureYoutubeFavoriteTable();
+
+            Assert.Single(SongLibrary.GetYoutubeFavorites());
+        }
+
+        [Fact]
+        public void Add_youtube_favorite_is_idempotent_per_user()
+        {
+            SongLibrary.EnsureYoutubeFavoriteTable();
+            Assert.True(SongLibrary.AddYoutubeFavorite("U1", "dQw4w9WgXcQ", "歌名", 212));
+            Assert.False(SongLibrary.AddYoutubeFavorite("U1", "dQw4w9WgXcQ", "另一個歌名", 0));
+            Assert.True(SongLibrary.AddYoutubeFavorite("U2", "dQw4w9WgXcQ", "歌名", 212));
+
+            Assert.True(SongLibrary.IsYoutubeFavorite("U1", "dQw4w9WgXcQ"));
+            Assert.False(SongLibrary.IsYoutubeFavorite("U3", "dQw4w9WgXcQ"));
+            var favorites = SongLibrary.GetYoutubeFavorites();
+            Assert.Equal(new[] { "U1", "U2" }, favorites.Select(f => f.UserId).OrderBy(u => u));
+            var first = favorites.Single(f => f.UserId == "U1");
+            Assert.Equal("歌名", first.Name);
+            Assert.Equal(212, first.LengthSeconds);
+            Assert.NotNull(first.CreatDate);
+        }
+
+        [Theory]
+        [InlineData("Y0017")]
+        [InlineData("")]
+        [InlineData("https://www.youtube.com/watch?v=dQw4w9WgXcQ")]
+        public void Add_youtube_favorite_rejects_non_video_ids(string id)
+        {
+            SongLibrary.EnsureYoutubeFavoriteTable();
+            Assert.False(SongLibrary.AddYoutubeFavorite("U1", id, "歌名", 0));
+            Assert.Empty(SongLibrary.GetYoutubeFavorites());
+        }
+
+        [Fact]
+        public void Add_youtube_favorite_truncates_long_names()
+        {
+            SongLibrary.EnsureYoutubeFavoriteTable();
+            Assert.True(SongLibrary.AddYoutubeFavorite("U1", "dQw4w9WgXcQ", new string('歌', 300), -5));
+
+            var favorite = SongLibrary.GetYoutubeFavorites().Single();
+            Assert.Equal(255, favorite.Name.Length);
+            Assert.Equal(0, favorite.LengthSeconds);
+        }
+
+        [Fact]
         public void Record_play_adds_to_today_list_and_session()
         {
             SongLibrary.RecordPlay("S1", "10/21 20:00", maxSessions: 5);
@@ -209,6 +260,43 @@ namespace UltimateKtv.Tests
 
             Assert.Equal(new[] { SongLibrary.TodayListUserId, "10/20 20:00", "10/21 20:00" }, FavoriteUsers());
             Assert.Equal(0L, Scalar("SELECT COUNT(*) FROM ktv_User WHERE User_Id = '10/19 20:00'"));
+        }
+
+        [Fact]
+        public void A_session_with_only_youtube_plays_counts_toward_the_limit()
+        {
+            SongLibrary.RecordYoutubePlay("aaaaaaaaaaa", null, "影片", 0, "10/19 20:00", maxSessions: 2);
+            SongLibrary.RecordPlay("S1", "10/20 20:00", maxSessions: 2);
+
+            SongLibrary.RecordYoutubePlay("bbbbbbbbbbb", null, "影片", 0, "10/21 20:00", maxSessions: 2);
+
+            // 最舊的那次只有 YouTube 歌，也要被刪掉 (含 ktv_User)
+            Assert.DoesNotContain(SongLibrary.GetYoutubeFavorites(), f => f.UserId == "10/19 20:00");
+            Assert.Equal(0L, Scalar("SELECT COUNT(*) FROM ktv_User WHERE User_Id = '10/19 20:00'"));
+            Assert.Equal(new[] { SongLibrary.TodayListUserId, "10/20 20:00" }, FavoriteUsers());
+            Assert.Contains(SongLibrary.GetYoutubeFavorites(), f => f.UserId == "10/21 20:00" && f.VideoId == "bbbbbbbbbbb");
+        }
+
+        [Fact]
+        public void Deleting_the_oldest_session_also_removes_its_youtube_plays()
+        {
+            SongLibrary.RecordPlay("S1", "10/19 20:00", maxSessions: 1);
+            SongLibrary.RecordYoutubePlay("aaaaaaaaaaa", null, "影片", 0, "10/19 20:00", maxSessions: 1);
+
+            SongLibrary.RecordPlay("S1", "10/20 20:00", maxSessions: 1);
+
+            Assert.Equal(new[] { SongLibrary.TodayListUserId, "10/20 20:00" }, FavoriteUsers());
+            Assert.Equal(new[] { SongLibrary.TodayListUserId }, SongLibrary.GetYoutubeFavorites().Select(f => f.UserId));
+        }
+
+        [Fact]
+        public void Clear_today_list_also_clears_youtube_plays()
+        {
+            SongLibrary.RecordYoutubePlay("aaaaaaaaaaa", null, "影片", 0, "10/21 20:00", maxSessions: 5);
+
+            SongLibrary.ClearTodayList();
+
+            Assert.Equal(new[] { "10/21 20:00" }, SongLibrary.GetYoutubeFavorites().Select(f => f.UserId));
         }
 
         [Fact]

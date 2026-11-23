@@ -441,27 +441,11 @@ namespace UltimateKtv
                 return;
             }
 
-            // Get all favorite songs for this user
-            var favoriteSongs = SongDatas.FavoriteSongData
-                .Where(fav => fav.TryGetValue("User_Id", out var uid) && uid?.ToString() == userId)
-                .ToList();
-
-            var songs = new List<Song>();
-
-            foreach (var favorite in favoriteSongs)
-            {
-                // Get the Song_Id from the favorite record
-                var songId = favorite.TryGetValue("Song_Id", out var sidObj) ? sidObj?.ToString() ?? "" : "";
-                if (string.IsNullOrEmpty(songId)) continue;
-
-                // Find the corresponding song in SongData
-                var song = SongDatas.FindSongById(songId);
-                if (song != null && !string.IsNullOrEmpty(song.Name)) songs.Add(song);
-            }
-
-            // Sort songs based on the selected sort method
+            // 歌庫的歌依設定排序，YouTube 最愛接在後面 (依加入順序)
+            var (songs, youtube) = SongQuery.FavoritesOf(userId, SongDatas.SongData, SongDatas.FavoriteSongData, SongDatas.YoutubeFavoriteData);
             var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
             _allSongs = SongQuery.Sort(songs, options).Select(SongDisplayItem.FromSong).ToList();
+            _allSongs.AddRange(youtube.Select(f => SongDisplayItem.FromYoutubeFavorite(f, SongDatas.GetYoutubeHistoryByVideoId(f.VideoId))));
 
             // Calculate pagination for songs
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;

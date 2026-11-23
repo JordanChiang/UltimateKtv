@@ -76,6 +76,8 @@
 
     <!-- 非國語歌名 (與 WPF LightSkyBlue 相同) -->
     <Color x:Key="ColorSongForeign">#87CEFA</Color>
+    <!-- YouTube 歌名 (YouTube 列表與我的最愛清單)；柔和的黃綠，與團體歌手的薄荷綠 #7EE0A8 分得開 -->
+    <Color x:Key="ColorSongYoutube">#A8E063</Color>
 
     <!-- 狀態色 (只用於狀態，不當裝飾)；Danger 上的白字 4.8:1 -->
     <Color x:Key="ColorDanger">#D32F2F</Color>
@@ -149,6 +151,7 @@
     <SolidColorBrush x:Key="BrushSingerFemale" Color="{StaticResource ColorSingerFemale}"/>
     <SolidColorBrush x:Key="BrushSingerGroup" Color="{StaticResource ColorSingerGroup}"/>
     <SolidColorBrush x:Key="BrushSongForeign" Color="{StaticResource ColorSongForeign}"/>
+    <SolidColorBrush x:Key="BrushSongYoutube" Color="{StaticResource ColorSongYoutube}"/>
 
     <!-- 列表風格 6 糖果光澤反光 -->
     <LinearGradientBrush x:Key="BrushGlossHighlight" StartPoint="0,0" EndPoint="0,1">

@@ -335,6 +335,7 @@ public class HttpServer : IDisposable
 			["youtubesearch"] = new(false, r => HttpServerHelper.SearchYoutubeAsync(r.Value)),
 			["orderyoutube"] = new(false, r => HttpServerHelper.OrderYoutubeAsync(r.Value, r.User, Remote)),
 			["orderyoutubehistory"] = Query(r => HttpServerHelper.OrderYoutubeHistory(r.Value, r.User, Remote)),
+			["orderyoutubefavorite"] = Query(r => HttpServerHelper.OrderYoutubeFavorite(r.Value, r.User, Remote)),
 			["queryyoutubehistory"] = Poll(r => HttpServerHelper.QueryYoutubeHistory(r.Page, r.Rows)),
 			["checknewyoutube"] = new(true, _ => HttpServerHelper.CheckNewYoutubeAsync(Remote)),
 			["importnewyoutube"] = new(false, _ => HttpServerHelper.ImportNewYoutubeAsync(Remote)),

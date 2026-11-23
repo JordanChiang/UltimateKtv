@@ -30,6 +30,23 @@ namespace UltimateKtv.Tests
             return e!;
         }
 
+        /// <summary>
+        /// 收集完成的工作。測試要讀 Job 的內容時用它等，不要在 handler 裡設變數再讀：
+        /// 沒有 SynchronizationContext 時 handler 依序在下載執行緒執行，NextEvent 醒來時後面加的 handler 可能還沒執行。
+        /// </summary>
+        private BlockingCollection<YoutubeDownloadJob> CaptureCompleted()
+        {
+            var completed = new BlockingCollection<YoutubeDownloadJob>();
+            _queue.Completed += (_, e) => completed.Add(e.Job);
+            return completed;
+        }
+
+        private static YoutubeDownloadJob Take(BlockingCollection<YoutubeDownloadJob> jobs)
+        {
+            Assert.True(jobs.TryTake(out var job, Timeout), "timed out waiting for a completed job");
+            return job!;
+        }
+
         private void WaitUntilWaiting(int count)
         {
             var deadline = DateTime.UtcNow + Timeout;
@@ -92,16 +109,49 @@ namespace UltimateKtv.Tests
         }
 
         [Fact]
+        public void Insert_first_is_carried_to_completion_for_downloads_and_cached_files()
+        {
+            Directory.CreateDirectory(_cacheDir);
+            File.WriteAllText(Path.Combine(_cacheDir, "A_aaaaaaaaaaa.mp4"), "video");
+            var completed = CaptureCompleted();
+
+            Assert.True(_queue.Enqueue("aaaaaaaaaaa", "A", null, null, insertFirst: true));
+            Assert.Equal("completed aaaaaaaaaaa cached", NextEvent());
+            Assert.True(Take(completed).InsertFirst);
+
+            Assert.True(_queue.Enqueue("bbbbbbbbbbb", "B", null, null, insertFirst: true));
+            Assert.Equal("completed bbbbbbbbbbb", NextEvent());
+            Assert.True(Take(completed).InsertFirst);
+
+            Assert.True(_queue.Enqueue("ccccccccccc", "C", null, null));
+            Assert.Equal("completed ccccccccccc", NextEvent());
+            Assert.False(Take(completed).InsertFirst); // 一般點歌預設不插播
+        }
+
+        [Fact]
+        public void Insert_first_of_a_video_already_queued_is_not_taken()
+        {
+            // 已在佇列中的影片再按插播：回傳 false，原本的工作維持一般點歌
+            _downloader.Block("aaaaaaaaaaa");
+            var completed = CaptureCompleted();
+            Assert.True(_queue.Enqueue("aaaaaaaaaaa", "A", null, null));
+            Assert.False(_queue.Enqueue("aaaaaaaaaaa", "A", null, null, insertFirst: true));
+
+            _downloader.Release("aaaaaaaaaaa");
+            Assert.Equal("completed aaaaaaaaaaa", NextEvent());
+            Assert.False(Take(completed).InsertFirst);
+        }
+
+        [Fact]
         public void A_local_file_from_the_history_is_used_as_the_target()
         {
             string historyFile = Path.Combine(_cacheDir, "舊的", "A_aaaaaaaaaaa.mp4");
-            YoutubeDownloadJob? completed = null;
-            _queue.Completed += (_, e) => completed = e.Job;
+            var completed = CaptureCompleted();
 
             Assert.True(_queue.Enqueue("aaaaaaaaaaa", "A", historyFile, null));
 
             Assert.Equal("completed aaaaaaaaaaa", NextEvent());
-            Assert.Equal(historyFile, completed!.FilePath);
+            Assert.Equal(historyFile, Take(completed).FilePath);
             Assert.True(File.Exists(historyFile));
         }
 
@@ -188,6 +238,31 @@ namespace UltimateKtv.Tests
             }
 
             public void Dispose() => _work.CompleteAdding();
+        }
+
+        [Theory]
+        [InlineData(0, "")]
+        [InlineData(-3, "")]
+        [InlineData(59, "0:59")]
+        [InlineData(289, "4:49")]
+        [InlineData(2883, "48:03")]
+        [InlineData(3723, "1:02:03")]
+        public void Duration_text_is_m_ss_or_h_mm_ss(int seconds, string expected)
+        {
+            Assert.Equal(expected, YoutubeDuration.Format(seconds));
+            if (expected.Length > 0) Assert.Equal(seconds, YoutubeDuration.ParseSeconds(expected));
+        }
+
+        [Theory]
+        [InlineData("00:48:03", 2883)] // 點唱紀錄列表的 hh:mm:ss
+        [InlineData(" 4:49 ", 289)]
+        [InlineData("", 0)]
+        [InlineData(null, 0)]
+        [InlineData("未知長度", 0)]
+        [InlineData("4:-1", 0)]
+        public void Duration_text_parses_back_to_seconds(string? text, int expected)
+        {
+            Assert.Equal(expected, YoutubeDuration.ParseSeconds(text));
         }
 
         [Fact]

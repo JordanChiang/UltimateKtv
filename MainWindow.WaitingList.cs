@@ -50,7 +50,9 @@ namespace UltimateKtv
             Id = song.Id,
             SongId = song.SongId,
             WaitingListSongName = song.SongName,
-            WaitingListSingerName = song.SingerName,
+            // YouTube 歌沒有歌手，歌手欄顯示影片長度，看得出多長
+            WaitingListSingerName = !song.IsYoutube ? song.SingerName
+                : song.Duration.Length > 0 ? song.Duration : Loc.T("Youtube.UnknownLength"),
             FilePath = song.FilePath,
             Volume = song.Volume,
             AudioTrack = song.AudioTrack,
@@ -601,10 +603,13 @@ namespace UltimateKtv
         /// </summary>
         private void SongInsertButton_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as FrameworkElement)?.DataContext is not SongDisplayItem song || song.IsYoutube) return;
+            if ((sender as FrameworkElement)?.DataContext is not SongDisplayItem song || string.IsNullOrEmpty(song.SongId)) return;
             AppLogger.Log($"User action: Insert button clicked for song '{song.SongName}'");
             // Clone: 列表使用固定列，換頁時列的內容會被改掉
-            _ = OrderSongAsync(song.Clone(), insertFirst: true);
+            if (song.IsYoutube)
+                DownloadYoutubeVideo(song.Clone(), tappedOnScreen: true, insertFirst: true); // 下載完 (或快取已有) 才插播
+            else
+                _ = OrderSongAsync(song.Clone(), insertFirst: true);
             ClearSongGridsSelection();
         }
 
@@ -633,7 +638,8 @@ namespace UltimateKtv
                 Volume = song.Volume,
                 AudioTrack = song.AudioTrack,
                 OrderedBy = song.OrderedBy,
-                IsYoutube = song.IsYoutube
+                IsYoutube = song.IsYoutube,
+                Duration = song.IsYoutube ? song.Duration : string.Empty
             };
 
             // 點歌時若正在播隨機歌，PlaybackSession 會切掉它，此時不顯示「已點歌」跑馬燈

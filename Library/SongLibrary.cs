@@ -276,12 +276,61 @@ public static class SongLibrary
 		return Db.ExecuteNonQuery("INSERT INTO ktv_Favorite (User_Id, Song_Id) VALUES (?, ?)", userId, songId) > 0;
 	}
 
+	// ---------------- YouTube 我的最愛 ----------------
+	// 不放進 ktv_Favorite：那張表由加歌程式 SongMgr 管 (Song_Id 對應 ktv_Song)，而且還沒下載的影片沒有地方查歌名，
+	// 所以另開一張表，以影片 ID 記錄並自帶歌名與長度。
+
+	public const string YoutubeFavoriteTable = "YoutubeFavorite";
+
+	/// <summary>YoutubeFavorite 表不存在時建立 (開機時呼叫一次)。</summary>
+	public static void EnsureYoutubeFavoriteTable()
+	{
+		if (Db.GetTableList().Contains(YoutubeFavoriteTable)) return;
+		Db.ExecuteNonQuery($@"CREATE TABLE {YoutubeFavoriteTable} (
+			User_Id TEXT(50),
+			VideoId TEXT(16),
+			Name TEXT(255),
+			Length INTEGER,
+			CreatDate DATETIME,
+			CONSTRAINT PK_{YoutubeFavoriteTable} PRIMARY KEY (User_Id, VideoId)
+		)");
+		AppLogger.Log($"DB Write: Created {YoutubeFavoriteTable} table");
+	}
+
+	/// <summary>所有使用者的 YouTube 最愛，依加入時間排序 (先加入的在前)。</summary>
+	public static List<YoutubeFavorite> GetYoutubeFavorites() =>
+		Db.GetDataTable($"SELECT User_Id, VideoId, Name, Length, CreatDate FROM {YoutubeFavoriteTable} ORDER BY CreatDate, VideoId")
+			.Rows.Cast<DataRow>()
+			.Select(r => new YoutubeFavorite(
+				Convert.ToString(r["User_Id"]) ?? "",
+				Convert.ToString(r["VideoId"]) ?? "",
+				Convert.ToString(r["Name"]) ?? "",
+				r["Length"] is DBNull ? 0 : Convert.ToInt32(r["Length"]),
+				r["CreatDate"] is DateTime d ? d : null))
+			.ToList();
+
+	public static bool IsYoutubeFavorite(string userId, string videoId) =>
+		CountOf($"SELECT COUNT(*) FROM {YoutubeFavoriteTable} WHERE User_Id = ? AND VideoId = ?", userId, videoId) > 0;
+
+	/// <param name="lengthSeconds">影片長度 (秒)，未知時給 0。</param>
+	/// <returns>是否新增成功 (已在最愛中或影片 ID 不合法時回傳 false)。</returns>
+	public static bool AddYoutubeFavorite(string userId, string videoId, string name, int lengthSeconds)
+	{
+		if (string.IsNullOrEmpty(userId) || !YoutubeVideoId.IsValid(videoId)) return false;
+		if (IsYoutubeFavorite(userId, videoId)) return false;
+		name ??= "";
+		if (name.Length > 255) name = name.Substring(0, 255);
+		return Db.ExecuteNonQuery($"INSERT INTO {YoutubeFavoriteTable} (User_Id, VideoId, Name, Length, CreatDate) VALUES (?, ?, ?, ?, ?)",
+			userId, videoId, name, Math.Max(0, lengthSeconds), DateTime.Now.ToString(DateFormat, CultureInfo.InvariantCulture)) > 0;
+	}
+
 	// ---------------- 點唱紀錄 ----------------
 
-	/// <summary>清空今日點唱清單。</summary>
+	/// <summary>清空今日點唱清單 (歌庫的歌與 YouTube 歌)。</summary>
 	public static void ClearTodayList()
 	{
 		Db.ExecuteNonQuery("DELETE FROM ktv_Favorite WHERE User_Id = ?", TodayListUserId);
+		TryYoutubeTable(() => Db.ExecuteNonQuery($"DELETE FROM {YoutubeFavoriteTable} WHERE User_Id = ?", TodayListUserId), "clear today's list");
 		AppLogger.Log($"DB Write: Cleared today's play list (User_Id = {TodayListUserId})");
 	}
 
@@ -293,23 +342,67 @@ public static class SongLibrary
 	{
 		if (string.IsNullOrEmpty(songId)) return;
 
-		// 1. 今日點唱清單
 		if (AddFavorite(TodayListUserId, songId))
 		{
 			AppLogger.Log($"DB Write: Added Song_Id={songId} to today's play list");
 		}
 
-		// 2. 這次開機的點唱紀錄：達到上限 (且這次開機還沒有紀錄) 時刪掉最舊的一次
+		PrepareSession(sessionUserId, maxSessions);
+
+		if (AddFavorite(sessionUserId, songId))
+		{
+			AppLogger.Log($"DB Write: Recorded play history: User_Id={sessionUserId}, Song_Id={songId}");
+		}
+	}
+
+	/// <summary>
+	/// 記錄一部 YouTube 影片被唱過，規則與 RecordPlay 相同，寫在 YoutubeFavorite 表 (今日點唱與點唱紀錄都是它的「使用者」)。
+	/// </summary>
+	/// <param name="songId">待播清單的 SongId：點唱紀錄 Id (例如「Y0017」) 或影片 ID。</param>
+	/// <param name="filePath">播放的檔案；檔名「{歌名}_{videoId}.mp4」也能取回影片 ID。</param>
+	/// <returns>是否找得到影片 ID (找不到時不記錄，例如沒有影片 ID 的匯入檔案)。</returns>
+	public static bool RecordYoutubePlay(string songId, string? filePath, string name, int lengthSeconds, string sessionUserId, int maxSessions)
+	{
+		string videoId = YoutubeVideoId.Resolve(null, songId, filePath);
+		if (videoId.Length == 0 && !string.IsNullOrEmpty(songId))
+		{
+			var byId = Db.GetDataTable("SELECT Url FROM YoutubeSongList WHERE Id = ?", songId);
+			if (byId.Rows.Count > 0 && YoutubeVideoId.IsValid(Convert.ToString(byId.Rows[0][0]))) videoId = Convert.ToString(byId.Rows[0][0])!;
+		}
+		if (videoId.Length == 0) return false;
+
+		if (AddYoutubeFavorite(TodayListUserId, videoId, name, lengthSeconds))
+		{
+			AppLogger.Log($"DB Write: Added YouTube {videoId} to today's play list");
+		}
+
+		PrepareSession(sessionUserId, maxSessions);
+
+		if (AddYoutubeFavorite(sessionUserId, videoId, name, lengthSeconds))
+		{
+			AppLogger.Log($"DB Write: Recorded YouTube play history: User_Id={sessionUserId}, VideoId={videoId}");
+		}
+		return true;
+	}
+
+	/// <summary>
+	/// 這次開機的點唱紀錄寫入前：達到 maxSessions 次 (且這次開機還沒有紀錄) 時刪掉最舊的一次，並確保 ktv_User 有這個 User_Id。
+	/// 開機次數以兩張表合計 (只唱 YouTube 歌的那次開機也算一次)。
+	/// </summary>
+	private static void PrepareSession(string sessionUserId, int maxSessions)
+	{
 		var sessions = Db.GetDataTable("SELECT DISTINCT User_Id FROM ktv_Favorite").Rows.Cast<DataRow>()
 			.Select(r => Convert.ToString(r[0]) ?? "")
-			.Where(IsSessionUserId)
-			.OrderBy(id => id, StringComparer.Ordinal)
 			.ToList();
+		TryYoutubeTable(() => sessions.AddRange(Db.GetDataTable($"SELECT DISTINCT User_Id FROM {YoutubeFavoriteTable}").Rows.Cast<DataRow>()
+			.Select(r => Convert.ToString(r[0]) ?? "")), "list sessions");
+		sessions = sessions.Where(IsSessionUserId).Distinct().OrderBy(id => id, StringComparer.Ordinal).ToList();
 
 		if (!sessions.Contains(sessionUserId) && sessions.Count >= maxSessions && sessions.Count > 0)
 		{
 			string oldest = sessions[0];
 			int deleted = Db.ExecuteNonQuery("DELETE FROM ktv_Favorite WHERE User_Id = ?", oldest);
+			TryYoutubeTable(() => deleted += Db.ExecuteNonQuery($"DELETE FROM {YoutubeFavoriteTable} WHERE User_Id = ?", oldest), "delete oldest session");
 			AppLogger.Log($"DB Write: Deleted oldest timestamp records: User_Id={oldest}, rows deleted={deleted}");
 			try
 			{
@@ -334,11 +427,13 @@ public static class SongLibrary
 		{
 			AppLogger.LogError("Could not check/create User_Id in ktv_User", ex);
 		}
+	}
 
-		if (AddFavorite(sessionUserId, songId))
-		{
-			AppLogger.Log($"DB Write: Recorded play history: User_Id={sessionUserId}, Song_Id={songId}");
-		}
+	/// <summary>YoutubeFavorite 表的附帶寫入：表不存在 (建立失敗) 時只記 log，不影響歌庫歌曲的紀錄。</summary>
+	private static void TryYoutubeTable(Action action, string what)
+	{
+		try { action(); }
+		catch (Exception ex) { AppLogger.Log($"{YoutubeFavoriteTable}: failed to {what}: {ex.Message}"); }
 	}
 
 	/// <summary>點唱紀錄的 User_Id 格式 "MM/dd HH:mm"。</summary>
@@ -361,3 +456,6 @@ public static class SongLibrary
 		return table.Rows.Count > 0 ? Convert.ToInt32(table.Rows[0][0]) : 0;
 	}
 }
+
+/// <summary>一筆 YouTube 我的最愛 (YoutubeFavorite 表的一列)。LengthSeconds 未知時為 0。</summary>
+public sealed record YoutubeFavorite(string UserId, string VideoId, string Name, int LengthSeconds, DateTime? CreatDate);

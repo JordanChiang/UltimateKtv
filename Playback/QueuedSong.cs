@@ -54,6 +54,10 @@ namespace UltimateKtv.Playback
         public int AudioTrack { get; init; }
         public string OrderedBy { get; init; } = string.Empty;
         public bool IsYoutube { get; init; }
+
+        /// <summary>YouTube 影片長度 (M:SS / H:MM:SS，不知道時空白)，待播清單的歌手欄顯示它。YouTube 歌的 SingerName 一律空白 (跑馬燈、正在播放不帶歌手)。</summary>
+        public string Duration { get; init; } = string.Empty;
+
         public bool IsRandom { get; init; }
 
         /// <summary>隨機歌開播時套用的聲道：-1=不指定, 0=人聲, 1=伴唱。</summary>

@@ -269,7 +269,6 @@
   "Marquee.FallbackRandom": "Bài hát ngẫu nhiên: {1} - {0}",
   "Marquee.FallbackSongAdded": "Bài hát yêu cầu: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "Không thể thêm bài hát YouTube vào mục yêu thích.",
   "Fav.SongLabel": "Bài hát: {0}",
   "Fav.SingerLabel": "Ca sĩ: {0}",
   "Fav.SelectUser": "Chọn người dùng:",

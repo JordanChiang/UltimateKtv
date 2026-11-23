@@ -1022,12 +1022,14 @@ namespace UltimateKtv
                     ApplyQuickSongListLayout();
                     if (!useYoutubeGrid)
                     {
-                        // 歌星搜尋時列出的是歌手，不顯示插播/最愛；Youtube 歌曲本來就不顯示插播/最愛按鈕，整欄隱藏
+                        // 歌星搜尋時列出的是歌手，不顯示插播/最愛；Youtube 列表 (搜尋結果、點播記錄) 與一般列表一樣有插播/最愛
                         bool isYoutubeList = _searchMode == SearchMode.Youtube;
-                        QuickActionsColumn.Visibility = (_isSingerSearchMode || isYoutubeList) ? Visibility.Collapsed : Visibility.Visible;
-                        // Youtube 列表不需要語言與操作欄，歌名欄固定 1100，歌曲時間欄取剩餘寬度 (約 200)
+                        QuickActionsColumn.Visibility = _isSingerSearchMode ? Visibility.Collapsed : Visibility.Visible;
+                        // Youtube 列表不需要語言欄，歌名欄 = 1100 扣掉操作欄，歌曲時間欄取剩餘寬度 (約 200)
                         QuickLanguageColumn.Visibility = isYoutubeList ? Visibility.Collapsed : Visibility.Visible;
-                        double songNameWidth = isYoutubeList ? 1100 : ((DataGridLength)FindResource("SongNameColumnWidth")).Value;
+                        double songNameWidth = isYoutubeList
+                            ? 1100 - ((DataGridLength)FindResource("SongActionsColumnWidth")).Value
+                            : ((DataGridLength)FindResource("SongNameColumnWidth")).Value;
                         QuickSongNameColumn.Width = new DataGridLength(songNameWidth);
                         // 就地換頁：沿用既有的 DataGridRow，避免每次換頁重建所有列
                         ShowPageItems(QuickSongListGrid, _quickSongListPageItems, pageItems);

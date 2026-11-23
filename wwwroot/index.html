@@ -2625,7 +2625,8 @@
                     const isMandarin = langShort === '國';
                     const item = document.createElement('div');
                     item.className = 'song-item';
-                    item.onclick = () => orderSong(song.Song_Id, songName);
+                    // YouTube 最愛要先下載 (已下載過就直接點歌)，走另一個 API
+                    item.onclick = () => song.IsYoutube ? orderYoutubeFavorite(song.Song_Id, songName) : orderSong(song.Song_Id, songName);
                     item.innerHTML = `
                         <div class="song-info">
                             <span class="song-name">${songName}</span>
@@ -2830,6 +2831,27 @@
                 console.error('Load history failed:', error);
                 loadingDiv.style.display = 'none';
                 resultsDiv.innerHTML = '<div class="no-results">' + t('Web.LoadFailed', '載入失敗，請稍後再試') + '</div>';
+            }
+        }
+
+        // 從我的最愛點 YouTube 歌 (清單列沒有下載進度條，只用提示訊息回報)
+        async function orderYoutubeFavorite(videoId, songName = '') {
+            if (appOptions.networkRemoteSongUsername && !currentUsername) {
+                showToast(t('Web.SetNameFirst', '請先設定您的名稱'), 'error');
+                showUsernameDialog();
+                return;
+            }
+            try {
+                const response = await fetch(`?queryType=orderyoutubefavorite&value=${encodeURIComponent(videoId)}&user=${encodeURIComponent(currentUsername || '')}`);
+                const data = await response.json();
+                if (data.success) {
+                    showToast(data.isDownloaded ? t('Web.AddedToQueue', '已加入待播清單') : t('Web.Downloading', '下載中'), 'success');
+                } else {
+                    showToast(data.message || t('Web.OrderFailed', '點歌失敗'), 'error');
+                }
+            } catch (error) {
+                console.error('YouTube favorite order failed:', error);
+                showToast(t('Web.NoResponse', '伺服器無回應，請稍後再試'), 'error');
             }
         }
 

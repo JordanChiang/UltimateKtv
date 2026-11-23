@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Nasumična reprodukcija: {1} - {0}",
   "Marquee.FallbackSongAdded": "Pjesma dodana: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube pjesme nije moguće dodati u favorite.",
   "Fav.SongLabel": "Pjesma: {0}",
   "Fav.SingerLabel": "Izvođač: {0}",
   "Fav.SelectUser": "Odaberite korisnika:",

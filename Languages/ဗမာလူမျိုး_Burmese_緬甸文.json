@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "ကျပန်းဖွင့်ခြင်း - {1} - {0}",
   "Marquee.FallbackSongAdded": "သီချင်း ထည့်သွင်းပြီးပါပြီ - {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube သီချင်းများကို အကြိုက်ဆုံးစာရင်း (Favorites) ထဲသို့ ထည့်၍မရပါ။",
   "Fav.SongLabel": "သီချင်း - {0}",
   "Fav.SingerLabel": "အဆိုတော် - {0}",
   "Fav.SelectUser": "အသုံးပြုသူကို ရွေးချယ်ပါ -",

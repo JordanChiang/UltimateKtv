@@ -267,7 +267,6 @@
   "Marquee.FallbackRandom": "Lecture aléatoire : {1} - {0}",
   "Marquee.FallbackSongAdded": "Chanson ajoutée : {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "Les chansons provenant de YouTube ne peuvent pas être ajoutées aux favoris.",
   "Fav.SongLabel": "Chanson : {0}",
   "Fav.SingerLabel": "Interprète : {0}",
   "Fav.SelectUser": "Sélectionner un utilisateur :",

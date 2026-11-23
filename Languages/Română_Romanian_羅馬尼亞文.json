@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Redare aleatorie: {1} - {0}",
   "Marquee.FallbackSongAdded": "Melodie adăugată: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "Melodiile de pe YouTube nu pot fi adăugate la favorite.",
   "Fav.SongLabel": "Melodie: {0}",
   "Fav.SingerLabel": "Interpret: {0}",
   "Fav.SelectUser": "Selectează utilizatorul:",

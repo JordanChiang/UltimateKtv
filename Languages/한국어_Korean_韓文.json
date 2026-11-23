@@ -267,7 +267,6 @@
   "Marquee.FallbackRandom": "랜덤 재생: {1} - {0}",
   "Marquee.FallbackSongAdded": "곡 추가됨: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube 곡은 즐겨찾기에 추가할 수 없습니다.",
   "Fav.SongLabel": "곡: {0}",
   "Fav.SingerLabel": "가수: {0}",
   "Fav.SelectUser": "사용자 선택:",

@@ -69,11 +69,12 @@ namespace UltimateKtv
         /// <summary>
         /// 點 YouTube 影片：已在待播清單或下載佇列中 (以影片 ID 判斷) 時回傳 false。
         /// tappedOnScreen：在主控台點的 (不是手機)，下載完點歌時歌名從點的位置飛出，與一般點歌相同。
+        /// insertFirst：插播，下載完 (或快取已有) 時排到待播清單第一首。
         /// </summary>
-        internal bool DownloadYoutubeVideo(SongDisplayItem song, bool tappedOnScreen = false)
+        internal bool DownloadYoutubeVideo(SongDisplayItem song, bool tappedOnScreen = false, bool insertFirst = false)
         {
             string videoId = YoutubeVideoId.Resolve(song.YoutubeId, song.SongId, song.FilePath);
-            if (IsYoutubeInWaitingList(videoId, song) || !YoutubeQueue.Enqueue(videoId, song.SongName, song.FilePath, song))
+            if (IsYoutubeInWaitingList(videoId, song) || !YoutubeQueue.Enqueue(videoId, song.SongName, song.FilePath, song, insertFirst))
             {
                 AppLogger.Log($"YouTube: '{song.SongName}' ({videoId}) is already in the waiting list or download queue, skipped.");
                 return false;
@@ -133,13 +134,14 @@ namespace UltimateKtv
                 string recordId = SongLibrary.RecordYoutubeSong(e.Job.VideoId, song.SongName, e.Job.FilePath, song.Language, song.Volume,
                     VocalSwitch.YoutubeDefaultChannel(SettingsManager.Instance.CurrentSettings.YoutubeDefaultNoVocal));
 
+                int lengthSeconds = 0;
                 if (!e.WasCached)
                 {
                     DebugLog($"YouTube Download: Completed! Path: {e.Job.FilePath}");
                     HttpServer.BroadcastEvent("YoutubeComplete", new { videoId = e.Job.VideoId });
 
                     // 下載完就寫入長度，點唱紀錄列表不必等到播放才有長度
-                    int lengthSeconds = await YtDlpHelper.GetMediaDurationSecondsAsync(e.Job.FilePath);
+                    lengthSeconds = await YtDlpHelper.GetMediaDurationSecondsAsync(e.Job.FilePath);
                     if (lengthSeconds > 0 && !string.IsNullOrEmpty(recordId))
                     {
                         SongLibrary.UpdateYoutubeSongLength(recordId, lengthSeconds);
@@ -151,7 +153,15 @@ namespace UltimateKtv
                     DebugLog($"YouTube: File already exists in cache: {e.Job.FilePath}");
                 }
 
-                _ = OrderSongAsync(song, OrderSource.YouTube, origin: TakeYoutubeOrderOrigin(e.Job.VideoId));
+                // 待播清單的歌手欄顯示影片長度 (QueuedSong.Duration)：手機點歌沒有長度，下載完量的、或快取檔量的。
+                // 複本：Tag 可能就是列表上的項目，不能改到列表的顯示
+                if (lengthSeconds <= 0) lengthSeconds = SongDisplayItem.ParseDurationSeconds(song.Duration);
+                if (lengthSeconds <= 0 && e.WasCached) lengthSeconds = await YtDlpHelper.GetMediaDurationSecondsAsync(e.Job.FilePath);
+                var ordered = song.Clone();
+                ordered.Duration = SongDisplayItem.FormatDuration(lengthSeconds);
+
+                _ = OrderSongAsync(ordered, OrderSource.YouTube, insertFirst: e.Job.InsertFirst,
+                    origin: TakeYoutubeOrderOrigin(e.Job.VideoId));
 
                 if (!e.WasCached && _currentQuickMethod == QuickMethod.YoutubeHistory)
                 {
@@ -174,7 +184,8 @@ namespace UltimateKtv
             // 對話框排到之後顯示，不擋住佇列下載下一部
             Dispatcher.BeginInvoke(() =>
             {
-                if (!string.IsNullOrEmpty(song.YoutubeId) && song.SongId.StartsWith("Y"))
+                // 點唱紀錄的編號 (Y0017)；我的最愛的 SongId 是影片 ID，可能也是 Y 開頭
+                if (!string.IsNullOrEmpty(song.YoutubeId) && song.SongId.StartsWith("Y") && !YoutubeVideoId.IsValid(song.SongId))
                 {
                     var result = MessageBox.Show(Loc.T("Youtube.DownloadFailedRemove", e.Error.Message), Loc.T("Youtube.DownloadErrorTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (result == MessageBoxResult.Yes)

@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "შემთხვევითი დაკვრა: {1} - {0}",
   "Marquee.FallbackSongAdded": "სიმღერა დაემატა: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube-ის სიმღერების დამატება რჩეულებში შეუძლებელია.",
   "Fav.SongLabel": "სიმღერა: {0}",
   "Fav.SingerLabel": "შემსრულებელი: {0}",
   "Fav.SelectUser": "აირჩიეთ მომხმარებელი:",

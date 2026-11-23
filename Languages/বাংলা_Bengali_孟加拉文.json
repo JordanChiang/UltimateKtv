@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "র‍্যান্ডম প্লে (এলোমেলোভাবে বাজছে): {1} - {0}",
   "Marquee.FallbackSongAdded": "গান যোগ করা হয়েছে: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "ইউটিউব গানগুলো পছন্দের তালিকায় যোগ করা যায় না।",
   "Fav.SongLabel": "গান: {0}",
   "Fav.SingerLabel": "শিল্পী: {0}",
   "Fav.SelectUser": "ব্যবহারকারী নির্বাচন করুন:",

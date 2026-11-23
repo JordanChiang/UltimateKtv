@@ -267,7 +267,6 @@
   "Marquee.FallbackRandom": "ランダム再生: {1} - {0}",
   "Marquee.FallbackSongAdded": "楽曲を追加しました: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTubeの楽曲はお気に入りに追加できません。",
   "Fav.SongLabel": "曲名: {0}",
   "Fav.SingerLabel": "歌手名: {0}",
   "Fav.SelectUser": "ユーザーを選択:",

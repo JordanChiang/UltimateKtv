@@ -275,7 +275,7 @@
   "Marquee.FallbackRandom": "隨機播放歌曲：「{1} - {0}」",
   "Marquee.FallbackSongAdded": "點播歌曲：「{1} - {0}」",
 
-  "Fav.YoutubeNotAllowed": "YouTube 歌曲無法加入最愛。",
+  "Fav.YoutubeSource": "來源: YouTube ({0})",
   "Fav.SongLabel": "歌曲: {0}",
   "Fav.SingerLabel": "歌手: {0}",
   "Fav.SelectUser": "選擇使用者:",

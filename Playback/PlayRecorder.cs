@@ -6,7 +6,7 @@ namespace UltimateKtv.Playback
     /// <summary>
     /// 播放紀錄：決定一首歌開播後要寫入哪些紀錄。隨機歌一律不記。
     /// <list type="bullet">
-    /// <item>這次開機第一首 (本機) 歌開播時清空今日點唱，接著記錄點唱 (今日點唱 + 點唱紀錄)。</item>
+    /// <item>這次開機第一首歌開播時清空今日點唱，接著記錄點唱 (今日點唱 + 點唱紀錄)；YouTube 歌以影片 ID 記在 YoutubeFavorite 表。</item>
     /// <item>播放進度超過設定比例時播放次數加一 (每次開播只算一次)；本機歌同時更新記憶體中的歌曲。</item>
     /// <item>YouTube 歌開播時記下影片長度 (只在還沒有長度時)。</item>
     /// </list>
@@ -69,18 +69,18 @@ namespace UltimateKtv.Playback
             if (_playing == null || string.IsNullOrEmpty(playing.Id)) return;
 
             string songId = playing.Id;
-            if (isYoutube)
+            int lengthSeconds = (int)duration.TotalSeconds;
+            if (isYoutube && lengthSeconds > 0)
             {
-                int lengthSeconds = (int)duration.TotalSeconds;
-                if (lengthSeconds <= 0) return;
                 _background(() =>
                 {
                     if (SongLibrary.UpdateYoutubeSongLength(songId, lengthSeconds)) YoutubeLengthStored?.Invoke(songId, lengthSeconds);
                 });
-                return;
             }
 
             int maxSessions = _maxSessions();
+            string? filePath = playing.FilePath;
+            string name = playing.Name;
             _background(() =>
             {
                 try
@@ -90,7 +90,10 @@ namespace UltimateKtv.Playback
                         SongLibrary.ClearTodayList();
                         _todayListCleared = true;
                     }
-                    SongLibrary.RecordPlay(songId, _sessionUserId, maxSessions);
+                    if (!isYoutube)
+                        SongLibrary.RecordPlay(songId, _sessionUserId, maxSessions);
+                    else if (!SongLibrary.RecordYoutubePlay(songId, filePath, name, lengthSeconds, _sessionUserId, maxSessions))
+                        AppLogger.Log($"Play record: no video ID for YouTube '{name}' ({songId}), not recorded.");
                     _historyChanged();
                 }
                 catch (Exception ex)

@@ -267,7 +267,6 @@
   "Marquee.FallbackRandom": "Tilfældig afspilning: {1} - {0}",
   "Marquee.FallbackSongAdded": "Sang tilføjet: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube-sange kan ikke tilføjes til favoritter.",
   "Fav.SongLabel": "Sang: {0}",
   "Fav.SingerLabel": "Kunstner: {0}",
   "Fav.SelectUser": "Vælg bruger:",

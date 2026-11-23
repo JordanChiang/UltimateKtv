@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Naključno predvajanje: {1} - {0}",
   "Marquee.FallbackSongAdded": "Pesem dodana: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "Pesmi z YouTuba ni mogoče dodati med priljubljene.",
   "Fav.SongLabel": "Pesem: {0}",
   "Fav.SingerLabel": "Izvajalec: {0}",
   "Fav.SelectUser": "Izberite uporabnika:",

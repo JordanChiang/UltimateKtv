@@ -13,52 +13,13 @@ namespace UltimateKtv
     public partial class MainWindow
     {
         /// <summary>
-        /// Handles right click on song grid to show add to favorites dialog
-        /// </summary>
-        private void SongGrid_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is DataGrid grid)
-            {
-                var row = FindVisualParent<DataGridRow>(e.OriginalSource as DependencyObject);
-                if (row != null && row.Item is SongDisplayItem songItem)
-                {
-                    if (songItem.IsYoutube)
-                    {
-                        DebugLog("Ignoring right-click add to favorites for YouTube song.");
-                        return;
-                    }
-                    grid.SelectedItem = songItem;
-                    ShowAddToFavoriteDialog(songItem.Clone());
-                    e.Handled = true;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Context menu handler for adding to favorites
-        /// </summary>
-        private void AddToFavorite_Click(object sender, RoutedEventArgs e)
-        {
-            if (SongListGrid.SelectedItem is SongDisplayItem songItem)
-            {
-                if (songItem.IsYoutube)
-                {
-                    MessageBox.Show(Loc.T("Fav.YoutubeNotAllowed"), Loc.T("Common.Hint"), MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-                AppLogger.Log($"User action: Add to favorite clicked for song '{songItem.SongName}'");
-                ShowAddToFavoriteDialog(songItem.Clone());
-            }
-        }
-
-        /// <summary>
         /// 歌曲列表列內的「♥」按鈕：加入最愛
         /// </summary>
         private void SongFavoriteButton_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as FrameworkElement)?.DataContext is not SongDisplayItem songItem || songItem.IsYoutube) return;
+            if ((sender as FrameworkElement)?.DataContext is not SongDisplayItem songItem || string.IsNullOrEmpty(songItem.SongId)) return;
             AppLogger.Log($"User action: Favorite button clicked for song '{songItem.SongName}'");
-            // Clone: 列表使用固定列，換頁時列的內容會被改掉
+            // Clone: 列表與縮圖格使用固定列，換頁時列的內容會被改掉
             ShowAddToFavoriteDialog(songItem.Clone());
             ClearSongGridsSelection();
         }
@@ -66,6 +27,34 @@ namespace UltimateKtv
         /// <summary>
         /// Shows a dialog to select which user to add the song to their favorites
         /// </summary>
+        /// <summary>
+        /// 加入最愛視窗的「歌曲: 歌名」：歌名用主題色加粗，和標籤、下面的歌手/來源分得清楚 (一般歌與 YouTube 歌相同)。
+        /// </summary>
+        private TextBlock CreateFavoriteSongLabel(string songName)
+        {
+            var label = new TextBlock
+            {
+                FontSize = (double)FindResource("FontSizeS"),
+                Margin = new Thickness(0, 0, 0, 5),
+                TextWrapping = TextWrapping.Wrap
+            };
+            // 語言檔的格式是「歌曲: {0}」；翻譯沒有 {0} 時整句照舊顯示，不上色
+            string template = Loc.T("Fav.SongLabel");
+            int index = template.IndexOf("{0}", StringComparison.Ordinal);
+            if (index < 0)
+            {
+                label.Text = Loc.T("Fav.SongLabel", songName);
+                return label;
+            }
+            var name = new System.Windows.Documents.Run(songName) { FontWeight = FontWeights.SemiBold };
+            name.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty,
+                TryFindResource("PrimaryHueMidBrush") != null ? "PrimaryHueMidBrush" : "PrimaryBrush");
+            label.Inlines.Add(new System.Windows.Documents.Run(template[..index]));
+            label.Inlines.Add(name);
+            label.Inlines.Add(new System.Windows.Documents.Run(template[(index + 3)..]));
+            return label;
+        }
+
         private async void ShowAddToFavoriteDialog(SongDisplayItem songItem)
         {
             try
@@ -81,7 +70,8 @@ namespace UltimateKtv
                 }
 
                 // Create dialog content
-                var dialogContent = new StackPanel { Margin = new Thickness(20), MinWidth = 400 };
+                // 固定寬度：只設 MinWidth 時對話框量內容不限寬，長歌名 (YouTube 標題) 不會換行而把視窗撐寬
+                var dialogContent = new StackPanel { Margin = new Thickness(20), Width = 400 };
 
                 dialogContent.Children.Add(new TextBlock
                 {
@@ -91,17 +81,15 @@ namespace UltimateKtv
                     Margin = new Thickness(0, 0, 0, 15)
                 });
 
-                dialogContent.Children.Add(new TextBlock
-                {
-                    Text = Loc.T("Fav.SongLabel", songItem.SongName),
-                    FontSize = (double)FindResource("FontSizeS"),
-                    Margin = new Thickness(0, 0, 0, 5),
-                    TextWrapping = TextWrapping.Wrap
-                });
+                dialogContent.Children.Add(CreateFavoriteSongLabel(songItem.SongName));
 
+                // YouTube 歌的歌手欄放的是長度/頻道，改顯示來源與長度
+                string secondLine = songItem.IsYoutube
+                    ? Loc.T("Fav.YoutubeSource", string.IsNullOrEmpty(songItem.Duration) ? Loc.T("Youtube.UnknownLength") : songItem.Duration)
+                    : Loc.T("Fav.SingerLabel", songItem.SingerName);
                 dialogContent.Children.Add(new TextBlock
                 {
-                    Text = Loc.T("Fav.SingerLabel", songItem.SingerName),
+                    Text = secondLine,
                     FontSize = (double)FindResource("FontSizeS"),
                     Margin = new Thickness(0, 0, 0, 15),
                     TextWrapping = TextWrapping.Wrap
@@ -177,7 +165,10 @@ namespace UltimateKtv
                     if (userListBox.SelectedItem is UserInfo selectedUser)
                     {
                         DialogHost.CloseDialogCommand.Execute(null, null);
-                        AddSongToUserFavorites(songItem.SongId, selectedUser.UserId, selectedUser.UserName);
+                        if (songItem.IsYoutube)
+                            AddYoutubeToUserFavorites(songItem, selectedUser.UserId, selectedUser.UserName);
+                        else
+                            AddSongToUserFavorites(songItem.SongId, selectedUser.UserId, selectedUser.UserName);
                     }
                     else
                     {
@@ -309,6 +300,47 @@ namespace UltimateKtv
             {
                 DebugLog($"Error adding song to favorites: {ex.Message}");
                 AppLogger.LogError($"Failed to add song to favorites: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// YouTube 歌加入使用者的最愛：以影片 ID 記錄 (點唱紀錄的編號會被清除，不能用)，歌名與長度一起存。
+        /// </summary>
+        private void AddYoutubeToUserFavorites(SongDisplayItem song, string userId, string userName)
+        {
+            try
+            {
+                string videoId = YoutubeVideoId.Resolve(song.YoutubeId, song.SongId, song.FilePath);
+                if (!YoutubeVideoId.IsValid(videoId))
+                {
+                    AppLogger.Log($"YouTube favorite: no video ID for '{song.SongName}' (SongId={song.SongId}), skipped.");
+                    MarqueeAPI.ShowText(Loc.T("Fav.AddFailed"), MarqueeDisplayDevice.ConsoleScreen);
+                    return;
+                }
+
+                if (SongLibrary.IsYoutubeFavorite(userId, videoId))
+                {
+                    AppLogger.Log($"YouTube {videoId} already in favorites for user {userName}");
+                    MarqueeAPI.ShowText(Loc.T("Fav.AlreadyIn", userName), MarqueeDisplayDevice.ConsoleScreen);
+                    return;
+                }
+
+                if (SongLibrary.AddYoutubeFavorite(userId, videoId, song.SongName, SongDisplayItem.ParseDurationSeconds(song.Duration)))
+                {
+                    AppLogger.Log($"Successfully added YouTube {videoId} to {userName}'s favorites");
+                    SongDatas.ReloadFavoriteData();
+                    MarqueeAPI.ShowText(Loc.T("Fav.Added", userName), MarqueeDisplayDevice.ConsoleScreen);
+                }
+                else
+                {
+                    AppLogger.LogError($"Failed to add YouTube {videoId} to {userName}'s favorites", null);
+                    MarqueeAPI.ShowText(Loc.T("Fav.AddFailed"), MarqueeDisplayDevice.ConsoleScreen);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.LogError($"Failed to add YouTube song to favorites: {ex.Message}", ex);
+                MarqueeAPI.ShowText(Loc.T("Fav.AddFailed"), MarqueeDisplayDevice.ConsoleScreen);
             }
         }
 

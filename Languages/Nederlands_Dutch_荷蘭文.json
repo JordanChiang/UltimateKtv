@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Willekeurig afspelen: {1} - {0}",
   "Marquee.FallbackSongAdded": "Nummer toegevoegd: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube-nummers kunnen niet aan favorieten worden toegevoegd.",
   "Fav.SongLabel": "Nummer: {0}",
   "Fav.SingerLabel": "Zanger(es): {0}",
   "Fav.SelectUser": "Selecteer gebruiker:",

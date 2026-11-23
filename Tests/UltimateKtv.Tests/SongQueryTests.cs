@@ -409,5 +409,52 @@ namespace UltimateKtv.Tests
             var songs = new[] { new Song { Id = "noname", Name = "", Singer = "Jay" }, S("named", singer: "JAY") };
             Assert.Equal(new[] { "named" }, Ids(SongQuery.BySinger(songs, "jay", Options())));
         }
+
+        // ---- 我的最愛 ----
+
+        private static Dictionary<string, object?> Fav(string userId, object? songId) =>
+            new() { ["User_Id"] = userId, ["Song_Id"] = songId };
+
+        private static YoutubeFavorite Yt(string userId, string videoId) => new(userId, videoId, "影片 " + videoId, 0, null);
+
+        [Fact]
+        public void Favorites_are_the_users_library_songs_and_youtube_videos()
+        {
+            var songs = new[] { S("a"), S("b"), S("c"), new Song { Id = "noname", Name = "" } };
+            var rows = new[] { Fav("U1", "c"), Fav("U1", "a"), Fav("U2", "b"), Fav("U1", "missing"), Fav("U1", "noname"), Fav("U1", null) };
+            var youtube = new[] { Yt("U1", "ccccccccccc"), Yt("U2", "bbbbbbbbbbb"), Yt("U1", "aaaaaaaaaaa") };
+
+            var (favoriteSongs, favoriteVideos) = SongQuery.FavoritesOf("U1", songs, rows, youtube);
+
+            // 歌庫裡找不到、沒有歌名、Song_Id 空白的略過；依歌庫順序 (排序由呼叫端決定)
+            Assert.Equal(new[] { "a", "c" }, Ids(favoriteSongs));
+            // YouTube 維持加入順序，不重新排序
+            Assert.Equal(new[] { "ccccccccccc", "aaaaaaaaaaa" }, favoriteVideos.Select(f => f.VideoId));
+        }
+
+        [Fact]
+        public void Duplicate_favorite_rows_list_the_song_once()
+        {
+            var (favoriteSongs, _) = SongQuery.FavoritesOf("U1", new[] { S("a") }, new[] { Fav("U1", "a"), Fav("U1", "a") }, null);
+            Assert.Equal(new[] { "a" }, Ids(favoriteSongs));
+        }
+
+        [Fact]
+        public void A_user_with_only_youtube_favorites_still_has_favorites()
+        {
+            var (favoriteSongs, favoriteVideos) = SongQuery.FavoritesOf("U1", new[] { S("a") }, null, new[] { Yt("U1", "aaaaaaaaaaa") });
+            Assert.Empty(favoriteSongs);
+            Assert.Single(favoriteVideos);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void No_user_means_no_favorites(string? userId)
+        {
+            var (favoriteSongs, favoriteVideos) = SongQuery.FavoritesOf(userId, new[] { S("a") }, new[] { Fav("", "a") }, new[] { Yt("", "aaaaaaaaaaa") });
+            Assert.Empty(favoriteSongs);
+            Assert.Empty(favoriteVideos);
+        }
     }
 }

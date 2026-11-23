@@ -18,12 +18,13 @@ namespace UltimateKtv
     /// <summary>佇列中的一部影片。Tag 由呼叫端放自己的資料 (主程式放點歌用的歌曲項目)。</summary>
     public sealed class YoutubeDownloadJob
     {
-        internal YoutubeDownloadJob(string videoId, string title, string filePath, object? tag)
+        internal YoutubeDownloadJob(string videoId, string title, string filePath, object? tag, bool insertFirst)
         {
             VideoId = videoId;
             Title = title;
             FilePath = filePath;
             Tag = tag;
+            InsertFirst = insertFirst;
         }
 
         public string VideoId { get; }
@@ -31,6 +32,8 @@ namespace UltimateKtv
         /// <summary>下載完成 (或快取中已有) 的檔案完整路徑。</summary>
         public string FilePath { get; }
         public object? Tag { get; }
+        /// <summary>插播：完成 (或快取中已有) 時排到待播清單第一首；失敗或取消時就不插播。</summary>
+        public bool InsertFirst { get; }
     }
 
     public sealed class YoutubeDownloadProgressEventArgs : EventArgs
@@ -126,10 +129,11 @@ namespace UltimateKtv
         /// <summary>
         /// 加入佇列。existingFilePath 是本機檔案路徑時 (例如點唱紀錄中的影片) 直接用它，否則存到快取資料夾。
         /// </summary>
+        /// <param name="insertFirst">插播 (記在 Job.InsertFirst，完成時由呼叫端處理)。</param>
         /// <returns>這部影片已在佇列中時回傳 false。</returns>
-        public bool Enqueue(string videoId, string title, string? existingFilePath, object? tag)
+        public bool Enqueue(string videoId, string title, string? existingFilePath, object? tag, bool insertFirst = false)
         {
-            var job = new YoutubeDownloadJob(videoId, title, TargetPath(videoId, title, existingFilePath), tag);
+            var job = new YoutubeDownloadJob(videoId, title, TargetPath(videoId, title, existingFilePath), tag, insertFirst);
             lock (_gate)
             {
                 if (Contains(videoId)) return false;

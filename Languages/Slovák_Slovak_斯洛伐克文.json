@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Náhodné prehrávanie: {1} – {0}",
   "Marquee.FallbackSongAdded": "Skladba pridaná: {1} – {0}",
 
-  "Fav.YoutubeNotAllowed": "Skladby z YouTube nie je možné pridať medzi obľúbené.",
   "Fav.SongLabel": "Skladba: {0}",
   "Fav.SingerLabel": "Interpret: {0}",
   "Fav.SelectUser": "Vyberte používateľa:",

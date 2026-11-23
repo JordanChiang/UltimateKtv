@@ -169,6 +169,29 @@ namespace UltimateKtv
         }
 
         /// <summary>
+        /// 一位使用者的我的最愛 (主控台與手機共用；今日點唱、點唱紀錄也是「使用者」)：
+        /// Songs 是 ktv_Favorite 中這位使用者的歌庫歌曲 (歌庫裡找不到或沒有歌名的略過、不重複，依歌庫順序，排序由呼叫端決定)；
+        /// Youtube 是這位使用者的 YouTube 影片，維持 youtubeFavorites 的順序 (加入時間)，顯示時接在歌庫的歌後面。
+        /// </summary>
+        public static (List<Song> Songs, List<YoutubeFavorite> Youtube) FavoritesOf(string? userId, IEnumerable<Song>? songs,
+            IEnumerable<IReadOnlyDictionary<string, object?>>? favoriteRows, IEnumerable<YoutubeFavorite>? youtubeFavorites)
+        {
+            if (string.IsNullOrEmpty(userId)) return (new List<Song>(), new List<YoutubeFavorite>());
+
+            var songIds = new HashSet<string>(
+                (favoriteRows ?? Enumerable.Empty<IReadOnlyDictionary<string, object?>>())
+                    .Where(row => row.TryGetValue("User_Id", out var uid) && Convert.ToString(uid) == userId)
+                    .Select(row => row.TryGetValue("Song_Id", out var sid) ? Convert.ToString(sid) ?? "" : "")
+                    .Where(id => id.Length > 0));
+
+            var favoriteSongs = songIds.Count == 0 || songs == null
+                ? new List<Song>()
+                : songs.Where(s => songIds.Contains(s.Id) && !string.IsNullOrEmpty(s.Name)).ToList();
+            var youtube = (youtubeFavorites ?? Enumerable.Empty<YoutubeFavorite>()).Where(f => f.UserId == userId).ToList();
+            return (favoriteSongs, youtube);
+        }
+
+        /// <summary>
         /// 搜尋框：歌名或歌星包含 text 就算 (不分大小寫、全形半形、平假名片假名，不限字數)；
         /// text 空白 = 該語系全部，lang 空白 = 全部語系。
         /// </summary>

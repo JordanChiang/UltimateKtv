@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Satunnaistoisto: {1} – {0}",
   "Marquee.FallbackSongAdded": "Kappale lisätty: {1} – {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube-kappaleita ei voi lisätä suosikkeihin.",
   "Fav.SongLabel": "Kappale: {0}",
   "Fav.SingerLabel": "Esittäjä: {0}",
   "Fav.SelectUser": "Valitse käyttäjä:",

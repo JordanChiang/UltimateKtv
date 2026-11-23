@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Tilfeldig avspilling: {1} – {0}",
   "Marquee.FallbackSongAdded": "Sang lagt til: {1} – {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube-sanger kan ikke legges til i favoritter.",
   "Fav.SongLabel": "Sang: {0}",
   "Fav.SingerLabel": "Artist: {0}",
   "Fav.SelectUser": "Velg bruker:",

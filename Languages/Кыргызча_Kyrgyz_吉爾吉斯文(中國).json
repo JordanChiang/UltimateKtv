@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Туш келди ойнотуу: {1} - {0}",
   "Marquee.FallbackSongAdded": "Ыр кошулду: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube ырларын сүйүктүүлөргө кошууга болбойт.",
   "Fav.SongLabel": "Ыр: {0}",
   "Fav.SingerLabel": "Аткаруучу: {0}",
   "Fav.SelectUser": "Колдонуучуну тандаңыз:",

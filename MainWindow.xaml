@@ -897,6 +897,10 @@
                 <DataTrigger Binding="{Binding Language}" Value="國語">
                     <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
                 </DataTrigger>
+                <!-- YouTube 歌沒有語系，用專屬顏色 (不當成外語歌) -->
+                <DataTrigger Binding="{Binding IsYoutube}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource BrushSongYoutube}"/>
+                </DataTrigger>
                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
                     <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
                     <Setter Property="FontWeight" Value="SemiBold"/>
@@ -966,18 +970,9 @@
             <Setter Property="Foreground" Value="{DynamicResource SingerButtonBackground}" />
         </Style>
 
-        <!-- 操作欄：整列點擊 = 點歌；按鈕只負責插播與加入最愛 (YouTube 歌曲不顯示) -->
+        <!-- 操作欄：整列點擊 = 點歌；按鈕只負責插播與加入最愛 (YouTube 列表、我的最愛清單裡的 YouTube 歌也一樣，插播在下載完才排到第一首) -->
         <DataTemplate x:Key="SongListActionsCellTemplate">
             <StackPanel Orientation="Horizontal">
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsYoutube}" Value="True">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </StackPanel.Style>
                 <Button Content="{DynamicResource Str.Song.Insert}" Width="110" Margin="0,0,12,0"
                         Style="{StaticResource SongRowActionButtonStyle}" Click="SongInsertButton_Click"/>
                 <Button Width="76" ToolTip="{DynamicResource Str.Song.AddFavorite}"
@@ -1237,6 +1232,19 @@
                                                 </DataGrid.ContextMenu>
                                                 <DataGrid.Columns>
                                                     <DataGridTemplateColumn local:Loc.HeaderKey="Col.SongName" Width="300" CanUserSort="False">
+                                                        <!-- 歌名太長看不完整：滑鼠停在歌名欄 (整格，不只文字上) 顯示完整歌名，空白列不顯示。
+                                                             放在儲存格而不是 TextBlock：TextBlock 只有文字那一段，短歌名或停在格子空白處時不會出現 -->
+                                                        <DataGridTemplateColumn.CellStyle>
+                                                            <Style TargetType="DataGridCell" BasedOn="{StaticResource FloatingDataGridCellStyle}">
+                                                                <Setter Property="ToolTipService.InitialShowDelay" Value="300"/>
+                                                                <Setter Property="ToolTipService.ShowDuration" Value="10000"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding WaitingListSongName, Converter={StaticResource NotNullOrEmptyToBoolConverter}}" Value="True">
+                                                                        <Setter Property="ToolTip" Value="{Binding WaitingListSongName}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </DataGridTemplateColumn.CellStyle>
                                                         <DataGridTemplateColumn.CellTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel Orientation="Horizontal" Margin="0">
@@ -1270,7 +1278,7 @@
                                                                                                Foreground="{StaticResource BrushSuccess}"/>
                                                                     </Border>
                                                                     <!-- Song name -->
-                                                                    <TextBlock Text="{Binding WaitingListSongName}" 
+                                                                    <TextBlock Text="{Binding WaitingListSongName}"
                                                                                TextAlignment="Left"
                                                                                VerticalAlignment="Center"
                                                                                TextTrimming="CharacterEllipsis">
@@ -1776,15 +1784,9 @@
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                           PreviewMouseLeftButtonDown="SongGrid_PreviewMouseLeftButtonDown"
                                           PreviewMouseLeftButtonUp="SongGrid_PreviewMouseLeftButtonUp"
-                                          PreviewMouseRightButtonDown="SongGrid_PreviewMouseRightButtonDown"
                                           SelectionChanged="WaitingListGrid_SelectionChanged"
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
-                                    <DataGrid.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="{DynamicResource Str.Song.AddFavorite}" Click="AddToFavorite_Click"/>
-                                        </ContextMenu>
-                                    </DataGrid.ContextMenu>
                                     <DataGrid.Columns>
                                         <DataGridTextColumn x:Name="QuickSongNameColumn" local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}">
                                             <DataGridTextColumn.ElementStyle>
@@ -1805,6 +1807,10 @@
                                                             </MultiDataTrigger.Conditions>
                                                             <Setter Property="Foreground" Value="{StaticResource BrushSongForeign}"/>
                                                         </MultiDataTrigger>
+                                                        <!-- YouTube 搜尋/點唱紀錄：專屬顏色 (與我的最愛清單相同) -->
+                                                        <DataTrigger Binding="{Binding IsYoutube}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource BrushSongYoutube}"/>
+                                                        </DataTrigger>
                                                         <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
                                                             <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
                                                             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -1954,6 +1960,13 @@
                                                                               LoadedBehavior="Manual" 
                                                                               UnloadedBehavior="Stop" 
                                                                               Volume="0" />
+                                                                <!-- 左上角加入最愛 (點縮圖其他地方仍是點歌) -->
+                                                                <Button Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,6,0,0"
+                                                                        Width="60" Height="50" Background="{StaticResource BrushScrim}"
+                                                                        ToolTip="{DynamicResource Str.Song.AddFavorite}"
+                                                                        Style="{StaticResource SongRowActionButtonStyle}" Click="SongFavoriteButton_Click">
+                                                                    <materialDesign:PackIcon Kind="HeartOutline" Width="32" Height="32"/>
+                                                                </Button>
                                                                 <!-- 右上角歌曲長度 (H:MM:SS，不到 1 小時為 M:SS)，未知時隱藏 -->
                                                                 <Border x:Name="DurationBadge" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0"
                                                                         Background="{StaticResource BrushScrim}" CornerRadius="{StaticResource RadiusXSmall}" Padding="6,1">
@@ -2072,14 +2085,8 @@
                                           Visibility="Collapsed"
                                           PreviewMouseLeftButtonDown="SongGrid_PreviewMouseLeftButtonDown"
                                           PreviewMouseLeftButtonUp="SongGrid_PreviewMouseLeftButtonUp"
-                                          PreviewMouseRightButtonDown="SongGrid_PreviewMouseRightButtonDown"
                                           SelectionChanged="WaitingListGrid_SelectionChanged"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
-                                    <DataGrid.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="{DynamicResource Str.Song.AddFavorite}" Click="AddToFavorite_Click"/>
-                                        </ContextMenu>
-                                    </DataGrid.ContextMenu>
                                         <DataGrid.Columns>
                                             <DataGridTextColumn local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
@@ -2115,14 +2122,8 @@
                                           Visibility="Collapsed"
                                           PreviewMouseLeftButtonDown="SongGrid_PreviewMouseLeftButtonDown"
                                           PreviewMouseLeftButtonUp="SongGrid_PreviewMouseLeftButtonUp"
-                                          PreviewMouseRightButtonDown="SongGrid_PreviewMouseRightButtonDown"
                                           SelectionChanged="WaitingListGrid_SelectionChanged"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
-                                    <DataGrid.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="{DynamicResource Str.Song.AddFavorite}" Click="AddToFavorite_Click"/>
-                                        </ContextMenu>
-                                    </DataGrid.ContextMenu>
                                         <DataGrid.Columns>
                                             <DataGridTextColumn local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="{StaticResource LanguageSongNameColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListNameCellTextStyle}"/>

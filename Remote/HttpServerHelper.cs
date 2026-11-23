@@ -262,30 +262,22 @@ public class HttpServerHelper
 
 	public static string FavoriteSong(string user, string page, string rows)
 	{
-		if (!IsFavoriteUser(user) || SongDatas.FavoriteSongData == null || SongDatas.FavoriteSongData.Count == 0)
+		if (!IsFavoriteUser(user))
 			return EmptyResult;
 
 		try
 		{
-			// Get favorite song IDs for this user
-			var favSongIds = SongDatas.FavoriteSongData
-				.Where(x => Convert.ToString(x["User_Id"]) == user)
-				.Select(x => Convert.ToString(x["Song_Id"]))
-				.ToList();
-
-			if (favSongIds.Count == 0)
-				return EmptyResult;
-
-			// Get songs that match the favorite IDs
-			var favoriteSongs = SongDatas.SongData?
-				.Where(x => favSongIds.Contains(x.Id))
+			// 與主控台相同的組成 (SongQuery.FavoritesOf)；手機的歌庫歌曲固定依字數、筆劃排序。
+			// YouTube 最愛接在後面，以 IsYoutube 標示，網頁改呼叫 orderyoutubefavorite
+			var (songs, youtubeFavorites) = SongQuery.FavoritesOf(user, SongDatas.SongData, SongDatas.FavoriteSongData, SongDatas.YoutubeFavoriteData);
+			var favoriteSongs = songs
 				.OrderBy(x => x.WordCount)
 				.ThenBy(x => x.SongStroke)
 				.ThenBy(x => x.Name)
 				.ThenBy(x => x.Singer)
 				.ToList();
 
-			if (favoriteSongs == null || favoriteSongs.Count == 0)
+			if (favoriteSongs.Count == 0 && youtubeFavorites.Count == 0)
 				return EmptyResult;
 
 			// Convert to DataTable
@@ -296,6 +288,7 @@ public class HttpServerHelper
 			{
 				dataTable.Columns.Add(colName, typeof(string));
 			}
+			dataTable.Columns.Add("IsYoutube", typeof(bool));
 
 			foreach (var song in favoriteSongs)
 			{
@@ -304,6 +297,18 @@ public class HttpServerHelper
 				{
 					row[colName] = song.GetColumnValue(colName) ?? DBNull.Value;
 				}
+				row["IsYoutube"] = false;
+				dataTable.Rows.Add(row);
+			}
+
+			foreach (var favorite in youtubeFavorites)
+			{
+				var row = dataTable.NewRow();
+				row["Song_Id"] = favorite.VideoId;
+				row["Song_SongName"] = favorite.Name;
+				row["Song_Singer"] = "YouTube";
+				row["Song_Lang"] = "";
+				row["IsYoutube"] = true;
 				dataTable.Rows.Add(row);
 			}
 
@@ -675,6 +680,38 @@ public class HttpServerHelper
 	        catch (Exception ex)
 	        {
 	            System.Diagnostics.Debug.WriteLine($"[OrderYoutubeHistory] Exception: {ex.Message}");
+	            return ErrorResult("Order Error", ex.Message);
+	        }
+	    }
+
+	    /// <summary>
+	    /// 從我的最愛點 YouTube 歌：與主控台相同，已下載過就用點唱紀錄的檔案，否則下載到快取。
+	    /// </summary>
+	    public static string OrderYoutubeFavorite(string videoId, string userName, RemoteControl remote)
+	    {
+	        try
+	        {
+	            var favorite = SongDatas.YoutubeFavoriteData.FirstOrDefault(f => f.VideoId == videoId);
+	            if (favorite == null) return ErrorResult("Not Found", Loc.T("Web.Msg.HistoryNotFound"));
+
+	            var songItem = UltimateKtv.SongDisplayItem.FromYoutubeFavorite(favorite, SongDatas.GetYoutubeHistoryByVideoId(videoId));
+	            songItem.OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb;
+
+	            string localPath = songItem.FilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+	                ? Path.Combine(UltimateKtv.MainWindow.YoutubeCacheDir(), YoutubeVideoId.CacheFileName(songItem.SongName, videoId))
+	                : songItem.FilePath;
+	            bool isDownloaded = File.Exists(localPath);
+
+	            if (!remote.QueueYoutube(songItem))
+	            {
+	                return JsonConvert.SerializeObject(new { success = false, message = Loc.T("Web.AlreadyInPlaylist", songItem.SongName) });
+	            }
+
+	            return JsonConvert.SerializeObject(new { success = true, isDownloaded, message = Loc.T("Web.Msg.OrderOk") });
+	        }
+	        catch (Exception ex)
+	        {
+	            System.Diagnostics.Debug.WriteLine($"[OrderYoutubeFavorite] Exception: {ex.Message}");
 	            return ErrorResult("Order Error", ex.Message);
 	        }
 	    }

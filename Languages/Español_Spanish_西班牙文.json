@@ -267,7 +267,6 @@
   "Marquee.FallbackRandom": "Reproducción aleatoria: {1} - {0}",
   "Marquee.FallbackSongAdded": "Canción añadida: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "Las canciones de YouTube no se pueden añadir a favoritos.",
   "Fav.SongLabel": "Canción: {0}",
   "Fav.SingerLabel": "Intérprete: {0}",
   "Fav.SelectUser": "Seleccionar usuario:",

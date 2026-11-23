@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Véletlenszerű lejátszás: {1} – {0}",
   "Marquee.FallbackSongAdded": "Dal hozzáadva: {1} – {0}",
 
-  "Fav.YoutubeNotAllowed": "YouTube-dalok nem adhatók a kedvencekhez.",
   "Fav.SongLabel": "Dal: {0}",
   "Fav.SingerLabel": "Előadó: {0}",
   "Fav.SelectUser": "Felhasználó kiválasztása:",

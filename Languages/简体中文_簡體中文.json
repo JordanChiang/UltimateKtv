@@ -266,7 +266,6 @@
   "Marquee.FallbackRandom": "随机播放：「{1} - {0}」",
   "Marquee.FallbackSongAdded": "点播歌曲：「{1} - {0}」",
 
-  "Fav.YoutubeNotAllowed": "YouTube 歌曲无法加入收藏。",
   "Fav.SongLabel": "歌曲: {0}",
   "Fav.SingerLabel": "歌手: {0}",
   "Fav.SelectUser": "选择用户:",

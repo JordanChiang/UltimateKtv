@@ -267,7 +267,6 @@
   "Marquee.FallbackRandom": "Случайное воспроизведение: {1} — {0}",
   "Marquee.FallbackSongAdded": "Песня добавлена: {1} — {0}",
 
-  "Fav.YoutubeNotAllowed": "Песни с YouTube нельзя добавить в избранное.",
   "Fav.SongLabel": "Песня: {0}",
   "Fav.SingerLabel": "Исполнитель: {0}",
   "Fav.SelectUser": "Выберите пользователя:",

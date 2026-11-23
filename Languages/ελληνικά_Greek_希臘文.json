@@ -248,7 +248,6 @@
   "Marquee.FallbackRandom": "Τυχαία αναπαραγωγή: {1} - {0}",
   "Marquee.FallbackSongAdded": "Το τραγούδι προστέθηκε: {1} - {0}",
 
-  "Fav.YoutubeNotAllowed": "Τα τραγούδια από το YouTube δεν μπορούν να προστεθούν στα αγαπημένα.",
   "Fav.SongLabel": "Τραγούδι: {0}",
   "Fav.SingerLabel": "Ερμηνευτής: {0}",
   "Fav.SelectUser": "Επιλέξτε χρήστη:",

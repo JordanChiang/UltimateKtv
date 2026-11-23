@@ -46,6 +46,8 @@ namespace UltimateKtv
         public static DataTable? FavoriteUserData { get; private set; }
         public static List<Dictionary<string, object?>>? FavoriteSongData { get; private set; }
         public static DataTable? FavoriteSongDataSchema { get; private set; }
+        /// <summary>YouTube 我的最愛 (YoutubeFavorite 表)，依加入時間排序。</summary>
+        public static List<YoutubeFavorite> YoutubeFavoriteData { get; private set; } = new();
 
         /// <summary>
         /// Removes text within parentheses or brackets from a song title to normalize it for matching.
@@ -183,6 +185,7 @@ namespace UltimateKtv
                 FavoriteUserData = Db.GetDataTable("SELECT * FROM ktv_User ORDER BY User_Id");
                 FavoriteSongData = Db.GetDictionary("SELECT * FROM ktv_Favorite ORDER BY User_Id");
                 FavoriteSongDataSchema = Db.GetDataTable("SELECT * FROM ktv_Favorite WHERE 1=0");
+                YoutubeFavoriteData = LoadYoutubeFavorites();
 
                 // Populate lists from the newly loaded DataTables
                 if (LangData != null)
@@ -402,6 +405,15 @@ namespace UltimateKtv
                 EnsureYoutubeNameColumnLength(Db.FilePath);
             }
 
+            try
+            {
+                SongLibrary.EnsureYoutubeFavoriteTable();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"Failed to create {SongLibrary.YoutubeFavoriteTable} table: {ex.Message}");
+            }
+
             // 舊版留下的紀錄 (缺影片 ID、歌名被截斷、Lang 存成長度) 在這裡修正一次，讀取時不再寫入
             int repaired = SongLibrary.RepairYoutubeHistory();
             if (repaired > 0) AppLogger.Log($"YouTube history: repaired {repaired} legacy fields.");
@@ -497,6 +509,22 @@ namespace UltimateKtv
             }
         }
 
+        /// <summary>依影片 ID (Url 欄) 取點唱紀錄；沒有時回傳 null。</summary>
+        public static Dictionary<string, object?>? GetYoutubeHistoryByVideoId(string videoId)
+        {
+            if (string.IsNullOrEmpty(videoId)) return null;
+            try
+            {
+                var dt = Db.GetDataTable("SELECT * FROM YoutubeSongList WHERE Url = ?", videoId);
+                return dt.Rows.Count > 0 ? YoutubeRowToDictionary(dt.Rows[0]) : null;
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"GetYoutubeHistoryByVideoId Error ({videoId}): {ex.Message}");
+                return null;
+            }
+        }
+
         /// <summary>YoutubeSongList 的一列轉成字典 (舊資料已在開機時由 SongLibrary.RepairYoutubeHistory 修正)。</summary>
         private static Dictionary<string, object?> YoutubeRowToDictionary(System.Data.DataRow row)
         {
@@ -511,17 +539,35 @@ namespace UltimateKtv
         /// <summary>
         /// Reloads the favorite song data from the database.
         /// Used after modifying the ktv_Favorite table to keep the in-memory cache in sync.
+        /// 使用者清單 (ktv_User) 也一起重新載入：點唱紀錄寫入時會新增這次開機的使用者、刪掉最舊一次，
+        /// 不重新載入的話這次開機的紀錄要下次開機才列得出來。可能在背景執行緒呼叫，所以只整個換掉、不改內容。
         /// </summary>
         public static void ReloadFavoriteData()
         {
             try
             {
+                FavoriteUserData = Db.GetDataTable("SELECT * FROM ktv_User ORDER BY User_Id");
                 FavoriteSongData = Db.GetDictionary("SELECT * FROM ktv_Favorite ORDER BY User_Id");
                 Debug.WriteLine("Favorite data reloaded successfully.");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error reloading favorite data: {ex.Message}");
+            }
+            YoutubeFavoriteData = LoadYoutubeFavorites();
+        }
+
+        /// <summary>讀取 YouTube 我的最愛；讀不到 (例如表建立失敗) 時回傳空清單，不影響其他資料。</summary>
+        private static List<YoutubeFavorite> LoadYoutubeFavorites()
+        {
+            try
+            {
+                return SongLibrary.GetYoutubeFavorites();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"Failed to load YouTube favorites: {ex.Message}");
+                return new List<YoutubeFavorite>();
             }
         }
         /// <summary>
