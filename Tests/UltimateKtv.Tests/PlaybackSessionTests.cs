@@ -492,11 +492,15 @@ namespace UltimateKtv.Tests
         // ---------- 執行緒 ----------
 
         [Fact]
-        public async Task Calls_from_another_thread_throw()
+        public void Calls_from_another_thread_throw()
         {
             var session = _session;
+            Exception? ex = null;
 
-            var ex = await Task.Run(() => Record.Exception(() => session.Skip()));
+            // 用專用執行緒：場次在 thread pool 的執行緒上建立，Task.Run 可能排到同一條而不會丟例外
+            var thread = new Thread(() => ex = Record.Exception(() => session.Skip()));
+            thread.Start();
+            Assert.True(thread.Join(TimeSpan.FromSeconds(10)), "the other thread did not finish");
 
             Assert.IsType<InvalidOperationException>(ex);
         }
