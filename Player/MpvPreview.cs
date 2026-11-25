@@ -99,7 +99,7 @@ namespace UltimateKtv
         }
 
         /// <summary>建立預覽實例；libmpv 沒有 render API 或建立失敗時回傳 null (預覽改顯示黑畫面)。</summary>
-        public static MpvPreview? TryCreate(Dispatcher dispatcher, string hwdec)
+        public static MpvPreview? TryCreate(Dispatcher dispatcher, string hwdec, string? hwdecCodecs)
         {
             if (!MpvNative.IsRenderApiAvailable) return null;
             IntPtr ctx = MpvNative.Create!();
@@ -111,11 +111,14 @@ namespace UltimateKtv
                     ("config", "no"), ("vo", "libmpv"), ("ao", "null"), ("aid", "no"), ("sid", "no"),
                     ("idle", "yes"), ("keep-open", "no"), ("osd-level", "0"), ("ytdl", "no"), ("load-scripts", "no"),
                     ("input-default-bindings", "no"), ("hwdec", hwdec),
-                    ("vf", "lavfi=[scale=" + W + ":-2:flags=fast_bilinear]"), // 先縮小再渲染，CPU 少一半以上
+                    // 先縮小再渲染，CPU 少一半以上；交錯畫格先去交錯 (只處理標記為交錯的畫格、每格輸出一張)，否則縮圖有梳齒殘影
+                    ("vf", "lavfi=[yadif=mode=send_frame:deint=interlaced,scale=" + W + ":-2:flags=fast_bilinear]"),
                     ("sws-fast", "yes"), ("zimg-fast", "yes"),
                     ("demuxer-max-bytes", "32MiB"), ("demuxer-max-back-bytes", "8MiB"),
                 })
                     MpvNative.SetOptionUtf8(ctx, k, v);
+                // 與主實例相同的硬體解碼白名單 (含 MPEG-2)；主實例讀不到時維持預設
+                if (!string.IsNullOrEmpty(hwdecCodecs)) MpvNative.SetOptionUtf8(ctx, "hwdec-codecs", hwdecCodecs);
 
                 int err = MpvNative.Initialize!(ctx);
                 if (err < 0) throw new InvalidOperationException("mpv_initialize: " + MpvNative.Error(err));

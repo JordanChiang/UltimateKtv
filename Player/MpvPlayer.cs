@@ -165,9 +165,23 @@ namespace UltimateKtv
             _smoothMotion = true;
             SetOption("video-sync", "display-resample");
             SetOption("interpolation", "no");
+            // 去交錯：mpv 預設不處理，DVD/KTV 的 480i mpg 會出現橫向梳齒紋；DirectShow (LAV + EVR) 會自動去交錯。
+            // auto 只處理標記為交錯的畫格 (漸進式影片不受影響)，每個圖場輸出一格 (59.94fps，同 EVR)；
+            // 軟體解碼用 bwdif，硬體解碼由 mpv 選對應的 GPU 去交錯濾鏡
+            SetOption("deinterlace", "auto");
 
             int err = MpvNative.Initialize!(_ctx);
             if (err < 0) throw new InvalidOperationException($"mpv_initialize failed: {MpvNative.Error(err)}");
+
+            // mpv 預設的硬體解碼白名單沒有 MPEG-2 (KTV 多數歌曲)，開了硬體加速仍是軟體解碼；LAV 有開 MPEG-2 硬解。
+            // 預設清單隨 DLL 版本不同 (x64 / x86 不一樣)，所以讀出後補上，不寫死
+            // (讀不到時維持預設，不可只設 mpeg2video，否則 H.264 等反而不能硬解)
+            string? hwdecCodecs = GetString("hwdec-codecs");
+            if (!string.IsNullOrEmpty(hwdecCodecs) && !hwdecCodecs.Split(',').Contains("mpeg2video"))
+            {
+                hwdecCodecs += ",mpeg2video";
+                SetProperty("hwdec-codecs", hwdecCodecs);
+            }
 
             Observe(ObsPause, "pause", MpvNative.FORMAT_FLAG);
             Observe(ObsTimePos, "time-pos", MpvNative.FORMAT_DOUBLE);
@@ -183,7 +197,7 @@ namespace UltimateKtv
             Osd = new MpvOsd(args => Command(args), name => GetString(name), () => _host.VideoHwnd);
             Osd.ScrollingChanged += OnOsdScrollingChanged;
             WarmUpOsd();
-            _preview = MpvPreview.TryCreate(_dispatcher, settings.EnableHWAccel ? "auto-copy-safe" : "no");
+            _preview = MpvPreview.TryCreate(_dispatcher, settings.EnableHWAccel ? "auto-copy-safe" : "no", hwdecCodecs);
 
             Stretch = Stretch.Uniform;
             ApplySettings(settings);
@@ -369,7 +383,7 @@ namespace UltimateKtv
             // HWAccelMode: 0=自動, 1=NVIDIA, 2=Intel, 3=DXVA2(copy-back), 4=DXVA2(native), 5=D3D11
             string hwdec = !settings.EnableHWAccel ? "no" : settings.HWAccelMode switch
             {
-                1 => "nvdec",
+                1 => "nvdec-copy", // 影像輸出是 d3d11，沒有 CUDA 互通 (nvdec 會 Could not create device 退回軟解)
                 3 => "dxva2-copy",
                 4 => "dxva2",
                 5 => "d3d11va",
