@@ -1024,7 +1024,7 @@ namespace UltimateKtv
                     ApplyQuickSongListLayout();
                     if (!useYoutubeGrid)
                     {
-                        // 歌星搜尋時列出的是歌手，不顯示插播/最愛；Youtube 列表 (搜尋結果、點播記錄) 與一般列表一樣有插播/最愛
+                        // 歌星搜尋時列出的是歌手，不顯示插播/最愛；Youtube 列表 (點播記錄；搜尋結果用縮圖格，只有 ♥) 與一般列表一樣有插播/最愛
                         bool isYoutubeList = _searchMode == SearchMode.Youtube;
                         QuickActionsColumn.Visibility = _isSingerSearchMode ? Visibility.Collapsed : Visibility.Visible;
                         // Youtube 列表不需要語言欄，歌名欄 = 1100 扣掉操作欄，歌曲時間欄取剩餘寬度 (約 200)

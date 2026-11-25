@@ -27,9 +27,6 @@ namespace UltimateKtv
         }
 
         /// <summary>
-        /// Shows a dialog to select which user to add the song to their favorites
-        /// </summary>
-        /// <summary>
         /// 加入最愛視窗的「歌曲: 歌名」：歌名用主題色加粗，和標籤、下面的歌手/來源分得清楚 (一般歌與 YouTube 歌相同)。
         /// </summary>
         private TextBlock CreateFavoriteSongLabel(string songName)
@@ -57,6 +54,9 @@ namespace UltimateKtv
             return label;
         }
 
+        /// <summary>
+        /// Shows a dialog to select which user to add the song to their favorites
+        /// </summary>
         private async void ShowAddToFavoriteDialog(SongDisplayItem songItem)
         {
             try

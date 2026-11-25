@@ -41,7 +41,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 | :--- | :--- |
 | `Updater` (net471, 一律 x86) | `Update/ZipHelper.cs` |
 | `StyleSimulator` | `Settings/AppSettings.cs`, `Themes/ThemeSettings.cs`, `Themes/NavMenu.cs`, `Themes/RowStyleBrushes.cs`, `Themes/AmbientBackground.cs`, `Themes/MicroFx.cs` |
-| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`AudioChannel.cs`、`SongLibrary.cs`、`Song.cs`、`Singer.cs`、`SongQuery.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDuration.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Themes/NavMenu.cs`, `Remote/WebCultureMatcher.cs`, `Remote/RemoteCommands.cs`, `Player/MpvNative.cs`, `Player/DirectShowAudioRenderer.cs`, `Update/UpdateManifest.cs` |
+| `Tests/UltimateKtv.Tests` | `Playback/*.cs`, `Infrastructure/AppLogger.cs`, `Library/` 的 `Db.cs`、`DbHelper.cs`、`DataTableExtension.cs`、`AudioChannel.cs`、`SongLibrary.cs`、`Song.cs`、`Singer.cs`、`SongQuery.cs`, `Lyrics/LyricsSource.cs`, `Youtube/YoutubeVideoId.cs`, `Youtube/YoutubeDuration.cs`, `Youtube/YoutubeDownloadQueue.cs`, `Youtube/YoutubeFormat.cs`, `Settings/AppSettings.cs`, `Settings/SettingsJson.cs`, `Themes/ThemeSettings.cs`, `Themes/NavMenu.cs`, `Remote/WebCultureMatcher.cs`, `Remote/RemoteCommands.cs`, `Player/MpvNative.cs`, `Player/DirectShowAudioRenderer.cs`, `Update/UpdateManifest.cs` |
 
 搬移或改名這些檔案時，要一併改上述專案 csproj 的 `Include` 路徑。
 
@@ -78,7 +78,7 @@ dotnet test Tests/UltimateKtv.Tests/UltimateKtv.Tests.csproj -p:Platform=x64 --f
 
 libmpv 的影片是原生視窗，WPF 元素疊不上去：電視畫面的跑馬燈/歌詞由 `ITvOverlay` 處理 (`Player/MpvOsd.cs` 用 mpv overlay 合成；DirectShow 直接用 WPF 疊加)，主控台預覽是第二個 mpv 軟體渲染實例 (`MpvPreview` → `D3DImageSurface`)。兩個引擎的音訊處理 (消人聲、增益、限制器、音量) 必須與 MediaKit 一致。
 
-歌詞來源的規則在 `Lyrics/LyricsSource` (同檔名字幕檔 `.ass` > `.ssa` > `.srt` > 內嵌預設字幕軌 > `.lrc`，一次一種)：字幕檔在開檔前由 `PlayerTarget` 交給引擎 (`UKtvPlayer.SubtitleFile`)，內嵌軌與 `.lrc` 在 MediaOpened 才決定 (`LoadLyricsForSong`)；`.lrc` 由程式畫在電視疊加層，其他由引擎渲染。mpv 用 `sub-files` (關掉 `sub-auto`，否則會把 `.lrc`、`歌名.zh-TW.srt` 也載入)；DirectShow 由 MediaKit 的 VSFilter 畫，VSFilter 會載入所有同名開頭的字幕檔、沒有 BOM 一律當 ANSI，所以 MediaKit 交給它的是暫存資料夾裡改了唯一檔名的複本 (合法 UTF-8 補 BOM)。`.srt` 的外觀沿用 LRC 歌詞 (`VideoDisplayWindow.GetPlainSubtitleStyle`)，`.ass` 一律照檔案。兩個平台的 `vsfilter.dll` 都是 MPC-HC 官方 GitHub release 1.7.13 的 standalone filters (原本 x86 的 1.7.17 nightly 用 `put_TextSettings` 設 `.srt` 外觀時陰影/外框會畫錯位置)。
+歌詞來源的規則在 `Lyrics/LyricsSource` (同檔名字幕檔 `.ass` > `.ssa` > `.srt` > 內嵌預設字幕軌 > `.lrc`，一次一種)：字幕檔在開檔前由 `PlayerTarget` 交給引擎 (`UKtvPlayer.SubtitleFile`)，內嵌軌與 `.lrc` 在 MediaOpened 才決定 (`LoadLyricsForSong`)；`.lrc` 由程式畫在電視疊加層，其他由引擎渲染。mpv 用 `sub-files` (關掉 `sub-auto`，否則會把 `.lrc`、`歌名.zh-TW.srt` 也載入)；DirectShow 由 MediaKit 的 VSFilter 畫，VSFilter 會載入所有同名開頭的字幕檔、沒有 BOM 一律當 ANSI，所以 MediaKit 交給它的是暫存資料夾裡改了唯一檔名的複本 (合法 UTF-8 補 BOM)。`.srt` 的外觀沿用 LRC 歌詞 (`VideoDisplayWindow.GetPlainSubtitleStyle`)，`.ass` 一律照檔案；DirectShow 只套得上字型、字級、粗體、顏色與有無陰影 (VSFilter 的 `put_TextSettings` 沒有底部距離、陰影位移/顏色，固定 2 px)，mpv 全部套用。兩個平台的 `vsfilter.dll` 都是 MPC-HC 官方 GitHub release 1.7.13 的 standalone filters (原本 x86 的 1.7.17 nightly 用 `put_TextSettings` 設 `.srt` 外觀時陰影/外框會畫錯位置)。
 
 ### 歌庫 / 資料庫
 - **`Db`** — 唯一的資料庫入口。執行目錄有 `CrazySong.db` 就用 SQLite，否則用 `CrazySong.mdb` (Access：x64 用 ACE.OLEDB.12.0、x86 用 Jet 4.0)。SQL 一律用 `?` 位置參數；兩種資料庫的 SQL 差異 (例如 `IIF` vs `COALESCE`) 用 `Db.IsAccess` 分支。決定資料庫種類的是靜態建構子，測試必須在第一次碰 `Db` 前建立 SQLite 檔。
