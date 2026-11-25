@@ -155,7 +155,8 @@ try {
     Check '最愛清單有 YouTube 影片' ($null -ne $row) ("rows=" + @($rows).Count)
     if ($row) {
         Check '最愛列標示 IsYoutube' ($row.IsYoutube -eq $true)
-        Check '最愛列歌手欄為 YouTube' ($row.Song_Singer -eq 'YouTube') $row.Song_Singer
+        # 歌手欄為「YT-長度」(SongDisplayItem.YoutubeFavoriteSinger)；上面寫入的長度是 30 秒
+        Check '最愛列歌手欄為 YT-長度' ($row.Song_Singer -eq 'YT-0:30') $row.Song_Singer
         Check '最愛列歌名' ($row.Song_SongName -eq $VideoName) $row.Song_SongName
     }
 

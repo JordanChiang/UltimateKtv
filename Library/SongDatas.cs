@@ -525,6 +525,49 @@ namespace UltimateKtv
             }
         }
 
+        /// <summary>
+        /// 點唱紀錄依影片 ID (Url 欄) 建索引：一次讀出整張表，列出多首 YouTube 最愛時不必每首各查一次 DB。
+        /// 同一部影片有多筆時取第一筆 (同 GetYoutubeHistoryByVideoId)；讀取失敗時回傳空索引。
+        /// </summary>
+        public static Dictionary<string, Dictionary<string, object?>> GetYoutubeHistoryByVideoIds()
+        {
+            var index = new Dictionary<string, Dictionary<string, object?>>(StringComparer.Ordinal);
+            try
+            {
+                var dt = Db.GetDataTable("SELECT * FROM YoutubeSongList");
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    string url = row["Url"]?.ToString()?.Trim() ?? "";
+                    if (url.Length > 0 && !index.ContainsKey(url)) index[url] = YoutubeRowToDictionary(row);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"GetYoutubeHistoryByVideoIds Error: {ex.Message}");
+            }
+            return index;
+        }
+
+        /// <summary>點唱紀錄裡所有影片 ID (Url 欄)；YouTube 搜尋結果用來標示「點過的」。讀取失敗時回傳空集合。</summary>
+        public static HashSet<string> GetYoutubeHistoryVideoIds()
+        {
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+            try
+            {
+                var dt = Db.GetDataTable("SELECT Url FROM YoutubeSongList");
+                foreach (System.Data.DataRow row in dt.Rows)
+                {
+                    string url = row[0]?.ToString()?.Trim() ?? "";
+                    if (url.Length > 0) ids.Add(url);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppLogger.Log($"GetYoutubeHistoryVideoIds Error: {ex.Message}");
+            }
+            return ids;
+        }
+
         /// <summary>YoutubeSongList 的一列轉成字典 (舊資料已在開機時由 SongLibrary.RepairYoutubeHistory 修正)。</summary>
         private static Dictionary<string, object?> YoutubeRowToDictionary(System.Data.DataRow row)
         {

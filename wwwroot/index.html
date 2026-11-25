@@ -348,13 +348,14 @@
 
         .song-item.wrap-mode .song-info {
             flex-wrap: wrap;
+            /* 換行後歌名與下一行 (歌手 / YT-長度) 只留小間距，不然 gap 10px 疊上去像多一行空白 */
+            row-gap: 4px;
         }
 
         .song-item.wrap-mode .song-name {
             white-space: normal;
             word-break: break-all;
             flex: 0 0 100%;
-            margin-bottom: 5px;
             padding-right: 0;
         }
 
@@ -505,6 +506,11 @@
 
         .song-item.yt-busy {
             cursor: default;
+        }
+
+        /* YouTube 搜尋結果已在點播記錄 (點過)：改用淺藍底色 (一般卡片是淺綠)；hover 仍是共用的紫色 */
+        .song-item.yt-in-history {
+            background: rgba(179, 222, 247, 0.95);
         }
 
         .loading {
@@ -1406,6 +1412,8 @@
                 const data = JSON.parse(e.data);
                 const progressContainer = document.getElementById(`yt-progress-container-${data.videoId}`);
                 if (progressContainer) progressContainer.style.display = 'none';
+                // 下載完已記入點播記錄：搜尋結果這一列改成「點過」的框線，不必重新搜尋
+                document.getElementById(`yt-row-${data.videoId}`)?.classList.add('yt-in-history');
                 setYtRowState(data.videoId, 'done', t('Web.OrderOk', '點歌成功'));
                 showToast(t('Web.YtAdded', 'YouTube 歌曲已加入清單！'), 'success');
             });
@@ -2681,7 +2689,7 @@
                 videos.forEach(video => {
                     // Video data maps to SongDisplayItem properties from the server
                     html += `
-                        <div id="yt-row-${video.Song_Id}" class="song-item wrap-mode" style="flex-direction: column; align-items: stretch;" onclick="orderYoutube('${video.Song_Id}')">
+                        <div id="yt-row-${video.Song_Id}" class="song-item wrap-mode${video.InHistory ? ' yt-in-history' : ''}" style="flex-direction: column; align-items: stretch;" onclick="orderYoutube('${video.Song_Id}')">
                             <div style="display: flex; align-items: center; width: 100%;">
                                 <div class="song-info">
                                     <span class="song-name" style="flex: 1;">${video.Song_SongName}</span>

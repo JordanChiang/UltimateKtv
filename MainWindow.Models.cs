@@ -81,6 +81,9 @@ namespace UltimateKtv
         public System.Windows.Media.ImageSource? ThumbnailImage { get => _thumbnailImage; set => Set(ref _thumbnailImage, value); }
         /// <summary>YouTube 縮圖右上角顯示的歌曲長度 (H:MM:SS 或 M:SS)，未知時為空字串。</summary>
         public string Duration { get => _duration; set => Set(ref _duration, value); }
+        private bool _isInYoutubeHistory;
+        /// <summary>YouTube 搜尋結果的影片已在點唱紀錄中 (點過)；縮圖格以不同框線標示。</summary>
+        public bool IsInYoutubeHistory { get => _isInYoutubeHistory; set => Set(ref _isInYoutubeHistory, value); }
 
         /// <summary>從歌庫的歌建立列表項目；歌庫未設定音量時用 90、伴唱位置用 0。</summary>
         public static SongDisplayItem FromSong(Song song) => new SongDisplayItem
@@ -134,7 +137,7 @@ namespace UltimateKtv
 
         /// <summary>
         /// YouTube 我的最愛轉成清單項目。已下載過 (有點唱紀錄) 時沿用紀錄的檔案與音量，否則點了才下載；
-        /// 歌手欄顯示「YouTube」，與歌庫的歌混在最愛清單時看得出來源 (長度仍在 Duration，加入最愛視窗會用到)。
+        /// 歌手欄顯示「YT-長度」，與歌庫的歌混在最愛清單時看得出來源 (長度也在 Duration，加入最愛視窗會用到)。
         /// </summary>
         public static SongDisplayItem FromYoutubeFavorite(YoutubeFavorite favorite, IReadOnlyDictionary<string, object?>? history)
         {
@@ -152,9 +155,13 @@ namespace UltimateKtv
                     Duration = FormatDuration(favorite.LengthSeconds),
                 };
             if (string.IsNullOrEmpty(item.Duration)) item.Duration = FormatDuration(favorite.LengthSeconds);
-            item.SingerName = "YouTube";
+            item.SingerName = YoutubeFavoriteSinger(item.Duration);
             return item;
         }
+
+        /// <summary>我的最愛清單裡 YouTube 歌的歌手欄：「YT-長度」，長度未知時只有「YT」(主畫面與手機共用)。</summary>
+        public static string YoutubeFavoriteSinger(string? duration) =>
+            string.IsNullOrEmpty(duration) ? "YT" : $"YT-{duration}";
 
         /// <summary>把秒數格式化為 H:MM:SS (不到 1 小時為 M:SS)；0 以下回傳空字串。</summary>
         public static string FormatDuration(double totalSeconds) => YoutubeDuration.Format(totalSeconds);
@@ -181,6 +188,7 @@ namespace UltimateKtv
             ThumbnailUrl = src.ThumbnailUrl;
             ThumbnailImage = src.ThumbnailImage;
             Duration = src.Duration;
+            IsInYoutubeHistory = src.IsInYoutubeHistory;
         }
 
         /// <summary>

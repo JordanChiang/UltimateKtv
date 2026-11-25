@@ -838,6 +838,7 @@ namespace UltimateKtv
 
                     // Use YoutubeExplode to search for videos
                     var youtubeResults = await _youtube.Search.GetVideosAsync(key).CollectAsync(SettingsManager.Instance.CurrentSettings.YoutubeSearchCount);
+                    var historyIds = SongDatas.GetYoutubeHistoryVideoIds();
                     var results = youtubeResults.Select(v => {
                         string durationStr = "";
                         if (v.Duration.HasValue)
@@ -856,7 +857,8 @@ namespace UltimateKtv
                             IsYoutube = true,
                             Volume = 30,
                             ThumbnailUrl = v.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url,
-                            Duration = v.Duration.HasValue ? SongDisplayItem.FormatDuration(v.Duration.Value.TotalSeconds) : ""
+                            Duration = v.Duration.HasValue ? SongDisplayItem.FormatDuration(v.Duration.Value.TotalSeconds) : "",
+                            IsInYoutubeHistory = historyIds.Contains(v.Id.Value)
                         };
                     }).ToList();
 

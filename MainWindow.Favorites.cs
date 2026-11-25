@@ -17,6 +17,8 @@ namespace UltimateKtv
         /// </summary>
         private void SongFavoriteButton_Click(object sender, RoutedEventArgs e)
         {
+            // 縮圖格的 ♥ 在 ThumbnailButton 的範本裡：Click 會冒泡到外層，不擋下會同時點歌
+            e.Handled = true;
             if ((sender as FrameworkElement)?.DataContext is not SongDisplayItem songItem || string.IsNullOrEmpty(songItem.SongId)) return;
             AppLogger.Log($"User action: Favorite button clicked for song '{songItem.SongName}'");
             // Clone: 列表與縮圖格使用固定列，換頁時列的內容會被改掉

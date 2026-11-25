@@ -223,6 +223,8 @@
   "Youtube.DownloadingRemaining": "下載中.. (剩餘: {0})",
   "Youtube.Downloading": "下載中..",
   "Youtube.DownloadingEllipsis": "下載中...",
+  "Youtube.DownloadStarted": "YouTube 影片下載中，完成後自動加入待播清單：{0}",
+  "Youtube.AlreadyQueued": "「{0}」已在待播清單或下載佇列中",
   "Youtube.FallbackDownloading": "備用引擎下載中...",
   "Youtube.StatusRemaining": "{0} (剩餘: {1})",
   "Youtube.UserCancelled": "使用者取消下載",

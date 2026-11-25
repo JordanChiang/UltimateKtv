@@ -215,6 +215,8 @@
   "Youtube.DownloadingRemaining": "Downloading.. ({0} left)",
   "Youtube.Downloading": "Downloading..",
   "Youtube.DownloadingEllipsis": "Downloading...",
+  "Youtube.DownloadStarted": "Downloading YouTube video, it will be added to the waiting list when done: {0}",
+  "Youtube.AlreadyQueued": "\"{0}\" is already in the waiting list or download queue",
   "Youtube.FallbackDownloading": "Downloading with backup engine...",
   "Youtube.StatusRemaining": "{0} ({1} left)",
   "Youtube.UserCancelled": "Download cancelled by user",

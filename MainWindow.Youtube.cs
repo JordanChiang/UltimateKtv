@@ -77,6 +77,9 @@ namespace UltimateKtv
             if (IsYoutubeInWaitingList(videoId, song) || !YoutubeQueue.Enqueue(videoId, song.SongName, song.FilePath, song, insertFirst))
             {
                 AppLogger.Log($"YouTube: '{song.SongName}' ({videoId}) is already in the waiting list or download queue, skipped.");
+                // 主控台點的才提示 (手機由 API 回應處理)；插播時也是這裡，否則按了沒反應
+                if (tappedOnScreen)
+                    MarqueeAPI.ShowText(Loc.T("Youtube.AlreadyQueued", song.SongName), UltimateKtv.Enums.MarqueeDisplayDevice.ConsoleScreen);
                 return false;
             }
             if (tappedOnScreen) RememberYoutubeOrderOrigin(videoId);
@@ -106,6 +109,9 @@ namespace UltimateKtv
                 _youtubeShownJob = current;
                 YoutubeDownloadPercentage = 0;
                 if (YoutubeDownloadText != null) YoutubeDownloadText.Visibility = Visibility.Visible;
+                // 下載狀態只顯示在 YouTube 頁上方；從其他頁點的 (例如我的最愛) 看不到，改用主控台跑馬燈提示
+                if (YoutubeStatusPanel?.Visibility != Visibility.Visible)
+                    MarqueeAPI.ShowText(Loc.T("Youtube.DownloadStarted", current.Title), UltimateKtv.Enums.MarqueeDisplayDevice.ConsoleScreen);
                 DebugLog($"YouTube Download: Starting for {current.Title} ({current.VideoId})");
             }
             UpdateYoutubeDownloadQueueUI();
@@ -133,6 +139,7 @@ namespace UltimateKtv
                 song.FilePath = e.Job.FilePath;
                 string recordId = SongLibrary.RecordYoutubeSong(e.Job.VideoId, song.SongName, e.Job.FilePath, song.Language, song.Volume,
                     VocalSwitch.YoutubeDefaultChannel(SettingsManager.Instance.CurrentSettings.YoutubeDefaultNoVocal));
+                MarkYoutubeInHistory(e.Job.VideoId);
 
                 int lengthSeconds = 0;
                 if (!e.WasCached)
@@ -228,6 +235,14 @@ namespace UltimateKtv
                 foreach (var item in cached.Where(Matches)) { item.SingerName = lengthText; item.Duration = durationText; }
             }
             foreach (var item in _quickSongListPageItems.Where(Matches)) { item.SingerName = lengthText; item.Duration = durationText; }
+        }
+
+        /// <summary>剛記入點唱紀錄的影片：搜尋結果 (含目前這頁的縮圖格) 改成「點過」的框線，不必重新搜尋。</summary>
+        private void MarkYoutubeInHistory(string videoId)
+        {
+            if (string.IsNullOrEmpty(videoId)) return;
+            foreach (var item in _youtubeSearchResults.Concat(_youtubeGridPageItems).Where(s => s.IsYoutube && s.SongId == videoId))
+                item.IsInYoutubeHistory = true;
         }
 
         /// <summary>取消下載：停止目前這首並清空下載佇列。</summary>

@@ -1981,6 +1981,11 @@
                                                             <Trigger Property="IsMouseOver" Value="True">
                                                                 <Setter TargetName="border" Property="Background" Value="{StaticResource BrushOverlayHover}"/>
                                                             </Trigger>
+                                                            <!-- 已在點播記錄 (點過) 的影片：YouTube 歌名的綠色框線 -->
+                                                            <DataTrigger Binding="{Binding IsInYoutubeHistory}" Value="True">
+                                                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushSongYoutube}"/>
+                                                                <Setter TargetName="border" Property="BorderThickness" Value="6"/>
+                                                            </DataTrigger>
                                                             <DataTrigger Binding="{Binding Duration}" Value="">
                                                                 <Setter TargetName="DurationBadge" Property="Visibility" Value="Collapsed"/>
                                                             </DataTrigger>

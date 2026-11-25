@@ -445,7 +445,12 @@ namespace UltimateKtv
             var (songs, youtube) = SongQuery.FavoritesOf(userId, SongDatas.SongData, SongDatas.FavoriteSongData, SongDatas.YoutubeFavoriteData);
             var options = SongQueryOptions.FromSettings(SettingsManager.Instance.CurrentSettings);
             _allSongs = SongQuery.Sort(songs, options).Select(SongDisplayItem.FromSong).ToList();
-            _allSongs.AddRange(youtube.Select(f => SongDisplayItem.FromYoutubeFavorite(f, SongDatas.GetYoutubeHistoryByVideoId(f.VideoId))));
+            if (youtube.Count > 0)
+            {
+                // 點唱紀錄一次讀出再對照，不要每首最愛各查一次 DB
+                var history = SongDatas.GetYoutubeHistoryByVideoIds();
+                _allSongs.AddRange(youtube.Select(f => SongDisplayItem.FromYoutubeFavorite(f, history.GetValueOrDefault(f.VideoId))));
+            }
 
             // Calculate pagination for songs
             _totalSongPages = (_allSongs.Count == 0) ? 1 : (_allSongs.Count + CurrentSongPageSize - 1) / CurrentSongPageSize;

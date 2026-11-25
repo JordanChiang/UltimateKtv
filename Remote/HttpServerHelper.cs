@@ -301,12 +301,18 @@ public class HttpServerHelper
 				dataTable.Rows.Add(row);
 			}
 
+			// 長度同主畫面：點唱紀錄有長度就用紀錄的，否則用加入最愛時存的 (點唱紀錄一次讀出，不逐首查 DB)
+			var history = youtubeFavorites.Count > 0 ? SongDatas.GetYoutubeHistoryByVideoIds() : null;
 			foreach (var favorite in youtubeFavorites)
 			{
+				int lengthSeconds = favorite.LengthSeconds;
+				if (history != null && history.TryGetValue(favorite.VideoId, out var record)
+					&& int.TryParse(record.GetValueOrDefault("Length")?.ToString(), out int recorded) && recorded > 0)
+					lengthSeconds = recorded;
 				var row = dataTable.NewRow();
 				row["Song_Id"] = favorite.VideoId;
 				row["Song_SongName"] = favorite.Name;
-				row["Song_Singer"] = "YouTube";
+				row["Song_Singer"] = UltimateKtv.SongDisplayItem.YoutubeFavoriteSinger(UltimateKtv.SongDisplayItem.FormatDuration(lengthSeconds));
 				row["Song_Lang"] = "";
 				row["IsYoutube"] = true;
 				dataTable.Rows.Add(row);
@@ -571,6 +577,7 @@ public class HttpServerHelper
 	        {
 	            var youtube = new YoutubeClient();
 	            var youtubeResults = await youtube.Search.GetVideosAsync(keyword).CollectAsync(50);
+	            var historyIds = SongDatas.GetYoutubeHistoryVideoIds();
 
 	            var results = youtubeResults.Select(v => new
 	            {
@@ -580,7 +587,8 @@ public class HttpServerHelper
 	                Song_Lang = v.Duration.HasValue ? UltimateKtv.SongDisplayItem.FormatDuration(v.Duration.Value.TotalSeconds) : "",
 	                FilePath = v.Url,
 	                IsYoutube = true,
-	                Song_Volume = 30
+	                Song_Volume = 30,
+	                InHistory = historyIds.Contains(v.Id.Value) // 已在點播記錄 (點過)：網頁改用淺藍底色 (主控台縮圖格是綠框)
 	            }).ToList();
 
 	            return JsonConvert.SerializeObject(results);
