@@ -327,7 +327,7 @@ namespace UltimateKtv
                     return;
                 }
 
-                if (SongLibrary.AddYoutubeFavorite(userId, videoId, song.SongName, SongDisplayItem.ParseDurationSeconds(song.Duration)))
+                if (SongLibrary.AddYoutubeFavorite(userId, videoId, song.SongName, YoutubeDuration.ParseSeconds(song.Duration)))
                 {
                     AppLogger.Log($"Successfully added YouTube {videoId} to {userName}'s favorites");
                     SongDatas.ReloadFavoriteData();

@@ -312,7 +312,7 @@ public class HttpServerHelper
 				var row = dataTable.NewRow();
 				row["Song_Id"] = favorite.VideoId;
 				row["Song_SongName"] = favorite.Name;
-				row["Song_Singer"] = UltimateKtv.SongDisplayItem.YoutubeFavoriteSinger(UltimateKtv.SongDisplayItem.FormatDuration(lengthSeconds));
+				row["Song_Singer"] = UltimateKtv.SongDisplayItem.YoutubeFavoriteSinger(YoutubeDuration.Format(lengthSeconds));
 				row["Song_Lang"] = "";
 				row["IsYoutube"] = true;
 				dataTable.Rows.Add(row);
@@ -584,7 +584,7 @@ public class HttpServerHelper
 	                Song_Id = v.Id.Value,
 	                Song_SongName = v.Title,
 	                Song_Singer = v.Author.ChannelTitle,
-	                Song_Lang = v.Duration.HasValue ? UltimateKtv.SongDisplayItem.FormatDuration(v.Duration.Value.TotalSeconds) : "",
+	                Song_Lang = v.Duration.HasValue ? YoutubeDuration.Format(v.Duration.Value.TotalSeconds) : "",
 	                FilePath = v.Url,
 	                IsYoutube = true,
 	                Song_Volume = 30,
@@ -623,8 +623,7 @@ public class HttpServerHelper
 	            };
 
 	            // 下載快取裡已有這部影片時，手機顯示「已下載」
-	            string vId = YoutubeVideoId.Resolve(songItem.YoutubeId, songItem.SongId);
-	            bool isDownloaded = File.Exists(Path.Combine(UltimateKtv.MainWindow.YoutubeCacheDir(), YoutubeVideoId.CacheFileName(songItem.SongName, vId)));
+	            bool isDownloaded = IsYoutubeDownloaded(songItem);
 
 	            bool downloadQueued = false;
 	            bool alreadyQueued = false;
@@ -693,6 +692,17 @@ public class HttpServerHelper
 	    }
 
 	    /// <summary>
+	    /// 影片是否已在本機 (手機顯示「已下載」)：FilePath 是本機檔案 (點唱紀錄) 就看它，
+	    /// 否則 (還是網址) 看下載快取裡的「{歌名}_{videoId}.mp4」。
+	    /// </summary>
+	    private static bool IsYoutubeDownloaded(UltimateKtv.SongDisplayItem song)
+	    {
+	        if (!song.FilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return File.Exists(song.FilePath);
+	        string videoId = YoutubeVideoId.Resolve(song.YoutubeId, song.SongId, song.FilePath);
+	        return File.Exists(Path.Combine(UltimateKtv.MainWindow.YoutubeCacheDir(), YoutubeVideoId.CacheFileName(song.SongName, videoId)));
+	    }
+
+	    /// <summary>
 	    /// 從我的最愛點 YouTube 歌：與主控台相同，已下載過就用點唱紀錄的檔案，否則下載到快取。
 	    /// </summary>
 	    public static string OrderYoutubeFavorite(string videoId, string userName, RemoteControl remote)
@@ -705,10 +715,7 @@ public class HttpServerHelper
 	            var songItem = UltimateKtv.SongDisplayItem.FromYoutubeFavorite(favorite, SongDatas.GetYoutubeHistoryByVideoId(videoId));
 	            songItem.OrderedBy = !string.IsNullOrEmpty(userName) ? userName : Loc.OrderedByWeb;
 
-	            string localPath = songItem.FilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-	                ? Path.Combine(UltimateKtv.MainWindow.YoutubeCacheDir(), YoutubeVideoId.CacheFileName(songItem.SongName, videoId))
-	                : songItem.FilePath;
-	            bool isDownloaded = File.Exists(localPath);
+	            bool isDownloaded = IsYoutubeDownloaded(songItem);
 
 	            if (!remote.QueueYoutube(songItem))
 	            {

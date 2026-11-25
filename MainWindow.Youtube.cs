@@ -162,10 +162,10 @@ namespace UltimateKtv
 
                 // 待播清單的歌手欄顯示影片長度 (QueuedSong.Duration)：手機點歌沒有長度，下載完量的、或快取檔量的。
                 // 複本：Tag 可能就是列表上的項目，不能改到列表的顯示
-                if (lengthSeconds <= 0) lengthSeconds = SongDisplayItem.ParseDurationSeconds(song.Duration);
+                if (lengthSeconds <= 0) lengthSeconds = YoutubeDuration.ParseSeconds(song.Duration);
                 if (lengthSeconds <= 0 && e.WasCached) lengthSeconds = await YtDlpHelper.GetMediaDurationSecondsAsync(e.Job.FilePath);
                 var ordered = song.Clone();
-                ordered.Duration = SongDisplayItem.FormatDuration(lengthSeconds);
+                ordered.Duration = YoutubeDuration.Format(lengthSeconds);
 
                 _ = OrderSongAsync(ordered, OrderSource.YouTube, insertFirst: e.Job.InsertFirst,
                     origin: TakeYoutubeOrderOrigin(e.Job.VideoId));
@@ -226,7 +226,7 @@ namespace UltimateKtv
         {
             if (string.IsNullOrEmpty(songId) || lengthSeconds <= 0) return;
             string lengthText = TimeSpan.FromSeconds(lengthSeconds).ToString(@"hh\:mm\:ss");
-            string durationText = SongDisplayItem.FormatDuration(lengthSeconds);
+            string durationText = YoutubeDuration.Format(lengthSeconds);
 
             bool Matches(SongDisplayItem s) => s.IsYoutube && (s.SongId == songId || s.YoutubeId == songId);
 

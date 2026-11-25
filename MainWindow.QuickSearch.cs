@@ -857,7 +857,7 @@ namespace UltimateKtv
                             IsYoutube = true,
                             Volume = 30,
                             ThumbnailUrl = v.Thumbnails.OrderByDescending(t => t.Resolution.Area).FirstOrDefault()?.Url,
-                            Duration = v.Duration.HasValue ? SongDisplayItem.FormatDuration(v.Duration.Value.TotalSeconds) : "",
+                            Duration = v.Duration.HasValue ? YoutubeDuration.Format(v.Duration.Value.TotalSeconds) : "",
                             IsInYoutubeHistory = historyIds.Contains(v.Id.Value)
                         };
                     }).ToList();

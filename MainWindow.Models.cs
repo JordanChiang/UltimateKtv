@@ -131,7 +131,7 @@ namespace UltimateKtv
                 YoutubeId = url,
                 Volume = Number("Volume", 30),
                 ThumbnailUrl = $"https://i.ytimg.com/vi/{url}/hqdefault.jpg",
-                Duration = FormatDuration(lengthSeconds),
+                Duration = YoutubeDuration.Format(lengthSeconds),
             };
         }
 
@@ -152,9 +152,9 @@ namespace UltimateKtv
                     YoutubeId = favorite.VideoId,
                     Volume = 30,
                     ThumbnailUrl = $"https://i.ytimg.com/vi/{favorite.VideoId}/hqdefault.jpg",
-                    Duration = FormatDuration(favorite.LengthSeconds),
+                    Duration = YoutubeDuration.Format(favorite.LengthSeconds),
                 };
-            if (string.IsNullOrEmpty(item.Duration)) item.Duration = FormatDuration(favorite.LengthSeconds);
+            if (string.IsNullOrEmpty(item.Duration)) item.Duration = YoutubeDuration.Format(favorite.LengthSeconds);
             item.SingerName = YoutubeFavoriteSinger(item.Duration);
             return item;
         }
@@ -162,12 +162,6 @@ namespace UltimateKtv
         /// <summary>我的最愛清單裡 YouTube 歌的歌手欄：「YT-長度」，長度未知時只有「YT」(主畫面與手機共用)。</summary>
         public static string YoutubeFavoriteSinger(string? duration) =>
             string.IsNullOrEmpty(duration) ? "YT" : $"YT-{duration}";
-
-        /// <summary>把秒數格式化為 H:MM:SS (不到 1 小時為 M:SS)；0 以下回傳空字串。</summary>
-        public static string FormatDuration(double totalSeconds) => YoutubeDuration.Format(totalSeconds);
-
-        /// <summary>把 FormatDuration 的字串 (M:SS、H:MM:SS) 轉回秒數；無法解析時回傳 0。</summary>
-        public static int ParseDurationSeconds(string? text) => YoutubeDuration.ParseSeconds(text);
 
         /// <summary>把另一個項目的所有欄位複製到這個項目 (用於分頁列表的固定列)。</summary>
         public void CopyFrom(SongDisplayItem src)
