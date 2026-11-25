@@ -169,6 +169,10 @@ namespace UltimateKtv
             // auto 只處理標記為交錯的畫格 (漸進式影片不受影響)，每個圖場輸出一格 (59.94fps，同 EVR)；
             // 軟體解碼用 bwdif，硬體解碼由 mpv 選對應的 GPU 去交錯濾鏡
             SetOption("deinterlace", "auto");
+            // 交換鏈只排 1 格：mpv 每格都在上一格顯示後才開始畫 (也是取用 OSD 的時間點)，固定在 vblank 後不久，
+            // 跑馬燈在半格處送的 overlay 才不會撞上。預設 3 格時開始畫的時間點隨佇列狀態漂移，去交錯後的 59.94fps
+            // 影片加上主控台動態效果的負載，會漂到半格附近而偶爾一格沒收到、下一格收到兩次 (實測跳格 9~15% → 0~3%)
+            SetOption("swapchain-depth", "1");
 
             int err = MpvNative.Initialize!(_ctx);
             if (err < 0) throw new InvalidOperationException($"mpv_initialize failed: {MpvNative.Error(err)}");
@@ -381,13 +385,14 @@ namespace UltimateKtv
         public void ApplySettings(AppSettings settings)
         {
             // HWAccelMode: 0=自動, 1=NVIDIA, 2=Intel, 3=DXVA2(copy-back), 4=DXVA2(native), 5=D3D11
+            // 一律用 copy-back (解碼仍在 GPU，畫格複製回記憶體再上傳)：零複製的 d3d11va / dxva2 畫格會讓電視跑馬燈
+            // 跳格 (實測 H.264 28%、MPEG-2 64% 的格位置沒更新，copy-back 與軟解 0~1%)，所以 DXVA2 兩種方式在 mpv 相同
             string hwdec = !settings.EnableHWAccel ? "no" : settings.HWAccelMode switch
             {
                 1 => "nvdec-copy", // 影像輸出是 d3d11，沒有 CUDA 互通 (nvdec 會 Could not create device 退回軟解)
-                3 => "dxva2-copy",
-                4 => "dxva2",
-                5 => "d3d11va",
-                _ => "auto-safe" // Intel QuickSync 在 mpv 走 d3d11va，交給 auto-safe
+                3 or 4 => "dxva2-copy",
+                5 => "d3d11va-copy",
+                _ => "auto-copy-safe" // Intel QuickSync 在 mpv 走 d3d11va，交給 auto
             };
             if (hwdec != _hwdec)
             {
