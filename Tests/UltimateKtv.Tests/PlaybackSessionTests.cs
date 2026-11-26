@@ -177,6 +177,49 @@ namespace UltimateKtv.Tests
         }
 
         [Fact]
+        public void YouTube_video_already_queued_is_matched_by_video_id()
+        {
+            PlayNow(Song("A"));
+            // 點唱紀錄點的：SongId 是紀錄編號，影片 ID 在快取檔名裡
+            var fromHistory = Song("Love Song", singer: "", youtube: true) with { SongId = "Y0017", FilePath = @"D:\Yt\Love Song_aaaaaaaaaaa.mp4" };
+            Order(fromHistory);
+
+            // 搜尋結果 / 沒下載過的最愛：SongId 是影片 ID，FilePath 是網址
+            var fromSearch = Song("Love Song (Live)", singer: "", youtube: true) with { SongId = "aaaaaaaaaaa", FilePath = "https://www.youtube.com/watch?v=aaaaaaaaaaa" };
+
+            Assert.True(_session.IsQueued(fromSearch));
+            Assert.Equal(EnqueueResult.Duplicate, Order(fromSearch with { FilePath = @"D:\Yt\Love Song (Live)_aaaaaaaaaaa.mp4" }));
+            Assert.False(_session.IsQueued(fromSearch with { SongId = "bbbbbbbbbbb", FilePath = "https://www.youtube.com/watch?v=bbbbbbbbbbb" }));
+        }
+
+        [Fact]
+        public void IsQueued_follows_the_duplicate_rule_and_ignores_the_playing_song()
+        {
+            var a = Song("A");
+            PlayNow(a);
+            Order(Song("B", "歌手甲"));
+
+            Assert.False(_session.IsQueued(a));
+            Assert.True(_session.IsQueued(Song("b", "歌手甲") with { FilePath = @"D:\Other\b.mpg" }));
+            Assert.False(_session.IsQueued(Song("B", "歌手乙") with { FilePath = @"D:\Other\B.mpg" }));
+            // YouTube 歌不比歌名
+            Assert.False(_session.IsQueued(Song("B", "歌手甲", youtube: true) with { FilePath = @"D:\Yt\B_ccccccccccc.mp4" }));
+        }
+
+        [Fact]
+        public void Song_leaves_queued_state_when_it_starts_playing()
+        {
+            PlayNow(Song("A"));
+            var b = Song("B");
+            Order(b);
+            Assert.True(_session.IsQueued(b));
+
+            _session.Skip();
+
+            Assert.False(_session.IsQueued(b));
+        }
+
+        [Fact]
         public void Insert_first_of_a_queued_song_moves_it_to_first()
         {
             PlayNow(Song("A"));

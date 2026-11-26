@@ -513,6 +513,24 @@
             background: rgba(179, 222, 247, 0.95);
         }
 
+        /* 已在待播清單的歌：歌名前的待播圖示 (與主控台同一個 PlaylistCheck 圖示)；沒在待播的歌不留空位 */
+        .song-item.in-queue .song-name::before {
+            content: '';
+            display: inline-block;
+            width: 1.2em;
+            height: 1.2em;
+            margin-right: 6px;
+            vertical-align: -0.25em;
+            background-color: #667eea;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14,10H3V12H14V10M14,6H3V8H14V6M3,16H10V14H3V16M21.5,11.5L23,13L16,20L11.5,15.5L13,14L16,17L21.5,11.5Z'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14,10H3V12H14V10M14,6H3V8H14V6M3,16H10V14H3V16M21.5,11.5L23,13L16,20L11.5,15.5L13,14L16,17L21.5,11.5Z'/%3E%3C/svg%3E") center / contain no-repeat;
+        }
+
+        /* hover 的卡片底色就是 #667eea，圖示改白色才看得到 */
+        .song-item.in-queue:hover .song-name::before {
+            background-color: white;
+        }
+
         .loading {
             text-align: center;
             padding: 40px;
@@ -1388,6 +1406,7 @@
 
             eventSource.addEventListener('playlistChanged', (e) => {
                 console.log('[SSE] Playlist changed event received');
+                refreshQueuedMarks();
                 // Refresh playlist if modal is open
                 const modal = document.getElementById('playlistModal');
                 if (modal) {
@@ -2080,6 +2099,35 @@
             }
         }
 
+        // 已在待播清單的歌：歌名前顯示待播圖示 (.in-queue)。列表的 song-item 以 data-qkey 標示
+        // (「s:歌曲編號」歌庫的歌、「y:影片 ID」YouTube 歌、「h:紀錄 Id」沒有影片 ID 的 YouTube 點唱紀錄)，
+        // 由伺服器用與主控台相同的規則判斷。
+        // 列表顯示後與待播清單變動 (SSE playlistChanged) 時呼叫；連續呼叫只查一次。
+        let queuedMarksTimer = null;
+        let queuedMarksSeq = 0;
+        function refreshQueuedMarks() {
+            clearTimeout(queuedMarksTimer);
+            queuedMarksTimer = setTimeout(applyQueuedMarks, 50);
+        }
+
+        async function applyQueuedMarks() {
+            const seq = ++queuedMarksSeq;
+            const keys = [...new Set(Array.from(document.querySelectorAll('.song-item[data-qkey]'), el => el.dataset.qkey))];
+            if (keys.length === 0) return;
+            try {
+                const chunks = [];
+                for (let i = 0; i < keys.length; i += 100) chunks.push(keys.slice(i, i + 100));
+                const results = await Promise.all(chunks.map(chunk =>
+                    fetch(`?queryType=queuedflags&value=${encodeURIComponent(chunk.join(','))}`).then(r => r.json())));
+                if (seq !== queuedMarksSeq) return; // 已有較新的查詢
+                const queued = new Set(results.flatMap(r => Array.isArray(r) ? r : []));
+                document.querySelectorAll('.song-item[data-qkey]').forEach(el =>
+                    el.classList.toggle('in-queue', queued.has(el.dataset.qkey)));
+            } catch (error) {
+                console.error('Query queued songs failed:', error);
+            }
+        }
+
         // Check if song name overflows and apply wrap mode if it does
         function checkAndApplyWrapMode(containerId) {
             const container = document.getElementById(containerId);
@@ -2215,7 +2263,7 @@
                 const isMandarin = langShort === '國'; // Check if it's Mandarin
 
                 html += `
-                    <div class="song-item" onclick="orderSong('${songId}', '${songName.replace(/'/g, "\\'")}')">
+                    <div class="song-item" data-qkey="s:${songId}" onclick="orderSong('${songId}', '${songName.replace(/'/g, "\\'")}')">
                         <div class="song-info">
                             <span class="song-name">${songName}</span>
                             <span class="singer-name">${singerName}</span>
@@ -2232,6 +2280,7 @@
             }
 
             checkAndApplyWrapMode(containerId);
+            refreshQueuedMarks();
         }
 
         // This function is called when a singer item is clicked from the singer list.
@@ -2352,7 +2401,7 @@
 
                     // Display the found song with an order button
                     resultDiv.innerHTML = `
-                        <div class="song-item" style="background: #e3f2fd;" onclick="orderSong('${songId}', '${songName.replace(/'/g, "\\'")}')">
+                        <div class="song-item" data-qkey="s:${songId}" style="background: #e3f2fd;" onclick="orderSong('${songId}', '${songName.replace(/'/g, "\\'")}')">
                             <div class="song-info">
                                 <span class="song-name">${songName}</span>
                                 <span class="singer-name">${singerName}</span>
@@ -2362,6 +2411,7 @@
                     `;
                     // Wait for DOM update then check overflow
                     requestAnimationFrame(() => checkAndApplyWrapMode('numberSongResult'));
+                    refreshQueuedMarks();
                 } else {
                     resultDiv.innerHTML = '<div class="no-results">' + t('Web.NumberNotFound', '找不到此編號的歌曲') + '</div>';
                 }
@@ -2633,6 +2683,7 @@
                     const isMandarin = langShort === '國';
                     const item = document.createElement('div');
                     item.className = 'song-item';
+                    item.dataset.qkey = (song.IsYoutube ? 'y:' : 's:') + song.Song_Id;
                     // YouTube 最愛要先下載 (已下載過就直接點歌)，走另一個 API
                     item.onclick = () => song.IsYoutube ? orderYoutubeFavorite(song.Song_Id, songName) : orderSong(song.Song_Id, songName);
                     item.innerHTML = `
@@ -2647,6 +2698,7 @@
 
                 // Apply wrap mode check
                 checkAndApplyWrapMode('favoriteSongResults');
+                refreshQueuedMarks();
 
                 // Check if more pages available
                 container.dataset.hasMore = songs.length >= 20 ? 'true' : 'false';
@@ -2689,7 +2741,7 @@
                 videos.forEach(video => {
                     // Video data maps to SongDisplayItem properties from the server
                     html += `
-                        <div id="yt-row-${video.Song_Id}" class="song-item wrap-mode${video.InHistory ? ' yt-in-history' : ''}" style="flex-direction: column; align-items: stretch;" onclick="orderYoutube('${video.Song_Id}')">
+                        <div id="yt-row-${video.Song_Id}" data-qkey="y:${video.Song_Id}" class="song-item wrap-mode${video.InHistory ? ' yt-in-history' : ''}" style="flex-direction: column; align-items: stretch;" onclick="orderYoutube('${video.Song_Id}')">
                             <div style="display: flex; align-items: center; width: 100%;">
                                 <div class="song-info">
                                     <span class="song-name" style="flex: 1;">${video.Song_SongName}</span>
@@ -2712,6 +2764,7 @@
 
                 resultsDiv.innerHTML = html;
                 checkAndApplyWrapMode('youtubeResults');
+                refreshQueuedMarks();
 
             } catch (error) {
                 console.error('YouTube search failed:', error);
@@ -2814,8 +2867,9 @@
                     const dbId = item.Id;
                     const videoId = item.Url || item.Id;
                     const title = item.Name;
+                    const qkey = item.Url ? `y:${item.Url}` : `h:${dbId}`; // 沒有影片 ID 的舊紀錄由伺服器用紀錄 Id 查
                     html += `
-                        <div id="yt-row-${videoId}" class="song-item wrap-mode" style="flex-direction: column; align-items: stretch;" onclick="orderYoutubeHistory('${dbId}', '${videoId}')">
+                        <div id="yt-row-${videoId}" data-qkey="${qkey}" class="song-item wrap-mode" style="flex-direction: column; align-items: stretch;" onclick="orderYoutubeHistory('${dbId}', '${videoId}')">
                             <div style="display: flex; align-items: center; width: 100%;">
                                 <div class="song-info">
                                     <span class="song-name" style="flex: 1;">${title}</span>
@@ -2835,6 +2889,7 @@
                 });
                 resultsDiv.innerHTML = html;
                 checkAndApplyWrapMode('youtubeResults');
+                refreshQueuedMarks();
             } catch (error) {
                 console.error('Load history failed:', error);
                 loadingDiv.style.display = 'none';

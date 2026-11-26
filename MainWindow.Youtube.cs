@@ -74,7 +74,7 @@ namespace UltimateKtv
         internal bool DownloadYoutubeVideo(SongDisplayItem song, bool tappedOnScreen = false, bool insertFirst = false)
         {
             string videoId = YoutubeVideoId.Resolve(song.YoutubeId, song.SongId, song.FilePath);
-            if (IsYoutubeInWaitingList(videoId, song) || !YoutubeQueue.Enqueue(videoId, song.SongName, song.FilePath, song, insertFirst))
+            if (IsInWaitingList(song) || !YoutubeQueue.Enqueue(videoId, song.SongName, song.FilePath, song, insertFirst))
             {
                 AppLogger.Log($"YouTube: '{song.SongName}' ({videoId}) is already in the waiting list or download queue, skipped.");
                 // 主控台點的才提示 (手機由 API 回應處理)；插播時也是這裡，否則按了沒反應
@@ -85,12 +85,6 @@ namespace UltimateKtv
             if (tappedOnScreen) RememberYoutubeOrderOrigin(videoId);
             return true;
         }
-
-        /// <summary>待播清單中是否已有這部影片；沒有影片 ID 時 (例如匯入的檔案) 退回比對 SongId。</summary>
-        private bool IsYoutubeInWaitingList(string videoId, SongDisplayItem song) =>
-            _playback.Snapshot.Any(w => w.IsYoutube && (videoId.Length > 0
-                ? YoutubeVideoId.Resolve(null, w.SongId, w.FilePath) == videoId
-                : w.SongId == song.SongId));
 
         private void YoutubeQueue_Changed()
         {

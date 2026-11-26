@@ -84,6 +84,9 @@ namespace UltimateKtv
         private bool _isInYoutubeHistory;
         /// <summary>YouTube 搜尋結果的影片已在點唱紀錄中 (點過)；縮圖格以不同框線標示。</summary>
         public bool IsInYoutubeHistory { get => _isInYoutubeHistory; set => Set(ref _isInYoutubeHistory, value); }
+        private bool _isQueued;
+        /// <summary>已在待播清單中 (點了會被當成重複)；歌名前 / 縮圖右上角顯示待播圖示。由主視窗在換頁與待播清單變動時更新。</summary>
+        public bool IsQueued { get => _isQueued; set => Set(ref _isQueued, value); }
 
         /// <summary>從歌庫的歌建立列表項目；歌庫未設定音量時用 90、伴唱位置用 0。</summary>
         public static SongDisplayItem FromSong(Song song) => new SongDisplayItem

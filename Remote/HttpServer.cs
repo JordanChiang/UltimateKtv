@@ -329,6 +329,7 @@ public class HttpServer : IDisposable
 			["queryplayerstate"] = Poll(_ => HttpServerHelper.QueryPlayerState(Remote)),
 			["queryhostserverinfo"] = Poll(_ => HttpServerHelper.QueryHostServerInfo()),
 			["queryplaylist"] = Poll(r => HttpServerHelper.QueryPlaylist(r.Value, Remote)),
+			["queuedflags"] = Query(r => HttpServerHelper.QueuedFlags(r.Value, Remote)),
 			["querygeneration"] = Query(r => HttpServerHelper.QueryGeneration(r.Value, r.Page, r.Rows)),
 			["debug"] = Poll(_ => GetDebugInfo()),
 			["singerphoto"] = new(true, r => HandleSingerPhoto(r.Context, r.Params)),

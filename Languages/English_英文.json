@@ -109,6 +109,7 @@
 
   "Song.Insert": "Insert",
   "Song.AddFavorite": "Add to Favorites",
+  "Song.InWaitingList": "Already in the queue",
   "Song.Unknown": "Unknown Song",
 
   "Player.Skip": "Skip",

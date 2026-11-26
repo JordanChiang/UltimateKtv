@@ -110,6 +110,7 @@
 
   "Song.Insert": "插播",
   "Song.AddFavorite": "加入最愛",
+  "Song.InWaitingList": "已在待播清單",
   "Song.Unknown": "未知歌曲",
 
   "Player.Skip": "切歌",

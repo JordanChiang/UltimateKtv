@@ -613,6 +613,45 @@ namespace UltimateKtv
             ClearSongGridsSelection();
         }
 
+        private static QueuedSong ToQueuedSong(SongDisplayItem song) => new QueuedSong
+        {
+            SongId = song.SongId,
+            SongName = song.SongName,
+            // YouTube 的 SingerName 存的是頻道名/歌曲時間，不是歌手
+            SingerName = song.IsYoutube ? string.Empty : song.SingerName,
+            FilePath = song.FilePath,
+            Volume = song.Volume,
+            AudioTrack = song.AudioTrack,
+            OrderedBy = song.OrderedBy,
+            IsYoutube = song.IsYoutube,
+            Duration = song.IsYoutube ? song.Duration : string.Empty
+        };
+
+        /// <summary>
+        /// 列表上的歌是否已在待播清單 (與點歌的重複判斷同一條規則)。YouTube 歌先換成影片 ID：
+        /// 點唱紀錄的 SongId 是紀錄編號、影片 ID 在 YoutubeId，沒下載過的歌 FilePath 是網址。
+        /// </summary>
+        internal bool IsInWaitingList(SongDisplayItem song)
+        {
+            if (string.IsNullOrEmpty(song.SongId) || _playback == null) return false;
+            var candidate = ToQueuedSong(song);
+            if (song.IsYoutube)
+            {
+                string videoId = YoutubeVideoId.Resolve(song.YoutubeId, song.SongId, song.FilePath);
+                if (videoId.Length > 0) candidate = candidate with { SongId = videoId };
+            }
+            return _playback.IsQueued(candidate);
+        }
+
+        /// <summary>更新畫面上各歌曲列表 (含 YouTube 縮圖格) 的待播圖示。換頁與待播清單變動時呼叫。</summary>
+        private void RefreshQueuedMarks()
+        {
+            foreach (var slots in new[] { _songListPageItems, _languageSongListPageItems, _quickSongListPageItems, _youtubeGridPageItems })
+            {
+                foreach (var slot in slots) slot.IsQueued = IsInWaitingList(slot);
+            }
+        }
+
         /// <summary>
         /// 點歌：加入待播清單 (重複檢查、隨機歌切斷由 PlaybackSession 處理)，並依結果顯示提示/跑馬燈。
         /// </summary>
@@ -628,19 +667,7 @@ namespace UltimateKtv
                 return await Dispatcher.InvokeAsync(() => OrderSongAsync(song, source, insertFirst, origin)).Task.Unwrap();
             }
 
-            var queued = new QueuedSong
-            {
-                SongId = song.SongId,
-                SongName = song.SongName,
-                // YouTube 的 SingerName 存的是頻道名/歌曲時間，不是歌手
-                SingerName = song.IsYoutube ? string.Empty : song.SingerName,
-                FilePath = song.FilePath,
-                Volume = song.Volume,
-                AudioTrack = song.AudioTrack,
-                OrderedBy = song.OrderedBy,
-                IsYoutube = song.IsYoutube,
-                Duration = song.IsYoutube ? song.Duration : string.Empty
-            };
+            var queued = ToQueuedSong(song);
 
             // 點歌時若正在播隨機歌，PlaybackSession 會切掉它，此時不顯示「已點歌」跑馬燈
             bool cutsOffRandom = source != OrderSource.Random && _playback.Current?.IsRandom == true;

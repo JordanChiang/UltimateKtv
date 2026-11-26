@@ -381,6 +381,48 @@ public class HttpServerHelper
 		}
 	}
 
+	/// <summary>一次最多查幾首 (手機一頁最多 50 首)。</summary>
+	private const int MaxQueuedFlagKeys = 200;
+
+	/// <summary>
+	/// 手機列表上哪些歌已在待播清單 (與主控台的待播圖示同一條規則)。keys 以逗號分隔：
+	/// 「s:歌曲編號」是歌庫的歌、「y:影片 ID」是 YouTube 歌、「h:紀錄 Id」是沒有影片 ID 的 YouTube 點唱紀錄
+	/// (與主控台一樣由快取檔名解析影片 ID)；回傳其中已在待播的 key。
+	/// </summary>
+	public static string QueuedFlags(string keys, RemoteControl remote)
+	{
+		try
+		{
+			var items = new List<(string Key, UltimateKtv.SongDisplayItem Song)>();
+			foreach (var key in (keys ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct().Take(MaxQueuedFlagKeys))
+			{
+				if (key.StartsWith("s:", StringComparison.Ordinal))
+				{
+					var song = SongDatas.FindSongById(key.Substring(2));
+					if (song != null) items.Add((key, UltimateKtv.SongDisplayItem.FromSong(song)));
+				}
+				else if (key.StartsWith("y:", StringComparison.Ordinal) && YoutubeVideoId.IsValid(key.Substring(2)))
+				{
+					string videoId = key.Substring(2);
+					items.Add((key, new UltimateKtv.SongDisplayItem { SongId = videoId, YoutubeId = videoId, IsYoutube = true }));
+				}
+				else if (key.StartsWith("h:", StringComparison.Ordinal))
+				{
+					var record = SongDatas.GetYoutubeHistoryById(key.Substring(2));
+					if (record != null) items.Add((key, UltimateKtv.SongDisplayItem.FromYoutubeHistory(record)));
+				}
+			}
+			if (items.Count == 0) return EmptyResult;
+
+			var queued = remote.AreInWaitingList(items.Select(i => i.Song).ToList());
+			return JsonConvert.SerializeObject(items.Where((_, i) => queued[i]).Select(i => i.Key));
+		}
+		catch (Exception ex)
+		{
+			return ErrorResult("Query Error", ex.Message);
+		}
+	}
+
 	public static string QueryPlayerState(RemoteControl remote)
 	{
 		try

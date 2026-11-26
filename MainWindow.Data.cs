@@ -166,9 +166,13 @@ namespace UltimateKtv
         private readonly ObservableCollection<SongDisplayItem> _youtubeGridPageItems = new ObservableCollection<SongDisplayItem>();
         private readonly ObservableCollection<WaitingListItem> _waitingListPageItems = new ObservableCollection<WaitingListItem>();
 
-        private static void ShowPageItems(ItemsControl grid, ObservableCollection<SongDisplayItem> slots, IList<SongDisplayItem> items)
+        private void ShowPageItems(ItemsControl grid, ObservableCollection<SongDisplayItem> slots, IList<SongDisplayItem> items)
         {
-            ShowPageItemsCore(grid, slots, items, (slot, src) => slot.CopyFrom(src));
+            ShowPageItemsCore(grid, slots, items, (slot, src) =>
+            {
+                slot.CopyFrom(src);
+                slot.IsQueued = IsInWaitingList(slot);
+            });
         }
 
         private static void ShowPageItems(DataGrid grid, ObservableCollection<WaitingListItem> slots, IList<WaitingListItem> items)

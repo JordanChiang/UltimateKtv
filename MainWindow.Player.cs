@@ -90,7 +90,11 @@ namespace UltimateKtv
                     catch { return false; }
                 }));
 
-            _playback.QueueChanged += (_, _) => UpdateWaitingListDisplay();
+            _playback.QueueChanged += (_, _) =>
+            {
+                UpdateWaitingListDisplay();
+                RefreshQueuedMarks();
+            };
             _playback.SongStarting += Playback_SongStarting;
             _playback.SongOpened += Playback_SongOpened;
             _playback.SongEnded += Playback_SongEnded;

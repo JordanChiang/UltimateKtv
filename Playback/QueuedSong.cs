@@ -62,5 +62,29 @@ namespace UltimateKtv.Playback
 
         /// <summary>隨機歌開播時套用的聲道：-1=不指定, 0=人聲, 1=伴唱。</summary>
         public int RandomAudioChannel { get; init; } = -1;
+
+        /// <summary>
+        /// 是否為同一首歌：點歌時視為重複，歌曲列表上標示「已在待播」也用這條規則。
+        /// 同檔案就是同一首；兩首都是 YouTube 時比影片 ID (沒有影片 ID 時比 SongId)，不比歌名 (同名的不同影片不算)；
+        /// 兩首都是歌庫的歌時，同歌名加同歌手也算。
+        /// </summary>
+        public static bool IsSameSong(QueuedSong a, QueuedSong b)
+        {
+            if (!string.IsNullOrEmpty(a.FilePath) && a.FilePath.Equals(b.FilePath, StringComparison.OrdinalIgnoreCase)) return true;
+            if (a.IsYoutube != b.IsYoutube) return false;
+
+            if (a.IsYoutube)
+            {
+                string idA = YoutubeVideoId.Resolve(null, a.SongId, a.FilePath);
+                string idB = YoutubeVideoId.Resolve(null, b.SongId, b.FilePath);
+                return idA.Length > 0 && idB.Length > 0
+                    ? idA == idB
+                    : !string.IsNullOrEmpty(a.SongId) && a.SongId == b.SongId;
+            }
+
+            return !string.IsNullOrEmpty(a.SongName) &&
+                   a.SongName.Equals(b.SongName, StringComparison.OrdinalIgnoreCase) &&
+                   a.SingerName.Equals(b.SingerName, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

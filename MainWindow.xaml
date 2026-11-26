@@ -912,6 +912,30 @@
             </Style.Triggers>
         </Style>
 
+        <!-- 已在待播清單的歌：歌名前的待播圖示 (強調色、與歌名同大小；沒在待播的歌不留空位) -->
+        <Style x:Key="QueuedMarkIconStyle" TargetType="materialDesign:PackIcon">
+            <Setter Property="Kind" Value="PlaylistCheck"/>
+            <Setter Property="Width" Value="{DynamicResource SongListFontSize}"/>
+            <Setter Property="Height" Value="{DynamicResource SongListFontSize}"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{DynamicResource BrushAccent}"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsQueued}" Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 歌名欄：待播圖示 + 歌名 (DockPanel 讓長歌名仍以 … 截斷) -->
+        <DataTemplate x:Key="SongListNameCellTemplate">
+            <DockPanel LastChildFill="True" VerticalAlignment="Center">
+                <materialDesign:PackIcon DockPanel.Dock="Left" Style="{StaticResource QueuedMarkIconStyle}"/>
+                <TextBlock Text="{Binding SongName}" Style="{StaticResource SongListNameCellTextStyle}"/>
+            </DockPanel>
+        </DataTemplate>
+
         <!-- 次要文字 (語言欄) -->
         <Style x:Key="SongListDimCellTextStyle" TargetType="TextBlock">
             <Setter Property="TextAlignment" Value="Left"/>
@@ -1788,41 +1812,50 @@
                                           Visibility="Collapsed"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn x:Name="QuickSongNameColumn" local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="TextAlignment" Value="Left"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
-                                                    <Setter Property="Margin" Value="0"/>
-                                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                                    <Setter Property="Padding" Value="0"/>
-                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
-                                                    <Style.Triggers>
-                                                        <!-- Only apply non-Mandarin color when in Song mode (toggle unchecked) -->
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                 <Condition Binding="{Binding ElementName=SingerRadio, Path=IsChecked}" Value="False"/>
-                                                                 <Condition Binding="{Binding Language, Converter={StaticResource NotEqualConverter}, ConverterParameter=國語}" Value="True"/>
-                                                            </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Foreground" Value="{StaticResource BrushSongForeign}"/>
-                                                        </MultiDataTrigger>
-                                                        <!-- YouTube 搜尋/點唱紀錄：專屬顏色 (與我的最愛清單相同) -->
-                                                        <DataTrigger Binding="{Binding IsYoutube}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource BrushSongYoutube}"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-<DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
-                                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
+                                        <DataGridTemplateColumn x:Name="QuickSongNameColumn" local:Loc.HeaderKey="Col.SongName" Width="{StaticResource SongNameColumnWidth}">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel LastChildFill="True" VerticalAlignment="Center">
+                                                        <materialDesign:PackIcon DockPanel.Dock="Left" Style="{StaticResource QueuedMarkIconStyle}"/>
+                                                        <TextBlock Text="{Binding SongName}">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="TextAlignment" Value="Left"/>
+                                                                    <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                                    <Setter Property="Margin" Value="0"/>
+                                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                    <Setter Property="Padding" Value="0"/>
+                                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                                    <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+                                                                    <Style.Triggers>
+                                                                        <!-- Only apply non-Mandarin color when in Song mode (toggle unchecked) -->
+                                                                        <MultiDataTrigger>
+                                                                            <MultiDataTrigger.Conditions>
+                                                                                 <Condition Binding="{Binding ElementName=SingerRadio, Path=IsChecked}" Value="False"/>
+                                                                                 <Condition Binding="{Binding Language, Converter={StaticResource NotEqualConverter}, ConverterParameter=國語}" Value="True"/>
+                                                                            </MultiDataTrigger.Conditions>
+                                                                            <Setter Property="Foreground" Value="{StaticResource BrushSongForeign}"/>
+                                                                        </MultiDataTrigger>
+                                                                        <!-- YouTube 搜尋/點唱紀錄：專屬顏色 (與我的最愛清單相同) -->
+                                                                        <DataTrigger Binding="{Binding IsYoutube}" Value="True">
+                                                                            <Setter Property="Foreground" Value="{StaticResource BrushSongYoutube}"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver}" Value="True">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                        </DataTrigger>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource BrushTextSelectedGradient}"/>
+                                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                         <DataGridTemplateColumn Width="*">
                                             <DataGridTemplateColumn.HeaderStyle>
                                                 <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource GlobalDataGridColumnHeaderStyle}">
@@ -1967,11 +2000,17 @@
                                                                         Style="{StaticResource SongRowActionButtonStyle}" Click="SongFavoriteButton_Click">
                                                                     <materialDesign:PackIcon Kind="HeartOutline" Width="32" Height="32"/>
                                                                 </Button>
-                                                                <!-- 右上角歌曲長度 (H:MM:SS，不到 1 小時為 M:SS)，未知時隱藏 -->
-                                                                <Border x:Name="DurationBadge" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0"
-                                                                        Background="{StaticResource BrushScrim}" CornerRadius="{StaticResource RadiusXSmall}" Padding="6,1">
-                                                                    <TextBlock Text="{Binding Duration}" Foreground="{StaticResource BrushTextMain}" FontSize="{StaticResource FontSizeM}" FontWeight="Bold"/>
-                                                                </Border>
+                                                                <!-- 右上角：已在待播清單的圖示 + 歌曲長度 (H:MM:SS，不到 1 小時為 M:SS)，各自在沒有時隱藏 -->
+                                                                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,6,6,0">
+                                                                    <Border x:Name="QueuedBadge" Background="{StaticResource BrushScrim}" CornerRadius="{StaticResource RadiusXSmall}" Padding="6,1"
+                                                                            Margin="0,0,6,0" Visibility="Collapsed" ToolTip="{DynamicResource Str.Song.InWaitingList}">
+                                                                        <materialDesign:PackIcon Kind="PlaylistCheck" Width="30" Height="30" VerticalAlignment="Center"
+                                                                                                 Foreground="{DynamicResource BrushAccent}"/>
+                                                                    </Border>
+                                                                    <Border x:Name="DurationBadge" Background="{StaticResource BrushScrim}" CornerRadius="{StaticResource RadiusXSmall}" Padding="6,1">
+                                                                        <TextBlock Text="{Binding Duration}" Foreground="{StaticResource BrushTextMain}" FontSize="{StaticResource FontSizeM}" FontWeight="Bold"/>
+                                                                    </Border>
+                                                                </StackPanel>
                                                                 <Border x:Name="TitleBorder" Grid.Row="1" Background="{StaticResource BrushScrim}">
                                                                     <TextBlock Text="{Binding SongName}" Foreground="{StaticResource BrushTextMain}" TextAlignment="Center" Padding="2" FontSize="{StaticResource FontSizeS}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
                                                                 </Border>
@@ -1986,11 +2025,16 @@
                                                                 <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource BrushSongYoutube}"/>
                                                                 <Setter TargetName="border" Property="BorderThickness" Value="6"/>
                                                             </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsQueued}" Value="True">
+                                                                <Setter TargetName="QueuedBadge" Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
                                                             <DataTrigger Binding="{Binding Duration}" Value="">
                                                                 <Setter TargetName="DurationBadge" Property="Visibility" Value="Collapsed"/>
+                                                                <Setter TargetName="QueuedBadge" Property="Margin" Value="0"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Duration}" Value="{x:Null}">
                                                                 <Setter TargetName="DurationBadge" Property="Visibility" Value="Collapsed"/>
+                                                                <Setter TargetName="QueuedBadge" Property="Margin" Value="0"/>
                                                             </DataTrigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -2093,8 +2137,7 @@
                                           SelectionChanged="WaitingListGrid_SelectionChanged"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="{StaticResource SongNameColumnWidth}"
-                                                                ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
+                                            <DataGridTemplateColumn local:Loc.HeaderKey="Col.SongName" Width="{StaticResource SongNameColumnWidth}" CellTemplate="{StaticResource SongListNameCellTemplate}"/>
                                             <DataGridTemplateColumn local:Loc.HeaderKey="Col.Singer" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
                                             <DataGridTextColumn local:Loc.HeaderKey="Col.Language" Binding="{Binding Language, Converter={StaticResource SongLanguageDisplayConverter}}" Width="{StaticResource SongLanguageColumnWidth}"
                                                                 ElementStyle="{StaticResource SongListDimCellTextStyle}"/>
@@ -2130,8 +2173,7 @@
                                           SelectionChanged="WaitingListGrid_SelectionChanged"
                                           ColumnHeaderStyle="{StaticResource GlobalDataGridColumnHeaderStyle}">
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn local:Loc.HeaderKey="Col.SongName" Binding="{Binding SongName}" Width="{StaticResource LanguageSongNameColumnWidth}"
-                                                                ElementStyle="{StaticResource SongListNameCellTextStyle}"/>
+                                            <DataGridTemplateColumn local:Loc.HeaderKey="Col.SongName" Width="{StaticResource LanguageSongNameColumnWidth}" CellTemplate="{StaticResource SongListNameCellTemplate}"/>
                                             <DataGridTemplateColumn local:Loc.HeaderKey="Col.Singer" Width="*" CellTemplate="{StaticResource SongListSingerCellTemplate}"/>
                                             <DataGridTemplateColumn Header="" Width="{StaticResource SongActionsColumnWidth}" CellTemplate="{StaticResource SongListActionsCellTemplate}"/>
                                         </DataGrid.Columns>

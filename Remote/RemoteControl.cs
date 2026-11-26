@@ -35,6 +35,10 @@ namespace UltimateKtv
         public (RemoteNowPlaying NowPlaying, List<WaitingListItem> WaitingList) GetWaitingList() =>
             Invoke(m => (NowPlaying(m), m.GetWaitingListItems()));
 
+        /// <summary>每首歌是否已在待播清單 (與主控台列表的待播圖示同一條規則)，順序與 songs 相同。</summary>
+        public bool[] AreInWaitingList(IReadOnlyList<SongDisplayItem> songs) =>
+            Invoke(m => songs.Select(m.IsInWaitingList).ToArray());
+
         // ---- 播放控制 ----
 
         public void Skip() => Post(m => m.SkipCurrentSong());
