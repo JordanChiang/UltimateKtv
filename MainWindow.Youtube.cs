@@ -186,7 +186,7 @@ namespace UltimateKtv
             Dispatcher.BeginInvoke(() =>
             {
                 // 點唱紀錄的編號 (Y0017)；我的最愛的 SongId 是影片 ID，可能也是 Y 開頭
-                if (!string.IsNullOrEmpty(song.YoutubeId) && song.SongId.StartsWith("Y") && !YoutubeVideoId.IsValid(song.SongId))
+                if (!string.IsNullOrEmpty(song.YoutubeId) && YoutubeRecordId.IsValid(song.SongId))
                 {
                     var result = MessageBox.Show(Loc.T("Youtube.DownloadFailedRemove", e.Error.Message), Loc.T("Youtube.DownloadErrorTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (result == MessageBoxResult.Yes)

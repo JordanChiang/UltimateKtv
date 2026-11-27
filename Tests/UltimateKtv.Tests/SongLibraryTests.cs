@@ -125,6 +125,31 @@ namespace UltimateKtv.Tests
         }
 
         [Fact]
+        public void Record_youtube_song_reuses_the_smallest_free_id()
+        {
+            CreateFullYoutubeTable();
+            Db.ExecuteNonQuery("INSERT INTO YoutubeSongList (Id) VALUES ('Y0001')");
+            Db.ExecuteNonQuery("INSERT INTO YoutubeSongList (Id) VALUES ('Y0002')");
+            Db.ExecuteNonQuery("INSERT INTO YoutubeSongList (Id) VALUES ('Y0005')");
+
+            Assert.Equal("Y0003", SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "甲", @"D:\yt\甲_aaaaaaaaaaa.mp4", "", 30, AudioChannel.NoVocal));
+            Assert.Equal("Y0004", SongLibrary.RecordYoutubeSong("bbbbbbbbbbb", "乙", @"D:\yt\乙_bbbbbbbbbbb.mp4", "", 30, AudioChannel.NoVocal));
+            Assert.Equal("Y0006", SongLibrary.RecordYoutubeSong("ccccccccccc", "丙", @"D:\yt\丙_ccccccccccc.mp4", "", 30, AudioChannel.NoVocal));
+        }
+
+        [Fact]
+        public void Record_youtube_song_continues_after_y9999()
+        {
+            CreateFullYoutubeTable();
+            Db.ExecuteNonQuery(@"WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM n WHERE x < 9999)
+                INSERT INTO YoutubeSongList (Id) SELECT 'Y' || substr('000' || x, -4) FROM n");
+            Assert.Equal(9999L, Scalar("SELECT COUNT(*) FROM YoutubeSongList"));
+
+            Assert.Equal("YA000", SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "甲", @"D:\yt\甲_aaaaaaaaaaa.mp4", "", 30, AudioChannel.NoVocal));
+            Assert.Equal("YA001", SongLibrary.RecordYoutubeSong("bbbbbbbbbbb", "乙", @"D:\yt\乙_bbbbbbbbbbb.mp4", "", 30, AudioChannel.NoVocal));
+        }
+
+        [Fact]
         public void Record_youtube_song_fills_the_missing_video_id_of_an_imported_file()
         {
             CreateFullYoutubeTable();

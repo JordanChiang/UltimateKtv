@@ -23,6 +23,7 @@
     <Compile Include="..\..\Library\SongQuery.cs" Link="Linked\Library\SongQuery.cs" />
     <Compile Include="..\..\Lyrics\LyricsSource.cs" Link="Linked\Lyrics\LyricsSource.cs" />
     <Compile Include="..\..\Youtube\YoutubeVideoId.cs" Link="Linked\Youtube\YoutubeVideoId.cs" />
+    <Compile Include="..\..\Youtube\YoutubeRecordId.cs" Link="Linked\Youtube\YoutubeRecordId.cs" />
     <Compile Include="..\..\Youtube\YoutubeDuration.cs" Link="Linked\Youtube\YoutubeDuration.cs" />
     <Compile Include="..\..\Youtube\YoutubeDownloadQueue.cs" Link="Linked\Youtube\YoutubeDownloadQueue.cs" />
     <Compile Include="..\..\Youtube\YoutubeFormat.cs" Link="Linked\Youtube\YoutubeFormat.cs" />

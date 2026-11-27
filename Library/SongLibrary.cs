@@ -82,13 +82,14 @@ public static class SongLibrary
 				}
 			}
 
-			// 新 Id：Y0001 起依序編號
-			var maxIdTable = Db.GetDataTable("SELECT MAX(Id) FROM YoutubeSongList");
-			string newId = "Y0001";
-			if (maxIdTable.Rows.Count > 0 && maxIdTable.Rows[0][0] != DBNull.Value)
+			// 新 Id：取最小的空號 (刪除留下的缺號會補上)
+			var ids = Db.GetDataTable("SELECT Id FROM YoutubeSongList").Rows.Cast<DataRow>()
+				.Select(r => r[0] == DBNull.Value ? "" : r[0].ToString() ?? "");
+			string? newId = YoutubeRecordId.Next(ids);
+			if (newId == null)
 			{
-				string maxId = maxIdTable.Rows[0][0].ToString() ?? "";
-				if (maxId.StartsWith("Y") && int.TryParse(maxId.Substring(1), out int num)) newId = $"Y{(num + 1):D4}";
+				AppLogger.Log($"Error recording YouTube song: no free record Id left ({YoutubeRecordId.Count} used)");
+				return "";
 			}
 
 			if (name.Length > YoutubeNameMaxLength) name = name.Substring(0, YoutubeNameMaxLength);
