@@ -138,6 +138,25 @@ namespace UltimateKtv.Tests
         }
 
         [Fact]
+        public void Youtube_history_is_deleted_only_when_the_id_still_belongs_to_the_video()
+        {
+            CreateFullYoutubeTable();
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("aaaaaaaaaaa", "甲", @"D:\yt\甲_aaaaaaaaaaa.mp4", "", 30, AudioChannel.NoVocal));
+            Assert.True(SongLibrary.IsYoutubeHistoryOf("Y0001", "aaaaaaaaaaa"));
+
+            // 紀錄被刪除後，Y0001 補給了別部影片：拿著舊 Id 的畫面不能刪到新影片的紀錄
+            Assert.True(SongLibrary.DeleteYoutubeHistory("Y0001", "aaaaaaaaaaa"));
+            Assert.Equal("Y0001", SongLibrary.RecordYoutubeSong("bbbbbbbbbbb", "乙", @"D:\yt\乙_bbbbbbbbbbb.mp4", "", 30, AudioChannel.NoVocal));
+
+            Assert.False(SongLibrary.IsYoutubeHistoryOf("Y0001", "aaaaaaaaaaa"));
+            Assert.False(SongLibrary.DeleteYoutubeHistory("Y0001", "aaaaaaaaaaa"));
+            Assert.Equal("bbbbbbbbbbb", Scalar("SELECT Url FROM YoutubeSongList WHERE Id = 'Y0001'"));
+
+            Assert.False(SongLibrary.IsYoutubeHistoryOf("Y0001", ""));
+            Assert.False(SongLibrary.DeleteYoutubeHistory("Y0001", ""));
+        }
+
+        [Fact]
         public void Record_youtube_song_continues_after_y9999()
         {
             CreateFullYoutubeTable();

@@ -155,16 +155,39 @@ public static class SongLibrary
 		}
 	}
 
-	public static void DeleteYoutubeHistory(string id)
+	/// <summary>
+	/// 紀錄 Id 是否仍是這部影片的點唱紀錄。畫面上的 Id 可能已被刪除 (例如在 SongMgr)，
+	/// 刪除後編號又會補給別部影片，所以要連影片 ID 一起比對。
+	/// </summary>
+	public static bool IsYoutubeHistoryOf(string id, string videoId)
 	{
+		if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(videoId)) return false;
 		try
 		{
-			Db.ExecuteNonQuery("DELETE FROM YoutubeSongList WHERE Id = ?", id);
-			AppLogger.Log($"Deleted Youtube History record: {id}");
+			return Db.GetDataTable("SELECT Id FROM YoutubeSongList WHERE Id = ? AND Url = ?", id, videoId).Rows.Count > 0;
+		}
+		catch (Exception ex)
+		{
+			AppLogger.Log($"Error checking Youtube history {id}: {ex.Message}");
+			return false;
+		}
+	}
+
+	/// <summary>刪除一筆點唱紀錄；Id 與影片 ID 都相符才刪 (理由見 IsYoutubeHistoryOf)。</summary>
+	/// <returns>是否有刪除。</returns>
+	public static bool DeleteYoutubeHistory(string id, string videoId)
+	{
+		if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(videoId)) return false;
+		try
+		{
+			int rows = Db.ExecuteNonQuery("DELETE FROM YoutubeSongList WHERE Id = ? AND Url = ?", id, videoId);
+			AppLogger.Log(rows > 0 ? $"Deleted Youtube History record: {id} ({videoId})" : $"Youtube History record {id} ({videoId}) no longer exists; nothing deleted");
+			return rows > 0;
 		}
 		catch (Exception ex)
 		{
 			AppLogger.Log($"Error deleting Youtube history: {ex.Message}");
+			return false;
 		}
 	}
 

@@ -185,13 +185,14 @@ namespace UltimateKtv
             // 對話框排到之後顯示，不擋住佇列下載下一部
             Dispatcher.BeginInvoke(() =>
             {
-                // 點唱紀錄的編號 (Y0017)；我的最愛的 SongId 是影片 ID，可能也是 Y 開頭
-                if (!string.IsNullOrEmpty(song.YoutubeId) && YoutubeRecordId.IsValid(song.SongId))
+                // 點唱紀錄的編號 (Y0017)；我的最愛的 SongId 是影片 ID，可能也是 Y 開頭。
+                // 紀錄可能已被刪除、編號又補給別部影片，所以要確認仍是這部影片的紀錄才問要不要刪
+                if (YoutubeRecordId.IsValid(song.SongId) && SongLibrary.IsYoutubeHistoryOf(song.SongId, song.YoutubeId))
                 {
                     var result = MessageBox.Show(Loc.T("Youtube.DownloadFailedRemove", e.Error.Message), Loc.T("Youtube.DownloadErrorTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question);
                     if (result == MessageBoxResult.Yes)
                     {
-                        SongLibrary.DeleteYoutubeHistory(song.SongId);
+                        SongLibrary.DeleteYoutubeHistory(song.SongId, song.YoutubeId);
                         if (_currentQuickMethod == QuickMethod.YoutubeHistory)
                         {
                             UpdateSearchWords(true, resetPage: false);
