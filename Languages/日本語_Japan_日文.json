@@ -221,6 +221,7 @@
   "Youtube.DownloadFailedRemove": "ダウンロード失敗：{0}\n動画が削除されたか、非公開になった可能性があります。\n再生履歴から削除しますか？",
   "Youtube.DownloadErrorTitle": "ダウンロードエラー",
   "Youtube.DownloadFailed": "ダウンロード失敗：{0}",
+  "Youtube.DiskSpaceLow": "ダウンロード先のドライブ ({0}) の空き容量が {1} GB しかなく、{2} GB 未満のためダウンロードしません。\nディスクの空きを増やすか、YouTube のダウンロード先を別のドライブに変更してください。",
 
   "Legend.Male": "男性",
   "Legend.Female": "女性",

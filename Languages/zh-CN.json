@@ -222,6 +222,7 @@
   "Youtube.DownloadFailedRemove": "下载失败: {0}\n这个视频可能已被下架或更改权限。\n是否要将此记录从点播历史中删除？",
   "Youtube.DownloadErrorTitle": "下载错误",
   "Youtube.DownloadFailed": "下载失败: {0}",
+  "Youtube.DiskSpaceLow": "下载目录所在磁盘 ({0}) 剩余空间只有 {1} GB，不到 {2} GB，暂不下载。\n请清理磁盘空间，或把 YouTube 下载目录改到其他磁盘。",
 
   "Legend.Male": "男",
   "Legend.Female": "女",

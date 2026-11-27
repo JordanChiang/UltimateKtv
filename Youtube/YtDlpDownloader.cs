@@ -20,6 +20,13 @@ namespace UltimateKtv
 
         public async Task DownloadAsync(string videoId, string filePath, IProgress<double> progress, Action<string> status, CancellationToken cancellationToken)
         {
+            // 下載目錄所在磁碟剩餘空間不到 DiskSpace.MinFreeGB 就不下載 (快取已有的影片不會走到這裡)
+            if (DiskSpace.IsLow(filePath, "YouTube", out string drive, out double freeGB))
+            {
+                AppLogger.Log($"[YouTube] Skipping download of {videoId} — insufficient disk space on '{drive}': {freeGB:F2} GB free (need at least {DiskSpace.MinFreeGB} GB).");
+                throw new LowDiskSpaceException(Loc.T("Youtube.DiskSpaceLow", drive, freeGB.ToString("F1"), DiskSpace.MinFreeGB));
+            }
+
             bool highQuality = SettingsManager.Instance.CurrentSettings.HighQualityYoutube;
             try
             {

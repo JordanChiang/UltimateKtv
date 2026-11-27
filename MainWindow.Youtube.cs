@@ -185,6 +185,13 @@ namespace UltimateKtv
             // 對話框排到之後顯示，不擋住佇列下載下一部
             Dispatcher.BeginInvoke(() =>
             {
+                // 空間不足不是影片的問題，不問要不要刪紀錄
+                if (e.Error is LowDiskSpaceException)
+                {
+                    MessageBox.Show(e.Error.Message, Loc.T("Youtube.DownloadErrorTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 // 點唱紀錄的編號 (Y0017)；我的最愛的 SongId 是影片 ID，可能也是 Y 開頭。
                 // 紀錄可能已被刪除、編號又補給別部影片，所以要確認仍是這部影片的紀錄才問要不要刪
                 if (YoutubeRecordId.IsValid(song.SongId) && SongLibrary.IsYoutubeHistoryOf(song.SongId, song.YoutubeId))

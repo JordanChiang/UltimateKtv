@@ -221,6 +221,7 @@
   "Youtube.DownloadFailedRemove": "Download failed: {0}\nThis video may have been removed or made private.\nRemove it from the play history?",
   "Youtube.DownloadErrorTitle": "Download Error",
   "Youtube.DownloadFailed": "Download failed: {0}",
+  "Youtube.DiskSpaceLow": "Only {1} GB free on the download drive ({0}); at least {2} GB is required, so the video was not downloaded.\nFree up disk space or move the YouTube download folder to another drive.",
 
   "Legend.Male": "Male",
   "Legend.Female": "Female",

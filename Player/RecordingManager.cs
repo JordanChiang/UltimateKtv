@@ -110,23 +110,11 @@ namespace UltimateKtv
                     outputDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, outputDir);
                 }
 
-                // Check free disk space on the recording drive (require at least 1 GB)
-                const long MinFreeBytes = 1L * 1024 * 1024 * 1024; // 1 GB
-                try
+                // 錄音磁碟剩餘空間不到 DiskSpace.MinFreeGB 就不錄這首
+                if (DiskSpace.IsLow(outputDir, "Recording", out string driveRoot, out double freeGB))
                 {
-                    string driveRoot = Path.GetPathRoot(outputDir) ?? outputDir;
-                    var driveInfo = new DriveInfo(driveRoot);
-                    long freeBytes = driveInfo.AvailableFreeSpace;
-                    if (freeBytes < MinFreeBytes)
-                    {
-                        double freeGB = freeBytes / (1024.0 * 1024.0 * 1024.0);
-                        AppLogger.Log($"[Recording] Skipping recording — insufficient disk space on '{driveRoot}': {freeGB:F2} GB free (need at least 1 GB).");
-                        return;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    AppLogger.LogError($"[Recording] Could not check disk space for '{outputDir}', proceeding anyway.", ex);
+                    AppLogger.Log($"[Recording] Skipping recording — insufficient disk space on '{driveRoot}': {freeGB:F2} GB free (need at least {DiskSpace.MinFreeGB} GB).");
+                    return;
                 }
 
                 try
