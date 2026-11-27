@@ -49,6 +49,7 @@
   "Options.HttpServer": "リモートサーバー",
   "Options.ServerDisabledShort": "サーバー無効",
   "Options.ChangeLibraryDrive": "楽曲ライブラリドライブ",
+  "Options.YoutubeDir": "YouTube のダウンロード先",
   "Options.PathLabel": "パス:",
   "Options.NoDirSelected": "（フォルダー未選択）",
   "Options.RandomPlay": "ランダム再生",
@@ -93,6 +94,7 @@
   "Options.PublicIpUrl": "パブリックアドレス: {0}",
   "Options.PublicIpFailed": "パブリックIPを取得できませんでした。ネットワーク接続を確認してください。",
   "Options.SelectLibraryDir": "楽曲ライブラリフォルダを選択",
+  "Options.SelectYoutubeDir": "YouTube 動画のダウンロード先フォルダーを選択",
   "Options.SelectRecordingDir": "録音フォルダを選択",
 
   "Search.Song": "楽曲",

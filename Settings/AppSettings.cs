@@ -124,7 +124,10 @@ namespace UltimateKtv
         public int YoutubeSearchCount { get; set; } = 50;
 
         [Description("Youtube 下載目錄: 設定 YouTube 影片下載的預設目錄。")]
-        public string YoutubeDownloadDir { get; set; } = @"YoutubeDownloads";
+        public string YoutubeDownloadDir { get; set; } = DefaultYoutubeDownloadDir;
+
+        /// <summary>YouTube 下載目錄的預設值 (程式目錄下的相對路徑)。</summary>
+        public const string DefaultYoutubeDownloadDir = "YoutubeDownloads";
 
         [Description("GitHub 更新網址: 設定自動更新檢查的 GitHub 倉庫 (格式: Owner/Repo)。 預設為 JordanChiang/UltimateKtv")]
         public string GitHubRepoUrl { get; set; } = "JordanChiang/UltimateKtv";

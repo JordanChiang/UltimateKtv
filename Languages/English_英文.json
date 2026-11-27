@@ -48,6 +48,7 @@
   "Options.HttpServer": "Remote Server",
   "Options.ServerDisabledShort": "Server disabled",
   "Options.ChangeLibraryDrive": "Song Library Drive",
+  "Options.YoutubeDir": "YouTube download folder",
   "Options.PathLabel": "Path:",
   "Options.NoDirSelected": "(No folder selected)",
   "Options.RandomPlay": "Random Play",
@@ -92,6 +93,7 @@
   "Options.PublicIpUrl": "Public address: {0}",
   "Options.PublicIpFailed": "Couldn't get the public IP. Check your network connection.",
   "Options.SelectLibraryDir": "Select the song library folder",
+  "Options.SelectYoutubeDir": "Select the folder for YouTube downloads",
   "Options.SelectRecordingDir": "Select the recording folder",
 
   "Search.Song": "Songs",

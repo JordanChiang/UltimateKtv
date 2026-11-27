@@ -56,6 +56,7 @@
   "Options.HttpServer": "遠端點歌伺服器",
   "Options.ServerDisabledShort": "伺服器未啟用",
   "Options.ChangeLibraryDrive": "更換歌庫磁碟代號",
+  "Options.YoutubeDir": "YouTube 下載目錄",
   "Options.PathLabel": "路徑:",
   "Options.NoDirSelected": "(尚未選擇目錄)",
   "Options.RandomPlay": "隨機播放",
@@ -101,6 +102,7 @@
   "Options.PublicIpUrl": "公網連線網址: {0}",
   "Options.PublicIpFailed": "無法取得公網IP，請檢查網路連線",
   "Options.SelectLibraryDir": "選擇歌庫所在的目錄",
+  "Options.SelectYoutubeDir": "選擇 YouTube 影片下載的目錄",
   "Options.SelectRecordingDir": "選擇錄音檔存放的目錄",
 
   "Search.Song": "歌曲",

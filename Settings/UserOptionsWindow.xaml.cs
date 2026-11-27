@@ -356,6 +356,9 @@ namespace UltimateKtv
                 ? Loc.T("Options.NoDirSelected") 
                 : settings.SongLibraryDrivePath;
 
+            // Set YouTube Download Dir：一律顯示完整路徑 (相對路徑以程式目錄為準)
+            YoutubeDirText.Text = ResolveAppPath(settings.YoutubeDownloadDir ?? AppSettings.DefaultYoutubeDownloadDir);
+
             // Set Random Play settings
             RandomPlayToggle.IsChecked = settings.RandomPlayEnabled;
             // Select category by matching Tag value (0, 1, 2, or 10)
@@ -622,6 +625,11 @@ namespace UltimateKtv
             settings.ChangeSongLibraryDriveEnabled = ChangeSongLibraryDriveToggle.IsChecked == true;
             string drivePathText = SongLibraryDrivePathText.Text;
             settings.SongLibraryDrivePath = (drivePathText == Loc.T("Options.NoDirSelected")) ? "" : drivePathText.Trim();
+
+            // Save YouTube Download Dir：選的是預設目錄就存回相對路徑，程式搬家後仍跟著程式目錄
+            string youtubeDirText = YoutubeDirText.Text.Trim();
+            if (youtubeDirText.Length > 0)
+                settings.YoutubeDownloadDir = IsDefaultYoutubeDir(youtubeDirText) ? AppSettings.DefaultYoutubeDownloadDir : youtubeDirText;
 
             // Save Random Play settings
             settings.RandomPlayEnabled = RandomPlayToggle.IsChecked == true;
@@ -1115,6 +1123,44 @@ namespace UltimateKtv
                 SongLibraryDrivePathText.Text = dialog.FolderName;
                 SongLibraryDrivePathText.ToolTip = dialog.FolderName;
                 AppLogger.Log($"Song library drive path selected: {dialog.FolderName}");
+            }
+        }
+
+        private void BrowseYoutubeDir_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = Loc.T("Options.SelectYoutubeDir"),
+                Multiselect = false
+            };
+
+            string currentPath = YoutubeDirText.Text;
+            dialog.InitialDirectory = Directory.Exists(currentPath) ? currentPath : AppDomain.CurrentDomain.BaseDirectory;
+
+            if (dialog.ShowDialog() == true)
+            {
+                YoutubeDirText.Text = dialog.FolderName;
+                YoutubeDirText.ToolTip = dialog.FolderName;
+                AppLogger.Log($"YouTube download dir selected: {dialog.FolderName}");
+            }
+        }
+
+        /// <summary>相對路徑以程式目錄為準 (與 MainWindow.YoutubeCacheDir 相同)。</summary>
+        private static string ResolveAppPath(string path) =>
+            System.IO.Path.IsPathRooted(path) ? path : System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, path);
+
+        /// <summary>這個目錄就是預設的下載目錄 (相對或完整路徑寫法都算)。</summary>
+        private static bool IsDefaultYoutubeDir(string? dir)
+        {
+            if (dir == null) return true;
+            try
+            {
+                string Full(string p) => System.IO.Path.GetFullPath(ResolveAppPath(p)).TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
+                return string.Equals(Full(dir), Full(AppSettings.DefaultYoutubeDownloadDir), StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception)
+            {
+                return false; // 路徑格式錯誤：當成自訂目錄顯示原文，讓使用者看得到並重選
             }
         }
 
