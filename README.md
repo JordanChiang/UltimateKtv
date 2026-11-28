@@ -1,5 +1,7 @@
 # UltimateKtv
 
+**繁體中文** | [English](README.en.md)
+
 UltimateKtv 是一套針對 Windows 平台開發的專業 KTV 點歌與播放系統，支援雙螢幕獨立顯示、手機網頁端遠端點歌、YouTube 線上影音搜索播放以及硬體加速解碼等多項進階功能，為家庭娛樂提供完整的解決風格。
 
 ## 功能簡介 (Features)
@@ -259,3 +261,11 @@ powershell -ExecutionPolicy Bypass -File scripts\pack-release.ps1 -PublishDir <�
 | **Uptime** | 程式已執行的時數 |
 
 長時間使用後，比較各筆的 Private、Handles、GDI 是否持續上升，即可判斷是否有資源洩漏。記錄間隔可修改 `ResourceMonitor.Interval` (`Infrastructure/ResourceMonitor.cs`)。
+
+---
+
+## 授權 (License)
+
+UltimateKtv 本身的原始碼以 [MIT License](LICENSE) 授權。
+
+隨附的第三方元件 (`Codec/`、`Codec_x86/`、`Tools/` 與 NuGet 套件) 各依其授權條款散布，例如 LAV Filters 為 GPL-2.0 (見 `Codec/COPYING`)。
