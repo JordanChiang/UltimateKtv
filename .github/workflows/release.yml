@@ -29,10 +29,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '8.0.x'
 
@@ -123,7 +123,7 @@ jobs:
 
       - name: 建立 GitHub Release 並上傳附檔
         if: ${{ github.event.inputs.dry_run != 'true' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: ${{ steps.ver.outputs.tag }}
@@ -203,7 +203,7 @@ jobs:
       # 試跑 (dry_run)：不動任何 Release，改把打包好的附檔上傳為 workflow artifact 供下載檢查。
       - name: 試跑：上傳附檔為 artifact
         if: ${{ github.event.inputs.dry_run == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ReleaseAssets-${{ steps.ver.outputs.tag }}
           path: publish/ReleaseAssets/
