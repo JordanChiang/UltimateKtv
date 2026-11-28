@@ -3,7 +3,7 @@ name: Release
 # 推送版本號 tag (例如 2.0.5) 時，自動發佈 x64 + x86 到 GitHub Release。
 #   Phase 1：發佈主程式 (x64/x86) + Updater + StyleSimulator，打包元件 zip + update.json。
 #   Phase 2：抓 SongMgr (JordanChiang/SongMgr) 最新 release 的 App 包併入 (Codec_x86/Tools 共用本體的)。
-#   Phase 3：把 exe 送 VirusTotal，結果附加到 Release notes (需 VT_API_KEY secret；失敗不中斷發佈)。
+#   Phase 3：把 exe 送 VirusTotal，結果寫在 run Summary 並存到 vt-reports 分支，Release notes 附上分支上報告的連結 (需 VT_API_KEY secret；失敗不中斷發佈)。
 # 手動觸發可勾 dry_run 試跑：照常 build/打包，並照樣跑 VirusTotal，但不建立或更動任何 Release；
 # VT 結果改寫進該 run 的 Summary 頁、附檔上傳為 workflow artifact (用來確認新 code commit 的 VT 掃描與產出)。
 on:
@@ -132,7 +132,7 @@ jobs:
           generate_release_notes: true
 
       # Phase 3：exe 送 VirusTotal。結果一律寫進該 run 的 Summary 頁；
-      # 正式發佈 (非 dry_run) 時另外附加到 Release notes。錯誤 (無 key / 逾時 / 速率限制) 都不中斷。
+      # 正式發佈 (非 dry_run) 時另外存成 vt-reports 分支的 <tag>.md，Release notes 附上它的連結。錯誤 (無 key / 逾時 / 速率限制) 都不中斷。
       # 注意：VT 上傳會讓檔案對 VT 使用者可見；dry_run 掃的是未發佈 build，等於提前公開 (內容與正式發佈幾乎一樣)。
       # HA gate：對照 scripts/vt-baseline.json 白名單，只在某 exe 出現白名單以外的新命中時，
       # 在 Summary 標記「建議送 Hybrid Analysis」並附上本機 scan.sh 指令 (不自動送)。
@@ -161,13 +161,44 @@ jobs:
           # 一律寫進該 run 的 Summary 頁 (dry_run 時這就是查看掃描結果的地方)
           Get-Content -Raw $vt | Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding utf8
           if ('${{ github.event.inputs.dry_run }}' -eq 'true') { Write-Host 'VT: dry_run，結果只寫 Summary、不動 Release。'; exit 0 }
-          # 正式發佈：附加到 Release notes
+          # 正式發佈：掃描結果存成 vt-reports 分支的 <tag>.md (Actions 的 run/Summary 在公開 repo 最多留 90 天，
+          # 分支上的檔案永久保留)，Release notes 只附它的連結。vt-reports 是孤兒分支，不含程式碼、不併回 master。
           $tag = '${{ steps.ver.outputs.tag }}'
+          $reportUrl = '${{ github.server_url }}/${{ github.repository }}/blob/vt-reports/' + [uri]::EscapeDataString("$tag.md")
+          $wt = Join-Path $env:RUNNER_TEMP 'vt-reports'
+          $pushed = $false
+          try {
+            git fetch --depth=1 origin vt-reports
+            if ($LASTEXITCODE -eq 0) {
+              git worktree add -B vt-reports $wt FETCH_HEAD
+            } else {
+              # 第一次：建立孤兒分支
+              git worktree add --detach $wt
+              git -C $wt checkout --orphan vt-reports
+              git -C $wt rm -rf --quiet .
+            }
+            if ($LASTEXITCODE -ne 0) { throw "建立 vt-reports 工作目錄失敗 (exit $LASTEXITCODE)" }
+            ("# $tag`n`n" + (Get-Content -Raw $vt)) | Set-Content -Path (Join-Path $wt "$tag.md") -Encoding utf8NoBOM
+            git -C $wt add -- "$tag.md"
+            git -C $wt diff --cached --quiet
+            if ($LASTEXITCODE -ne 0) {
+              git -C $wt -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -q -m "VT report $tag"
+              if ($LASTEXITCODE -ne 0) { throw "commit 失敗 (exit $LASTEXITCODE)" }
+            }
+            git -C $wt push origin vt-reports
+            if ($LASTEXITCODE -ne 0) { throw "push 失敗 (exit $LASTEXITCODE)" }
+            $pushed = $true
+            Write-Host "VT: 報告已存到 vt-reports 分支 -> $reportUrl"
+          }
+          catch { Write-Warning "VT: 存到 vt-reports 分支失敗 ($($_.Exception.Message))，改把完整結果寫進 release notes。" }
+          $section = if ($pushed) { "## VirusTotal 掃描結果`n`n各 exe 的 VirusTotal 掃描結果見 [$tag 的掃描報告]($reportUrl)。`n" } else { Get-Content -Raw $vt }
           $body = gh release view $tag --json body -q .body
           $combined = Join-Path $env:RUNNER_TEMP 'notes.md'
-          ($body + "`n`n" + (Get-Content -Raw $vt)) | Set-Content -Path $combined -Encoding utf8
+          ($body + "`n`n" + $section) | Set-Content -Path $combined -Encoding utf8
           gh release edit $tag --notes-file $combined
+          if ($LASTEXITCODE -ne 0) { throw "更新 release notes 失敗 (exit $LASTEXITCODE)" }
           Write-Host 'VT: 已附加到 release notes。'
+          exit 0
 
       # 試跑 (dry_run)：不動任何 Release，改把打包好的附檔上傳為 workflow artifact 供下載檢查。
       - name: 試跑：上傳附檔為 artifact
